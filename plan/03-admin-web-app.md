@@ -10,6 +10,7 @@ A polished embedded admin console at `/admin`: log in, manage projects, manage e
 
 - React + Vite + TypeScript in `web/admin/`; `vite build` output embedded via `go:embed` and served at `/admin` (SPA fallback to `index.html`).
 - Client stack kept lean: `react-router`, a TypeScript client generated from the `moth.admin.v1` protos (`connect-web`, speaking gRPC-Web) with `connect-query` for TanStack Query integration, a small component layer (Radix primitives + hand-rolled styles or Tailwind). No heavyweight UI kit — the admin's look should foreshadow moth's design-system feature.
+- **Visuals follow [`DESIGN.md`](../DESIGN.md)** — the repo-root design system (near-monochrome palette, Satoshi/Cascadia Code, type scale, spacing, component recipes, and its admin-app per-surface notes) is the base for every screen; tokens land in one CSS-variables file with light and dark schemes.
 - Session handling against the milestone-01 cookie auth: login page, logout, `UNAUTHENTICATED` status → redirect to login.
 - First-run setup screen (create initial admin) replacing the milestone-01 placeholder.
 
@@ -40,6 +41,7 @@ A polished embedded admin console at `/admin`: log in, manage projects, manage e
 - **Instructions are the product** — the setup page must produce a copy-paste block that actually works against this instance, not generic docs. Values interpolated server-side via the admin API.
 - **Secrets shown once** — publishable key always visible; secret key only at creation/regeneration. Matches user expectations from Stripe et al.
 - **SPA stays dumb** — all invariants enforced by the services; the SPA is a pure generated-client consumer, so future CLI/automation gets the same power by generating a client from the same protos.
+- **`DESIGN.md` is the visual contract** — no colors, fonts, radii, or spacing outside its tokens; deviations are made by amending `DESIGN.md` first, not ad hoc in components.
 
 ## Acceptance criteria
 

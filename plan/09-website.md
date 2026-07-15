@@ -10,7 +10,7 @@ A fast static website that sells moth in one scroll and documents it completely:
 
 - `website/` in the repo: **Astro** with **Starlight** for the docs section — static output, excellent docs ergonomics (sidebar, search, dark mode) without inventing a docs system; fits the existing Node toolchain from the admin SPA.
 - Deployed to **GitHub Pages** via a GitHub Actions workflow (build on push to `main`, versioned deploy on release tags); custom domain ready (CNAME configurable, exact domain TBD).
-- Brand foundation: moth logo/wordmark, palette, and typography defined here (a design token file) — reused later by the admin SPA and default SDK theme so product and site feel related.
+- Brand foundation: visuals are based on [`DESIGN.md`](../DESIGN.md) at the repo root — its near-monochrome palette, Satoshi/Cascadia Code typography, type scale, and per-surface notes for the website are the source of truth, materialized here as a design token file shared with the admin SPA and default SDK theme so product and site feel related. The moth logo/wordmark is designed in this milestone and folded back into `DESIGN.md`.
 - No trackers, no external requests (fonts self-hosted) — the site practices the privacy stance the product claims. Optional privacy-respecting page counts (e.g. self-hosted Plausible) documented but off by default.
 
 ### Landing page
@@ -44,6 +44,7 @@ Screenshots are generated from a seeded demo instance by a Playwright script (re
 - **Docs are part of the product loop** — the milestone-03 setup-instructions page links to these docs; the docs quick start must stay byte-compatible with what that page renders. One review checklist ties them together.
 - **Static or bust** — no backend, no signups, no cookies; the site must survive on any static host and cost nothing to run.
 - **Honesty as positioning** — the comparison section states limitations plainly; for a security product, credibility is the growth channel.
+- **`DESIGN.md` is the visual contract** — landing and docs (via Starlight theming) stay inside its tokens and voice rules; deviations are made by amending `DESIGN.md` first, not ad hoc in the site.
 
 ## Acceptance criteria
 
