@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// ProjectService manages the projects (one per mobile app) hosted by this
+// moth instance. All RPCs require an authenticated admin session.
+service ProjectService {
+  rpc CreateProject(CreateProjectRequest) returns (CreateProjectResponse);
+  rpc GetProject(GetProjectRequest) returns (GetProjectResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+}
+
+message Project {
+  string id = 1;
+  string name = 2;
+  // URL-safe identifier, used in hosted-page and JWKS URLs (/p/{slug}/...).
+  string slug = 3;
+  // Identifies the project to the mobile SDK. Safe to embed in an app.
+  string publishable_key = 4;
+  google.protobuf.Timestamp create_time = 5;
+  google.protobuf.Timestamp update_time = 6;
+}
+
+message CreateProjectRequest {
+  string name = 1;
+}
+
+message CreateProjectResponse {
+  Project project = 1;
+  // The server-to-server secret key. Stored hashed server-side and therefore
+  // returned exactly once, in this response.
+  string secret_key = 2;
+}
+
+message GetProjectRequest {
+  string id = 1;
+}
+
+message GetProjectResponse {
+  Project project = 1;
+}
+
+message ListProjectsRequest {}
+
+message ListProjectsResponse {
+  repeated Project projects = 1;
+}
+
+message UpdateProjectRequest {
+  string id = 1;
+  string name = 2;
+}
+
+message UpdateProjectResponse {
+  Project project = 1;
+}
+
+message DeleteProjectRequest {
+  string id = 1;
+}
+
+message DeleteProjectResponse {}
