@@ -1,0 +1,88 @@
+# moth — Mobile + Auth
+
+## Vision
+
+moth makes authentication for a new mobile app trivial: run **one small binary**, create a project in the admin web app, add the served Flutter package to your `pubspec.yaml`, wrap your app in a login widget — done.
+
+The defining idea: **one moth server carries your entire portfolio of independent apps**. An indie developer, studio, or agency runs a single instance; every app they ship is just another project on it — with its own users, signing keys, provider credentials, branding, and analytics, fully isolated from the others. Adding app #10 costs exactly what app #1 did: one project created in the admin, zero new infrastructure.
+
+## Core capabilities
+
+- **Single binary server** — no external dependencies, embedded database, embedded admin UI, embedded Flutter package. `moth serve` and you're running.
+- **One server, many independent apps** — unlimited projects per instance, each a sealed tenant: its own user base, its own signing keypair, its own Google/Apple credentials, its own login branding. Nothing is shared across projects unless the operator is looking at the admin console.
+- **Per-project authentication** — email/password, Sign in with Google, Sign in with Apple. Users belong to exactly one project; the same email in two apps is two unrelated accounts.
+- **Admin web application** — create/configure projects, manage users, view analytics, copy setup instructions, customize the login design system (colors, font, spacing, logo).
+- **Admin CLI** — the same binary drives any moth instance from the terminal (personal access tokens): scriptable project/user management, declarative `moth project apply`, and one-command Google/Apple console configuration (`moth setup google|apple`).
+- **Agent-ready** — `moth skill export` emits an Agent Skills package (optionally interpolated with a project's real config) that teaches coding agents both how to integrate moth into an app and how to administer an instance through the CLI.
+- **Served Flutter package** — the server exposes a pub-compatible repository so developers reference the SDK directly from their moth instance in `pubspec.yaml`. The SDK provides a wrapper widget for the whole app and exposes auth state through an `InheritedWidget`.
+
+## Architecture decisions
+
+| Decision | Choice | Rationale |
+|---|---|---|
+| Server language | **Go** (1.23+) | Best-in-class for small static cross-platform binaries; `go:embed` bundles all assets; trivial deployment. |
+| Database | **SQLite** via `modernc.org/sqlite` | Embedded, zero-config, pure-Go driver keeps CGO-free cross-compilation. Single data directory to back up. |
+| API protocol | **gRPC**, protobuf-first, served with `connect-go` | Typed, codegen'd clients for Dart and TypeScript from one set of `.proto` files. connect-go speaks native gRPC (Flutter SDK) *and* gRPC-Web (browser SPA) on the same port, multiplexed with the plain-HTTP surfaces. `buf` for codegen/lint/breaking-change checks. |
+| Web surfaces | stdlib `net/http` alongside gRPC | Pub repository API, hosted verify/reset/OAuth-redirect pages, asset serving, JWKS, healthz — their consumers (pub client, browsers, third-party JWT libs) require plain HTTP. |
+| Access tokens | **JWT, ES256**, **one keypair per project**, per-project JWKS endpoint | The developer's own backend verifies its app's tokens offline against the project's public key (or online via an introspection RPC). Per-project keys mean a token minted for one app can never validate for another, and one project's key can be rotated or revoked without touching the rest. |
+| Sessions | Opaque **rotating refresh tokens** stored server-side | Revocable, detects token theft via rotation reuse. |
+| Password hashing | **argon2id** | Current best practice. |
+| Admin UI | **React + Vite + TypeScript SPA**, embedded via `go:embed` | Rich interactive admin (theme editor, charts) without server-side templating complexity. |
+| Flutter SDK delivery | Server implements the **pub hosted repository API** | `hosted: https://your-moth/pub` in pubspec — no publishing to pub.dev needed, version always matches the server. |
+| Email delivery | SMTP (configurable), console/log transport in dev | Keeps the binary dependency-free. |
+
+## System shape
+
+```
+┌────────────────────────── moth (single binary) ──────────────────────────┐
+│                                                                          │
+│  /admin           → embedded React SPA (admin console)                   │
+│  moth.admin.v1.*  → admin gRPC services (gRPC-Web from the SPA,           │
+│                     session-cookie auth)                                  │
+│  moth.auth.v1.*   → project auth gRPC services (publishable key + JWT)    │
+│  moth.server.v1.* → developer-backend gRPC services (secret key):         │
+│                     token introspection, user management                  │
+│  /pub/*           → pub repository API (HTTP) serving moth_auth           │
+│  /p/*, /assets/*  → hosted pages & project assets (HTTP)                  │
+│  /p/{slug}/.well-known/jwks.json → per-project public keys (HTTP)         │
+│                                                                          │
+│  SQLite (data/moth.db) · file store (data/uploads/) · keys (data/keys/)  │
+└──────────────────────────────────────────────────────────────────────────┘
+        ▲                                ▲
+        │ admin browser                  │ Flutter app (moth_auth SDK)
+```
+
+## Data model (sketch)
+
+- `admins` — operators of the moth instance.
+- `projects` — one per mobile app: name, slug, publishable key, secret key, provider config (Google/Apple credentials), theme JSON, settings.
+- `project_keys` — per-project ES256 signing keypairs (private key encrypted at rest, public part served via the project JWKS); multiple rows per project to support rotation.
+- `users` — scoped by `project_id`; email, password hash (nullable for social-only), verification state, custom claims (roles/permissions embedded in the JWT).
+- `identities` — links a user to a provider (`password`, `google`, `apple`) with provider subject ID; enables account linking.
+- `refresh_tokens` — hashed, rotating, per device session.
+- `events` — analytics event stream (signup, login, provider, platform, timestamp).
+- `email_tokens` — verification / password-reset tokens.
+
+## Milestones
+
+| # | Milestone | Outcome |
+|---|---|---|
+| [01](01-foundations.md) | Foundations | Runnable binary: CLI, config, SQLite + migrations, project model, admin bootstrap, CI. |
+| [02](02-email-password-auth.md) | Email/password auth | Full signup/login lifecycle per project: tokens, refresh, verification, password reset. |
+| [03](03-admin-web-app.md) | Admin web app v1 | Embedded SPA: projects, API keys, user management, setup instructions. |
+| [04](04-social-sign-in.md) | Social sign-in | Sign in with Google & Apple, native flows, account linking. |
+| [05](05-flutter-sdk.md) | Flutter SDK + pub serving | `moth_auth` package served from the binary; wrapper widget + inherited auth state. |
+| [06](06-design-system.md) | Design system & themed login | Admin theme editor; SDK login screens render project branding. |
+| [07](07-analytics.md) | Analytics | Event capture and admin dashboards. |
+| [08](08-admin-cli.md) | Admin CLI | Terminal project management via personal access tokens; one-command Google/Apple console setup; `moth doctor`. |
+| [09](09-website.md) | Public website | Static landing page + single-sourced docs (Astro/Starlight, GitHub Pages), brand foundation. |
+| [10](10-hardening-release.md) | Hardening & release | Security hardening, audit log, backups, packaging, final docs, v1.0. |
+
+Milestones are strictly ordered by dependency: each ends with a demoable state. 01–02 make the auth engine real, 03 makes it operable, 04–05 make the headline developer experience real, 06–08 make it lovable and automatable (08 needs only 03+04 and can run in parallel with 05–07), 09 gives it a front door (parallelizable; goes live with the release), 10 makes it shippable.
+
+## Non-goals (v1)
+
+- Other providers (GitHub, Facebook, phone/SMS, magic links) — architecture leaves room via the `identities` table.
+- Multi-node / horizontal scaling — SQLite + single process is the point; a moth instance serves one team's portfolio.
+- User-facing account portal (self-service profile page) — SDK covers in-app needs.
+- iOS/Android native SDKs (Swift/Kotlin) — Flutter first; the published protos make generating native gRPC clients straightforward when the time comes.
