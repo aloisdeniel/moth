@@ -16,7 +16,7 @@ import (
 	"github.com/aloisdeniel/moth/internal/store"
 )
 
-//go:embed web/admin.html
+//go:embed web/admin.html web/page.html.tmpl
 var webFS embed.FS
 
 const minPasswordLen = 8

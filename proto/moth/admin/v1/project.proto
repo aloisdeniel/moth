@@ -25,6 +25,25 @@ message Project {
   string publishable_key = 4;
   google.protobuf.Timestamp create_time = 5;
   google.protobuf.Timestamp update_time = 6;
+  ProjectSettings settings = 7;
+}
+
+// ProjectSettings is the per-project auth policy.
+message ProjectSettings {
+  // Minimum accepted password length (default 8).
+  int32 password_min_length = 1;
+  // Block SignIn until the email address is verified.
+  bool require_email_verification = 2;
+  // Whether the public SignUp RPC is open (invite-only projects: false).
+  bool allow_public_signup = 3;
+  // SignUp with an already-registered email returns OK and mails the owner
+  // instead of erroring, so responses never reveal whether an account
+  // exists.
+  bool enumeration_safe_signup = 4;
+  // Access token (JWT) lifetime in seconds (default 900).
+  int32 access_token_ttl_seconds = 5;
+  // Refresh token sliding window in days (default 30).
+  int32 refresh_token_ttl_days = 6;
 }
 
 message CreateProjectRequest {
@@ -55,6 +74,9 @@ message ListProjectsResponse {
 message UpdateProjectRequest {
   string id = 1;
   string name = 2;
+  // Replaces the whole settings object when set; leave unset to keep the
+  // current settings.
+  ProjectSettings settings = 3;
 }
 
 message UpdateProjectResponse {

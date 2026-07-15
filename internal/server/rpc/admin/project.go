@@ -49,6 +49,7 @@ func (h *ProjectHandler) CreateProject(ctx context.Context, req *connect.Request
 		Slug:           slug,
 		PublishableKey: token.New(token.PublishableKeyPrefix),
 		SecretKeyHash:  token.Hash(secretKey),
+		Settings:       store.DefaultProjectSettings(),
 		CreatedAt:      now,
 		UpdatedAt:      now,
 	}
@@ -107,6 +108,9 @@ func (h *ProjectHandler) UpdateProject(ctx context.Context, req *connect.Request
 		return nil, projectErr(err)
 	}
 	p.Name = name
+	if req.Msg.Settings != nil {
+		p.Settings = settingsFromProto(req.Msg.Settings)
+	}
 	p.UpdatedAt = time.Now()
 	if err := h.store.UpdateProject(ctx, p); err != nil {
 		return nil, projectErr(err)
@@ -190,5 +194,30 @@ func projectProto(p store.Project) *adminv1.Project {
 		PublishableKey: p.PublishableKey,
 		CreateTime:     timestamppb.New(p.CreatedAt),
 		UpdateTime:     timestamppb.New(p.UpdatedAt),
+		Settings:       settingsProto(p.Settings),
+	}
+}
+
+func settingsProto(s store.ProjectSettings) *adminv1.ProjectSettings {
+	return &adminv1.ProjectSettings{
+		PasswordMinLength:        int32(s.PasswordMinLength),
+		RequireEmailVerification: s.RequireEmailVerification,
+		AllowPublicSignup:        s.AllowPublicSignup,
+		EnumerationSafeSignup:    s.EnumerationSafeSignup,
+		AccessTokenTtlSeconds:    int32(s.AccessTokenTTLSeconds),
+		RefreshTokenTtlDays:      int32(s.RefreshTokenTTLDays),
+	}
+}
+
+// settingsFromProto converts the admin message; zero numeric fields fall
+// back to defaults when the row is next loaded.
+func settingsFromProto(s *adminv1.ProjectSettings) store.ProjectSettings {
+	return store.ProjectSettings{
+		PasswordMinLength:        int(s.PasswordMinLength),
+		RequireEmailVerification: s.RequireEmailVerification,
+		AllowPublicSignup:        s.AllowPublicSignup,
+		EnumerationSafeSignup:    s.EnumerationSafeSignup,
+		AccessTokenTTLSeconds:    int(s.AccessTokenTtlSeconds),
+		RefreshTokenTTLDays:      int(s.RefreshTokenTtlDays),
 	}
 }

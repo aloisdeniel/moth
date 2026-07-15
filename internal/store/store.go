@@ -47,6 +47,8 @@ type ProjectStore interface {
 	CreateProject(ctx context.Context, p Project, k ProjectKey) error
 	GetProject(ctx context.Context, id string) (Project, error)
 	GetProjectBySlug(ctx context.Context, slug string) (Project, error)
+	GetProjectByPublishableKey(ctx context.Context, key string) (Project, error)
+	GetProjectBySecretKeyHash(ctx context.Context, keyHash string) (Project, error)
 	ListProjects(ctx context.Context) ([]Project, error)
 	UpdateProject(ctx context.Context, p Project) error
 	DeleteProject(ctx context.Context, id string) error
@@ -54,15 +56,53 @@ type ProjectStore interface {
 	ListActiveProjectKeys(ctx context.Context, projectID string) ([]ProjectKey, error)
 }
 
-// Store implements AdminStore, SessionStore and ProjectStore on SQLite.
+// UserStore persists a project's end users and their provider identities.
+type UserStore interface {
+	CreateUser(ctx context.Context, u User, identities ...Identity) error
+	CreateIdentity(ctx context.Context, id Identity) error
+	GetUser(ctx context.Context, projectID, id string) (User, error)
+	GetUserByEmail(ctx context.Context, projectID, email string) (User, error)
+	ListUsers(ctx context.Context, projectID string) ([]User, error)
+	UpdateUser(ctx context.Context, u User) error
+	DeleteUser(ctx context.Context, projectID, id string) error
+}
+
+// RefreshTokenStore persists rotating refresh tokens.
+type RefreshTokenStore interface {
+	CreateRefreshToken(ctx context.Context, rt RefreshToken) error
+	GetRefreshToken(ctx context.Context, projectID, tokenHash string) (RefreshToken, error)
+	RotateRefreshToken(ctx context.Context, oldID string, rotatedAt time.Time, successor RefreshToken) error
+	RevokeRefreshToken(ctx context.Context, projectID, id string, now time.Time) error
+	RevokeRefreshTokenFamily(ctx context.Context, projectID, familyID string, now time.Time) error
+	RevokeUserRefreshTokens(ctx context.Context, projectID, userID string, now time.Time) error
+}
+
+// EmailTokenStore persists single-use verification/reset/change tokens.
+type EmailTokenStore interface {
+	CreateEmailToken(ctx context.Context, et EmailToken) error
+	GetEmailToken(ctx context.Context, projectID, tokenHash string) (EmailToken, error)
+	ConsumeEmailToken(ctx context.Context, projectID, id string, now time.Time) error
+	DeleteUserEmailTokens(ctx context.Context, projectID, userID, purpose string) error
+}
+
+// EventStore records analytics events (stub until milestone 07).
+type EventStore interface {
+	InsertEvent(ctx context.Context, e Event) error
+}
+
+// Store implements every per-domain store interface on SQLite.
 type Store struct {
 	db *sql.DB
 }
 
 var (
-	_ AdminStore   = (*Store)(nil)
-	_ SessionStore = (*Store)(nil)
-	_ ProjectStore = (*Store)(nil)
+	_ AdminStore        = (*Store)(nil)
+	_ SessionStore      = (*Store)(nil)
+	_ ProjectStore      = (*Store)(nil)
+	_ UserStore         = (*Store)(nil)
+	_ RefreshTokenStore = (*Store)(nil)
+	_ EmailTokenStore   = (*Store)(nil)
+	_ EventStore        = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL

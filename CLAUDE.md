@@ -19,18 +19,31 @@ order.
 
 ```
 cmd/moth/            main + cobra commands (serve, admin create, version)
-proto/moth/          protobuf definitions (moth.admin.v1, later auth/server)
+proto/moth/          protobuf definitions (moth.admin.v1, moth.auth.v1,
+                     moth.server.v1)
 gen/                 buf-generated Go code — committed, never hand-edited
 internal/config/     flags > MOTH_* env > moth.toml > defaults resolution
+                     (incl. [smtp] section)
 internal/store/      SQLite (modernc.org/sqlite), embedded migrations,
                      hand-written SQL behind per-domain interfaces (no ORM)
 internal/keys/       master key (encrypts at rest), per-project ES256
                      keypairs, JWKS building
+internal/jwt/        minimal ES256 JWS sign/verify for moth access tokens
+                     (third-party JOSE libs verify them via the JWKS)
+internal/mail/       Mailer interface: SMTP + console transports, embedded
+                     email templates
 internal/password/   argon2id hashing
 internal/token/      random API keys / session tokens + SHA-256 hashing
-internal/server/     handler assembly, interceptors, plain-HTTP surfaces
-internal/server/rpc/admin/  moth.admin.v1 connect handlers + auth interceptor
+internal/ratelimit/  in-memory token buckets for credential-facing RPCs
+internal/server/     handler assembly, interceptors, plain-HTTP surfaces,
+                     hosted verify/reset/confirm-email pages
+internal/server/rpc/admin/     moth.admin.v1 handlers + session interceptor
+internal/server/rpc/auth/      moth.auth.v1 handlers; publishable-key (pk_)
+                               interceptor + rate limiting; ErrorInfo reasons
+internal/server/rpc/serverapi/ moth.server.v1 handlers; secret-key (sk_)
+                               interceptor
 internal/server/web/ embedded placeholder admin page (real SPA: milestone 03)
+scripts/             e2e_grpcurl.sh — manual auth-lifecycle pass with grpcurl
 ```
 
 ## Conventions

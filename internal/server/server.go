@@ -14,18 +14,37 @@ import (
 	"github.com/rs/cors"
 
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
+	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
+	"github.com/aloisdeniel/moth/gen/moth/server/v1/serverv1connect"
 	"github.com/aloisdeniel/moth/internal/config"
 	"github.com/aloisdeniel/moth/internal/keys"
+	"github.com/aloisdeniel/moth/internal/mail"
 	adminrpc "github.com/aloisdeniel/moth/internal/server/rpc/admin"
+	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
+	"github.com/aloisdeniel/moth/internal/server/rpc/serverapi"
+	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/version"
 )
+
+// Store is everything the assembled server needs from persistence.
+type Store interface {
+	adminrpc.Store
+	store.EmailTokenStore
+	store.EventStore
+}
 
 // Options configures a Server.
 type Options struct {
 	Config config.Config
-	Store  adminrpc.Store
+	Store  Store
 	Master keys.MasterKey
 	Logger *slog.Logger
+	// Mailer delivers auth emails; nil falls back to the console
+	// transport (dev default).
+	Mailer mail.Mailer
+	// RateLimits override the auth-service throttles; zero value means
+	// defaults.
+	RateLimits authrpc.RateLimits
 	// SetupToken guards the first-run admin setup screen. Empty when an
 	// admin account already exists.
 	SetupToken string
@@ -34,10 +53,11 @@ type Options struct {
 // Server is the assembled moth server.
 type Server struct {
 	cfg        config.Config
-	store      adminrpc.Store
+	store      Store
 	master     keys.MasterKey
 	log        *slog.Logger
-	setupToken atomic.Value // string; "" once setup is complete
+	auth       *authrpc.Handler // shared with the hosted confirmation pages
+	setupToken atomic.Value     // string; "" once setup is complete
 	handler    http.Handler
 }
 
@@ -46,6 +66,12 @@ func New(o Options) *Server {
 	if o.Logger == nil {
 		o.Logger = slog.Default()
 	}
+	if o.Mailer == nil {
+		o.Mailer = mail.Console{Log: o.Logger}
+	}
+	if o.RateLimits.PerIP == nil || o.RateLimits.PerAccount == nil {
+		o.RateLimits = authrpc.DefaultRateLimits()
+	}
 	s := &Server{
 		cfg:    o.Config,
 		store:  o.Store,
@@ -53,27 +79,62 @@ func New(o Options) *Server {
 		log:    o.Logger,
 	}
 	s.setupToken.Store(o.SetupToken)
+	s.auth = authrpc.New(authrpc.Options{
+		Store:   o.Store,
+		Master:  o.Master,
+		Mailer:  o.Mailer,
+		BaseURL: o.Config.BaseURL,
+		Logger:  o.Logger,
+	})
 
-	interceptors := connect.WithInterceptors(
-		newRequestIDInterceptor(),
-		newRecoveryInterceptor(o.Logger),
-		newLoggingInterceptor(o.Logger),
-		adminrpc.NewAuthInterceptor(o.Store),
-	)
+	// chain prepends the shared observability interceptors to a service's
+	// own auth interceptors.
+	chain := func(extra ...connect.Interceptor) connect.Option {
+		all := []connect.Interceptor{
+			newRequestIDInterceptor(),
+			newRecoveryInterceptor(o.Logger),
+			newLoggingInterceptor(o.Logger),
+		}
+		return connect.WithInterceptors(append(all, extra...)...)
+	}
+	adminInterceptors := chain(adminrpc.NewAuthInterceptor(o.Store))
+	authInterceptors := chain(
+		authrpc.NewProjectInterceptor(o.Store),
+		authrpc.NewRateLimitInterceptor(o.RateLimits))
+	serverInterceptors := chain(serverapi.NewSecretKeyInterceptor(o.Store))
 
 	mux := http.NewServeMux()
 
+	// moth.admin.v1 — the admin console (session-cookie auth).
 	sessionPath, sessionHandler := adminv1connect.NewSessionServiceHandler(
-		adminrpc.NewSessionHandler(o.Store, o.Config.Secure()), interceptors)
+		adminrpc.NewSessionHandler(o.Store, o.Config.Secure()), adminInterceptors)
 	mux.Handle(sessionPath, sessionHandler)
-
 	projectPath, projectHandler := adminv1connect.NewProjectServiceHandler(
-		adminrpc.NewProjectHandler(o.Store, o.Master), interceptors)
+		adminrpc.NewProjectHandler(o.Store, o.Master), adminInterceptors)
 	mux.Handle(projectPath, projectHandler)
+	adminUserPath, adminUserHandler := adminv1connect.NewUserServiceHandler(
+		adminrpc.NewUserHandler(o.Store), adminInterceptors)
+	mux.Handle(adminUserPath, adminUserHandler)
+
+	// moth.auth.v1 — the public end-user API (publishable-key auth).
+	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
+	mux.Handle(authPath, authHandler)
+
+	// moth.server.v1 — the developer-backend API (secret-key auth).
+	tokenPath, tokenHandler := serverv1connect.NewTokenServiceHandler(
+		serverapi.NewTokenHandler(o.Store, nil), serverInterceptors)
+	mux.Handle(tokenPath, tokenHandler)
+	serverUserPath, serverUserHandler := serverv1connect.NewUserServiceHandler(
+		serverapi.NewUserHandler(o.Store, nil), serverInterceptors)
+	mux.Handle(serverUserPath, serverUserHandler)
 
 	serviceNames := []string{
 		adminv1connect.SessionServiceName,
 		adminv1connect.ProjectServiceName,
+		adminv1connect.UserServiceName,
+		authv1connect.AuthServiceName,
+		serverv1connect.TokenServiceName,
+		serverv1connect.UserServiceName,
 	}
 	mux.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker(serviceNames...)))
 	if version.IsDev() {
@@ -84,6 +145,10 @@ func New(o Options) *Server {
 
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.HandleFunc("GET /p/{slug}/.well-known/jwks.json", s.handleJWKS)
+	mux.HandleFunc("GET /p/{slug}/verify", s.handleVerifyPage)
+	mux.HandleFunc("GET /p/{slug}/reset", s.handleResetPage)
+	mux.HandleFunc("POST /p/{slug}/reset", s.handleResetSubmit)
+	mux.HandleFunc("GET /p/{slug}/confirm-email", s.handleConfirmEmailPage)
 	mux.HandleFunc("GET /admin", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)
@@ -93,7 +158,7 @@ func New(o Options) *Server {
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   []string{o.Config.BaseOrigin()},
 		AllowedMethods:   connectcors.AllowedMethods(),
-		AllowedHeaders:   connectcors.AllowedHeaders(),
+		AllowedHeaders:   append(connectcors.AllowedHeaders(), "X-Moth-Key"),
 		ExposedHeaders:   append(connectcors.ExposedHeaders(), requestIDHeader),
 		AllowCredentials: true,
 		MaxAge:           7200,

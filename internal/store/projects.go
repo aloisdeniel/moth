@@ -16,6 +16,7 @@ type Project struct {
 	Slug           string
 	PublishableKey string
 	SecretKeyHash  string
+	Settings       ProjectSettings
 	CreatedAt      time.Time
 	UpdatedAt      time.Time
 }
@@ -43,10 +44,14 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	}
 	defer tx.Rollback()
 
+	settings, err := encodeProjectSettings(p.Settings)
+	if err != nil {
+		return fmt.Errorf("encode project settings: %w", err)
+	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO projects (id, name, slug, publishable_key, secret_key_hash, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		p.ID, p.Name, p.Slug, p.PublishableKey, p.SecretKeyHash,
+		`INSERT INTO projects (id, name, slug, publishable_key, secret_key_hash, settings, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		p.ID, p.Name, p.Slug, p.PublishableKey, p.SecretKeyHash, settings,
 		formatTime(p.CreatedAt), formatTime(p.UpdatedAt)); err != nil {
 		return fmt.Errorf("insert project: %w", err)
 	}
@@ -63,7 +68,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
@@ -73,6 +78,16 @@ func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 func (s *Store) GetProjectBySlug(ctx context.Context, slug string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
 		`SELECT `+projectColumns+` FROM projects WHERE slug = ?`, slug))
+}
+
+func (s *Store) GetProjectByPublishableKey(ctx context.Context, key string) (Project, error) {
+	return scanProject(s.db.QueryRowContext(ctx,
+		`SELECT `+projectColumns+` FROM projects WHERE publishable_key = ?`, key))
+}
+
+func (s *Store) GetProjectBySecretKeyHash(ctx context.Context, keyHash string) (Project, error) {
+	return scanProject(s.db.QueryRowContext(ctx,
+		`SELECT `+projectColumns+` FROM projects WHERE secret_key_hash = ?`, keyHash))
 }
 
 func (s *Store) ListProjects(ctx context.Context) ([]Project, error) {
@@ -98,9 +113,13 @@ func (s *Store) ListProjects(ctx context.Context) ([]Project, error) {
 }
 
 func (s *Store) UpdateProject(ctx context.Context, p Project) error {
+	settings, err := encodeProjectSettings(p.Settings)
+	if err != nil {
+		return fmt.Errorf("encode project settings: %w", err)
+	}
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE projects SET name = ?, updated_at = ? WHERE id = ?`,
-		p.Name, formatTime(p.UpdatedAt), p.ID)
+		`UPDATE projects SET name = ?, settings = ?, updated_at = ? WHERE id = ?`,
+		p.Name, settings, formatTime(p.UpdatedAt), p.ID)
 	if err != nil {
 		return fmt.Errorf("update project: %w", err)
 	}
@@ -167,11 +186,14 @@ func scanProject(row *sql.Row) (Project, error) {
 
 func scanProjectRow(row rowScanner) (Project, error) {
 	var p Project
-	var createdAt, updatedAt string
+	var settings, createdAt, updatedAt string
 	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.PublishableKey, &p.SecretKeyHash,
-		&createdAt, &updatedAt)
+		&settings, &createdAt, &updatedAt)
 	if err != nil {
 		return Project{}, err
+	}
+	if p.Settings, err = parseProjectSettings(settings); err != nil {
+		return Project{}, fmt.Errorf("parse project settings: %w", err)
 	}
 	if p.CreatedAt, err = parseTime(createdAt); err != nil {
 		return Project{}, fmt.Errorf("parse project created_at: %w", err)

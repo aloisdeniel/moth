@@ -8,10 +8,12 @@ require (
 	connectrpc.com/grpchealth v1.5.0
 	connectrpc.com/grpcreflect v1.3.0
 	github.com/BurntSushi/toml v1.6.0
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/crypto v0.54.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260715203245-bcc9394bd25e
 	google.golang.org/protobuf v1.36.11
 	modernc.org/sqlite v1.53.0
 )

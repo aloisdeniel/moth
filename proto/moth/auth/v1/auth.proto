@@ -1,0 +1,206 @@
+syntax = "proto3";
+
+package moth.auth.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1";
+
+// AuthService is the public end-user authentication API consumed by mobile
+// apps (via the SDK). Every call carries the project's publishable key in
+// `x-moth-key: pk_...` request metadata; an interceptor resolves it to the
+// project, so users, tokens and emails are always project-scoped.
+//
+// RPCs about the current user (GetMe, UpdateMe, ChangePassword,
+// RequestEmailChange, DeleteAccount) additionally require a valid access
+// token in `authorization: Bearer ...` metadata.
+//
+// Errors carry a google.rpc.ErrorInfo detail with a stable machine-readable
+// `reason` (e.g. INVALID_CREDENTIALS, EMAIL_NOT_VERIFIED) that SDKs map to
+// typed errors.
+service AuthService {
+  // SignUp registers a new email/password user, subject to project policy
+  // (public signup open, password length, email verification). Depending on
+  // policy the response may already include tokens, or be empty until the
+  // email is verified.
+  rpc SignUp(SignUpRequest) returns (SignUpResponse);
+  // SignIn exchanges email/password for a token pair. The error is the same
+  // whether the email is unknown or the password wrong.
+  rpc SignIn(SignInRequest) returns (SignInResponse);
+  // RefreshToken rotates the presented refresh token and mints a fresh
+  // access token. Presenting an already-rotated token is treated as theft:
+  // the whole token family is revoked.
+  rpc RefreshToken(RefreshTokenRequest) returns (RefreshTokenResponse);
+  // SignOut revokes the presented refresh token, or every session of the
+  // user with all_devices.
+  rpc SignOut(SignOutRequest) returns (SignOutResponse);
+
+  // GetMe returns the user authenticated by the access token.
+  rpc GetMe(GetMeRequest) returns (GetMeResponse);
+  // UpdateMe updates the user's own profile fields.
+  rpc UpdateMe(UpdateMeRequest) returns (UpdateMeResponse);
+  // ChangePassword requires the current password, revokes every other
+  // session and returns a fresh token pair for this device.
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+
+  // RequestEmailVerification (re)sends the verification email. It always
+  // returns OK so responses never reveal whether an account exists.
+  rpc RequestEmailVerification(RequestEmailVerificationRequest) returns (RequestEmailVerificationResponse);
+  // ConfirmEmailVerification consumes a verification token from the email
+  // link and marks the address verified.
+  rpc ConfirmEmailVerification(ConfirmEmailVerificationRequest) returns (ConfirmEmailVerificationResponse);
+
+  // RequestPasswordReset emails a reset link. It always returns OK so
+  // responses never reveal whether an account exists.
+  rpc RequestPasswordReset(RequestPasswordResetRequest) returns (RequestPasswordResetResponse);
+  // ConfirmPasswordReset consumes a reset token and sets the new password;
+  // every refresh token of the user is revoked.
+  rpc ConfirmPasswordReset(ConfirmPasswordResetRequest) returns (ConfirmPasswordResetResponse);
+
+  // RequestEmailChange sends a confirmation link to the new address; the
+  // account email only switches once that address is verified.
+  rpc RequestEmailChange(RequestEmailChangeRequest) returns (RequestEmailChangeResponse);
+  // ConfirmEmailChange consumes an email-change token and applies the
+  // pending address. The previous address receives a notification with a
+  // revert link (valid 72 h) that goes through this same RPC.
+  rpc ConfirmEmailChange(ConfirmEmailChangeRequest) returns (ConfirmEmailChangeResponse);
+
+  // DeleteAccount permanently deletes the user after fresh re-authentication
+  // (App Store guideline 5.1.1). Identities, sessions and email tokens are
+  // cascaded.
+  rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+}
+
+// User is the caller's own account as exposed to the app.
+message User {
+  string id = 1;
+  string email = 2;
+  bool email_verified = 3;
+  string display_name = 4;
+  string avatar_url = 5;
+  google.protobuf.Timestamp create_time = 6;
+}
+
+// TokenPair is one authenticated session: a short-lived ES256 JWT plus the
+// opaque rotating refresh token that renews it.
+message TokenPair {
+  string access_token = 1;
+  string refresh_token = 2;
+  // Access token lifetime in seconds.
+  int64 expires_in = 3;
+}
+
+message SignUpRequest {
+  string email = 1;
+  string password = 2;
+  string display_name = 3;
+  // Free-form device description stored with the session, e.g. "iPhone 15".
+  string device_info = 4;
+}
+
+message SignUpResponse {
+  // Unset when project policy withholds it: enumeration-safe projects
+  // always return an empty response, and projects requiring verification
+  // return the user without tokens.
+  User user = 1;
+  // Set only when the user may sign in immediately.
+  TokenPair tokens = 2;
+}
+
+message SignInRequest {
+  string email = 1;
+  string password = 2;
+  string device_info = 3;
+}
+
+message SignInResponse {
+  User user = 1;
+  TokenPair tokens = 2;
+}
+
+message RefreshTokenRequest {
+  string refresh_token = 1;
+}
+
+message RefreshTokenResponse {
+  User user = 1;
+  TokenPair tokens = 2;
+}
+
+message SignOutRequest {
+  string refresh_token = 1;
+  // Revoke every session of the user, not just this one.
+  bool all_devices = 2;
+}
+
+message SignOutResponse {}
+
+message GetMeRequest {}
+
+message GetMeResponse {
+  User user = 1;
+}
+
+message UpdateMeRequest {
+  optional string display_name = 1;
+  optional string avatar_url = 2;
+}
+
+message UpdateMeResponse {
+  User user = 1;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {
+  // A fresh session for this device; all other sessions are revoked.
+  TokenPair tokens = 1;
+}
+
+message RequestEmailVerificationRequest {
+  string email = 1;
+}
+
+message RequestEmailVerificationResponse {}
+
+message ConfirmEmailVerificationRequest {
+  string token = 1;
+}
+
+message ConfirmEmailVerificationResponse {}
+
+message RequestPasswordResetRequest {
+  string email = 1;
+}
+
+message RequestPasswordResetResponse {}
+
+message ConfirmPasswordResetRequest {
+  string token = 1;
+  string new_password = 2;
+}
+
+message ConfirmPasswordResetResponse {}
+
+message RequestEmailChangeRequest {
+  string new_email = 1;
+}
+
+message RequestEmailChangeResponse {}
+
+message ConfirmEmailChangeRequest {
+  string token = 1;
+}
+
+message ConfirmEmailChangeResponse {}
+
+message DeleteAccountRequest {
+  // Fresh re-authentication: the current password. (Recent social sign-in
+  // for social-only users arrives with milestone 04.)
+  string password = 1;
+}
+
+message DeleteAccountResponse {}

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// UserService gives instance operators minimal visibility and control over
+// a project's end users (the full management UI lands in milestone 03).
+// All RPCs require an authenticated admin session.
+service UserService {
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  // DisableUser blocks sign-in, refresh and introspection and revokes the
+  // user's refresh tokens.
+  rpc DisableUser(DisableUserRequest) returns (DisableUserResponse);
+  rpc EnableUser(EnableUserRequest) returns (EnableUserResponse);
+}
+
+// User is the operator's view of a project end user.
+message User {
+  string id = 1;
+  string email = 2;
+  bool email_verified = 3;
+  string display_name = 4;
+  bool disabled = 5;
+  google.protobuf.Timestamp create_time = 6;
+}
+
+message ListUsersRequest {
+  string project_id = 1;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+message DisableUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message DisableUserResponse {
+  User user = 1;
+}
+
+message EnableUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message EnableUserResponse {
+  User user = 1;
+}

@@ -27,9 +27,10 @@ type testEnv struct {
 	sessions adminv1connect.SessionServiceClient
 	projects adminv1connect.ProjectServiceClient
 	store    *store.Store
+	mails    *captureMailer
 }
 
-func newTestEnv(t *testing.T, setupToken string) *testEnv {
+func newTestEnv(t *testing.T, setupToken string, opts ...func(*Options)) *testEnv {
 	t.Helper()
 	dir := t.TempDir()
 
@@ -46,13 +47,19 @@ func newTestEnv(t *testing.T, setupToken string) *testEnv {
 		t.Fatal(err)
 	}
 
-	srv := New(Options{
+	mails := &captureMailer{}
+	options := Options{
 		Config:     config.Config{Addr: ":0", DataDir: dir, BaseURL: "http://localhost:8080"},
 		Store:      st,
 		Master:     master,
 		Logger:     slog.New(slog.DiscardHandler),
+		Mailer:     mails,
 		SetupToken: setupToken,
-	})
+	}
+	for _, opt := range opts {
+		opt(&options)
+	}
+	srv := New(options)
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)
 
@@ -67,6 +74,7 @@ func newTestEnv(t *testing.T, setupToken string) *testEnv {
 		sessions: adminv1connect.NewSessionServiceClient(client, ts.URL),
 		projects: adminv1connect.NewProjectServiceClient(client, ts.URL),
 		store:    st,
+		mails:    mails,
 	}
 }
 
