@@ -1,0 +1,194 @@
+/*
+ * moth design tokens — materialized from /DESIGN.md (the visual contract).
+ * Shared by the landing page and the Starlight docs theme (via customCss).
+ * Do not invent values here: amend DESIGN.md first, then mirror it.
+ */
+
+/* ---- Fonts (self-hosted, woff2 only — zero external requests) ---------- */
+/* Satoshi — Indian Type Foundry, Fontshare free-font license.             */
+/* Cascadia Code — Microsoft, SIL OFL 1.1.                                  */
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/satoshi-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/satoshi-500.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('../fonts/satoshi-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cascadia Code';
+  src: url('../fonts/cascadia-code-400.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Cascadia Code';
+  src: url('../fonts/cascadia-code-700.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ---- Scheme-independent tokens ----------------------------------------- */
+
+:root {
+  /* Typography */
+  --moth-font-text: 'Satoshi', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --moth-font-mono: 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Type scale: size / line-height / weight */
+  --moth-text-display-size: 56px;
+  --moth-text-display-leading: 1.1;
+  --moth-text-display-weight: 700;
+  --moth-text-title-1-size: 32px;
+  --moth-text-title-1-leading: 1.2;
+  --moth-text-title-1-weight: 700;
+  --moth-text-title-2-size: 24px;
+  --moth-text-title-2-leading: 1.3;
+  --moth-text-title-2-weight: 700;
+  --moth-text-title-3-size: 18px;
+  --moth-text-title-3-leading: 1.4;
+  --moth-text-title-3-weight: 500;
+  --moth-text-body-size: 15px;
+  --moth-text-body-leading: 1.6;
+  --moth-text-caption-size: 13px;
+  --moth-text-caption-leading: 1.5;
+  --moth-text-micro-size: 11px;
+  --moth-text-micro-leading: 1.4;
+  --moth-text-micro-tracking: 0.08em;
+  --moth-text-code-size: 13px;
+  --moth-text-code-leading: 1.6;
+  --moth-tracking-tight: -0.02em; /* headings >= 24px */
+
+  /* Spacing — base unit 4px; allowed steps only */
+  --moth-space-1: 4px;
+  --moth-space-2: 8px;
+  --moth-space-3: 12px;
+  --moth-space-4: 16px;
+  --moth-space-6: 24px;
+  --moth-space-8: 32px;
+  --moth-space-12: 48px;
+  --moth-space-16: 64px;
+  --moth-space-24: 96px;
+
+  /* Layout */
+  --moth-content-max-width: 1080px;
+  --moth-gutter: 24px;
+
+  /* Radius */
+  --moth-radius-sm: 6px;
+  --moth-radius-md: 8px;
+  --moth-radius-lg: 12px;
+  --moth-radius-full: 9999px;
+
+  /* Motion */
+  --moth-duration-fast: 120ms;
+  --moth-duration-medium: 200ms;
+  --moth-duration-slow: 300ms;
+  --moth-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  /* Elevation shadows (levels 2 and 3 only; level 0/1 use borders) */
+  --moth-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --moth-shadow-3: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+/* ---- Light scheme (default) --------------------------------------------- */
+
+:root {
+  color-scheme: light dark;
+
+  --moth-background: #ffffff;
+  --moth-background-subtle: #fafafa;
+  --moth-surface: #ffffff;
+  --moth-surface-hover: #f5f5f5;
+  --moth-border: #ebebeb;
+  --moth-border-strong: #d4d4d4;
+  --moth-text-primary: #0a0a0a;
+  --moth-text-secondary: #666666;
+  --moth-text-tertiary: #999999;
+  --moth-inverse: #0a0a0a;
+  --moth-inverse-text: #ffffff;
+
+  --moth-accent: #0068d6;
+  --moth-success: #0f7b3e;
+  --moth-warning: #a35200;
+  --moth-danger: #cc0000;
+  --moth-info: #666666;
+}
+
+/* ---- Dark scheme --------------------------------------------------------
+ * Two triggers: the system preference (landing page follows the OS) and
+ * Starlight's explicit [data-theme] attribute (its toggle must win both ways).
+ */
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --moth-background: #0a0a0a;
+    --moth-background-subtle: #111111;
+    --moth-surface: #161616;
+    --moth-surface-hover: #1f1f1f;
+    --moth-border: #262626;
+    --moth-border-strong: #3d3d3d;
+    --moth-text-primary: #ededed;
+    --moth-text-secondary: #9c9c9c;
+    --moth-text-tertiary: #6e6e6e;
+    --moth-inverse: #ededed;
+    --moth-inverse-text: #0a0a0a;
+
+    --moth-accent: #52a8ff;
+    --moth-success: #3ecf6e;
+    --moth-warning: #f5a623;
+    --moth-danger: #ff6166;
+    --moth-info: #9c9c9c;
+
+    --moth-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.32);
+    --moth-shadow-3: 0 8px 30px rgba(0, 0, 0, 0.48);
+  }
+}
+
+:root[data-theme='dark'] {
+  --moth-background: #0a0a0a;
+  --moth-background-subtle: #111111;
+  --moth-surface: #161616;
+  --moth-surface-hover: #1f1f1f;
+  --moth-border: #262626;
+  --moth-border-strong: #3d3d3d;
+  --moth-text-primary: #ededed;
+  --moth-text-secondary: #9c9c9c;
+  --moth-text-tertiary: #6e6e6e;
+  --moth-inverse: #ededed;
+  --moth-inverse-text: #0a0a0a;
+
+  --moth-accent: #52a8ff;
+  --moth-success: #3ecf6e;
+  --moth-warning: #f5a623;
+  --moth-danger: #ff6166;
+  --moth-info: #9c9c9c;
+
+  --moth-shadow-2: 0 4px 12px rgba(0, 0, 0, 0.32);
+  --moth-shadow-3: 0 8px 30px rgba(0, 0, 0, 0.48);
+}
+
+/* Motion is functional; honor reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --moth-duration-fast: 0ms;
+    --moth-duration-medium: 0ms;
+    --moth-duration-slow: 0ms;
+  }
+}

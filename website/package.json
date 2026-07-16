@@ -1,0 +1,23 @@
+{
+  "name": "moth-website",
+  "private": true,
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "sync": "node scripts/sync-generated.mjs",
+    "predev": "npm run sync",
+    "dev": "astro dev",
+    "prebuild": "npm run sync",
+    "build": "astro build",
+    "preview": "astro preview",
+    "screenshots": "node scripts/screenshots.mjs",
+    "assets": "node scripts/generate-assets.mjs",
+    "check-links": "node scripts/check-links.mjs",
+    "lighthouse": "npx -y @lhci/cli@0.15.x autorun"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.41.3",
+    "astro": "^7.1.0",
+    "sharp": "^0.35.3"
+  }
+}

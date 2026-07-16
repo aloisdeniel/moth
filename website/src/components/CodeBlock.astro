@@ -1,0 +1,52 @@
+---
+/**
+ * Code block per DESIGN.md: `code` type on background-subtle, hairline
+ * border, radius-md, 16px padding, trailing copy button.
+ *
+ * Deliberately monochrome — no syntax-highlighting palette (colour is for
+ * state, never decoration). Full-line comments (`#`, `//`, `;`) render in
+ * text-tertiary for rhythm; everything else stays text-primary.
+ */
+import CopyButton from './CopyButton.astro';
+
+interface Props {
+  code: string;
+  /** Small mono overline: a filename or language hint ("pubspec.yaml"). */
+  label?: string;
+  copy?: boolean;
+}
+
+const { code, label, copy = true } = Astro.props;
+
+const escape = (s: string) =>
+  s.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+
+const html = code
+  .split('\n')
+  .map((line) =>
+    /^\s*(#|\/\/|;)/.test(line)
+      ? `<span class="code-comment">${escape(line)}</span>`
+      : escape(line),
+  )
+  .join('\n');
+
+// Copy the code without comment-only lines — paste-ready.
+const copyText = code
+  .split('\n')
+  .filter((line) => !/^\s*(#|\/\/)/.test(line))
+  .join('\n');
+---
+
+<figure class="code-block">
+  {
+    label && (
+      <figcaption class="code-block-label">
+        <span>{label}</span>
+      </figcaption>
+    )
+  }
+  <div class="code-block-body">
+    <pre tabindex="0"><code set:html={html} /></pre>
+    {copy && <CopyButton text={copyText} />}
+  </div>
+</figure>

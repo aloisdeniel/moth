@@ -1,7 +1,7 @@
 VERSION ?= dev
 LDFLAGS := -s -w -X github.com/aloisdeniel/moth/internal/version.Version=$(VERSION)
 
-.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens
+.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens website website-screenshots website-check
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/moth ./cmd/moth
@@ -80,6 +80,27 @@ cross:
 	GOOS=linux   GOARCH=arm64 go build -o /dev/null ./cmd/moth
 	GOOS=darwin  GOARCH=arm64 go build -o /dev/null ./cmd/moth
 	GOOS=windows GOARCH=amd64 go build -o /dev/null ./cmd/moth
+
+# The public website (plan/09): a standalone static Astro+Starlight project
+# under website/, separate from the embedded admin SPA. Needs its own
+# `npm ci` in website/ once.
+website:
+	cd website && npm ci && npm run build
+
+# Regenerates the landing-page screenshots from a seeded demo moth instance
+# into website/public/screenshots/ (see website/scripts/screenshots.mjs).
+# Needs bin/moth (built here) plus Playwright chromium in web/admin and
+# sharp in website — run `npm ci` in both once. The script degrades to
+# labeled placeholders when the binary/browser are unavailable; CI runs it
+# with MOTH_SCREENSHOTS_STRICT=1 to fail instead. Deterministic (fixed seed,
+# fixed viewport) and re-runnable. Screenshots are committed.
+website-screenshots: build
+	cd website && node scripts/screenshots.mjs
+
+# Internal link/asset integrity check over the built site (website/dist).
+# Run after `make website`. External links are verified by lychee in CI.
+website-check:
+	cd website && node scripts/check-links.mjs
 
 clean:
 	rm -rf bin

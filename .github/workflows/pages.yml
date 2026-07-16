@@ -1,0 +1,81 @@
+name: pages
+
+# Builds website/ and deploys it to GitHub Pages.
+#
+# Base-path / custom-domain configuration (repository → Settings → Variables):
+#
+#   WEBSITE_SITE    absolute origin the site is served from
+#                   (default https://aloisdeniel.github.io — the user pages host)
+#   WEBSITE_BASE    path the site is mounted at
+#                   (default /moth — the *project* pages sub-path)
+#   WEBSITE_DOMAIN  custom domain; when set, a CNAME file is written and you
+#                   should also set WEBSITE_SITE=https://<domain> and
+#                   WEBSITE_BASE=/  (root of the custom domain)
+#
+# The defaults match the scaffold's documented project-pages fallback
+# (https://aloisdeniel.github.io/moth) so a deploy works before any domain is
+# registered. To move to the custom domain, set the three variables above —
+# no code change, no invented domain committed to the repo.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      # The CLI reference page is single-sourced from this repo-root file
+      # (website/scripts/sync-generated.mjs), so a `moth docs gen` commit that
+      # touches only it must still redeploy the site.
+      - 'docs/cli/**'
+      - '.github/workflows/pages.yml'
+  # TODO (plan/09 — versioned deploy): publish on release tags once versioned
+  # docs snapshots begin at v1.0. Until then a tag deploy would be identical
+  # to a main deploy, so tags are intentionally not wired here. To enable,
+  # add `tags: ['v*']` under `push:` and branch the base path per version.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One in-flight deploy at a time; never cancel a running deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      WEBSITE_SITE: ${{ vars.WEBSITE_SITE || 'https://aloisdeniel.github.io' }}
+      WEBSITE_BASE: ${{ vars.WEBSITE_BASE || '/moth' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+        working-directory: website
+      - run: npm run build
+        working-directory: website
+      # Custom domain: write dist/CNAME so GitHub Pages serves it. Skipped
+      # (no file) until WEBSITE_DOMAIN is set, so no placeholder domain ships.
+      - name: Write CNAME for custom domain
+        if: ${{ vars.WEBSITE_DOMAIN != '' }}
+        run: printf '%s\n' "${{ vars.WEBSITE_DOMAIN }}" > website/dist/CNAME
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
