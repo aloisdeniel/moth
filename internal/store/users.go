@@ -21,6 +21,7 @@ type User struct {
 	AvatarURL       string
 	CustomClaims    string // JSON object embedded in the JWT `claims` claim
 	DisabledAt      *time.Time
+	LastLoginAt     *time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 }
@@ -67,11 +68,11 @@ func (s *Store) CreateUser(ctx context.Context, u User, identities ...Identity) 
 
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO users (id, project_id, email, email_verified_at, password_hash,
-		                    display_name, avatar_url, custom_claims, disabled_at, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		                    display_name, avatar_url, custom_claims, disabled_at, last_login_at, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		u.ID, u.ProjectID, u.Email, formatNullTime(u.EmailVerifiedAt), nullString(u.PasswordHash),
 		u.DisplayName, u.AvatarURL, u.CustomClaims, formatNullTime(u.DisabledAt),
-		formatTime(u.CreatedAt), formatTime(u.UpdatedAt)); err != nil {
+		formatNullTime(u.LastLoginAt), formatTime(u.CreatedAt), formatTime(u.UpdatedAt)); err != nil {
 		if err := conflictErr(err); errors.Is(err, ErrConflict) {
 			return err
 		}
@@ -111,7 +112,7 @@ func insertIdentity(ctx context.Context, db execer, id Identity) error {
 }
 
 const userColumns = `id, project_id, email, email_verified_at, password_hash,
-	display_name, avatar_url, custom_claims, disabled_at, created_at, updated_at`
+	display_name, avatar_url, custom_claims, disabled_at, last_login_at, created_at, updated_at`
 
 func (s *Store) GetUser(ctx context.Context, projectID, id string) (User, error) {
 	return scanUser(s.db.QueryRowContext(ctx,
@@ -164,6 +165,149 @@ func (s *Store) UpdateUser(ctx context.Context, u User) error {
 	return requireRow(res)
 }
 
+// SetUserLastLogin records a successful sign-in without touching
+// updated_at, so concurrent profile edits cannot race with it.
+func (s *Store) SetUserLastLogin(ctx context.Context, projectID, id string, at time.Time) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE users SET last_login_at = ? WHERE project_id = ? AND id = ?`,
+		formatTime(at), projectID, id)
+	if err != nil {
+		return fmt.Errorf("set user last login: %w", err)
+	}
+	return nil
+}
+
+// UserPage selects one page of a project's users, newest first (IDs are
+// UUIDv7, so ID order is creation order). AfterID is the last ID of the
+// previous page; empty means the first page. Query is a case-insensitive
+// substring filter on email and display name.
+type UserPage struct {
+	Query   string
+	AfterID string
+	Limit   int
+}
+
+// likePattern escapes LIKE wildcards in q and wraps it in %...%.
+func likePattern(q string) string {
+	r := strings.NewReplacer(`\`, `\\`, `%`, `\%`, `_`, `\_`)
+	return "%" + r.Replace(q) + "%"
+}
+
+func (s *Store) ListUsersPage(ctx context.Context, projectID string, page UserPage) ([]User, error) {
+	q := `SELECT ` + userColumns + ` FROM users WHERE project_id = ?`
+	args := []any{projectID}
+	if page.Query != "" {
+		q += ` AND (email LIKE ? ESCAPE '\' OR display_name LIKE ? ESCAPE '\')`
+		p := likePattern(page.Query)
+		args = append(args, p, p)
+	}
+	if page.AfterID != "" {
+		q += ` AND id < ?`
+		args = append(args, page.AfterID)
+	}
+	q += ` ORDER BY id DESC LIMIT ?`
+	args = append(args, page.Limit)
+
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list users page: %w", err)
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		u, err := scanUserRow(rows)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, u)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list users page: %w", err)
+	}
+	return users, nil
+}
+
+// CountUsers counts a project's users matching query ("" matches all).
+func (s *Store) CountUsers(ctx context.Context, projectID, query string) (int, error) {
+	q := `SELECT COUNT(*) FROM users WHERE project_id = ?`
+	args := []any{projectID}
+	if query != "" {
+		q += ` AND (email LIKE ? ESCAPE '\' OR display_name LIKE ? ESCAPE '\')`
+		p := likePattern(query)
+		args = append(args, p, p)
+	}
+	var n int
+	if err := s.db.QueryRowContext(ctx, q, args...).Scan(&n); err != nil {
+		return 0, fmt.Errorf("count users: %w", err)
+	}
+	return n, nil
+}
+
+// CountUsersByProject returns the user count of every project.
+func (s *Store) CountUsersByProject(ctx context.Context) (map[string]int, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT project_id, COUNT(*) FROM users GROUP BY project_id`)
+	if err != nil {
+		return nil, fmt.Errorf("count users by project: %w", err)
+	}
+	defer rows.Close()
+
+	counts := make(map[string]int)
+	for rows.Next() {
+		var projectID string
+		var n int
+		if err := rows.Scan(&projectID, &n); err != nil {
+			return nil, fmt.Errorf("scan user count: %w", err)
+		}
+		counts[projectID] = n
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("count users by project: %w", err)
+	}
+	return counts, nil
+}
+
+// ListIdentitiesForUsers returns the identities of the given users, keyed
+// by user ID. Used to render provider badges on a page of users.
+func (s *Store) ListIdentitiesForUsers(ctx context.Context, projectID string, userIDs []string) (map[string][]Identity, error) {
+	if len(userIDs) == 0 {
+		return map[string][]Identity{}, nil
+	}
+	placeholders := strings.Repeat("?,", len(userIDs)-1) + "?"
+	args := make([]any, 0, len(userIDs)+1)
+	args = append(args, projectID)
+	for _, id := range userIDs {
+		args = append(args, id)
+	}
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, project_id, user_id, provider, provider_subject, created_at
+		 FROM identities WHERE project_id = ? AND user_id IN (`+placeholders+`)
+		 ORDER BY created_at, id`, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list identities: %w", err)
+	}
+	defer rows.Close()
+
+	byUser := make(map[string][]Identity)
+	for rows.Next() {
+		var id Identity
+		var createdAt string
+		if err := rows.Scan(&id.ID, &id.ProjectID, &id.UserID, &id.Provider,
+			&id.ProviderSubject, &createdAt); err != nil {
+			return nil, fmt.Errorf("scan identity: %w", err)
+		}
+		if id.CreatedAt, err = parseTime(createdAt); err != nil {
+			return nil, fmt.Errorf("parse identity created_at: %w", err)
+		}
+		byUser[id.UserID] = append(byUser[id.UserID], id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list identities: %w", err)
+	}
+	return byUser, nil
+}
+
 // DeleteUser removes the user; identities, refresh tokens and email tokens
 // cascade via foreign keys.
 func (s *Store) DeleteUser(ctx context.Context, projectID, id string) error {
@@ -185,10 +329,10 @@ func scanUser(row *sql.Row) (User, error) {
 
 func scanUserRow(row rowScanner) (User, error) {
 	var u User
-	var verifiedAt, passwordHash, disabledAt sql.NullString
+	var verifiedAt, passwordHash, disabledAt, lastLoginAt sql.NullString
 	var createdAt, updatedAt string
 	err := row.Scan(&u.ID, &u.ProjectID, &u.Email, &verifiedAt, &passwordHash,
-		&u.DisplayName, &u.AvatarURL, &u.CustomClaims, &disabledAt, &createdAt, &updatedAt)
+		&u.DisplayName, &u.AvatarURL, &u.CustomClaims, &disabledAt, &lastLoginAt, &createdAt, &updatedAt)
 	if err != nil {
 		return User{}, err
 	}
@@ -198,6 +342,9 @@ func scanUserRow(row rowScanner) (User, error) {
 	}
 	if u.DisabledAt, err = parseNullTime(disabledAt); err != nil {
 		return User{}, fmt.Errorf("parse user disabled_at: %w", err)
+	}
+	if u.LastLoginAt, err = parseNullTime(lastLoginAt); err != nil {
+		return User{}, fmt.Errorf("parse user last_login_at: %w", err)
 	}
 	if u.CreatedAt, err = parseTime(createdAt); err != nil {
 		return User{}, fmt.Errorf("parse user created_at: %w", err)

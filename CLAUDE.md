@@ -8,19 +8,27 @@ order.
 
 ## Commands
 
-- `make build` — build `bin/moth` (set `VERSION=` for releases)
+- `make build` — build `bin/moth` (set `VERSION=` for releases); embeds the
+  committed SPA build in `internal/server/web/dist`
 - `make test` — `go test ./...`
 - `make lint` — `golangci-lint run` + `buf lint`
-- `make proto` — `buf generate` (regenerates `gen/`; commit the result)
+- `make proto` — `buf generate` (regenerates `gen/` Go + `web/admin/src/gen`
+  TypeScript; needs `npm ci` in `web/admin` once; commit the results)
+- `make web` — rebuild the embedded admin SPA into `internal/server/web/dist`
+  (commit the result; CI fails when it is stale)
+- `make dev` — Go server on :8080 + Vite dev server on :5173 with an RPC
+  proxy (open `http://localhost:5173/admin/`); frontend edits hot-reload
 - `make run` — build and start `moth serve`
 - `make cross` — check the four release targets compile
+- `npx playwright test` (in `web/admin`, after `make build`) — browser smoke
+  test against the real binary
 
 ## Layout
 
 ```
 cmd/moth/            main + cobra commands (serve, admin create, version)
 proto/moth/          protobuf definitions (moth.admin.v1, moth.auth.v1,
-                     moth.server.v1)
+                     moth.server.v1); embed.go serves the sources at /protos/
 gen/                 buf-generated Go code — committed, never hand-edited
 internal/config/     flags > MOTH_* env > moth.toml > defaults resolution
                      (incl. [smtp] section)
@@ -42,7 +50,12 @@ internal/server/rpc/auth/      moth.auth.v1 handlers; publishable-key (pk_)
                                interceptor + rate limiting; ErrorInfo reasons
 internal/server/rpc/serverapi/ moth.server.v1 handlers; secret-key (sk_)
                                interceptor
-internal/server/web/ embedded placeholder admin page (real SPA: milestone 03)
+internal/server/web/ hosted-page template + dist/ (committed Vite build of
+                     the admin SPA, embedded and served at /admin)
+web/admin/           admin SPA source: React + Vite + TS, connect-web +
+                     connect-query client generated from the protos
+                     (src/gen), DESIGN.md tokens in src/styles, Playwright
+                     smoke test in e2e/
 scripts/             e2e_grpcurl.sh — manual auth-lifecycle pass with grpcurl
 ```
 

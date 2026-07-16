@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+import "moth/admin/v1/session.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// AdminAccountService manages the operator accounts of this moth instance:
+// inviting additional admins and changing one's own password. All RPCs
+// except AcceptAdminInvite require an authenticated admin session.
+service AdminAccountService {
+  rpc ListAdmins(ListAdminsRequest) returns (ListAdminsResponse);
+  // InviteAdmin creates a single-use invite for a new operator account.
+  // The invite link is returned for copy-paste and additionally emailed
+  // when a mailer is configured.
+  rpc InviteAdmin(InviteAdminRequest) returns (InviteAdminResponse);
+  rpc ListAdminInvites(ListAdminInvitesRequest) returns (ListAdminInvitesResponse);
+  rpc RevokeAdminInvite(RevokeAdminInviteRequest) returns (RevokeAdminInviteResponse);
+  // AcceptAdminInvite redeems an invite token, creates the admin account
+  // and signs it in (sets the session cookie). Unauthenticated.
+  rpc AcceptAdminInvite(AcceptAdminInviteRequest) returns (AcceptAdminInviteResponse);
+  // ChangePassword changes the calling admin's password after verifying
+  // the current one, and ends the admin's other browser sessions.
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+}
+
+// AdminInvite is a pending operator invitation.
+message AdminInvite {
+  string id = 1;
+  string email = 2;
+  google.protobuf.Timestamp create_time = 3;
+  google.protobuf.Timestamp expire_time = 4;
+}
+
+message ListAdminsRequest {}
+
+message ListAdminsResponse {
+  repeated Admin admins = 1;
+}
+
+message InviteAdminRequest {
+  string email = 1;
+}
+
+message InviteAdminResponse {
+  AdminInvite invite = 1;
+  // Absolute invite URL, returned exactly once. Anyone opening it can
+  // claim the account.
+  string invite_url = 2;
+  // Whether the invite was also delivered by email.
+  bool emailed = 3;
+}
+
+message ListAdminInvitesRequest {}
+
+message ListAdminInvitesResponse {
+  repeated AdminInvite invites = 1;
+}
+
+message RevokeAdminInviteRequest {
+  string id = 1;
+}
+
+message RevokeAdminInviteResponse {}
+
+message AcceptAdminInviteRequest {
+  string token = 1;
+  string password = 2;
+}
+
+message AcceptAdminInviteResponse {
+  Admin admin = 1;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {}

@@ -113,6 +113,35 @@ func (s *Store) RevokeRefreshTokenFamily(ctx context.Context, projectID, familyI
 	return nil
 }
 
+// ListActiveUserRefreshTokens returns the user's usable refresh tokens at
+// now — one per live device session.
+func (s *Store) ListActiveUserRefreshTokens(ctx context.Context, projectID, userID string, now time.Time) ([]RefreshToken, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, project_id, user_id, token_hash, family_id, device_info,
+		        expires_at, rotated_at, revoked_at, created_at
+		 FROM refresh_tokens
+		 WHERE project_id = ? AND user_id = ?
+		   AND rotated_at IS NULL AND revoked_at IS NULL AND expires_at > ?
+		 ORDER BY created_at, id`, projectID, userID, formatTime(now))
+	if err != nil {
+		return nil, fmt.Errorf("list active refresh tokens: %w", err)
+	}
+	defer rows.Close()
+
+	var tokens []RefreshToken
+	for rows.Next() {
+		rt, err := scanRefreshToken(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan refresh token: %w", err)
+		}
+		tokens = append(tokens, rt)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list active refresh tokens: %w", err)
+	}
+	return tokens, nil
+}
+
 // RevokeUserRefreshTokens revokes every refresh token of a user (all
 // devices).
 func (s *Store) RevokeUserRefreshTokens(ctx context.Context, projectID, userID string, now time.Time) error {

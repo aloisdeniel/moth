@@ -5,8 +5,10 @@ import (
 	"embed"
 	"encoding/json"
 	"errors"
+	"mime"
 	"net/http"
 	"net/mail"
+	"path"
 	"strings"
 	"time"
 
@@ -14,15 +16,35 @@ import (
 	"github.com/aloisdeniel/moth/internal/password"
 	adminrpc "github.com/aloisdeniel/moth/internal/server/rpc/admin"
 	"github.com/aloisdeniel/moth/internal/store"
+	protosrc "github.com/aloisdeniel/moth/proto"
 )
 
-//go:embed web/admin.html web/page.html.tmpl
+//go:embed all:web/dist web/page.html.tmpl
 var webFS embed.FS
 
 const minPasswordLen = 8
 
 func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+// handleProtoFile serves the embedded .proto sources (e.g.
+// /protos/moth/auth/v1/auth.proto) so developers can generate their own
+// backend clients against this instance.
+func (s *Server) handleProtoFile(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Path
+	if !strings.HasSuffix(name, ".proto") {
+		http.NotFound(w, r)
+		return
+	}
+	raw, err := protosrc.FS.ReadFile(name)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename="+path.Base(name))
+	w.Write(raw)
 }
 
 // handleJWKS serves a project's active public keys so any standard JWT
@@ -56,15 +78,31 @@ func (s *Server) handleJWKS(w http.ResponseWriter, r *http.Request) {
 	w.Write(doc)
 }
 
-// handleAdminPage serves the embedded placeholder console (replaced by the
-// real SPA in milestone 03).
+// handleAdminPage serves the embedded admin SPA: real files from the Vite
+// build output, and index.html for every client-routed path (SPA
+// fallback).
 func (s *Server) handleAdminPage(w http.ResponseWriter, r *http.Request) {
-	page, err := webFS.ReadFile("web/admin.html")
+	name := strings.TrimPrefix(strings.TrimPrefix(r.URL.Path, "/admin"), "/")
+	if name != "" && name != "index.html" {
+		if raw, err := webFS.ReadFile("web/dist/" + name); err == nil {
+			if ct := mime.TypeByExtension(path.Ext(name)); ct != "" {
+				w.Header().Set("Content-Type", ct)
+			}
+			// Vite fingerprints everything under assets/; cache those hard.
+			if strings.HasPrefix(name, "assets/") {
+				w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+			}
+			w.Write(raw)
+			return
+		}
+	}
+	page, err := webFS.ReadFile("web/dist/index.html")
 	if err != nil {
 		s.internalError(w, r, err)
 		return
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache")
 	w.Write(page)
 }
 

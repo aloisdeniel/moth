@@ -59,7 +59,10 @@ func newTestEnv(t *testing.T, setupToken string, opts ...func(*Options)) *testEn
 	for _, opt := range opts {
 		opt(&options)
 	}
-	srv := New(options)
+	srv, err := New(options)
+	if err != nil {
+		t.Fatal(err)
+	}
 	ts := httptest.NewServer(srv.Handler())
 	t.Cleanup(ts.Close)
 

@@ -1,0 +1,120 @@
+/*
+ * moth design tokens — generated from DESIGN.md (the visual contract).
+ * Every color, size, radius and duration used by the admin SPA lives here;
+ * components must not introduce values outside this file.
+ */
+
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Satoshi";
+  src: url("../fonts/Satoshi-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cascadia Code";
+  src: url("../fonts/CascadiaCode-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Neutrals — light scheme */
+  --background: #ffffff;
+  --background-subtle: #fafafa;
+  --surface: #ffffff;
+  --surface-hover: #f5f5f5;
+  --border: #ebebeb;
+  --border-strong: #d4d4d4;
+  --text-primary: #0a0a0a;
+  --text-secondary: #666666;
+  --text-tertiary: #999999;
+  --inverse: #0a0a0a;
+  --inverse-text: #ffffff;
+
+  /* Functional colors — state only, never decorative */
+  --accent: #0068d6;
+  --success: #0f7b3e;
+  --warning: #a35200;
+  --danger: #cc0000;
+  --info: #666666;
+
+  /* Typography */
+  --font-text: "Satoshi", -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Cascadia Code", "SF Mono", Menlo, Consolas, monospace;
+
+  /* Type scale: size / line-height / weight */
+  --title-1-size: 32px;
+  --title-2-size: 24px;
+  --title-3-size: 18px;
+  --body-size: 15px;
+  --caption-size: 13px;
+  --micro-size: 11px;
+  --code-size: 13px;
+
+  /* Radius */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-full: 9999px;
+
+  /* Elevation shadows (levels 2 and 3 only) */
+  --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-3: 0 8px 30px rgba(0, 0, 0, 0.12);
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-panel: 200ms;
+  --duration-modal: 300ms;
+  --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --background-subtle: #111111;
+    --surface: #161616;
+    --surface-hover: #1f1f1f;
+    --border: #262626;
+    --border-strong: #3d3d3d;
+    --text-primary: #ededed;
+    --text-secondary: #9c9c9c;
+    --text-tertiary: #6e6e6e;
+    --inverse: #ededed;
+    --inverse-text: #0a0a0a;
+
+    --accent: #52a8ff;
+    --success: #3ecf6e;
+    --warning: #f5a623;
+    --danger: #ff6166;
+    --info: #9c9c9c;
+
+    --shadow-2: 0 4px 12px rgba(0, 0, 0, 0.32);
+    --shadow-3: 0 8px 30px rgba(0, 0, 0, 0.48);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-panel: 0ms;
+    --duration-modal: 0ms;
+  }
+}

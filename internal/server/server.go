@@ -3,6 +3,8 @@
 package server
 
 import (
+	"context"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"sync/atomic"
@@ -62,7 +64,7 @@ type Server struct {
 }
 
 // New assembles the full handler.
-func New(o Options) *Server {
+func New(o Options) (*Server, error) {
 	if o.Logger == nil {
 		o.Logger = slog.Default()
 	}
@@ -79,10 +81,22 @@ func New(o Options) *Server {
 		log:    o.Logger,
 	}
 	s.setupToken.Store(o.SetupToken)
+
+	// Every email goes through one swappable transport so the admin
+	// console can reconfigure SMTP at runtime. Options.Mailer is the
+	// transport of last resort (console logger, or a recording mailer in
+	// tests); the settings handler points dyn at the effective SMTP.
+	dynMailer := mail.NewDynamic(o.Mailer)
+	settingsHandler, err := adminrpc.NewSettingsHandler(
+		context.Background(), o.Store, o.Config, dynMailer, o.Mailer)
+	if err != nil {
+		return nil, fmt.Errorf("resolve smtp settings: %w", err)
+	}
+
 	s.auth = authrpc.New(authrpc.Options{
 		Store:   o.Store,
 		Master:  o.Master,
-		Mailer:  o.Mailer,
+		Mailer:  dynMailer,
 		BaseURL: o.Config.BaseURL,
 		Logger:  o.Logger,
 	})
@@ -110,11 +124,18 @@ func New(o Options) *Server {
 		adminrpc.NewSessionHandler(o.Store, o.Config.Secure()), adminInterceptors)
 	mux.Handle(sessionPath, sessionHandler)
 	projectPath, projectHandler := adminv1connect.NewProjectServiceHandler(
-		adminrpc.NewProjectHandler(o.Store, o.Master), adminInterceptors)
+		adminrpc.NewProjectHandler(o.Store, o.Master, o.Config.BaseURL), adminInterceptors)
 	mux.Handle(projectPath, projectHandler)
 	adminUserPath, adminUserHandler := adminv1connect.NewUserServiceHandler(
-		adminrpc.NewUserHandler(o.Store), adminInterceptors)
+		adminrpc.NewUserHandler(o.Store, s.auth, dynMailer), adminInterceptors)
 	mux.Handle(adminUserPath, adminUserHandler)
+	accountPath, accountHandler := adminv1connect.NewAdminAccountServiceHandler(
+		adminrpc.NewAccountHandler(o.Store, dynMailer, o.Config.BaseURL,
+			o.Config.Secure(), settingsHandler.SMTPConfigured), adminInterceptors)
+	mux.Handle(accountPath, accountHandler)
+	settingsPath, settingsSvcHandler := adminv1connect.NewInstanceSettingsServiceHandler(
+		settingsHandler, adminInterceptors)
+	mux.Handle(settingsPath, settingsSvcHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -132,6 +153,8 @@ func New(o Options) *Server {
 		adminv1connect.SessionServiceName,
 		adminv1connect.ProjectServiceName,
 		adminv1connect.UserServiceName,
+		adminv1connect.AdminAccountServiceName,
+		adminv1connect.InstanceSettingsServiceName,
 		authv1connect.AuthServiceName,
 		serverv1connect.TokenServiceName,
 		serverv1connect.UserServiceName,
@@ -142,6 +165,9 @@ func New(o Options) *Server {
 		mux.Handle(grpcreflect.NewHandlerV1(reflector))
 		mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 	}
+
+	// The .proto sources, offered for download from the setup page.
+	mux.Handle("GET /protos/", http.StripPrefix("/protos/", http.HandlerFunc(s.handleProtoFile)))
 
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.HandleFunc("GET /p/{slug}/.well-known/jwks.json", s.handleJWKS)
@@ -165,7 +191,7 @@ func New(o Options) *Server {
 	})
 
 	s.handler = corsMiddleware.Handler(mux)
-	return s
+	return s, nil
 }
 
 // Handler returns the root HTTP handler. Serve it with Protocols() so

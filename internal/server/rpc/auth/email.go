@@ -44,6 +44,22 @@ func (h *Handler) issueEmailToken(ctx context.Context, projectID, userID, purpos
 	return plain, nil
 }
 
+// IssuePasswordResetLink issues a fresh reset token for the user, valid
+// for ttl, and returns the hosted reset-page URL. Shared with the admin
+// console: forced password resets (1 h) and set-password invites (72 h)
+// both land on the same hosted page.
+func (h *Handler) IssuePasswordResetLink(ctx context.Context, project store.Project, user store.User, ttl time.Duration) (string, error) {
+	plain, err := h.issueEmailToken(ctx, project.ID, user.ID,
+		store.EmailTokenPurposeReset, "", ttl)
+	if err != nil {
+		return "", err
+	}
+	return h.resetLink(project.Slug, plain), nil
+}
+
+// ResetTokenTTL is the lifetime of a "forgot password" reset link.
+const ResetTokenTTL = resetTokenTTL
+
 // consumeEmailToken validates and consumes a single-use token of the given
 // purposes, returning it. Unknown, expired, already-consumed and
 // wrong-purpose tokens all fail identically.

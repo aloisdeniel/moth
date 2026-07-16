@@ -28,7 +28,17 @@ type AdminStore interface {
 	UpsertAdmin(ctx context.Context, a Admin) error
 	GetAdmin(ctx context.Context, id string) (Admin, error)
 	GetAdminByEmail(ctx context.Context, email string) (Admin, error)
+	ListAdmins(ctx context.Context) ([]Admin, error)
+	UpdateAdminPassword(ctx context.Context, id, passwordHash string, now time.Time) error
 	CountAdmins(ctx context.Context) (int, error)
+}
+
+// AdminInviteStore persists pending operator invitations.
+type AdminInviteStore interface {
+	CreateAdminInvite(ctx context.Context, inv AdminInvite) error
+	GetAdminInviteByTokenHash(ctx context.Context, tokenHash string) (AdminInvite, error)
+	ListAdminInvites(ctx context.Context) ([]AdminInvite, error)
+	DeleteAdminInvite(ctx context.Context, id string) error
 }
 
 // SessionStore persists admin browser sessions (cookie tokens are stored
@@ -37,7 +47,15 @@ type SessionStore interface {
 	CreateSession(ctx context.Context, s AdminSession) error
 	GetSession(ctx context.Context, tokenHash string) (AdminSession, error)
 	DeleteSession(ctx context.Context, tokenHash string) error
+	DeleteAdminSessionsExcept(ctx context.Context, adminID, keepTokenHash string) error
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
+}
+
+// InstanceSettingStore persists instance-wide admin-edited settings.
+type InstanceSettingStore interface {
+	GetInstanceSetting(ctx context.Context, key string) (string, error)
+	SetInstanceSetting(ctx context.Context, key, value string, now time.Time) error
+	DeleteInstanceSetting(ctx context.Context, key string) error
 }
 
 // ProjectStore persists projects and their signing keys.
@@ -51,6 +69,10 @@ type ProjectStore interface {
 	GetProjectBySecretKeyHash(ctx context.Context, keyHash string) (Project, error)
 	ListProjects(ctx context.Context) ([]Project, error)
 	UpdateProject(ctx context.Context, p Project) error
+	UpdateProjectSecretKey(ctx context.Context, id, secretKeyHash string, now time.Time) error
+	// ResetProjectSigningKey retires all keys, installs k and revokes the
+	// project's refresh tokens in one transaction.
+	ResetProjectSigningKey(ctx context.Context, projectID string, k ProjectKey, now time.Time) error
 	DeleteProject(ctx context.Context, id string) error
 	SlugExists(ctx context.Context, slug string) (bool, error)
 	ListActiveProjectKeys(ctx context.Context, projectID string) ([]ProjectKey, error)
@@ -63,7 +85,12 @@ type UserStore interface {
 	GetUser(ctx context.Context, projectID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, projectID, email string) (User, error)
 	ListUsers(ctx context.Context, projectID string) ([]User, error)
+	ListUsersPage(ctx context.Context, projectID string, page UserPage) ([]User, error)
+	CountUsers(ctx context.Context, projectID, query string) (int, error)
+	CountUsersByProject(ctx context.Context) (map[string]int, error)
+	ListIdentitiesForUsers(ctx context.Context, projectID string, userIDs []string) (map[string][]Identity, error)
 	UpdateUser(ctx context.Context, u User) error
+	SetUserLastLogin(ctx context.Context, projectID, id string, at time.Time) error
 	DeleteUser(ctx context.Context, projectID, id string) error
 }
 
@@ -71,6 +98,7 @@ type UserStore interface {
 type RefreshTokenStore interface {
 	CreateRefreshToken(ctx context.Context, rt RefreshToken) error
 	GetRefreshToken(ctx context.Context, projectID, tokenHash string) (RefreshToken, error)
+	ListActiveUserRefreshTokens(ctx context.Context, projectID, userID string, now time.Time) ([]RefreshToken, error)
 	RotateRefreshToken(ctx context.Context, oldID string, rotatedAt time.Time, successor RefreshToken) error
 	RevokeRefreshToken(ctx context.Context, projectID, id string, now time.Time) error
 	RevokeRefreshTokenFamily(ctx context.Context, projectID, familyID string, now time.Time) error
@@ -96,13 +124,15 @@ type Store struct {
 }
 
 var (
-	_ AdminStore        = (*Store)(nil)
-	_ SessionStore      = (*Store)(nil)
-	_ ProjectStore      = (*Store)(nil)
-	_ UserStore         = (*Store)(nil)
-	_ RefreshTokenStore = (*Store)(nil)
-	_ EmailTokenStore   = (*Store)(nil)
-	_ EventStore        = (*Store)(nil)
+	_ AdminStore           = (*Store)(nil)
+	_ AdminInviteStore     = (*Store)(nil)
+	_ SessionStore         = (*Store)(nil)
+	_ InstanceSettingStore = (*Store)(nil)
+	_ ProjectStore         = (*Store)(nil)
+	_ UserStore            = (*Store)(nil)
+	_ RefreshTokenStore    = (*Store)(nil)
+	_ EmailTokenStore      = (*Store)(nil)
+	_ EventStore           = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL

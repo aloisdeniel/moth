@@ -12,6 +12,7 @@ import (
 	"mime/quotedprintable"
 	"net/smtp"
 	"strings"
+	"sync/atomic"
 )
 
 // Message is one email ready to send.
@@ -25,6 +26,26 @@ type Message struct {
 // Mailer sends transactional emails.
 type Mailer interface {
 	Send(ctx context.Context, m Message) error
+}
+
+// Dynamic is a Mailer whose underlying transport can be swapped at
+// runtime, so the admin console can reconfigure SMTP without a restart.
+type Dynamic struct {
+	v atomic.Value // Mailer
+}
+
+// NewDynamic wraps m in a swappable mailer.
+func NewDynamic(m Mailer) *Dynamic {
+	d := &Dynamic{}
+	d.Set(m)
+	return d
+}
+
+// Set replaces the transport used by subsequent Sends.
+func (d *Dynamic) Set(m Mailer) { d.v.Store(&m) }
+
+func (d *Dynamic) Send(ctx context.Context, m Message) error {
+	return (*d.v.Load().(*Mailer)).Send(ctx, m)
 }
 
 // Console logs the full email instead of sending it — the dev default.

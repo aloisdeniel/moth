@@ -9,3 +9,8 @@ plugins:
   - local: ["go", "tool", "protoc-gen-connect-go"]
     out: gen
     opt: paths=source_relative
+  # TypeScript client for the admin SPA, pinned through web/admin's
+  # package-lock (run `npm ci` in web/admin first).
+  - local: web/admin/node_modules/.bin/protoc-gen-es
+    out: web/admin/src/gen
+    opt: target=ts

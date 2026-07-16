@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package moth.admin.v1;
 
+import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
@@ -14,6 +15,18 @@ service ProjectService {
   rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
   rpc UpdateProject(UpdateProjectRequest) returns (UpdateProjectResponse);
   rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
+  // RegenerateSecretKey replaces the project's server-to-server secret key.
+  // The old key stops working immediately; the new one is returned exactly
+  // once, in this response.
+  rpc RegenerateSecretKey(RegenerateSecretKeyRequest) returns (RegenerateSecretKeyResponse);
+  // GetSigningKey returns the project's active token-signing key (public
+  // part) and its JWKS URL, for the admin overview card.
+  rpc GetSigningKey(GetSigningKeyRequest) returns (GetSigningKeyResponse);
+  // ResetSigningKey generates a fresh ES256 keypair, removes every previous
+  // key from the project JWKS immediately, and revokes all refresh tokens.
+  // Every access token ever issued becomes invalid and all users must sign
+  // in again.
+  rpc ResetSigningKey(ResetSigningKeyRequest) returns (ResetSigningKeyResponse);
 }
 
 message Project {
@@ -26,6 +39,8 @@ message Project {
   google.protobuf.Timestamp create_time = 5;
   google.protobuf.Timestamp update_time = 6;
   ProjectSettings settings = 7;
+  // Number of end-user accounts in the project.
+  int64 user_count = 8;
 }
 
 // ProjectSettings is the per-project auth policy.
@@ -44,6 +59,17 @@ message ProjectSettings {
   int32 access_token_ttl_seconds = 5;
   // Refresh token sliding window in days (default 30).
   int32 refresh_token_ttl_days = 6;
+}
+
+// SigningKey is the public half of one project token-signing keypair.
+message SigningKey {
+  // RFC 7638 JWK thumbprint, the `kid` on every JWT the key signs.
+  string kid = 1;
+  // Signature algorithm, always "ES256".
+  string algorithm = 2;
+  // PEM-encoded public key (PKIX), for offline verification setups.
+  string public_key_pem = 3;
+  google.protobuf.Timestamp create_time = 4;
 }
 
 message CreateProjectRequest {
@@ -77,6 +103,9 @@ message UpdateProjectRequest {
   // Replaces the whole settings object when set; leave unset to keep the
   // current settings.
   ProjectSettings settings = 3;
+  // Fields to update ("name", "settings"). When unset, legacy behavior:
+  // name is always applied, settings only when present.
+  google.protobuf.FieldMask update_mask = 4;
 }
 
 message UpdateProjectResponse {
@@ -88,3 +117,36 @@ message DeleteProjectRequest {
 }
 
 message DeleteProjectResponse {}
+
+message RegenerateSecretKeyRequest {
+  string project_id = 1;
+}
+
+message RegenerateSecretKeyResponse {
+  Project project = 1;
+  // The replacement secret key, returned exactly once.
+  string secret_key = 2;
+}
+
+message GetSigningKeyRequest {
+  string project_id = 1;
+}
+
+message GetSigningKeyResponse {
+  SigningKey key = 1;
+  // Absolute URL of the project JWKS document.
+  string jwks_url = 2;
+  // Expected `iss` claim of this project's access tokens.
+  string issuer = 3;
+  // Expected `aud` claim (the project slug).
+  string audience = 4;
+}
+
+message ResetSigningKeyRequest {
+  string project_id = 1;
+}
+
+message ResetSigningKeyResponse {
+  // The replacement signing key.
+  SigningKey key = 1;
+}

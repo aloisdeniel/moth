@@ -35,19 +35,55 @@ const (
 const (
 	// UserServiceListUsersProcedure is the fully-qualified name of the UserService's ListUsers RPC.
 	UserServiceListUsersProcedure = "/moth.admin.v1.UserService/ListUsers"
+	// UserServiceGetUserProcedure is the fully-qualified name of the UserService's GetUser RPC.
+	UserServiceGetUserProcedure = "/moth.admin.v1.UserService/GetUser"
+	// UserServiceCreateUserProcedure is the fully-qualified name of the UserService's CreateUser RPC.
+	UserServiceCreateUserProcedure = "/moth.admin.v1.UserService/CreateUser"
+	// UserServiceUpdateUserProcedure is the fully-qualified name of the UserService's UpdateUser RPC.
+	UserServiceUpdateUserProcedure = "/moth.admin.v1.UserService/UpdateUser"
 	// UserServiceDisableUserProcedure is the fully-qualified name of the UserService's DisableUser RPC.
 	UserServiceDisableUserProcedure = "/moth.admin.v1.UserService/DisableUser"
 	// UserServiceEnableUserProcedure is the fully-qualified name of the UserService's EnableUser RPC.
 	UserServiceEnableUserProcedure = "/moth.admin.v1.UserService/EnableUser"
+	// UserServiceDeleteUserProcedure is the fully-qualified name of the UserService's DeleteUser RPC.
+	UserServiceDeleteUserProcedure = "/moth.admin.v1.UserService/DeleteUser"
+	// UserServiceRevokeUserSessionsProcedure is the fully-qualified name of the UserService's
+	// RevokeUserSessions RPC.
+	UserServiceRevokeUserSessionsProcedure = "/moth.admin.v1.UserService/RevokeUserSessions"
+	// UserServiceSendPasswordResetProcedure is the fully-qualified name of the UserService's
+	// SendPasswordReset RPC.
+	UserServiceSendPasswordResetProcedure = "/moth.admin.v1.UserService/SendPasswordReset"
 )
 
 // UserServiceClient is a client for the moth.admin.v1.UserService service.
 type UserServiceClient interface {
+	// ListUsers pages through a project's users, newest first, optionally
+	// filtered by a case-insensitive substring match on email or display
+	// name.
 	ListUsers(context.Context, *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error)
+	// GetUser returns one user with its provider identities and active
+	// sessions.
+	GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error)
+	// CreateUser adds an account on the operator's behalf: either with a
+	// password, or without one plus an invite email that lets the owner set
+	// their own (the counterpart of invite-only signup mode).
+	CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error)
+	// UpdateUser applies the fields named in update_mask ("display_name",
+	// "custom_claims").
+	UpdateUser(context.Context, *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error)
 	// DisableUser blocks sign-in, refresh and introspection and revokes the
 	// user's refresh tokens.
 	DisableUser(context.Context, *connect.Request[v1.DisableUserRequest]) (*connect.Response[v1.DisableUserResponse], error)
 	EnableUser(context.Context, *connect.Request[v1.EnableUserRequest]) (*connect.Response[v1.EnableUserResponse], error)
+	// DeleteUser permanently removes the user, its identities, sessions and
+	// pending email tokens.
+	DeleteUser(context.Context, *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error)
+	// RevokeUserSessions revokes every refresh token of the user (all
+	// devices); outstanding access tokens die at their expiry.
+	RevokeUserSessions(context.Context, *connect.Request[v1.RevokeUserSessionsRequest]) (*connect.Response[v1.RevokeUserSessionsResponse], error)
+	// SendPasswordReset emails the user a password-reset link, as if they
+	// had used "forgot password" themselves.
+	SendPasswordReset(context.Context, *connect.Request[v1.SendPasswordResetRequest]) (*connect.Response[v1.SendPasswordResetResponse], error)
 }
 
 // NewUserServiceClient constructs a client for the moth.admin.v1.UserService service. By default,
@@ -67,6 +103,24 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceMethods.ByName("ListUsers")),
 			connect.WithClientOptions(opts...),
 		),
+		getUser: connect.NewClient[v1.GetUserRequest, v1.GetUserResponse](
+			httpClient,
+			baseURL+UserServiceGetUserProcedure,
+			connect.WithSchema(userServiceMethods.ByName("GetUser")),
+			connect.WithClientOptions(opts...),
+		),
+		createUser: connect.NewClient[v1.CreateUserRequest, v1.CreateUserResponse](
+			httpClient,
+			baseURL+UserServiceCreateUserProcedure,
+			connect.WithSchema(userServiceMethods.ByName("CreateUser")),
+			connect.WithClientOptions(opts...),
+		),
+		updateUser: connect.NewClient[v1.UpdateUserRequest, v1.UpdateUserResponse](
+			httpClient,
+			baseURL+UserServiceUpdateUserProcedure,
+			connect.WithSchema(userServiceMethods.ByName("UpdateUser")),
+			connect.WithClientOptions(opts...),
+		),
 		disableUser: connect.NewClient[v1.DisableUserRequest, v1.DisableUserResponse](
 			httpClient,
 			baseURL+UserServiceDisableUserProcedure,
@@ -79,19 +133,58 @@ func NewUserServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(userServiceMethods.ByName("EnableUser")),
 			connect.WithClientOptions(opts...),
 		),
+		deleteUser: connect.NewClient[v1.DeleteUserRequest, v1.DeleteUserResponse](
+			httpClient,
+			baseURL+UserServiceDeleteUserProcedure,
+			connect.WithSchema(userServiceMethods.ByName("DeleteUser")),
+			connect.WithClientOptions(opts...),
+		),
+		revokeUserSessions: connect.NewClient[v1.RevokeUserSessionsRequest, v1.RevokeUserSessionsResponse](
+			httpClient,
+			baseURL+UserServiceRevokeUserSessionsProcedure,
+			connect.WithSchema(userServiceMethods.ByName("RevokeUserSessions")),
+			connect.WithClientOptions(opts...),
+		),
+		sendPasswordReset: connect.NewClient[v1.SendPasswordResetRequest, v1.SendPasswordResetResponse](
+			httpClient,
+			baseURL+UserServiceSendPasswordResetProcedure,
+			connect.WithSchema(userServiceMethods.ByName("SendPasswordReset")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // userServiceClient implements UserServiceClient.
 type userServiceClient struct {
-	listUsers   *connect.Client[v1.ListUsersRequest, v1.ListUsersResponse]
-	disableUser *connect.Client[v1.DisableUserRequest, v1.DisableUserResponse]
-	enableUser  *connect.Client[v1.EnableUserRequest, v1.EnableUserResponse]
+	listUsers          *connect.Client[v1.ListUsersRequest, v1.ListUsersResponse]
+	getUser            *connect.Client[v1.GetUserRequest, v1.GetUserResponse]
+	createUser         *connect.Client[v1.CreateUserRequest, v1.CreateUserResponse]
+	updateUser         *connect.Client[v1.UpdateUserRequest, v1.UpdateUserResponse]
+	disableUser        *connect.Client[v1.DisableUserRequest, v1.DisableUserResponse]
+	enableUser         *connect.Client[v1.EnableUserRequest, v1.EnableUserResponse]
+	deleteUser         *connect.Client[v1.DeleteUserRequest, v1.DeleteUserResponse]
+	revokeUserSessions *connect.Client[v1.RevokeUserSessionsRequest, v1.RevokeUserSessionsResponse]
+	sendPasswordReset  *connect.Client[v1.SendPasswordResetRequest, v1.SendPasswordResetResponse]
 }
 
 // ListUsers calls moth.admin.v1.UserService.ListUsers.
 func (c *userServiceClient) ListUsers(ctx context.Context, req *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error) {
 	return c.listUsers.CallUnary(ctx, req)
+}
+
+// GetUser calls moth.admin.v1.UserService.GetUser.
+func (c *userServiceClient) GetUser(ctx context.Context, req *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error) {
+	return c.getUser.CallUnary(ctx, req)
+}
+
+// CreateUser calls moth.admin.v1.UserService.CreateUser.
+func (c *userServiceClient) CreateUser(ctx context.Context, req *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error) {
+	return c.createUser.CallUnary(ctx, req)
+}
+
+// UpdateUser calls moth.admin.v1.UserService.UpdateUser.
+func (c *userServiceClient) UpdateUser(ctx context.Context, req *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error) {
+	return c.updateUser.CallUnary(ctx, req)
 }
 
 // DisableUser calls moth.admin.v1.UserService.DisableUser.
@@ -104,13 +197,50 @@ func (c *userServiceClient) EnableUser(ctx context.Context, req *connect.Request
 	return c.enableUser.CallUnary(ctx, req)
 }
 
+// DeleteUser calls moth.admin.v1.UserService.DeleteUser.
+func (c *userServiceClient) DeleteUser(ctx context.Context, req *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error) {
+	return c.deleteUser.CallUnary(ctx, req)
+}
+
+// RevokeUserSessions calls moth.admin.v1.UserService.RevokeUserSessions.
+func (c *userServiceClient) RevokeUserSessions(ctx context.Context, req *connect.Request[v1.RevokeUserSessionsRequest]) (*connect.Response[v1.RevokeUserSessionsResponse], error) {
+	return c.revokeUserSessions.CallUnary(ctx, req)
+}
+
+// SendPasswordReset calls moth.admin.v1.UserService.SendPasswordReset.
+func (c *userServiceClient) SendPasswordReset(ctx context.Context, req *connect.Request[v1.SendPasswordResetRequest]) (*connect.Response[v1.SendPasswordResetResponse], error) {
+	return c.sendPasswordReset.CallUnary(ctx, req)
+}
+
 // UserServiceHandler is an implementation of the moth.admin.v1.UserService service.
 type UserServiceHandler interface {
+	// ListUsers pages through a project's users, newest first, optionally
+	// filtered by a case-insensitive substring match on email or display
+	// name.
 	ListUsers(context.Context, *connect.Request[v1.ListUsersRequest]) (*connect.Response[v1.ListUsersResponse], error)
+	// GetUser returns one user with its provider identities and active
+	// sessions.
+	GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error)
+	// CreateUser adds an account on the operator's behalf: either with a
+	// password, or without one plus an invite email that lets the owner set
+	// their own (the counterpart of invite-only signup mode).
+	CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error)
+	// UpdateUser applies the fields named in update_mask ("display_name",
+	// "custom_claims").
+	UpdateUser(context.Context, *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error)
 	// DisableUser blocks sign-in, refresh and introspection and revokes the
 	// user's refresh tokens.
 	DisableUser(context.Context, *connect.Request[v1.DisableUserRequest]) (*connect.Response[v1.DisableUserResponse], error)
 	EnableUser(context.Context, *connect.Request[v1.EnableUserRequest]) (*connect.Response[v1.EnableUserResponse], error)
+	// DeleteUser permanently removes the user, its identities, sessions and
+	// pending email tokens.
+	DeleteUser(context.Context, *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error)
+	// RevokeUserSessions revokes every refresh token of the user (all
+	// devices); outstanding access tokens die at their expiry.
+	RevokeUserSessions(context.Context, *connect.Request[v1.RevokeUserSessionsRequest]) (*connect.Response[v1.RevokeUserSessionsResponse], error)
+	// SendPasswordReset emails the user a password-reset link, as if they
+	// had used "forgot password" themselves.
+	SendPasswordReset(context.Context, *connect.Request[v1.SendPasswordResetRequest]) (*connect.Response[v1.SendPasswordResetResponse], error)
 }
 
 // NewUserServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -126,6 +256,24 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceMethods.ByName("ListUsers")),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceGetUserHandler := connect.NewUnaryHandler(
+		UserServiceGetUserProcedure,
+		svc.GetUser,
+		connect.WithSchema(userServiceMethods.ByName("GetUser")),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceCreateUserHandler := connect.NewUnaryHandler(
+		UserServiceCreateUserProcedure,
+		svc.CreateUser,
+		connect.WithSchema(userServiceMethods.ByName("CreateUser")),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceUpdateUserHandler := connect.NewUnaryHandler(
+		UserServiceUpdateUserProcedure,
+		svc.UpdateUser,
+		connect.WithSchema(userServiceMethods.ByName("UpdateUser")),
+		connect.WithHandlerOptions(opts...),
+	)
 	userServiceDisableUserHandler := connect.NewUnaryHandler(
 		UserServiceDisableUserProcedure,
 		svc.DisableUser,
@@ -138,14 +286,44 @@ func NewUserServiceHandler(svc UserServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(userServiceMethods.ByName("EnableUser")),
 		connect.WithHandlerOptions(opts...),
 	)
+	userServiceDeleteUserHandler := connect.NewUnaryHandler(
+		UserServiceDeleteUserProcedure,
+		svc.DeleteUser,
+		connect.WithSchema(userServiceMethods.ByName("DeleteUser")),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceRevokeUserSessionsHandler := connect.NewUnaryHandler(
+		UserServiceRevokeUserSessionsProcedure,
+		svc.RevokeUserSessions,
+		connect.WithSchema(userServiceMethods.ByName("RevokeUserSessions")),
+		connect.WithHandlerOptions(opts...),
+	)
+	userServiceSendPasswordResetHandler := connect.NewUnaryHandler(
+		UserServiceSendPasswordResetProcedure,
+		svc.SendPasswordReset,
+		connect.WithSchema(userServiceMethods.ByName("SendPasswordReset")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.admin.v1.UserService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case UserServiceListUsersProcedure:
 			userServiceListUsersHandler.ServeHTTP(w, r)
+		case UserServiceGetUserProcedure:
+			userServiceGetUserHandler.ServeHTTP(w, r)
+		case UserServiceCreateUserProcedure:
+			userServiceCreateUserHandler.ServeHTTP(w, r)
+		case UserServiceUpdateUserProcedure:
+			userServiceUpdateUserHandler.ServeHTTP(w, r)
 		case UserServiceDisableUserProcedure:
 			userServiceDisableUserHandler.ServeHTTP(w, r)
 		case UserServiceEnableUserProcedure:
 			userServiceEnableUserHandler.ServeHTTP(w, r)
+		case UserServiceDeleteUserProcedure:
+			userServiceDeleteUserHandler.ServeHTTP(w, r)
+		case UserServiceRevokeUserSessionsProcedure:
+			userServiceRevokeUserSessionsHandler.ServeHTTP(w, r)
+		case UserServiceSendPasswordResetProcedure:
+			userServiceSendPasswordResetHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -159,10 +337,34 @@ func (UnimplementedUserServiceHandler) ListUsers(context.Context, *connect.Reque
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.ListUsers is not implemented"))
 }
 
+func (UnimplementedUserServiceHandler) GetUser(context.Context, *connect.Request[v1.GetUserRequest]) (*connect.Response[v1.GetUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.GetUser is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) CreateUser(context.Context, *connect.Request[v1.CreateUserRequest]) (*connect.Response[v1.CreateUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.CreateUser is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) UpdateUser(context.Context, *connect.Request[v1.UpdateUserRequest]) (*connect.Response[v1.UpdateUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.UpdateUser is not implemented"))
+}
+
 func (UnimplementedUserServiceHandler) DisableUser(context.Context, *connect.Request[v1.DisableUserRequest]) (*connect.Response[v1.DisableUserResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.DisableUser is not implemented"))
 }
 
 func (UnimplementedUserServiceHandler) EnableUser(context.Context, *connect.Request[v1.EnableUserRequest]) (*connect.Response[v1.EnableUserResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.EnableUser is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) DeleteUser(context.Context, *connect.Request[v1.DeleteUserRequest]) (*connect.Response[v1.DeleteUserResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.DeleteUser is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) RevokeUserSessions(context.Context, *connect.Request[v1.RevokeUserSessionsRequest]) (*connect.Response[v1.RevokeUserSessionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.RevokeUserSessions is not implemented"))
+}
+
+func (UnimplementedUserServiceHandler) SendPasswordReset(context.Context, *connect.Request[v1.SendPasswordResetRequest]) (*connect.Response[v1.SendPasswordResetResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.UserService.SendPasswordReset is not implemented"))
 }

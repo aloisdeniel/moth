@@ -58,6 +58,17 @@ func (s *Store) DeleteSession(ctx context.Context, tokenHash string) error {
 	return nil
 }
 
+// DeleteAdminSessionsExcept ends every session of the admin other than the
+// one identified by keepTokenHash (used after a password change).
+func (s *Store) DeleteAdminSessionsExcept(ctx context.Context, adminID, keepTokenHash string) error {
+	if _, err := s.db.ExecContext(ctx,
+		`DELETE FROM admin_sessions WHERE admin_id = ? AND token_hash <> ?`,
+		adminID, keepTokenHash); err != nil {
+		return fmt.Errorf("delete admin sessions: %w", err)
+	}
+	return nil
+}
+
 func (s *Store) DeleteExpiredSessions(ctx context.Context, now time.Time) error {
 	if _, err := s.db.ExecContext(ctx,
 		`DELETE FROM admin_sessions WHERE expires_at < ?`, formatTime(now)); err != nil {

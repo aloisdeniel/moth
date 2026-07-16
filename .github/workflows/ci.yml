@@ -38,6 +38,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/admin/package-lock.json
       - uses: bufbuild/buf-action@v1
         with:
           setup_only: true
@@ -45,10 +50,53 @@ jobs:
       - name: buf breaking
         if: github.event_name == 'pull_request'
         run: buf breaking --against ".git#branch=origin/${{ github.base_ref }}"
+      # protoc-gen-es comes from web/admin's dev dependencies.
+      - run: npm ci
+        working-directory: web/admin
       - name: check committed codegen is current
         run: |
           buf generate
-          git diff --exit-code gen/
+          git diff --exit-code gen/ web/admin/src/gen/
+
+  # The admin SPA: typecheck, rebuild, and fail when the committed embedded
+  # build (internal/server/web/dist) is stale.
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/admin/package-lock.json
+      - run: npm ci
+        working-directory: web/admin
+      - run: npm run build
+        working-directory: web/admin
+      - name: check committed SPA build is current
+        run: git diff --exit-code internal/server/web/dist/
+
+  # Browser smoke test against the real binary with the SPA embedded:
+  # first-run setup → login → create project → see keys.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/admin/package-lock.json
+      - run: npm ci
+        working-directory: web/admin
+      - run: make build
+      - run: npx playwright install --with-deps chromium
+        working-directory: web/admin
+      - run: npx playwright test
+        working-directory: web/admin
 
   cross-compile:
     runs-on: ubuntu-latest

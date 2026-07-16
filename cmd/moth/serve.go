@@ -16,7 +16,6 @@ import (
 
 	"github.com/aloisdeniel/moth/internal/config"
 	"github.com/aloisdeniel/moth/internal/keys"
-	"github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/server"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
@@ -72,28 +71,25 @@ func serve(ctx context.Context, cfg config.Config) error {
 		setupToken = token.Random(16)
 	}
 
-	var mailer mail.Mailer = mail.Console{Log: log}
+	// SMTP resolution (database settings > config > console) happens
+	// inside server.New, which also lets the admin console reconfigure it
+	// at runtime.
 	if cfg.SMTP.Enabled() {
-		mailer = mail.SMTP{
-			Host:     cfg.SMTP.Host,
-			Port:     cfg.SMTP.Port,
-			Username: cfg.SMTP.Username,
-			Password: cfg.SMTP.Password,
-			From:     cfg.SMTP.From,
-		}
 		log.Info("smtp transport configured", "host", cfg.SMTP.Host, "port", cfg.SMTP.Port)
 	} else {
-		log.Info("no smtp configured; emails are logged to the console")
+		log.Info("no smtp in config; console transport unless configured in the admin")
 	}
 
-	srv := server.New(server.Options{
+	srv, err := server.New(server.Options{
 		Config:     cfg,
 		Store:      st,
 		Master:     master,
 		Logger:     log,
-		Mailer:     mailer,
 		SetupToken: setupToken,
 	})
+	if err != nil {
+		return err
+	}
 
 	httpServer := &http.Server{
 		Addr:              cfg.Addr,

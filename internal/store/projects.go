@@ -37,6 +37,10 @@ type ProjectKey struct {
 // ProjectKeyStatusActive marks keys currently served in the project JWKS.
 const ProjectKeyStatusActive = "active"
 
+// ProjectKeyStatusRetired marks keys dropped from the JWKS by a signing
+// key reset; tokens they signed no longer validate.
+const ProjectKeyStatusRetired = "retired"
+
 func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -132,6 +136,51 @@ func (s *Store) DeleteProject(ctx context.Context, id string) error {
 		return fmt.Errorf("delete project: %w", err)
 	}
 	return requireRow(res)
+}
+
+// UpdateProjectSecretKey replaces the project's secret key hash; the old
+// key stops authenticating immediately.
+func (s *Store) UpdateProjectSecretKey(ctx context.Context, id, secretKeyHash string, now time.Time) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE projects SET secret_key_hash = ?, updated_at = ? WHERE id = ?`,
+		secretKeyHash, formatTime(now), id)
+	if err != nil {
+		return fmt.Errorf("update project secret key: %w", err)
+	}
+	return requireRow(res)
+}
+
+// ResetProjectSigningKey atomically retires every signing key of the
+// project, installs the replacement and revokes all refresh tokens: every
+// issued token is dead and all users must sign in again.
+func (s *Store) ResetProjectSigningKey(ctx context.Context, projectID string, k ProjectKey, now time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin reset signing key: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE project_keys SET status = ? WHERE project_id = ? AND status = ?`,
+		ProjectKeyStatusRetired, projectID, ProjectKeyStatusActive); err != nil {
+		return fmt.Errorf("retire project keys: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO project_keys (id, project_id, kid, algorithm, public_key_pem, private_key_enc, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		k.ID, k.ProjectID, k.Kid, k.Algorithm, k.PublicKeyPEM, k.PrivateKeyEnc,
+		k.Status, formatTime(k.CreatedAt)); err != nil {
+		return fmt.Errorf("insert replacement project key: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE refresh_tokens SET revoked_at = ? WHERE project_id = ? AND revoked_at IS NULL`,
+		formatTime(now), projectID); err != nil {
+		return fmt.Errorf("revoke project refresh tokens: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit reset signing key: %w", err)
+	}
+	return nil
 }
 
 func (s *Store) SlugExists(ctx context.Context, slug string) (bool, error) {

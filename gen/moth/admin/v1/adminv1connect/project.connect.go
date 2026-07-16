@@ -48,6 +48,15 @@ const (
 	// ProjectServiceDeleteProjectProcedure is the fully-qualified name of the ProjectService's
 	// DeleteProject RPC.
 	ProjectServiceDeleteProjectProcedure = "/moth.admin.v1.ProjectService/DeleteProject"
+	// ProjectServiceRegenerateSecretKeyProcedure is the fully-qualified name of the ProjectService's
+	// RegenerateSecretKey RPC.
+	ProjectServiceRegenerateSecretKeyProcedure = "/moth.admin.v1.ProjectService/RegenerateSecretKey"
+	// ProjectServiceGetSigningKeyProcedure is the fully-qualified name of the ProjectService's
+	// GetSigningKey RPC.
+	ProjectServiceGetSigningKeyProcedure = "/moth.admin.v1.ProjectService/GetSigningKey"
+	// ProjectServiceResetSigningKeyProcedure is the fully-qualified name of the ProjectService's
+	// ResetSigningKey RPC.
+	ProjectServiceResetSigningKeyProcedure = "/moth.admin.v1.ProjectService/ResetSigningKey"
 )
 
 // ProjectServiceClient is a client for the moth.admin.v1.ProjectService service.
@@ -57,6 +66,18 @@ type ProjectServiceClient interface {
 	ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error)
 	UpdateProject(context.Context, *connect.Request[v1.UpdateProjectRequest]) (*connect.Response[v1.UpdateProjectResponse], error)
 	DeleteProject(context.Context, *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error)
+	// RegenerateSecretKey replaces the project's server-to-server secret key.
+	// The old key stops working immediately; the new one is returned exactly
+	// once, in this response.
+	RegenerateSecretKey(context.Context, *connect.Request[v1.RegenerateSecretKeyRequest]) (*connect.Response[v1.RegenerateSecretKeyResponse], error)
+	// GetSigningKey returns the project's active token-signing key (public
+	// part) and its JWKS URL, for the admin overview card.
+	GetSigningKey(context.Context, *connect.Request[v1.GetSigningKeyRequest]) (*connect.Response[v1.GetSigningKeyResponse], error)
+	// ResetSigningKey generates a fresh ES256 keypair, removes every previous
+	// key from the project JWKS immediately, and revokes all refresh tokens.
+	// Every access token ever issued becomes invalid and all users must sign
+	// in again.
+	ResetSigningKey(context.Context, *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error)
 }
 
 // NewProjectServiceClient constructs a client for the moth.admin.v1.ProjectService service. By
@@ -100,16 +121,37 @@ func NewProjectServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(projectServiceMethods.ByName("DeleteProject")),
 			connect.WithClientOptions(opts...),
 		),
+		regenerateSecretKey: connect.NewClient[v1.RegenerateSecretKeyRequest, v1.RegenerateSecretKeyResponse](
+			httpClient,
+			baseURL+ProjectServiceRegenerateSecretKeyProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("RegenerateSecretKey")),
+			connect.WithClientOptions(opts...),
+		),
+		getSigningKey: connect.NewClient[v1.GetSigningKeyRequest, v1.GetSigningKeyResponse](
+			httpClient,
+			baseURL+ProjectServiceGetSigningKeyProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("GetSigningKey")),
+			connect.WithClientOptions(opts...),
+		),
+		resetSigningKey: connect.NewClient[v1.ResetSigningKeyRequest, v1.ResetSigningKeyResponse](
+			httpClient,
+			baseURL+ProjectServiceResetSigningKeyProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("ResetSigningKey")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // projectServiceClient implements ProjectServiceClient.
 type projectServiceClient struct {
-	createProject *connect.Client[v1.CreateProjectRequest, v1.CreateProjectResponse]
-	getProject    *connect.Client[v1.GetProjectRequest, v1.GetProjectResponse]
-	listProjects  *connect.Client[v1.ListProjectsRequest, v1.ListProjectsResponse]
-	updateProject *connect.Client[v1.UpdateProjectRequest, v1.UpdateProjectResponse]
-	deleteProject *connect.Client[v1.DeleteProjectRequest, v1.DeleteProjectResponse]
+	createProject       *connect.Client[v1.CreateProjectRequest, v1.CreateProjectResponse]
+	getProject          *connect.Client[v1.GetProjectRequest, v1.GetProjectResponse]
+	listProjects        *connect.Client[v1.ListProjectsRequest, v1.ListProjectsResponse]
+	updateProject       *connect.Client[v1.UpdateProjectRequest, v1.UpdateProjectResponse]
+	deleteProject       *connect.Client[v1.DeleteProjectRequest, v1.DeleteProjectResponse]
+	regenerateSecretKey *connect.Client[v1.RegenerateSecretKeyRequest, v1.RegenerateSecretKeyResponse]
+	getSigningKey       *connect.Client[v1.GetSigningKeyRequest, v1.GetSigningKeyResponse]
+	resetSigningKey     *connect.Client[v1.ResetSigningKeyRequest, v1.ResetSigningKeyResponse]
 }
 
 // CreateProject calls moth.admin.v1.ProjectService.CreateProject.
@@ -137,6 +179,21 @@ func (c *projectServiceClient) DeleteProject(ctx context.Context, req *connect.R
 	return c.deleteProject.CallUnary(ctx, req)
 }
 
+// RegenerateSecretKey calls moth.admin.v1.ProjectService.RegenerateSecretKey.
+func (c *projectServiceClient) RegenerateSecretKey(ctx context.Context, req *connect.Request[v1.RegenerateSecretKeyRequest]) (*connect.Response[v1.RegenerateSecretKeyResponse], error) {
+	return c.regenerateSecretKey.CallUnary(ctx, req)
+}
+
+// GetSigningKey calls moth.admin.v1.ProjectService.GetSigningKey.
+func (c *projectServiceClient) GetSigningKey(ctx context.Context, req *connect.Request[v1.GetSigningKeyRequest]) (*connect.Response[v1.GetSigningKeyResponse], error) {
+	return c.getSigningKey.CallUnary(ctx, req)
+}
+
+// ResetSigningKey calls moth.admin.v1.ProjectService.ResetSigningKey.
+func (c *projectServiceClient) ResetSigningKey(ctx context.Context, req *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error) {
+	return c.resetSigningKey.CallUnary(ctx, req)
+}
+
 // ProjectServiceHandler is an implementation of the moth.admin.v1.ProjectService service.
 type ProjectServiceHandler interface {
 	CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error)
@@ -144,6 +201,18 @@ type ProjectServiceHandler interface {
 	ListProjects(context.Context, *connect.Request[v1.ListProjectsRequest]) (*connect.Response[v1.ListProjectsResponse], error)
 	UpdateProject(context.Context, *connect.Request[v1.UpdateProjectRequest]) (*connect.Response[v1.UpdateProjectResponse], error)
 	DeleteProject(context.Context, *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error)
+	// RegenerateSecretKey replaces the project's server-to-server secret key.
+	// The old key stops working immediately; the new one is returned exactly
+	// once, in this response.
+	RegenerateSecretKey(context.Context, *connect.Request[v1.RegenerateSecretKeyRequest]) (*connect.Response[v1.RegenerateSecretKeyResponse], error)
+	// GetSigningKey returns the project's active token-signing key (public
+	// part) and its JWKS URL, for the admin overview card.
+	GetSigningKey(context.Context, *connect.Request[v1.GetSigningKeyRequest]) (*connect.Response[v1.GetSigningKeyResponse], error)
+	// ResetSigningKey generates a fresh ES256 keypair, removes every previous
+	// key from the project JWKS immediately, and revokes all refresh tokens.
+	// Every access token ever issued becomes invalid and all users must sign
+	// in again.
+	ResetSigningKey(context.Context, *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error)
 }
 
 // NewProjectServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -183,6 +252,24 @@ func NewProjectServiceHandler(svc ProjectServiceHandler, opts ...connect.Handler
 		connect.WithSchema(projectServiceMethods.ByName("DeleteProject")),
 		connect.WithHandlerOptions(opts...),
 	)
+	projectServiceRegenerateSecretKeyHandler := connect.NewUnaryHandler(
+		ProjectServiceRegenerateSecretKeyProcedure,
+		svc.RegenerateSecretKey,
+		connect.WithSchema(projectServiceMethods.ByName("RegenerateSecretKey")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceGetSigningKeyHandler := connect.NewUnaryHandler(
+		ProjectServiceGetSigningKeyProcedure,
+		svc.GetSigningKey,
+		connect.WithSchema(projectServiceMethods.ByName("GetSigningKey")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceResetSigningKeyHandler := connect.NewUnaryHandler(
+		ProjectServiceResetSigningKeyProcedure,
+		svc.ResetSigningKey,
+		connect.WithSchema(projectServiceMethods.ByName("ResetSigningKey")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.admin.v1.ProjectService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ProjectServiceCreateProjectProcedure:
@@ -195,6 +282,12 @@ func NewProjectServiceHandler(svc ProjectServiceHandler, opts ...connect.Handler
 			projectServiceUpdateProjectHandler.ServeHTTP(w, r)
 		case ProjectServiceDeleteProjectProcedure:
 			projectServiceDeleteProjectHandler.ServeHTTP(w, r)
+		case ProjectServiceRegenerateSecretKeyProcedure:
+			projectServiceRegenerateSecretKeyHandler.ServeHTTP(w, r)
+		case ProjectServiceGetSigningKeyProcedure:
+			projectServiceGetSigningKeyHandler.ServeHTTP(w, r)
+		case ProjectServiceResetSigningKeyProcedure:
+			projectServiceResetSigningKeyHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -222,4 +315,16 @@ func (UnimplementedProjectServiceHandler) UpdateProject(context.Context, *connec
 
 func (UnimplementedProjectServiceHandler) DeleteProject(context.Context, *connect.Request[v1.DeleteProjectRequest]) (*connect.Response[v1.DeleteProjectResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.DeleteProject is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) RegenerateSecretKey(context.Context, *connect.Request[v1.RegenerateSecretKeyRequest]) (*connect.Response[v1.RegenerateSecretKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.RegenerateSecretKey is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) GetSigningKey(context.Context, *connect.Request[v1.GetSigningKeyRequest]) (*connect.Response[v1.GetSigningKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.GetSigningKey is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) ResetSigningKey(context.Context, *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.ResetSigningKey is not implemented"))
 }

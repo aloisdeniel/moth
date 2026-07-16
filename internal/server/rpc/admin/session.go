@@ -22,7 +22,9 @@ import (
 // Store is everything the admin services need from persistence.
 type Store interface {
 	store.AdminStore
+	store.AdminInviteStore
 	store.SessionStore
+	store.InstanceSettingStore
 	store.ProjectStore
 	store.UserStore
 	store.RefreshTokenStore

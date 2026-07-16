@@ -126,6 +126,9 @@ func (h *Handler) SignIn(ctx context.Context, req *connect.Request[authv1.SignIn
 	if err != nil {
 		return nil, errInternal(err)
 	}
+	if err := h.store.SetUserLastLogin(ctx, project.ID, user.ID, h.now()); err != nil {
+		h.log.ErrorContext(ctx, "set last login", "error", err.Error())
+	}
 	h.insertEvent(ctx, project.ID, user.ID, store.EventUserSignedIn)
 	return connect.NewResponse(&authv1.SignInResponse{
 		User:   userProto(user),

@@ -98,6 +98,49 @@ func AccountExists(project, to string) Message {
 	})
 }
 
+// UserInvite is the "set your password" email for an account created by an
+// operator in the admin console.
+func UserInvite(project, to, link string) Message {
+	return render(to, layoutData{
+		Project: project,
+		Subject: fmt.Sprintf("You've been invited to %s", project),
+		Paragraphs: []string{
+			fmt.Sprintf("An account was created for you on %s.", project),
+			"Choose a password to start using it:",
+		},
+		ButtonLabel: "Set your password",
+		ButtonURL:   link,
+	})
+}
+
+// AdminInvite is the operator-invitation email for the moth admin console.
+func AdminInvite(to, link string) Message {
+	return render(to, layoutData{
+		Project: "moth",
+		Subject: "You've been invited to administer a moth instance",
+		Paragraphs: []string{
+			"You've been invited to become an operator of a moth instance.",
+			"Open the link below to choose a password and activate your admin account.",
+			"If you were not expecting this invitation, you can ignore this email.",
+		},
+		ButtonLabel: "Activate admin account",
+		ButtonURL:   link,
+	})
+}
+
+// Test is the probe email sent by the admin console's "send test email"
+// button.
+func Test(to string) Message {
+	return render(to, layoutData{
+		Project: "moth",
+		Subject: "moth test email",
+		Paragraphs: []string{
+			"This is a test email from your moth instance.",
+			"If you can read this, outgoing email is configured correctly.",
+		},
+	})
+}
+
 func render(to string, data layoutData) Message {
 	var text, html bytes.Buffer
 	// The layouts are static and the data is server-built, so rendering
