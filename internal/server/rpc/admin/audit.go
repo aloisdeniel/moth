@@ -54,6 +54,10 @@ const (
 	// Milestone 12 — store catalog provisioning.
 	ActionStoreCatalogSync = "billing.store_catalog.sync"
 	ActionOfferingReorder  = "billing.offering.reorder"
+	// Milestone 13 — themed paywall.
+	ActionPaywallUpdate  = "paywall.update"
+	ActionPaywallRestore = "paywall.restore"
+	ActionPaywallReset   = "paywall.reset"
 )
 
 type clientIPCtxKey struct{}

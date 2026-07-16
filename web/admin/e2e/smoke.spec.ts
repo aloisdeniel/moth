@@ -220,6 +220,35 @@ test("theme editor saves a primary color and persists it", async ({ page }) => {
   await expect(page.getByText("Current", { exact: true })).toBeVisible();
 });
 
+test("paywall editor saves a headline and the preview reflects it", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Design" }).click();
+
+  // Switch from the login theme editor to the paywall editor (same Design
+  // tab); the section toggle keeps a single live preview on screen.
+  await page.getByRole("button", { name: "Paywall" }).click();
+
+  const headline = page.getByLabel("Headline");
+  await headline.fill("Go Pro today");
+
+  // The live preview reflects the unsaved headline immediately.
+  await expect(page.locator(".mothpw__headline")).toHaveText("Go Pro today");
+
+  await page.getByRole("button", { name: "Save paywall" }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+
+  // Survives a full reload — the config really landed on the project.
+  await page.reload();
+  await page.getByRole("button", { name: "Paywall" }).click();
+  await expect(page.getByLabel("Headline")).toHaveValue("Go Pro today");
+  await expect(page.locator(".mothpw__headline")).toHaveText("Go Pro today");
+});
+
 // Preview honesty (plan/06): the three reference themes shared with the
 // Flutter golden suite (sdk/flutter/test/golden), as UpdateTheme payloads.
 const referenceThemes: Record<string, object> = {

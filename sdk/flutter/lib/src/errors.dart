@@ -48,6 +48,12 @@ MothException mapGrpcError(GrpcError error) {
       return MothInvalidRedirect(message);
     case 'LAST_LOGIN_METHOD':
       return MothLastLoginMethod(message);
+    case 'BILLING_NOT_CONFIGURED':
+      return MothBillingNotConfigured(message);
+    case 'INVALID_RECEIPT':
+      return MothInvalidReceipt(message);
+    case 'STORE_UNAVAILABLE':
+      return MothStoreUnavailable(message);
   }
   // No moth reason: transport-level failures become MothNetworkError so
   // callers can retry; everything else keeps the raw reason (if any).

@@ -22,6 +22,63 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// PaywallLayout is the rendering variant the paywall screen uses; the token
+// space (colors/spacing/radius) always comes from the theme.
+type PaywallLayout int32
+
+const (
+	PaywallLayout_PAYWALL_LAYOUT_UNSPECIFIED PaywallLayout = 0
+	// One card per tier, side by side (the default).
+	PaywallLayout_PAYWALL_LAYOUT_TILES PaywallLayout = 1
+	// Tiers stacked as full-width rows.
+	PaywallLayout_PAYWALL_LAYOUT_LIST PaywallLayout = 2
+	// A single selected tier with a period toggle.
+	PaywallLayout_PAYWALL_LAYOUT_COMPACT PaywallLayout = 3
+)
+
+// Enum value maps for PaywallLayout.
+var (
+	PaywallLayout_name = map[int32]string{
+		0: "PAYWALL_LAYOUT_UNSPECIFIED",
+		1: "PAYWALL_LAYOUT_TILES",
+		2: "PAYWALL_LAYOUT_LIST",
+		3: "PAYWALL_LAYOUT_COMPACT",
+	}
+	PaywallLayout_value = map[string]int32{
+		"PAYWALL_LAYOUT_UNSPECIFIED": 0,
+		"PAYWALL_LAYOUT_TILES":       1,
+		"PAYWALL_LAYOUT_LIST":        2,
+		"PAYWALL_LAYOUT_COMPACT":     3,
+	}
+)
+
+func (x PaywallLayout) Enum() *PaywallLayout {
+	p := new(PaywallLayout)
+	*p = x
+	return p
+}
+
+func (x PaywallLayout) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (PaywallLayout) Descriptor() protoreflect.EnumDescriptor {
+	return file_moth_billing_v1_billing_proto_enumTypes[0].Descriptor()
+}
+
+func (PaywallLayout) Type() protoreflect.EnumType {
+	return &file_moth_billing_v1_billing_proto_enumTypes[0]
+}
+
+func (x PaywallLayout) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use PaywallLayout.Descriptor instead.
+func (PaywallLayout) EnumDescriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{0}
+}
+
 // Store identifies which app store a purchase or subscription belongs to.
 type Store int32
 
@@ -56,11 +113,11 @@ func (x Store) String() string {
 }
 
 func (Store) Descriptor() protoreflect.EnumDescriptor {
-	return file_moth_billing_v1_billing_proto_enumTypes[0].Descriptor()
+	return file_moth_billing_v1_billing_proto_enumTypes[1].Descriptor()
 }
 
 func (Store) Type() protoreflect.EnumType {
-	return &file_moth_billing_v1_billing_proto_enumTypes[0]
+	return &file_moth_billing_v1_billing_proto_enumTypes[1]
 }
 
 func (x Store) Number() protoreflect.EnumNumber {
@@ -69,7 +126,7 @@ func (x Store) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use Store.Descriptor instead.
 func (Store) EnumDescriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{0}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{1}
 }
 
 // SubscriptionStatus mirrors the store's renewal state, mapped to a small set
@@ -124,11 +181,11 @@ func (x SubscriptionStatus) String() string {
 }
 
 func (SubscriptionStatus) Descriptor() protoreflect.EnumDescriptor {
-	return file_moth_billing_v1_billing_proto_enumTypes[1].Descriptor()
+	return file_moth_billing_v1_billing_proto_enumTypes[2].Descriptor()
 }
 
 func (SubscriptionStatus) Type() protoreflect.EnumType {
-	return &file_moth_billing_v1_billing_proto_enumTypes[1]
+	return &file_moth_billing_v1_billing_proto_enumTypes[2]
 }
 
 func (x SubscriptionStatus) Number() protoreflect.EnumNumber {
@@ -137,7 +194,7 @@ func (x SubscriptionStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SubscriptionStatus.Descriptor instead.
 func (SubscriptionStatus) EnumDescriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{1}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{2}
 }
 
 // EntitlementSource explains why an entitlement is active.
@@ -181,11 +238,11 @@ func (x EntitlementSource) String() string {
 }
 
 func (EntitlementSource) Descriptor() protoreflect.EnumDescriptor {
-	return file_moth_billing_v1_billing_proto_enumTypes[2].Descriptor()
+	return file_moth_billing_v1_billing_proto_enumTypes[3].Descriptor()
 }
 
 func (EntitlementSource) Type() protoreflect.EnumType {
-	return &file_moth_billing_v1_billing_proto_enumTypes[2]
+	return &file_moth_billing_v1_billing_proto_enumTypes[3]
 }
 
 func (x EntitlementSource) Number() protoreflect.EnumNumber {
@@ -194,7 +251,526 @@ func (x EntitlementSource) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use EntitlementSource.Descriptor instead.
 func (EntitlementSource) EnumDescriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{3}
+}
+
+// Offering is the ordered set of products a paywall presents — the products
+// sharing an `offering` tag, in sort order. Every project has a default
+// offering ("default").
+type Offering struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Offering tag; "default" for the project's default offering.
+	Identifier string `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	IsDefault  bool   `protobuf:"varint,2,opt,name=is_default,json=isDefault,proto3" json:"is_default,omitempty"`
+	// The products to display, in paywall order.
+	Products      []*OfferingProduct `protobuf:"bytes,3,rep,name=products,proto3" json:"products,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Offering) Reset() {
+	*x = Offering{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Offering) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Offering) ProtoMessage() {}
+
+func (x *Offering) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Offering.ProtoReflect.Descriptor instead.
+func (*Offering) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *Offering) GetIdentifier() string {
+	if x != nil {
+		return x.Identifier
+	}
+	return ""
+}
+
+func (x *Offering) GetIsDefault() bool {
+	if x != nil {
+		return x.IsDefault
+	}
+	return false
+}
+
+func (x *Offering) GetProducts() []*OfferingProduct {
+	if x != nil {
+		return x.Products
+	}
+	return nil
+}
+
+// OfferingProduct is one purchasable tier as the paywall needs it: enough to
+// render a card and match the native store product. Price/period are display
+// + analytics metadata; the native store read stays authoritative for the
+// localized price actually charged.
+type OfferingProduct struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stable moth catalog identifier (e.g. "monthly"); the app never gates on
+	// this — it gates on entitlements — but the SDK uses it to drive purchases.
+	Identifier  string `protobuf:"bytes,1,opt,name=identifier,proto3" json:"identifier,omitempty"`
+	DisplayName string `protobuf:"bytes,2,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	// Store SKUs so the SDK can pair this tier with the native store product;
+	// either may be empty when the tier ships on one store only.
+	AppleProductId    string `protobuf:"bytes,3,opt,name=apple_product_id,json=appleProductId,proto3" json:"apple_product_id,omitempty"`
+	GoogleProductId   string `protobuf:"bytes,4,opt,name=google_product_id,json=googleProductId,proto3" json:"google_product_id,omitempty"`
+	BillingPeriod     string `protobuf:"bytes,5,opt,name=billing_period,json=billingPeriod,proto3" json:"billing_period,omitempty"`
+	PriceAmountMicros int64  `protobuf:"varint,6,opt,name=price_amount_micros,json=priceAmountMicros,proto3" json:"price_amount_micros,omitempty"`
+	Currency          string `protobuf:"bytes,7,opt,name=currency,proto3" json:"currency,omitempty"`
+	// Trial/intro descriptor (display + analytics only).
+	TrialPeriod            string `protobuf:"bytes,8,opt,name=trial_period,json=trialPeriod,proto3" json:"trial_period,omitempty"`
+	IntroPriceAmountMicros int64  `protobuf:"varint,9,opt,name=intro_price_amount_micros,json=introPriceAmountMicros,proto3" json:"intro_price_amount_micros,omitempty"`
+	IntroPeriod            string `protobuf:"bytes,10,opt,name=intro_period,json=introPeriod,proto3" json:"intro_period,omitempty"`
+	// The stable entitlement identifiers this product grants while active (e.g.
+	// "pro"), so the paywall can label what a tier unlocks.
+	Entitlements []string `protobuf:"bytes,11,rep,name=entitlements,proto3" json:"entitlements,omitempty"`
+	SortOrder    int32    `protobuf:"varint,12,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
+	// Whether this tier is the paywall's highlighted "most popular" tier (from
+	// the paywall config's highlighted_product_identifier).
+	Highlighted   bool `protobuf:"varint,13,opt,name=highlighted,proto3" json:"highlighted,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OfferingProduct) Reset() {
+	*x = OfferingProduct{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OfferingProduct) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OfferingProduct) ProtoMessage() {}
+
+func (x *OfferingProduct) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OfferingProduct.ProtoReflect.Descriptor instead.
+func (*OfferingProduct) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OfferingProduct) GetIdentifier() string {
+	if x != nil {
+		return x.Identifier
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetAppleProductId() string {
+	if x != nil {
+		return x.AppleProductId
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetGoogleProductId() string {
+	if x != nil {
+		return x.GoogleProductId
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetBillingPeriod() string {
+	if x != nil {
+		return x.BillingPeriod
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetPriceAmountMicros() int64 {
+	if x != nil {
+		return x.PriceAmountMicros
+	}
+	return 0
+}
+
+func (x *OfferingProduct) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetTrialPeriod() string {
+	if x != nil {
+		return x.TrialPeriod
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetIntroPriceAmountMicros() int64 {
+	if x != nil {
+		return x.IntroPriceAmountMicros
+	}
+	return 0
+}
+
+func (x *OfferingProduct) GetIntroPeriod() string {
+	if x != nil {
+		return x.IntroPeriod
+	}
+	return ""
+}
+
+func (x *OfferingProduct) GetEntitlements() []string {
+	if x != nil {
+		return x.Entitlements
+	}
+	return nil
+}
+
+func (x *OfferingProduct) GetSortOrder() int32 {
+	if x != nil {
+		return x.SortOrder
+	}
+	return 0
+}
+
+func (x *OfferingProduct) GetHighlighted() bool {
+	if x != nil {
+		return x.Highlighted
+	}
+	return false
+}
+
+// Paywall is the public, render-ready paywall configuration. Copy and layout
+// only — colors/typography inherit from the theme.
+type Paywall struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Identifies this version of the paywall config; changes on every admin
+	// edit. Cache the paywall keyed by this value and echo it as
+	// GetPaywallRequest.known_paywall_revision.
+	RevisionId string `protobuf:"bytes,1,opt,name=revision_id,json=revisionId,proto3" json:"revision_id,omitempty"`
+	Headline   string `protobuf:"bytes,2,opt,name=headline,proto3" json:"headline,omitempty"`
+	Subtitle   string `protobuf:"bytes,3,opt,name=subtitle,proto3" json:"subtitle,omitempty"`
+	// Feature/benefit bullets, in display order.
+	Benefits []string `protobuf:"bytes,4,rep,name=benefits,proto3" json:"benefits,omitempty"`
+	// The offering tag whose products this paywall lists; pass it to
+	// GetOfferings.offering. Empty selects the default offering.
+	Offering string `protobuf:"bytes,5,opt,name=offering,proto3" json:"offering,omitempty"`
+	// The product identifier to render as "most popular"; empty for none.
+	HighlightedProductIdentifier string        `protobuf:"bytes,6,opt,name=highlighted_product_identifier,json=highlightedProductIdentifier,proto3" json:"highlighted_product_identifier,omitempty"`
+	Layout                       PaywallLayout `protobuf:"varint,7,opt,name=layout,proto3,enum=moth.billing.v1.PaywallLayout" json:"layout,omitempty"`
+	// Optional legal links rendered in the paywall footer.
+	TermsUrl      string `protobuf:"bytes,8,opt,name=terms_url,json=termsUrl,proto3" json:"terms_url,omitempty"`
+	PrivacyUrl    string `protobuf:"bytes,9,opt,name=privacy_url,json=privacyUrl,proto3" json:"privacy_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Paywall) Reset() {
+	*x = Paywall{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Paywall) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Paywall) ProtoMessage() {}
+
+func (x *Paywall) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Paywall.ProtoReflect.Descriptor instead.
+func (*Paywall) Descriptor() ([]byte, []int) {
 	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Paywall) GetRevisionId() string {
+	if x != nil {
+		return x.RevisionId
+	}
+	return ""
+}
+
+func (x *Paywall) GetHeadline() string {
+	if x != nil {
+		return x.Headline
+	}
+	return ""
+}
+
+func (x *Paywall) GetSubtitle() string {
+	if x != nil {
+		return x.Subtitle
+	}
+	return ""
+}
+
+func (x *Paywall) GetBenefits() []string {
+	if x != nil {
+		return x.Benefits
+	}
+	return nil
+}
+
+func (x *Paywall) GetOffering() string {
+	if x != nil {
+		return x.Offering
+	}
+	return ""
+}
+
+func (x *Paywall) GetHighlightedProductIdentifier() string {
+	if x != nil {
+		return x.HighlightedProductIdentifier
+	}
+	return ""
+}
+
+func (x *Paywall) GetLayout() PaywallLayout {
+	if x != nil {
+		return x.Layout
+	}
+	return PaywallLayout_PAYWALL_LAYOUT_UNSPECIFIED
+}
+
+func (x *Paywall) GetTermsUrl() string {
+	if x != nil {
+		return x.TermsUrl
+	}
+	return ""
+}
+
+func (x *Paywall) GetPrivacyUrl() string {
+	if x != nil {
+		return x.PrivacyUrl
+	}
+	return ""
+}
+
+type GetOfferingsRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Offering tag; empty selects the project's default offering.
+	Offering      string `protobuf:"bytes,1,opt,name=offering,proto3" json:"offering,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOfferingsRequest) Reset() {
+	*x = GetOfferingsRequest{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOfferingsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOfferingsRequest) ProtoMessage() {}
+
+func (x *GetOfferingsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOfferingsRequest.ProtoReflect.Descriptor instead.
+func (*GetOfferingsRequest) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetOfferingsRequest) GetOffering() string {
+	if x != nil {
+		return x.Offering
+	}
+	return ""
+}
+
+type GetOfferingsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offering      *Offering              `protobuf:"bytes,1,opt,name=offering,proto3" json:"offering,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetOfferingsResponse) Reset() {
+	*x = GetOfferingsResponse{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetOfferingsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetOfferingsResponse) ProtoMessage() {}
+
+func (x *GetOfferingsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetOfferingsResponse.ProtoReflect.Descriptor instead.
+func (*GetOfferingsResponse) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetOfferingsResponse) GetOffering() *Offering {
+	if x != nil {
+		return x.Offering
+	}
+	return nil
+}
+
+type GetPaywallRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The revision_id of the paywall the client has cached (empty on first
+	// call). When it still matches the current revision, the response omits
+	// `paywall`; see the caching contract on GetPaywall.
+	KnownPaywallRevision string `protobuf:"bytes,1,opt,name=known_paywall_revision,json=knownPaywallRevision,proto3" json:"known_paywall_revision,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
+}
+
+func (x *GetPaywallRequest) Reset() {
+	*x = GetPaywallRequest{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPaywallRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPaywallRequest) ProtoMessage() {}
+
+func (x *GetPaywallRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPaywallRequest.ProtoReflect.Descriptor instead.
+func (*GetPaywallRequest) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *GetPaywallRequest) GetKnownPaywallRevision() string {
+	if x != nil {
+		return x.KnownPaywallRevision
+	}
+	return ""
+}
+
+type GetPaywallResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Omitted when GetPaywallRequest.known_paywall_revision matches the current
+	// revision; present otherwise (including for projects on the built-in
+	// default paywall config).
+	Paywall       *Paywall `protobuf:"bytes,1,opt,name=paywall,proto3" json:"paywall,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetPaywallResponse) Reset() {
+	*x = GetPaywallResponse{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetPaywallResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetPaywallResponse) ProtoMessage() {}
+
+func (x *GetPaywallResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetPaywallResponse.ProtoReflect.Descriptor instead.
+func (*GetPaywallResponse) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *GetPaywallResponse) GetPaywall() *Paywall {
+	if x != nil {
+		return x.Paywall
+	}
+	return nil
 }
 
 // CustomerInfo is the complete subscription picture for one user. Apps gate
@@ -214,7 +790,7 @@ type CustomerInfo struct {
 
 func (x *CustomerInfo) Reset() {
 	*x = CustomerInfo{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[0]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -226,7 +802,7 @@ func (x *CustomerInfo) String() string {
 func (*CustomerInfo) ProtoMessage() {}
 
 func (x *CustomerInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[0]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -239,7 +815,7 @@ func (x *CustomerInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CustomerInfo.ProtoReflect.Descriptor instead.
 func (*CustomerInfo) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{0}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *CustomerInfo) GetActiveEntitlements() []*Entitlement {
@@ -275,7 +851,7 @@ type Entitlement struct {
 
 func (x *Entitlement) Reset() {
 	*x = Entitlement{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[1]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -287,7 +863,7 @@ func (x *Entitlement) String() string {
 func (*Entitlement) ProtoMessage() {}
 
 func (x *Entitlement) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[1]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -300,7 +876,7 @@ func (x *Entitlement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Entitlement.ProtoReflect.Descriptor instead.
 func (*Entitlement) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{1}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *Entitlement) GetIdentifier() string {
@@ -350,7 +926,7 @@ type ActiveSubscription struct {
 
 func (x *ActiveSubscription) Reset() {
 	*x = ActiveSubscription{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[2]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -362,7 +938,7 @@ func (x *ActiveSubscription) String() string {
 func (*ActiveSubscription) ProtoMessage() {}
 
 func (x *ActiveSubscription) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[2]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -375,7 +951,7 @@ func (x *ActiveSubscription) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ActiveSubscription.ProtoReflect.Descriptor instead.
 func (*ActiveSubscription) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{2}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *ActiveSubscription) GetProductIdentifier() string {
@@ -428,7 +1004,7 @@ type GetCustomerInfoRequest struct {
 
 func (x *GetCustomerInfoRequest) Reset() {
 	*x = GetCustomerInfoRequest{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[3]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -440,7 +1016,7 @@ func (x *GetCustomerInfoRequest) String() string {
 func (*GetCustomerInfoRequest) ProtoMessage() {}
 
 func (x *GetCustomerInfoRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[3]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -453,7 +1029,7 @@ func (x *GetCustomerInfoRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCustomerInfoRequest.ProtoReflect.Descriptor instead.
 func (*GetCustomerInfoRequest) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{3}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{10}
 }
 
 type GetCustomerInfoResponse struct {
@@ -465,7 +1041,7 @@ type GetCustomerInfoResponse struct {
 
 func (x *GetCustomerInfoResponse) Reset() {
 	*x = GetCustomerInfoResponse{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[4]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -477,7 +1053,7 @@ func (x *GetCustomerInfoResponse) String() string {
 func (*GetCustomerInfoResponse) ProtoMessage() {}
 
 func (x *GetCustomerInfoResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[4]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -490,7 +1066,7 @@ func (x *GetCustomerInfoResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetCustomerInfoResponse.ProtoReflect.Descriptor instead.
 func (*GetCustomerInfoResponse) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{4}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetCustomerInfoResponse) GetCustomerInfo() *CustomerInfo {
@@ -524,7 +1100,7 @@ type SubmitPurchaseRequest struct {
 
 func (x *SubmitPurchaseRequest) Reset() {
 	*x = SubmitPurchaseRequest{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[5]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -536,7 +1112,7 @@ func (x *SubmitPurchaseRequest) String() string {
 func (*SubmitPurchaseRequest) ProtoMessage() {}
 
 func (x *SubmitPurchaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[5]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -549,7 +1125,7 @@ func (x *SubmitPurchaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitPurchaseRequest.ProtoReflect.Descriptor instead.
 func (*SubmitPurchaseRequest) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{5}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *SubmitPurchaseRequest) GetStore() Store {
@@ -623,7 +1199,7 @@ type SubmitPurchaseResponse struct {
 
 func (x *SubmitPurchaseResponse) Reset() {
 	*x = SubmitPurchaseResponse{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[6]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -635,7 +1211,7 @@ func (x *SubmitPurchaseResponse) String() string {
 func (*SubmitPurchaseResponse) ProtoMessage() {}
 
 func (x *SubmitPurchaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[6]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -648,7 +1224,7 @@ func (x *SubmitPurchaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubmitPurchaseResponse.ProtoReflect.Descriptor instead.
 func (*SubmitPurchaseResponse) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{6}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *SubmitPurchaseResponse) GetCustomerInfo() *CustomerInfo {
@@ -670,7 +1246,7 @@ type RestorePurchasesRequest struct {
 
 func (x *RestorePurchasesRequest) Reset() {
 	*x = RestorePurchasesRequest{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[7]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -682,7 +1258,7 @@ func (x *RestorePurchasesRequest) String() string {
 func (*RestorePurchasesRequest) ProtoMessage() {}
 
 func (x *RestorePurchasesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[7]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -695,7 +1271,7 @@ func (x *RestorePurchasesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestorePurchasesRequest.ProtoReflect.Descriptor instead.
 func (*RestorePurchasesRequest) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{7}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *RestorePurchasesRequest) GetStore() Store {
@@ -721,7 +1297,7 @@ type RestorePurchasesResponse struct {
 
 func (x *RestorePurchasesResponse) Reset() {
 	*x = RestorePurchasesResponse{}
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[8]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -733,7 +1309,7 @@ func (x *RestorePurchasesResponse) String() string {
 func (*RestorePurchasesResponse) ProtoMessage() {}
 
 func (x *RestorePurchasesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_billing_v1_billing_proto_msgTypes[8]
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -746,7 +1322,7 @@ func (x *RestorePurchasesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RestorePurchasesResponse.ProtoReflect.Descriptor instead.
 func (*RestorePurchasesResponse) Descriptor() ([]byte, []int) {
-	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{8}
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RestorePurchasesResponse) GetCustomerInfo() *CustomerInfo {
@@ -760,7 +1336,52 @@ var File_moth_billing_v1_billing_proto protoreflect.FileDescriptor
 
 const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"\n" +
-	"\x1dmoth/billing/v1/billing.proto\x12\x0fmoth.billing.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa8\x01\n" +
+	"\x1dmoth/billing/v1/billing.proto\x12\x0fmoth.billing.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x87\x01\n" +
+	"\bOffering\x12\x1e\n" +
+	"\n" +
+	"identifier\x18\x01 \x01(\tR\n" +
+	"identifier\x12\x1d\n" +
+	"\n" +
+	"is_default\x18\x02 \x01(\bR\tisDefault\x12<\n" +
+	"\bproducts\x18\x03 \x03(\v2 .moth.billing.v1.OfferingProductR\bproducts\"\x83\x04\n" +
+	"\x0fOfferingProduct\x12\x1e\n" +
+	"\n" +
+	"identifier\x18\x01 \x01(\tR\n" +
+	"identifier\x12!\n" +
+	"\fdisplay_name\x18\x02 \x01(\tR\vdisplayName\x12(\n" +
+	"\x10apple_product_id\x18\x03 \x01(\tR\x0eappleProductId\x12*\n" +
+	"\x11google_product_id\x18\x04 \x01(\tR\x0fgoogleProductId\x12%\n" +
+	"\x0ebilling_period\x18\x05 \x01(\tR\rbillingPeriod\x12.\n" +
+	"\x13price_amount_micros\x18\x06 \x01(\x03R\x11priceAmountMicros\x12\x1a\n" +
+	"\bcurrency\x18\a \x01(\tR\bcurrency\x12!\n" +
+	"\ftrial_period\x18\b \x01(\tR\vtrialPeriod\x129\n" +
+	"\x19intro_price_amount_micros\x18\t \x01(\x03R\x16introPriceAmountMicros\x12!\n" +
+	"\fintro_period\x18\n" +
+	" \x01(\tR\vintroPeriod\x12\"\n" +
+	"\fentitlements\x18\v \x03(\tR\fentitlements\x12\x1d\n" +
+	"\n" +
+	"sort_order\x18\f \x01(\x05R\tsortOrder\x12 \n" +
+	"\vhighlighted\x18\r \x01(\bR\vhighlighted\"\xd6\x02\n" +
+	"\aPaywall\x12\x1f\n" +
+	"\vrevision_id\x18\x01 \x01(\tR\n" +
+	"revisionId\x12\x1a\n" +
+	"\bheadline\x18\x02 \x01(\tR\bheadline\x12\x1a\n" +
+	"\bsubtitle\x18\x03 \x01(\tR\bsubtitle\x12\x1a\n" +
+	"\bbenefits\x18\x04 \x03(\tR\bbenefits\x12\x1a\n" +
+	"\boffering\x18\x05 \x01(\tR\boffering\x12D\n" +
+	"\x1ehighlighted_product_identifier\x18\x06 \x01(\tR\x1chighlightedProductIdentifier\x126\n" +
+	"\x06layout\x18\a \x01(\x0e2\x1e.moth.billing.v1.PaywallLayoutR\x06layout\x12\x1b\n" +
+	"\tterms_url\x18\b \x01(\tR\btermsUrl\x12\x1f\n" +
+	"\vprivacy_url\x18\t \x01(\tR\n" +
+	"privacyUrl\"1\n" +
+	"\x13GetOfferingsRequest\x12\x1a\n" +
+	"\boffering\x18\x01 \x01(\tR\boffering\"M\n" +
+	"\x14GetOfferingsResponse\x125\n" +
+	"\boffering\x18\x01 \x01(\v2\x19.moth.billing.v1.OfferingR\boffering\"I\n" +
+	"\x11GetPaywallRequest\x124\n" +
+	"\x16known_paywall_revision\x18\x01 \x01(\tR\x14knownPaywallRevision\"H\n" +
+	"\x12GetPaywallResponse\x122\n" +
+	"\apaywall\x18\x01 \x01(\v2\x18.moth.billing.v1.PaywallR\apaywall\"\xa8\x01\n" +
 	"\fCustomerInfo\x12M\n" +
 	"\x13active_entitlements\x18\x01 \x03(\v2\x1c.moth.billing.v1.EntitlementR\x12activeEntitlements\x12I\n" +
 	"\rsubscriptions\x18\x02 \x03(\v2#.moth.billing.v1.ActiveSubscriptionR\rsubscriptions\"\xd5\x01\n" +
@@ -797,7 +1418,12 @@ const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"\x05store\x18\x01 \x01(\x0e2\x16.moth.billing.v1.StoreR\x05store\x12\x1a\n" +
 	"\breceipts\x18\x02 \x03(\tR\breceipts\"^\n" +
 	"\x18RestorePurchasesResponse\x12B\n" +
-	"\rcustomer_info\x18\x01 \x01(\v2\x1d.moth.billing.v1.CustomerInfoR\fcustomerInfo*A\n" +
+	"\rcustomer_info\x18\x01 \x01(\v2\x1d.moth.billing.v1.CustomerInfoR\fcustomerInfo*~\n" +
+	"\rPaywallLayout\x12\x1e\n" +
+	"\x1aPAYWALL_LAYOUT_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14PAYWALL_LAYOUT_TILES\x10\x01\x12\x17\n" +
+	"\x13PAYWALL_LAYOUT_LIST\x10\x02\x12\x1a\n" +
+	"\x16PAYWALL_LAYOUT_COMPACT\x10\x03*A\n" +
 	"\x05Store\x12\x15\n" +
 	"\x11STORE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSTORE_APPLE\x10\x01\x12\x10\n" +
@@ -815,11 +1441,14 @@ const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"\x1eENTITLEMENT_SOURCE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18ENTITLEMENT_SOURCE_STORE\x10\x01\x12\x1c\n" +
 	"\x18ENTITLEMENT_SOURCE_GRANT\x10\x02\x12\x1b\n" +
-	"\x17ENTITLEMENT_SOURCE_NONE\x10\x032\xc2\x02\n" +
+	"\x17ENTITLEMENT_SOURCE_NONE\x10\x032\xf6\x03\n" +
 	"\x0eBillingService\x12d\n" +
 	"\x0fGetCustomerInfo\x12'.moth.billing.v1.GetCustomerInfoRequest\x1a(.moth.billing.v1.GetCustomerInfoResponse\x12a\n" +
 	"\x0eSubmitPurchase\x12&.moth.billing.v1.SubmitPurchaseRequest\x1a'.moth.billing.v1.SubmitPurchaseResponse\x12g\n" +
-	"\x10RestorePurchases\x12(.moth.billing.v1.RestorePurchasesRequest\x1a).moth.billing.v1.RestorePurchasesResponseB;Z9github.com/aloisdeniel/moth/gen/moth/billing/v1;billingv1b\x06proto3"
+	"\x10RestorePurchases\x12(.moth.billing.v1.RestorePurchasesRequest\x1a).moth.billing.v1.RestorePurchasesResponse\x12[\n" +
+	"\fGetOfferings\x12$.moth.billing.v1.GetOfferingsRequest\x1a%.moth.billing.v1.GetOfferingsResponse\x12U\n" +
+	"\n" +
+	"GetPaywall\x12\".moth.billing.v1.GetPaywallRequest\x1a#.moth.billing.v1.GetPaywallResponseB;Z9github.com/aloisdeniel/moth/gen/moth/billing/v1;billingv1b\x06proto3"
 
 var (
 	file_moth_billing_v1_billing_proto_rawDescOnce sync.Once
@@ -833,47 +1462,63 @@ func file_moth_billing_v1_billing_proto_rawDescGZIP() []byte {
 	return file_moth_billing_v1_billing_proto_rawDescData
 }
 
-var file_moth_billing_v1_billing_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_moth_billing_v1_billing_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_moth_billing_v1_billing_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_moth_billing_v1_billing_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_moth_billing_v1_billing_proto_goTypes = []any{
-	(Store)(0),                       // 0: moth.billing.v1.Store
-	(SubscriptionStatus)(0),          // 1: moth.billing.v1.SubscriptionStatus
-	(EntitlementSource)(0),           // 2: moth.billing.v1.EntitlementSource
-	(*CustomerInfo)(nil),             // 3: moth.billing.v1.CustomerInfo
-	(*Entitlement)(nil),              // 4: moth.billing.v1.Entitlement
-	(*ActiveSubscription)(nil),       // 5: moth.billing.v1.ActiveSubscription
-	(*GetCustomerInfoRequest)(nil),   // 6: moth.billing.v1.GetCustomerInfoRequest
-	(*GetCustomerInfoResponse)(nil),  // 7: moth.billing.v1.GetCustomerInfoResponse
-	(*SubmitPurchaseRequest)(nil),    // 8: moth.billing.v1.SubmitPurchaseRequest
-	(*SubmitPurchaseResponse)(nil),   // 9: moth.billing.v1.SubmitPurchaseResponse
-	(*RestorePurchasesRequest)(nil),  // 10: moth.billing.v1.RestorePurchasesRequest
-	(*RestorePurchasesResponse)(nil), // 11: moth.billing.v1.RestorePurchasesResponse
-	(*timestamppb.Timestamp)(nil),    // 12: google.protobuf.Timestamp
+	(PaywallLayout)(0),               // 0: moth.billing.v1.PaywallLayout
+	(Store)(0),                       // 1: moth.billing.v1.Store
+	(SubscriptionStatus)(0),          // 2: moth.billing.v1.SubscriptionStatus
+	(EntitlementSource)(0),           // 3: moth.billing.v1.EntitlementSource
+	(*Offering)(nil),                 // 4: moth.billing.v1.Offering
+	(*OfferingProduct)(nil),          // 5: moth.billing.v1.OfferingProduct
+	(*Paywall)(nil),                  // 6: moth.billing.v1.Paywall
+	(*GetOfferingsRequest)(nil),      // 7: moth.billing.v1.GetOfferingsRequest
+	(*GetOfferingsResponse)(nil),     // 8: moth.billing.v1.GetOfferingsResponse
+	(*GetPaywallRequest)(nil),        // 9: moth.billing.v1.GetPaywallRequest
+	(*GetPaywallResponse)(nil),       // 10: moth.billing.v1.GetPaywallResponse
+	(*CustomerInfo)(nil),             // 11: moth.billing.v1.CustomerInfo
+	(*Entitlement)(nil),              // 12: moth.billing.v1.Entitlement
+	(*ActiveSubscription)(nil),       // 13: moth.billing.v1.ActiveSubscription
+	(*GetCustomerInfoRequest)(nil),   // 14: moth.billing.v1.GetCustomerInfoRequest
+	(*GetCustomerInfoResponse)(nil),  // 15: moth.billing.v1.GetCustomerInfoResponse
+	(*SubmitPurchaseRequest)(nil),    // 16: moth.billing.v1.SubmitPurchaseRequest
+	(*SubmitPurchaseResponse)(nil),   // 17: moth.billing.v1.SubmitPurchaseResponse
+	(*RestorePurchasesRequest)(nil),  // 18: moth.billing.v1.RestorePurchasesRequest
+	(*RestorePurchasesResponse)(nil), // 19: moth.billing.v1.RestorePurchasesResponse
+	(*timestamppb.Timestamp)(nil),    // 20: google.protobuf.Timestamp
 }
 var file_moth_billing_v1_billing_proto_depIdxs = []int32{
-	4,  // 0: moth.billing.v1.CustomerInfo.active_entitlements:type_name -> moth.billing.v1.Entitlement
-	5,  // 1: moth.billing.v1.CustomerInfo.subscriptions:type_name -> moth.billing.v1.ActiveSubscription
-	12, // 2: moth.billing.v1.Entitlement.expire_time:type_name -> google.protobuf.Timestamp
-	2,  // 3: moth.billing.v1.Entitlement.source:type_name -> moth.billing.v1.EntitlementSource
-	0,  // 4: moth.billing.v1.ActiveSubscription.store:type_name -> moth.billing.v1.Store
-	1,  // 5: moth.billing.v1.ActiveSubscription.status:type_name -> moth.billing.v1.SubscriptionStatus
-	12, // 6: moth.billing.v1.ActiveSubscription.current_period_end:type_name -> google.protobuf.Timestamp
-	3,  // 7: moth.billing.v1.GetCustomerInfoResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
-	0,  // 8: moth.billing.v1.SubmitPurchaseRequest.store:type_name -> moth.billing.v1.Store
-	3,  // 9: moth.billing.v1.SubmitPurchaseResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
-	0,  // 10: moth.billing.v1.RestorePurchasesRequest.store:type_name -> moth.billing.v1.Store
-	3,  // 11: moth.billing.v1.RestorePurchasesResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
-	6,  // 12: moth.billing.v1.BillingService.GetCustomerInfo:input_type -> moth.billing.v1.GetCustomerInfoRequest
-	8,  // 13: moth.billing.v1.BillingService.SubmitPurchase:input_type -> moth.billing.v1.SubmitPurchaseRequest
-	10, // 14: moth.billing.v1.BillingService.RestorePurchases:input_type -> moth.billing.v1.RestorePurchasesRequest
-	7,  // 15: moth.billing.v1.BillingService.GetCustomerInfo:output_type -> moth.billing.v1.GetCustomerInfoResponse
-	9,  // 16: moth.billing.v1.BillingService.SubmitPurchase:output_type -> moth.billing.v1.SubmitPurchaseResponse
-	11, // 17: moth.billing.v1.BillingService.RestorePurchases:output_type -> moth.billing.v1.RestorePurchasesResponse
-	15, // [15:18] is the sub-list for method output_type
-	12, // [12:15] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	5,  // 0: moth.billing.v1.Offering.products:type_name -> moth.billing.v1.OfferingProduct
+	0,  // 1: moth.billing.v1.Paywall.layout:type_name -> moth.billing.v1.PaywallLayout
+	4,  // 2: moth.billing.v1.GetOfferingsResponse.offering:type_name -> moth.billing.v1.Offering
+	6,  // 3: moth.billing.v1.GetPaywallResponse.paywall:type_name -> moth.billing.v1.Paywall
+	12, // 4: moth.billing.v1.CustomerInfo.active_entitlements:type_name -> moth.billing.v1.Entitlement
+	13, // 5: moth.billing.v1.CustomerInfo.subscriptions:type_name -> moth.billing.v1.ActiveSubscription
+	20, // 6: moth.billing.v1.Entitlement.expire_time:type_name -> google.protobuf.Timestamp
+	3,  // 7: moth.billing.v1.Entitlement.source:type_name -> moth.billing.v1.EntitlementSource
+	1,  // 8: moth.billing.v1.ActiveSubscription.store:type_name -> moth.billing.v1.Store
+	2,  // 9: moth.billing.v1.ActiveSubscription.status:type_name -> moth.billing.v1.SubscriptionStatus
+	20, // 10: moth.billing.v1.ActiveSubscription.current_period_end:type_name -> google.protobuf.Timestamp
+	11, // 11: moth.billing.v1.GetCustomerInfoResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
+	1,  // 12: moth.billing.v1.SubmitPurchaseRequest.store:type_name -> moth.billing.v1.Store
+	11, // 13: moth.billing.v1.SubmitPurchaseResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
+	1,  // 14: moth.billing.v1.RestorePurchasesRequest.store:type_name -> moth.billing.v1.Store
+	11, // 15: moth.billing.v1.RestorePurchasesResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
+	14, // 16: moth.billing.v1.BillingService.GetCustomerInfo:input_type -> moth.billing.v1.GetCustomerInfoRequest
+	16, // 17: moth.billing.v1.BillingService.SubmitPurchase:input_type -> moth.billing.v1.SubmitPurchaseRequest
+	18, // 18: moth.billing.v1.BillingService.RestorePurchases:input_type -> moth.billing.v1.RestorePurchasesRequest
+	7,  // 19: moth.billing.v1.BillingService.GetOfferings:input_type -> moth.billing.v1.GetOfferingsRequest
+	9,  // 20: moth.billing.v1.BillingService.GetPaywall:input_type -> moth.billing.v1.GetPaywallRequest
+	15, // 21: moth.billing.v1.BillingService.GetCustomerInfo:output_type -> moth.billing.v1.GetCustomerInfoResponse
+	17, // 22: moth.billing.v1.BillingService.SubmitPurchase:output_type -> moth.billing.v1.SubmitPurchaseResponse
+	19, // 23: moth.billing.v1.BillingService.RestorePurchases:output_type -> moth.billing.v1.RestorePurchasesResponse
+	8,  // 24: moth.billing.v1.BillingService.GetOfferings:output_type -> moth.billing.v1.GetOfferingsResponse
+	10, // 25: moth.billing.v1.BillingService.GetPaywall:output_type -> moth.billing.v1.GetPaywallResponse
+	21, // [21:26] is the sub-list for method output_type
+	16, // [16:21] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_moth_billing_v1_billing_proto_init() }
@@ -881,7 +1526,7 @@ func file_moth_billing_v1_billing_proto_init() {
 	if File_moth_billing_v1_billing_proto != nil {
 		return
 	}
-	file_moth_billing_v1_billing_proto_msgTypes[5].OneofWrappers = []any{
+	file_moth_billing_v1_billing_proto_msgTypes[12].OneofWrappers = []any{
 		(*SubmitPurchaseRequest_AppleJwsTransaction)(nil),
 		(*SubmitPurchaseRequest_GooglePurchaseToken)(nil),
 	}
@@ -890,8 +1535,8 @@ func file_moth_billing_v1_billing_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_billing_v1_billing_proto_rawDesc), len(file_moth_billing_v1_billing_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   9,
+			NumEnums:      4,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -279,6 +279,9 @@ func New(o Options) (*Server, error) {
 	themePath, themeHandler := adminv1connect.NewThemeServiceHandler(
 		adminrpc.NewThemeHandler(o.Store, s.uploads, auditor), adminInterceptors)
 	mux.Handle(themePath, themeHandler)
+	paywallPath, paywallHandler := adminv1connect.NewPaywallServiceHandler(
+		adminrpc.NewPaywallHandler(o.Store, auditor), adminInterceptors)
+	mux.Handle(paywallPath, paywallHandler)
 	analyticsPath, analyticsHandler := adminv1connect.NewAnalyticsServiceHandler(
 		adminrpc.NewAnalyticsHandler(o.Store, s.rollup, o.Now), adminInterceptors)
 	mux.Handle(analyticsPath, analyticsHandler)
@@ -329,6 +332,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.AdminAccountServiceName,
 		adminv1connect.InstanceSettingsServiceName,
 		adminv1connect.ThemeServiceName,
+		adminv1connect.PaywallServiceName,
 		adminv1connect.AnalyticsServiceName,
 		adminv1connect.AuditServiceName,
 		adminv1connect.MonetizationServiceName,

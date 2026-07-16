@@ -2,8 +2,13 @@ import 'package:flutter/widgets.dart';
 
 import '../auth_state.dart';
 import '../client.dart';
+import '../customer_info.dart';
+import '../offering.dart';
+import '../purchase.dart';
 import '../user.dart';
+import 'billing_adapter.dart';
 import 'oauth_adapter.dart';
+import 'purchase_flow.dart';
 
 /// Makes the moth auth state and client available to the widget tree.
 ///
@@ -24,7 +29,9 @@ class MothScope extends InheritedWidget {
     super.key,
     required this.client,
     required this.state,
+    this.customerInfo = const MothCustomerInfo.free(),
     this.oauthAdapter,
+    this.billingAdapter,
     required super.child,
   });
 
@@ -34,15 +41,35 @@ class MothScope extends InheritedWidget {
   /// The auth state at the time of the last change.
   final MothAuthState state;
 
+  /// The signed-in user's subscription state at the time of the last change.
+  /// Always valid — an empty [MothCustomerInfo] (the free `none` tier) for
+  /// free / signed-out users; never null, so gating code never special-cases
+  /// "never paid".
+  final MothCustomerInfo customerInfo;
+
   /// The adapter wired into [MothApp], consumed by [MothLoginScreen]'s
   /// provider buttons.
   final MothOAuthAdapter? oauthAdapter;
+
+  /// The adapter wired into [MothApp] that runs native store purchases,
+  /// consumed by [purchase] / [restorePurchases] and [MothPaywallScreen].
+  final MothBillingAdapter? billingAdapter;
 
   /// The signed-in user, or null while loading / signed out.
   MothUser? get user => switch (state) {
     MothSignedIn(:final user) => user,
     _ => null,
   };
+
+  /// Whether the signed-in user currently holds [entitlement] (e.g. `pro`).
+  /// The single question to ask when gating a feature.
+  bool hasEntitlement(String entitlement) =>
+      customerInfo.hasEntitlement(entitlement);
+
+  /// Subscription-state changes, for non-widget code (widgets rebuild via
+  /// [of]). Replays the current value, then every subsequent change.
+  Stream<MothCustomerInfo> get entitlementsChanged =>
+      client.customerInfoChanges;
 
   /// Signs out (server-side revocation is best effort; the local session
   /// always ends). With [allDevices] every session of the user is revoked.
@@ -62,6 +89,40 @@ class MothScope extends InheritedWidget {
   /// wraps this in a ready-made Material prompt.
   Future<void> deleteAccount({String password = ''}) =>
       client.deleteAccount(password: password);
+
+  /// Re-fetches the subscription state from the server; dependents rebuild
+  /// with the fresh entitlements. Throws when signed out.
+  Future<MothCustomerInfo> refreshCustomerInfo() => client.getCustomerInfo();
+
+  /// Buys [product]: runs the native store purchase through the
+  /// [billingAdapter], forwards the receipt to moth for validation, and — on
+  /// success — updates the subscription state so dependents rebuild. Returns a
+  /// typed [MothPurchaseResult]; never throws for the expected outcomes
+  /// (cancel, pending, already-owned, store/validation error).
+  Future<MothPurchaseResult> purchase(MothOfferingProduct product) async {
+    final adapter = billingAdapter;
+    if (adapter == null) {
+      return const MothPurchaseError(
+        'No MothBillingAdapter is configured: pass one to MothApp or '
+        'MothPaywallScreen.',
+      );
+    }
+    return runMothPurchase(client, adapter, product);
+  }
+
+  /// Re-links the store's existing purchases on this device to the current
+  /// user (new device, reinstall, account change) via the [billingAdapter],
+  /// then updates the subscription state. Throws [StateError] when no adapter
+  /// is configured.
+  Future<MothCustomerInfo> restorePurchases() async {
+    final adapter = billingAdapter;
+    if (adapter == null) {
+      throw StateError(
+        'moth: no MothBillingAdapter is configured for restorePurchases().',
+      );
+    }
+    return runMothRestore(client, adapter);
+  }
 
   /// The nearest scope, or null when there is none (no [MothApp] above).
   static MothScope? maybeOf(BuildContext context) =>
@@ -84,6 +145,8 @@ class MothScope extends InheritedWidget {
   @override
   bool updateShouldNotify(MothScope oldWidget) =>
       state != oldWidget.state ||
+      customerInfo != oldWidget.customerInfo ||
       client != oldWidget.client ||
-      oauthAdapter != oldWidget.oauthAdapter;
+      oauthAdapter != oldWidget.oauthAdapter ||
+      billingAdapter != oldWidget.billingAdapter;
 }

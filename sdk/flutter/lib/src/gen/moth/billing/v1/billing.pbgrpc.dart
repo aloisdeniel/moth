@@ -75,6 +75,39 @@ class BillingServiceClient extends $grpc.Client {
     return $createUnaryCall(_$restorePurchases, request, options: options);
   }
 
+  /// GetOfferings returns an offering's products for the paywall to display:
+  /// per product the catalog identifier, display name, store SKUs (so the SDK
+  /// can match the native store products), price/period metadata, trial/intro
+  /// descriptor, the entitlements it grants, sort order and the "most popular"
+  /// highlight flag. Unlike the three RPCs above this is publishable-key only
+  /// (no Bearer): a paywall renders before the user signs in.
+  $grpc.ResponseFuture<$0.GetOfferingsResponse> getOfferings(
+    $0.GetOfferingsRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getOfferings, request, options: options);
+  }
+
+  /// GetPaywall returns the project's public paywall configuration (copy,
+  /// benefit bullets, offering ref, layout, highlighted tier, legal links) with
+  /// a revision id, for the SDK's batteries-included paywall screen. Colors and
+  /// typography are NOT here — the paywall inherits them from the theme
+  /// (GetProjectConfig, milestone 06).
+  ///
+  /// Caching contract (identical to GetProjectConfig + theme): the client caches
+  /// the paywall keyed by revision_id and echoes it as
+  /// GetPaywallRequest.known_paywall_revision. When it still matches, the
+  /// response omits `paywall` and the client keeps rendering its cache
+  /// (stale-while-revalidate); when it differs (or was empty on first call),
+  /// `paywall` is present and the client replaces its cache. Publishable-key
+  /// only, like GetOfferings.
+  $grpc.ResponseFuture<$0.GetPaywallResponse> getPaywall(
+    $0.GetPaywallRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$getPaywall, request, options: options);
+  }
+
   // method descriptors
 
   static final _$getCustomerInfo =
@@ -92,6 +125,16 @@ class BillingServiceClient extends $grpc.Client {
       '/moth.billing.v1.BillingService/RestorePurchases',
       ($0.RestorePurchasesRequest value) => value.writeToBuffer(),
       $0.RestorePurchasesResponse.fromBuffer);
+  static final _$getOfferings =
+      $grpc.ClientMethod<$0.GetOfferingsRequest, $0.GetOfferingsResponse>(
+          '/moth.billing.v1.BillingService/GetOfferings',
+          ($0.GetOfferingsRequest value) => value.writeToBuffer(),
+          $0.GetOfferingsResponse.fromBuffer);
+  static final _$getPaywall =
+      $grpc.ClientMethod<$0.GetPaywallRequest, $0.GetPaywallResponse>(
+          '/moth.billing.v1.BillingService/GetPaywall',
+          ($0.GetPaywallRequest value) => value.writeToBuffer(),
+          $0.GetPaywallResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('moth.billing.v1.BillingService')
@@ -126,6 +169,22 @@ abstract class BillingServiceBase extends $grpc.Service {
         ($core.List<$core.int> value) =>
             $0.RestorePurchasesRequest.fromBuffer(value),
         ($0.RestorePurchasesResponse value) => value.writeToBuffer()));
+    $addMethod(
+        $grpc.ServiceMethod<$0.GetOfferingsRequest, $0.GetOfferingsResponse>(
+            'GetOfferings',
+            getOfferings_Pre,
+            false,
+            false,
+            ($core.List<$core.int> value) =>
+                $0.GetOfferingsRequest.fromBuffer(value),
+            ($0.GetOfferingsResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.GetPaywallRequest, $0.GetPaywallResponse>(
+        'GetPaywall',
+        getPaywall_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) => $0.GetPaywallRequest.fromBuffer(value),
+        ($0.GetPaywallResponse value) => value.writeToBuffer()));
   }
 
   $async.Future<$0.GetCustomerInfoResponse> getCustomerInfo_Pre(
@@ -154,4 +213,21 @@ abstract class BillingServiceBase extends $grpc.Service {
 
   $async.Future<$0.RestorePurchasesResponse> restorePurchases(
       $grpc.ServiceCall call, $0.RestorePurchasesRequest request);
+
+  $async.Future<$0.GetOfferingsResponse> getOfferings_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.GetOfferingsRequest> $request) async {
+    return getOfferings($call, await $request);
+  }
+
+  $async.Future<$0.GetOfferingsResponse> getOfferings(
+      $grpc.ServiceCall call, $0.GetOfferingsRequest request);
+
+  $async.Future<$0.GetPaywallResponse> getPaywall_Pre($grpc.ServiceCall $call,
+      $async.Future<$0.GetPaywallRequest> $request) async {
+    return getPaywall($call, await $request);
+  }
+
+  $async.Future<$0.GetPaywallResponse> getPaywall(
+      $grpc.ServiceCall call, $0.GetPaywallRequest request);
 }

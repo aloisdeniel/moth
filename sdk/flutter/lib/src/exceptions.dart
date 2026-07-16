@@ -116,6 +116,25 @@ class MothLastLoginMethod extends MothException {
   MothLastLoginMethod(super.message) : super(reason: 'LAST_LOGIN_METHOD');
 }
 
+/// The project has no store credentials configured, so purchases cannot be
+/// validated (`BILLING_NOT_CONFIGURED`).
+class MothBillingNotConfigured extends MothException {
+  MothBillingNotConfigured(super.message)
+    : super(reason: 'BILLING_NOT_CONFIGURED');
+}
+
+/// The purchase receipt / signed transaction was rejected by the store or is
+/// malformed (`INVALID_RECEIPT`).
+class MothInvalidReceipt extends MothException {
+  MothInvalidReceipt(super.message) : super(reason: 'INVALID_RECEIPT');
+}
+
+/// The store could not be reached to validate the purchase; retrying may
+/// succeed (`STORE_UNAVAILABLE`).
+class MothStoreUnavailable extends MothException {
+  MothStoreUnavailable(super.message) : super(reason: 'STORE_UNAVAILABLE');
+}
+
 /// The server could not be reached (connection, timeout, transport failure).
 /// The session is kept — retrying may succeed.
 class MothNetworkError extends MothException {

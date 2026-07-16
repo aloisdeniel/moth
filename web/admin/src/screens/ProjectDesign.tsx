@@ -31,18 +31,47 @@ import {
   type EditorTheme,
   type Palette,
 } from "../lib/theme";
+import { PaywallEditor } from "./ProjectPaywall";
 
-// ProjectDesign is the theme editor: the project's design system tokens on
-// the left, a live phone-framed replica of the SDK login screen on the
-// right, rendered from the current (unsaved) editor state.
+// ProjectDesign is the design tab: two editors sharing the project theme —
+// the login-screen theme editor (design tokens) and the paywall editor
+// (copy/layout that inherits those tokens). A section toggle switches between
+// them so only one live preview renders at a time.
 export function ProjectDesign({ project }: { project: Project }) {
   // The preview renders with the real embedded fonts, not local lookalikes.
   ensurePreviewFonts();
+  const [section, setSection] = useState<"login" | "paywall">("login");
   const theme = useQuery(ThemeService.method.getTheme, { projectId: project.id });
 
   if (theme.isPending) return <Loading />;
   if (theme.isError) return <ErrorNote message={errorMessage(theme.error)} />;
-  return <DesignEditor project={project} current={theme.data} />;
+  return (
+    <div className="stack-24">
+      <div className="seg" role="group" aria-label="Design section">
+        <button
+          type="button"
+          className="seg__btn"
+          aria-pressed={section === "login"}
+          onClick={() => setSection("login")}
+        >
+          Login screen
+        </button>
+        <button
+          type="button"
+          className="seg__btn"
+          aria-pressed={section === "paywall"}
+          onClick={() => setSection("paywall")}
+        >
+          Paywall
+        </button>
+      </div>
+      {section === "login" ? (
+        <DesignEditor project={project} current={theme.data} />
+      ) : (
+        <PaywallEditor project={project} theme={theme.data} />
+      )}
+    </div>
+  );
 }
 
 function DesignEditor({ project, current }: { project: Project; current: GetThemeResponse }) {

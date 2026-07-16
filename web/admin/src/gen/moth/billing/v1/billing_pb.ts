@@ -12,7 +12,289 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/billing/v1/billing.proto.
  */
 export const file_moth_billing_v1_billing: GenFile = /*@__PURE__*/
-  fileDesc("Ch1tb3RoL2JpbGxpbmcvdjEvYmlsbGluZy5wcm90bxIPbW90aC5iaWxsaW5nLnYxIoUBCgxDdXN0b21lckluZm8SOQoTYWN0aXZlX2VudGl0bGVtZW50cxgBIAMoCzIcLm1vdGguYmlsbGluZy52MS5FbnRpdGxlbWVudBI6Cg1zdWJzY3JpcHRpb25zGAIgAygLMiMubW90aC5iaWxsaW5nLnYxLkFjdGl2ZVN1YnNjcmlwdGlvbiKiAQoLRW50aXRsZW1lbnQSEgoKaWRlbnRpZmllchgBIAEoCRIvCgtleHBpcmVfdGltZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASMgoGc291cmNlGAMgASgOMiIubW90aC5iaWxsaW5nLnYxLkVudGl0bGVtZW50U291cmNlEhoKEnByb2R1Y3RfaWRlbnRpZmllchgEIAEoCSLsAQoSQWN0aXZlU3Vic2NyaXB0aW9uEhoKEnByb2R1Y3RfaWRlbnRpZmllchgBIAEoCRIlCgVzdG9yZRgCIAEoDjIWLm1vdGguYmlsbGluZy52MS5TdG9yZRIzCgZzdGF0dXMYAyABKA4yIy5tb3RoLmJpbGxpbmcudjEuU3Vic2NyaXB0aW9uU3RhdHVzEjYKEmN1cnJlbnRfcGVyaW9kX2VuZBgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASEgoKYXV0b19yZW5ldxgFIAEoCBISCgppc19zYW5kYm94GAYgASgIIhgKFkdldEN1c3RvbWVySW5mb1JlcXVlc3QiTwoXR2V0Q3VzdG9tZXJJbmZvUmVzcG9uc2USNAoNY3VzdG9tZXJfaW5mbxgBIAEoCzIdLm1vdGguYmlsbGluZy52MS5DdXN0b21lckluZm8ixwEKFVN1Ym1pdFB1cmNoYXNlUmVxdWVzdBIlCgVzdG9yZRgBIAEoDjIWLm1vdGguYmlsbGluZy52MS5TdG9yZRIaChJwcm9kdWN0X2lkZW50aWZpZXIYAiABKAkSHwoVYXBwbGVfandzX3RyYW5zYWN0aW9uGAMgASgJSAASHwoVZ29vZ2xlX3B1cmNoYXNlX3Rva2VuGAQgASgJSAASHgoWZ29vZ2xlX3N1YnNjcmlwdGlvbl9pZBgFIAEoCUIJCgdyZWNlaXB0Ik4KFlN1Ym1pdFB1cmNoYXNlUmVzcG9uc2USNAoNY3VzdG9tZXJfaW5mbxgBIAEoCzIdLm1vdGguYmlsbGluZy52MS5DdXN0b21lckluZm8iUgoXUmVzdG9yZVB1cmNoYXNlc1JlcXVlc3QSJQoFc3RvcmUYASABKA4yFi5tb3RoLmJpbGxpbmcudjEuU3RvcmUSEAoIcmVjZWlwdHMYAiADKAkiUAoYUmVzdG9yZVB1cmNoYXNlc1Jlc3BvbnNlEjQKDWN1c3RvbWVyX2luZm8YASABKAsyHS5tb3RoLmJpbGxpbmcudjEuQ3VzdG9tZXJJbmZvKkEKBVN0b3JlEhUKEVNUT1JFX1VOU1BFQ0lGSUVEEAASDwoLU1RPUkVfQVBQTEUQARIQCgxTVE9SRV9HT09HTEUQAiqwAgoSU3Vic2NyaXB0aW9uU3RhdHVzEiMKH1NVQlNDUklQVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIeChpTVUJTQ1JJUFRJT05fU1RBVFVTX0FDVElWRRABEiAKHFNVQlNDUklQVElPTl9TVEFUVVNfVFJJQUxJTkcQAhInCiNTVUJTQ1JJUFRJT05fU1RBVFVTX0lOX0dSQUNFX1BFUklPRBADEigKJFNVQlNDUklQVElPTl9TVEFUVVNfSU5fQklMTElOR19SRVRSWRAEEh4KGlNVQlNDUklQVElPTl9TVEFUVVNfUEFVU0VEEAUSHwobU1VCU0NSSVBUSU9OX1NUQVRVU19FWFBJUkVEEAYSHwobU1VCU0NSSVBUSU9OX1NUQVRVU19SRVZPS0VEEAcqkAEKEUVudGl0bGVtZW50U291cmNlEiIKHkVOVElUTEVNRU5UX1NPVVJDRV9VTlNQRUNJRklFRBAAEhwKGEVOVElUTEVNRU5UX1NPVVJDRV9TVE9SRRABEhwKGEVOVElUTEVNRU5UX1NPVVJDRV9HUkFOVBACEhsKF0VOVElUTEVNRU5UX1NPVVJDRV9OT05FEAMywgIKDkJpbGxpbmdTZXJ2aWNlEmQKD0dldEN1c3RvbWVySW5mbxInLm1vdGguYmlsbGluZy52MS5HZXRDdXN0b21lckluZm9SZXF1ZXN0GigubW90aC5iaWxsaW5nLnYxLkdldEN1c3RvbWVySW5mb1Jlc3BvbnNlEmEKDlN1Ym1pdFB1cmNoYXNlEiYubW90aC5iaWxsaW5nLnYxLlN1Ym1pdFB1cmNoYXNlUmVxdWVzdBonLm1vdGguYmlsbGluZy52MS5TdWJtaXRQdXJjaGFzZVJlc3BvbnNlEmcKEFJlc3RvcmVQdXJjaGFzZXMSKC5tb3RoLmJpbGxpbmcudjEuUmVzdG9yZVB1cmNoYXNlc1JlcXVlc3QaKS5tb3RoLmJpbGxpbmcudjEuUmVzdG9yZVB1cmNoYXNlc1Jlc3BvbnNlQjtaOWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9iaWxsaW5nL3YxO2JpbGxpbmd2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Ch1tb3RoL2JpbGxpbmcvdjEvYmlsbGluZy5wcm90bxIPbW90aC5iaWxsaW5nLnYxImYKCE9mZmVyaW5nEhIKCmlkZW50aWZpZXIYASABKAkSEgoKaXNfZGVmYXVsdBgCIAEoCBIyCghwcm9kdWN0cxgDIAMoCzIgLm1vdGguYmlsbGluZy52MS5PZmZlcmluZ1Byb2R1Y3QixQIKD09mZmVyaW5nUHJvZHVjdBISCgppZGVudGlmaWVyGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIYChBhcHBsZV9wcm9kdWN0X2lkGAMgASgJEhkKEWdvb2dsZV9wcm9kdWN0X2lkGAQgASgJEhYKDmJpbGxpbmdfcGVyaW9kGAUgASgJEhsKE3ByaWNlX2Ftb3VudF9taWNyb3MYBiABKAMSEAoIY3VycmVuY3kYByABKAkSFAoMdHJpYWxfcGVyaW9kGAggASgJEiEKGWludHJvX3ByaWNlX2Ftb3VudF9taWNyb3MYCSABKAMSFAoMaW50cm9fcGVyaW9kGAogASgJEhQKDGVudGl0bGVtZW50cxgLIAMoCRISCgpzb3J0X29yZGVyGAwgASgFEhMKC2hpZ2hsaWdodGVkGA0gASgIIuYBCgdQYXl3YWxsEhMKC3JldmlzaW9uX2lkGAEgASgJEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEiYKHmhpZ2hsaWdodGVkX3Byb2R1Y3RfaWRlbnRpZmllchgGIAEoCRIuCgZsYXlvdXQYByABKA4yHi5tb3RoLmJpbGxpbmcudjEuUGF5d2FsbExheW91dBIRCgl0ZXJtc191cmwYCCABKAkSEwoLcHJpdmFjeV91cmwYCSABKAkiJwoTR2V0T2ZmZXJpbmdzUmVxdWVzdBIQCghvZmZlcmluZxgBIAEoCSJDChRHZXRPZmZlcmluZ3NSZXNwb25zZRIrCghvZmZlcmluZxgBIAEoCzIZLm1vdGguYmlsbGluZy52MS5PZmZlcmluZyIzChFHZXRQYXl3YWxsUmVxdWVzdBIeChZrbm93bl9wYXl3YWxsX3JldmlzaW9uGAEgASgJIj8KEkdldFBheXdhbGxSZXNwb25zZRIpCgdwYXl3YWxsGAEgASgLMhgubW90aC5iaWxsaW5nLnYxLlBheXdhbGwihQEKDEN1c3RvbWVySW5mbxI5ChNhY3RpdmVfZW50aXRsZW1lbnRzGAEgAygLMhwubW90aC5iaWxsaW5nLnYxLkVudGl0bGVtZW50EjoKDXN1YnNjcmlwdGlvbnMYAiADKAsyIy5tb3RoLmJpbGxpbmcudjEuQWN0aXZlU3Vic2NyaXB0aW9uIqIBCgtFbnRpdGxlbWVudBISCgppZGVudGlmaWVyGAEgASgJEi8KC2V4cGlyZV90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIyCgZzb3VyY2UYAyABKA4yIi5tb3RoLmJpbGxpbmcudjEuRW50aXRsZW1lbnRTb3VyY2USGgoScHJvZHVjdF9pZGVudGlmaWVyGAQgASgJIuwBChJBY3RpdmVTdWJzY3JpcHRpb24SGgoScHJvZHVjdF9pZGVudGlmaWVyGAEgASgJEiUKBXN0b3JlGAIgASgOMhYubW90aC5iaWxsaW5nLnYxLlN0b3JlEjMKBnN0YXR1cxgDIAEoDjIjLm1vdGguYmlsbGluZy52MS5TdWJzY3JpcHRpb25TdGF0dXMSNgoSY3VycmVudF9wZXJpb2RfZW5kGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBISCgphdXRvX3JlbmV3GAUgASgIEhIKCmlzX3NhbmRib3gYBiABKAgiGAoWR2V0Q3VzdG9tZXJJbmZvUmVxdWVzdCJPChdHZXRDdXN0b21lckluZm9SZXNwb25zZRI0Cg1jdXN0b21lcl9pbmZvGAEgASgLMh0ubW90aC5iaWxsaW5nLnYxLkN1c3RvbWVySW5mbyLHAQoVU3VibWl0UHVyY2hhc2VSZXF1ZXN0EiUKBXN0b3JlGAEgASgOMhYubW90aC5iaWxsaW5nLnYxLlN0b3JlEhoKEnByb2R1Y3RfaWRlbnRpZmllchgCIAEoCRIfChVhcHBsZV9qd3NfdHJhbnNhY3Rpb24YAyABKAlIABIfChVnb29nbGVfcHVyY2hhc2VfdG9rZW4YBCABKAlIABIeChZnb29nbGVfc3Vic2NyaXB0aW9uX2lkGAUgASgJQgkKB3JlY2VpcHQiTgoWU3VibWl0UHVyY2hhc2VSZXNwb25zZRI0Cg1jdXN0b21lcl9pbmZvGAEgASgLMh0ubW90aC5iaWxsaW5nLnYxLkN1c3RvbWVySW5mbyJSChdSZXN0b3JlUHVyY2hhc2VzUmVxdWVzdBIlCgVzdG9yZRgBIAEoDjIWLm1vdGguYmlsbGluZy52MS5TdG9yZRIQCghyZWNlaXB0cxgCIAMoCSJQChhSZXN0b3JlUHVyY2hhc2VzUmVzcG9uc2USNAoNY3VzdG9tZXJfaW5mbxgBIAEoCzIdLm1vdGguYmlsbGluZy52MS5DdXN0b21lckluZm8qfgoNUGF5d2FsbExheW91dBIeChpQQVlXQUxMX0xBWU9VVF9VTlNQRUNJRklFRBAAEhgKFFBBWVdBTExfTEFZT1VUX1RJTEVTEAESFwoTUEFZV0FMTF9MQVlPVVRfTElTVBACEhoKFlBBWVdBTExfTEFZT1VUX0NPTVBBQ1QQAypBCgVTdG9yZRIVChFTVE9SRV9VTlNQRUNJRklFRBAAEg8KC1NUT1JFX0FQUExFEAESEAoMU1RPUkVfR09PR0xFEAIqsAIKElN1YnNjcmlwdGlvblN0YXR1cxIjCh9TVUJTQ1JJUFRJT05fU1RBVFVTX1VOU1BFQ0lGSUVEEAASHgoaU1VCU0NSSVBUSU9OX1NUQVRVU19BQ1RJVkUQARIgChxTVUJTQ1JJUFRJT05fU1RBVFVTX1RSSUFMSU5HEAISJwojU1VCU0NSSVBUSU9OX1NUQVRVU19JTl9HUkFDRV9QRVJJT0QQAxIoCiRTVUJTQ1JJUFRJT05fU1RBVFVTX0lOX0JJTExJTkdfUkVUUlkQBBIeChpTVUJTQ1JJUFRJT05fU1RBVFVTX1BBVVNFRBAFEh8KG1NVQlNDUklQVElPTl9TVEFUVVNfRVhQSVJFRBAGEh8KG1NVQlNDUklQVElPTl9TVEFUVVNfUkVWT0tFRBAHKpABChFFbnRpdGxlbWVudFNvdXJjZRIiCh5FTlRJVExFTUVOVF9TT1VSQ0VfVU5TUEVDSUZJRUQQABIcChhFTlRJVExFTUVOVF9TT1VSQ0VfU1RPUkUQARIcChhFTlRJVExFTUVOVF9TT1VSQ0VfR1JBTlQQAhIbChdFTlRJVExFTUVOVF9TT1VSQ0VfTk9ORRADMvYDCg5CaWxsaW5nU2VydmljZRJkCg9HZXRDdXN0b21lckluZm8SJy5tb3RoLmJpbGxpbmcudjEuR2V0Q3VzdG9tZXJJbmZvUmVxdWVzdBooLm1vdGguYmlsbGluZy52MS5HZXRDdXN0b21lckluZm9SZXNwb25zZRJhCg5TdWJtaXRQdXJjaGFzZRImLm1vdGguYmlsbGluZy52MS5TdWJtaXRQdXJjaGFzZVJlcXVlc3QaJy5tb3RoLmJpbGxpbmcudjEuU3VibWl0UHVyY2hhc2VSZXNwb25zZRJnChBSZXN0b3JlUHVyY2hhc2VzEigubW90aC5iaWxsaW5nLnYxLlJlc3RvcmVQdXJjaGFzZXNSZXF1ZXN0GikubW90aC5iaWxsaW5nLnYxLlJlc3RvcmVQdXJjaGFzZXNSZXNwb25zZRJbCgxHZXRPZmZlcmluZ3MSJC5tb3RoLmJpbGxpbmcudjEuR2V0T2ZmZXJpbmdzUmVxdWVzdBolLm1vdGguYmlsbGluZy52MS5HZXRPZmZlcmluZ3NSZXNwb25zZRJVCgpHZXRQYXl3YWxsEiIubW90aC5iaWxsaW5nLnYxLkdldFBheXdhbGxSZXF1ZXN0GiMubW90aC5iaWxsaW5nLnYxLkdldFBheXdhbGxSZXNwb25zZUI7WjlnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYmlsbGluZy92MTtiaWxsaW5ndjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+
+/**
+ * Offering is the ordered set of products a paywall presents — the products
+ * sharing an `offering` tag, in sort order. Every project has a default
+ * offering ("default").
+ *
+ * @generated from message moth.billing.v1.Offering
+ */
+export type Offering = Message<"moth.billing.v1.Offering"> & {
+  /**
+   * Offering tag; "default" for the project's default offering.
+   *
+   * @generated from field: string identifier = 1;
+   */
+  identifier: string;
+
+  /**
+   * @generated from field: bool is_default = 2;
+   */
+  isDefault: boolean;
+
+  /**
+   * The products to display, in paywall order.
+   *
+   * @generated from field: repeated moth.billing.v1.OfferingProduct products = 3;
+   */
+  products: OfferingProduct[];
+};
+
+/**
+ * Describes the message moth.billing.v1.Offering.
+ * Use `create(OfferingSchema)` to create a new message.
+ */
+export const OfferingSchema: GenMessage<Offering> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 0);
+
+/**
+ * OfferingProduct is one purchasable tier as the paywall needs it: enough to
+ * render a card and match the native store product. Price/period are display
+ * + analytics metadata; the native store read stays authoritative for the
+ * localized price actually charged.
+ *
+ * @generated from message moth.billing.v1.OfferingProduct
+ */
+export type OfferingProduct = Message<"moth.billing.v1.OfferingProduct"> & {
+  /**
+   * Stable moth catalog identifier (e.g. "monthly"); the app never gates on
+   * this — it gates on entitlements — but the SDK uses it to drive purchases.
+   *
+   * @generated from field: string identifier = 1;
+   */
+  identifier: string;
+
+  /**
+   * @generated from field: string display_name = 2;
+   */
+  displayName: string;
+
+  /**
+   * Store SKUs so the SDK can pair this tier with the native store product;
+   * either may be empty when the tier ships on one store only.
+   *
+   * @generated from field: string apple_product_id = 3;
+   */
+  appleProductId: string;
+
+  /**
+   * @generated from field: string google_product_id = 4;
+   */
+  googleProductId: string;
+
+  /**
+   * @generated from field: string billing_period = 5;
+   */
+  billingPeriod: string;
+
+  /**
+   * @generated from field: int64 price_amount_micros = 6;
+   */
+  priceAmountMicros: bigint;
+
+  /**
+   * @generated from field: string currency = 7;
+   */
+  currency: string;
+
+  /**
+   * Trial/intro descriptor (display + analytics only).
+   *
+   * @generated from field: string trial_period = 8;
+   */
+  trialPeriod: string;
+
+  /**
+   * @generated from field: int64 intro_price_amount_micros = 9;
+   */
+  introPriceAmountMicros: bigint;
+
+  /**
+   * @generated from field: string intro_period = 10;
+   */
+  introPeriod: string;
+
+  /**
+   * The stable entitlement identifiers this product grants while active (e.g.
+   * "pro"), so the paywall can label what a tier unlocks.
+   *
+   * @generated from field: repeated string entitlements = 11;
+   */
+  entitlements: string[];
+
+  /**
+   * @generated from field: int32 sort_order = 12;
+   */
+  sortOrder: number;
+
+  /**
+   * Whether this tier is the paywall's highlighted "most popular" tier (from
+   * the paywall config's highlighted_product_identifier).
+   *
+   * @generated from field: bool highlighted = 13;
+   */
+  highlighted: boolean;
+};
+
+/**
+ * Describes the message moth.billing.v1.OfferingProduct.
+ * Use `create(OfferingProductSchema)` to create a new message.
+ */
+export const OfferingProductSchema: GenMessage<OfferingProduct> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 1);
+
+/**
+ * Paywall is the public, render-ready paywall configuration. Copy and layout
+ * only — colors/typography inherit from the theme.
+ *
+ * @generated from message moth.billing.v1.Paywall
+ */
+export type Paywall = Message<"moth.billing.v1.Paywall"> & {
+  /**
+   * Identifies this version of the paywall config; changes on every admin
+   * edit. Cache the paywall keyed by this value and echo it as
+   * GetPaywallRequest.known_paywall_revision.
+   *
+   * @generated from field: string revision_id = 1;
+   */
+  revisionId: string;
+
+  /**
+   * @generated from field: string headline = 2;
+   */
+  headline: string;
+
+  /**
+   * @generated from field: string subtitle = 3;
+   */
+  subtitle: string;
+
+  /**
+   * Feature/benefit bullets, in display order.
+   *
+   * @generated from field: repeated string benefits = 4;
+   */
+  benefits: string[];
+
+  /**
+   * The offering tag whose products this paywall lists; pass it to
+   * GetOfferings.offering. Empty selects the default offering.
+   *
+   * @generated from field: string offering = 5;
+   */
+  offering: string;
+
+  /**
+   * The product identifier to render as "most popular"; empty for none.
+   *
+   * @generated from field: string highlighted_product_identifier = 6;
+   */
+  highlightedProductIdentifier: string;
+
+  /**
+   * @generated from field: moth.billing.v1.PaywallLayout layout = 7;
+   */
+  layout: PaywallLayout;
+
+  /**
+   * Optional legal links rendered in the paywall footer.
+   *
+   * @generated from field: string terms_url = 8;
+   */
+  termsUrl: string;
+
+  /**
+   * @generated from field: string privacy_url = 9;
+   */
+  privacyUrl: string;
+};
+
+/**
+ * Describes the message moth.billing.v1.Paywall.
+ * Use `create(PaywallSchema)` to create a new message.
+ */
+export const PaywallSchema: GenMessage<Paywall> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 2);
+
+/**
+ * @generated from message moth.billing.v1.GetOfferingsRequest
+ */
+export type GetOfferingsRequest = Message<"moth.billing.v1.GetOfferingsRequest"> & {
+  /**
+   * Offering tag; empty selects the project's default offering.
+   *
+   * @generated from field: string offering = 1;
+   */
+  offering: string;
+};
+
+/**
+ * Describes the message moth.billing.v1.GetOfferingsRequest.
+ * Use `create(GetOfferingsRequestSchema)` to create a new message.
+ */
+export const GetOfferingsRequestSchema: GenMessage<GetOfferingsRequest> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 3);
+
+/**
+ * @generated from message moth.billing.v1.GetOfferingsResponse
+ */
+export type GetOfferingsResponse = Message<"moth.billing.v1.GetOfferingsResponse"> & {
+  /**
+   * @generated from field: moth.billing.v1.Offering offering = 1;
+   */
+  offering?: Offering | undefined;
+};
+
+/**
+ * Describes the message moth.billing.v1.GetOfferingsResponse.
+ * Use `create(GetOfferingsResponseSchema)` to create a new message.
+ */
+export const GetOfferingsResponseSchema: GenMessage<GetOfferingsResponse> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 4);
+
+/**
+ * @generated from message moth.billing.v1.GetPaywallRequest
+ */
+export type GetPaywallRequest = Message<"moth.billing.v1.GetPaywallRequest"> & {
+  /**
+   * The revision_id of the paywall the client has cached (empty on first
+   * call). When it still matches the current revision, the response omits
+   * `paywall`; see the caching contract on GetPaywall.
+   *
+   * @generated from field: string known_paywall_revision = 1;
+   */
+  knownPaywallRevision: string;
+};
+
+/**
+ * Describes the message moth.billing.v1.GetPaywallRequest.
+ * Use `create(GetPaywallRequestSchema)` to create a new message.
+ */
+export const GetPaywallRequestSchema: GenMessage<GetPaywallRequest> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 5);
+
+/**
+ * @generated from message moth.billing.v1.GetPaywallResponse
+ */
+export type GetPaywallResponse = Message<"moth.billing.v1.GetPaywallResponse"> & {
+  /**
+   * Omitted when GetPaywallRequest.known_paywall_revision matches the current
+   * revision; present otherwise (including for projects on the built-in
+   * default paywall config).
+   *
+   * @generated from field: moth.billing.v1.Paywall paywall = 1;
+   */
+  paywall?: Paywall | undefined;
+};
+
+/**
+ * Describes the message moth.billing.v1.GetPaywallResponse.
+ * Use `create(GetPaywallResponseSchema)` to create a new message.
+ */
+export const GetPaywallResponseSchema: GenMessage<GetPaywallResponse> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 6);
 
 /**
  * CustomerInfo is the complete subscription picture for one user. Apps gate
@@ -44,7 +326,7 @@ export type CustomerInfo = Message<"moth.billing.v1.CustomerInfo"> & {
  * Use `create(CustomerInfoSchema)` to create a new message.
  */
 export const CustomerInfoSchema: GenMessage<CustomerInfo> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 0);
+  messageDesc(file_moth_billing_v1_billing, 7);
 
 /**
  * Entitlement is one active capability the user holds.
@@ -88,7 +370,7 @@ export type Entitlement = Message<"moth.billing.v1.Entitlement"> & {
  * Use `create(EntitlementSchema)` to create a new message.
  */
 export const EntitlementSchema: GenMessage<Entitlement> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 1);
+  messageDesc(file_moth_billing_v1_billing, 8);
 
 /**
  * ActiveSubscription is one of the user's store subscriptions.
@@ -139,7 +421,7 @@ export type ActiveSubscription = Message<"moth.billing.v1.ActiveSubscription"> &
  * Use `create(ActiveSubscriptionSchema)` to create a new message.
  */
 export const ActiveSubscriptionSchema: GenMessage<ActiveSubscription> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 2);
+  messageDesc(file_moth_billing_v1_billing, 9);
 
 /**
  * @generated from message moth.billing.v1.GetCustomerInfoRequest
@@ -152,7 +434,7 @@ export type GetCustomerInfoRequest = Message<"moth.billing.v1.GetCustomerInfoReq
  * Use `create(GetCustomerInfoRequestSchema)` to create a new message.
  */
 export const GetCustomerInfoRequestSchema: GenMessage<GetCustomerInfoRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 3);
+  messageDesc(file_moth_billing_v1_billing, 10);
 
 /**
  * @generated from message moth.billing.v1.GetCustomerInfoResponse
@@ -169,7 +451,7 @@ export type GetCustomerInfoResponse = Message<"moth.billing.v1.GetCustomerInfoRe
  * Use `create(GetCustomerInfoResponseSchema)` to create a new message.
  */
 export const GetCustomerInfoResponseSchema: GenMessage<GetCustomerInfoResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 4);
+  messageDesc(file_moth_billing_v1_billing, 11);
 
 /**
  * @generated from message moth.billing.v1.SubmitPurchaseRequest
@@ -223,7 +505,7 @@ export type SubmitPurchaseRequest = Message<"moth.billing.v1.SubmitPurchaseReque
  * Use `create(SubmitPurchaseRequestSchema)` to create a new message.
  */
 export const SubmitPurchaseRequestSchema: GenMessage<SubmitPurchaseRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 5);
+  messageDesc(file_moth_billing_v1_billing, 12);
 
 /**
  * @generated from message moth.billing.v1.SubmitPurchaseResponse
@@ -240,7 +522,7 @@ export type SubmitPurchaseResponse = Message<"moth.billing.v1.SubmitPurchaseResp
  * Use `create(SubmitPurchaseResponseSchema)` to create a new message.
  */
 export const SubmitPurchaseResponseSchema: GenMessage<SubmitPurchaseResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 6);
+  messageDesc(file_moth_billing_v1_billing, 13);
 
 /**
  * @generated from message moth.billing.v1.RestorePurchasesRequest
@@ -265,7 +547,7 @@ export type RestorePurchasesRequest = Message<"moth.billing.v1.RestorePurchasesR
  * Use `create(RestorePurchasesRequestSchema)` to create a new message.
  */
 export const RestorePurchasesRequestSchema: GenMessage<RestorePurchasesRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 7);
+  messageDesc(file_moth_billing_v1_billing, 14);
 
 /**
  * @generated from message moth.billing.v1.RestorePurchasesResponse
@@ -282,7 +564,47 @@ export type RestorePurchasesResponse = Message<"moth.billing.v1.RestorePurchases
  * Use `create(RestorePurchasesResponseSchema)` to create a new message.
  */
 export const RestorePurchasesResponseSchema: GenMessage<RestorePurchasesResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 8);
+  messageDesc(file_moth_billing_v1_billing, 15);
+
+/**
+ * PaywallLayout is the rendering variant the paywall screen uses; the token
+ * space (colors/spacing/radius) always comes from the theme.
+ *
+ * @generated from enum moth.billing.v1.PaywallLayout
+ */
+export enum PaywallLayout {
+  /**
+   * @generated from enum value: PAYWALL_LAYOUT_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * One card per tier, side by side (the default).
+   *
+   * @generated from enum value: PAYWALL_LAYOUT_TILES = 1;
+   */
+  TILES = 1,
+
+  /**
+   * Tiers stacked as full-width rows.
+   *
+   * @generated from enum value: PAYWALL_LAYOUT_LIST = 2;
+   */
+  LIST = 2,
+
+  /**
+   * A single selected tier with a period toggle.
+   *
+   * @generated from enum value: PAYWALL_LAYOUT_COMPACT = 3;
+   */
+  COMPACT = 3,
+}
+
+/**
+ * Describes the enum moth.billing.v1.PaywallLayout.
+ */
+export const PaywallLayoutSchema: GenEnum<PaywallLayout> = /*@__PURE__*/
+  enumDesc(file_moth_billing_v1_billing, 0);
 
 /**
  * Store identifies which app store a purchase or subscription belongs to.
@@ -310,7 +632,7 @@ export enum Store {
  * Describes the enum moth.billing.v1.Store.
  */
 export const StoreSchema: GenEnum<Store> = /*@__PURE__*/
-  enumDesc(file_moth_billing_v1_billing, 0);
+  enumDesc(file_moth_billing_v1_billing, 1);
 
 /**
  * SubscriptionStatus mirrors the store's renewal state, mapped to a small set
@@ -367,7 +689,7 @@ export enum SubscriptionStatus {
  * Describes the enum moth.billing.v1.SubscriptionStatus.
  */
 export const SubscriptionStatusSchema: GenEnum<SubscriptionStatus> = /*@__PURE__*/
-  enumDesc(file_moth_billing_v1_billing, 1);
+  enumDesc(file_moth_billing_v1_billing, 2);
 
 /**
  * EntitlementSource explains why an entitlement is active.
@@ -407,7 +729,7 @@ export enum EntitlementSource {
  * Describes the enum moth.billing.v1.EntitlementSource.
  */
 export const EntitlementSourceSchema: GenEnum<EntitlementSource> = /*@__PURE__*/
-  enumDesc(file_moth_billing_v1_billing, 2);
+  enumDesc(file_moth_billing_v1_billing, 3);
 
 /**
  * BillingService is the client-facing subscription API, consumed by the moth
@@ -462,6 +784,43 @@ export const BillingService: GenService<{
     methodKind: "unary";
     input: typeof RestorePurchasesRequestSchema;
     output: typeof RestorePurchasesResponseSchema;
+  },
+  /**
+   * GetOfferings returns an offering's products for the paywall to display:
+   * per product the catalog identifier, display name, store SKUs (so the SDK
+   * can match the native store products), price/period metadata, trial/intro
+   * descriptor, the entitlements it grants, sort order and the "most popular"
+   * highlight flag. Unlike the three RPCs above this is publishable-key only
+   * (no Bearer): a paywall renders before the user signs in.
+   *
+   * @generated from rpc moth.billing.v1.BillingService.GetOfferings
+   */
+  getOfferings: {
+    methodKind: "unary";
+    input: typeof GetOfferingsRequestSchema;
+    output: typeof GetOfferingsResponseSchema;
+  },
+  /**
+   * GetPaywall returns the project's public paywall configuration (copy,
+   * benefit bullets, offering ref, layout, highlighted tier, legal links) with
+   * a revision id, for the SDK's batteries-included paywall screen. Colors and
+   * typography are NOT here — the paywall inherits them from the theme
+   * (GetProjectConfig, milestone 06).
+   *
+   * Caching contract (identical to GetProjectConfig + theme): the client caches
+   * the paywall keyed by revision_id and echoes it as
+   * GetPaywallRequest.known_paywall_revision. When it still matches, the
+   * response omits `paywall` and the client keeps rendering its cache
+   * (stale-while-revalidate); when it differs (or was empty on first call),
+   * `paywall` is present and the client replaces its cache. Publishable-key
+   * only, like GetOfferings.
+   *
+   * @generated from rpc moth.billing.v1.BillingService.GetPaywall
+   */
+  getPaywall: {
+    methodKind: "unary";
+    input: typeof GetPaywallRequestSchema;
+    output: typeof GetPaywallResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_moth_billing_v1_billing, 0);

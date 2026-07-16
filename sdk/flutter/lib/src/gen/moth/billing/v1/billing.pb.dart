@@ -12,6 +12,7 @@
 
 import 'dart:core' as $core;
 
+import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 import 'package:protobuf/well_known_types/google/protobuf/timestamp.pb.dart'
     as $1;
@@ -21,6 +22,681 @@ import 'billing.pbenum.dart';
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
 
 export 'billing.pbenum.dart';
+
+/// Offering is the ordered set of products a paywall presents — the products
+/// sharing an `offering` tag, in sort order. Every project has a default
+/// offering ("default").
+class Offering extends $pb.GeneratedMessage {
+  factory Offering({
+    $core.String? identifier,
+    $core.bool? isDefault,
+    $core.Iterable<OfferingProduct>? products,
+  }) {
+    final result = create();
+    if (identifier != null) result.identifier = identifier;
+    if (isDefault != null) result.isDefault = isDefault;
+    if (products != null) result.products.addAll(products);
+    return result;
+  }
+
+  Offering._();
+
+  factory Offering.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Offering.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Offering',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'identifier')
+    ..aOB(2, _omitFieldNames ? '' : 'isDefault')
+    ..pPM<OfferingProduct>(3, _omitFieldNames ? '' : 'products',
+        subBuilder: OfferingProduct.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Offering clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Offering copyWith(void Function(Offering) updates) =>
+      super.copyWith((message) => updates(message as Offering)) as Offering;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Offering create() => Offering._();
+  @$core.override
+  Offering createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Offering getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Offering>(create);
+  static Offering? _defaultInstance;
+
+  /// Offering tag; "default" for the project's default offering.
+  @$pb.TagNumber(1)
+  $core.String get identifier => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set identifier($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasIdentifier() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearIdentifier() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.bool get isDefault => $_getBF(1);
+  @$pb.TagNumber(2)
+  set isDefault($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasIsDefault() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearIsDefault() => $_clearField(2);
+
+  /// The products to display, in paywall order.
+  @$pb.TagNumber(3)
+  $pb.PbList<OfferingProduct> get products => $_getList(2);
+}
+
+/// OfferingProduct is one purchasable tier as the paywall needs it: enough to
+/// render a card and match the native store product. Price/period are display
+/// + analytics metadata; the native store read stays authoritative for the
+/// localized price actually charged.
+class OfferingProduct extends $pb.GeneratedMessage {
+  factory OfferingProduct({
+    $core.String? identifier,
+    $core.String? displayName,
+    $core.String? appleProductId,
+    $core.String? googleProductId,
+    $core.String? billingPeriod,
+    $fixnum.Int64? priceAmountMicros,
+    $core.String? currency,
+    $core.String? trialPeriod,
+    $fixnum.Int64? introPriceAmountMicros,
+    $core.String? introPeriod,
+    $core.Iterable<$core.String>? entitlements,
+    $core.int? sortOrder,
+    $core.bool? highlighted,
+  }) {
+    final result = create();
+    if (identifier != null) result.identifier = identifier;
+    if (displayName != null) result.displayName = displayName;
+    if (appleProductId != null) result.appleProductId = appleProductId;
+    if (googleProductId != null) result.googleProductId = googleProductId;
+    if (billingPeriod != null) result.billingPeriod = billingPeriod;
+    if (priceAmountMicros != null) result.priceAmountMicros = priceAmountMicros;
+    if (currency != null) result.currency = currency;
+    if (trialPeriod != null) result.trialPeriod = trialPeriod;
+    if (introPriceAmountMicros != null)
+      result.introPriceAmountMicros = introPriceAmountMicros;
+    if (introPeriod != null) result.introPeriod = introPeriod;
+    if (entitlements != null) result.entitlements.addAll(entitlements);
+    if (sortOrder != null) result.sortOrder = sortOrder;
+    if (highlighted != null) result.highlighted = highlighted;
+    return result;
+  }
+
+  OfferingProduct._();
+
+  factory OfferingProduct.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory OfferingProduct.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'OfferingProduct',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'identifier')
+    ..aOS(2, _omitFieldNames ? '' : 'displayName')
+    ..aOS(3, _omitFieldNames ? '' : 'appleProductId')
+    ..aOS(4, _omitFieldNames ? '' : 'googleProductId')
+    ..aOS(5, _omitFieldNames ? '' : 'billingPeriod')
+    ..aInt64(6, _omitFieldNames ? '' : 'priceAmountMicros')
+    ..aOS(7, _omitFieldNames ? '' : 'currency')
+    ..aOS(8, _omitFieldNames ? '' : 'trialPeriod')
+    ..aInt64(9, _omitFieldNames ? '' : 'introPriceAmountMicros')
+    ..aOS(10, _omitFieldNames ? '' : 'introPeriod')
+    ..pPS(11, _omitFieldNames ? '' : 'entitlements')
+    ..aI(12, _omitFieldNames ? '' : 'sortOrder')
+    ..aOB(13, _omitFieldNames ? '' : 'highlighted')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  OfferingProduct clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  OfferingProduct copyWith(void Function(OfferingProduct) updates) =>
+      super.copyWith((message) => updates(message as OfferingProduct))
+          as OfferingProduct;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static OfferingProduct create() => OfferingProduct._();
+  @$core.override
+  OfferingProduct createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static OfferingProduct getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<OfferingProduct>(create);
+  static OfferingProduct? _defaultInstance;
+
+  /// Stable moth catalog identifier (e.g. "monthly"); the app never gates on
+  /// this — it gates on entitlements — but the SDK uses it to drive purchases.
+  @$pb.TagNumber(1)
+  $core.String get identifier => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set identifier($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasIdentifier() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearIdentifier() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get displayName => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set displayName($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasDisplayName() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearDisplayName() => $_clearField(2);
+
+  /// Store SKUs so the SDK can pair this tier with the native store product;
+  /// either may be empty when the tier ships on one store only.
+  @$pb.TagNumber(3)
+  $core.String get appleProductId => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set appleProductId($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasAppleProductId() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearAppleProductId() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get googleProductId => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set googleProductId($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasGoogleProductId() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearGoogleProductId() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get billingPeriod => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set billingPeriod($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasBillingPeriod() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearBillingPeriod() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $fixnum.Int64 get priceAmountMicros => $_getI64(5);
+  @$pb.TagNumber(6)
+  set priceAmountMicros($fixnum.Int64 value) => $_setInt64(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasPriceAmountMicros() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearPriceAmountMicros() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get currency => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set currency($core.String value) => $_setString(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasCurrency() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearCurrency() => $_clearField(7);
+
+  /// Trial/intro descriptor (display + analytics only).
+  @$pb.TagNumber(8)
+  $core.String get trialPeriod => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set trialPeriod($core.String value) => $_setString(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasTrialPeriod() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearTrialPeriod() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $fixnum.Int64 get introPriceAmountMicros => $_getI64(8);
+  @$pb.TagNumber(9)
+  set introPriceAmountMicros($fixnum.Int64 value) => $_setInt64(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasIntroPriceAmountMicros() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearIntroPriceAmountMicros() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get introPeriod => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set introPeriod($core.String value) => $_setString(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasIntroPeriod() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearIntroPeriod() => $_clearField(10);
+
+  /// The stable entitlement identifiers this product grants while active (e.g.
+  /// "pro"), so the paywall can label what a tier unlocks.
+  @$pb.TagNumber(11)
+  $pb.PbList<$core.String> get entitlements => $_getList(10);
+
+  @$pb.TagNumber(12)
+  $core.int get sortOrder => $_getIZ(11);
+  @$pb.TagNumber(12)
+  set sortOrder($core.int value) => $_setSignedInt32(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasSortOrder() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearSortOrder() => $_clearField(12);
+
+  /// Whether this tier is the paywall's highlighted "most popular" tier (from
+  /// the paywall config's highlighted_product_identifier).
+  @$pb.TagNumber(13)
+  $core.bool get highlighted => $_getBF(12);
+  @$pb.TagNumber(13)
+  set highlighted($core.bool value) => $_setBool(12, value);
+  @$pb.TagNumber(13)
+  $core.bool hasHighlighted() => $_has(12);
+  @$pb.TagNumber(13)
+  void clearHighlighted() => $_clearField(13);
+}
+
+/// Paywall is the public, render-ready paywall configuration. Copy and layout
+/// only — colors/typography inherit from the theme.
+class Paywall extends $pb.GeneratedMessage {
+  factory Paywall({
+    $core.String? revisionId,
+    $core.String? headline,
+    $core.String? subtitle,
+    $core.Iterable<$core.String>? benefits,
+    $core.String? offering,
+    $core.String? highlightedProductIdentifier,
+    PaywallLayout? layout,
+    $core.String? termsUrl,
+    $core.String? privacyUrl,
+  }) {
+    final result = create();
+    if (revisionId != null) result.revisionId = revisionId;
+    if (headline != null) result.headline = headline;
+    if (subtitle != null) result.subtitle = subtitle;
+    if (benefits != null) result.benefits.addAll(benefits);
+    if (offering != null) result.offering = offering;
+    if (highlightedProductIdentifier != null)
+      result.highlightedProductIdentifier = highlightedProductIdentifier;
+    if (layout != null) result.layout = layout;
+    if (termsUrl != null) result.termsUrl = termsUrl;
+    if (privacyUrl != null) result.privacyUrl = privacyUrl;
+    return result;
+  }
+
+  Paywall._();
+
+  factory Paywall.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Paywall.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Paywall',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'revisionId')
+    ..aOS(2, _omitFieldNames ? '' : 'headline')
+    ..aOS(3, _omitFieldNames ? '' : 'subtitle')
+    ..pPS(4, _omitFieldNames ? '' : 'benefits')
+    ..aOS(5, _omitFieldNames ? '' : 'offering')
+    ..aOS(6, _omitFieldNames ? '' : 'highlightedProductIdentifier')
+    ..aE<PaywallLayout>(7, _omitFieldNames ? '' : 'layout',
+        enumValues: PaywallLayout.values)
+    ..aOS(8, _omitFieldNames ? '' : 'termsUrl')
+    ..aOS(9, _omitFieldNames ? '' : 'privacyUrl')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Paywall clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Paywall copyWith(void Function(Paywall) updates) =>
+      super.copyWith((message) => updates(message as Paywall)) as Paywall;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Paywall create() => Paywall._();
+  @$core.override
+  Paywall createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Paywall getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Paywall>(create);
+  static Paywall? _defaultInstance;
+
+  /// Identifies this version of the paywall config; changes on every admin
+  /// edit. Cache the paywall keyed by this value and echo it as
+  /// GetPaywallRequest.known_paywall_revision.
+  @$pb.TagNumber(1)
+  $core.String get revisionId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set revisionId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRevisionId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRevisionId() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get headline => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set headline($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasHeadline() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearHeadline() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get subtitle => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set subtitle($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasSubtitle() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearSubtitle() => $_clearField(3);
+
+  /// Feature/benefit bullets, in display order.
+  @$pb.TagNumber(4)
+  $pb.PbList<$core.String> get benefits => $_getList(3);
+
+  /// The offering tag whose products this paywall lists; pass it to
+  /// GetOfferings.offering. Empty selects the default offering.
+  @$pb.TagNumber(5)
+  $core.String get offering => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set offering($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasOffering() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearOffering() => $_clearField(5);
+
+  /// The product identifier to render as "most popular"; empty for none.
+  @$pb.TagNumber(6)
+  $core.String get highlightedProductIdentifier => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set highlightedProductIdentifier($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasHighlightedProductIdentifier() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearHighlightedProductIdentifier() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  PaywallLayout get layout => $_getN(6);
+  @$pb.TagNumber(7)
+  set layout(PaywallLayout value) => $_setField(7, value);
+  @$pb.TagNumber(7)
+  $core.bool hasLayout() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearLayout() => $_clearField(7);
+
+  /// Optional legal links rendered in the paywall footer.
+  @$pb.TagNumber(8)
+  $core.String get termsUrl => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set termsUrl($core.String value) => $_setString(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasTermsUrl() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearTermsUrl() => $_clearField(8);
+
+  @$pb.TagNumber(9)
+  $core.String get privacyUrl => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set privacyUrl($core.String value) => $_setString(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasPrivacyUrl() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearPrivacyUrl() => $_clearField(9);
+}
+
+class GetOfferingsRequest extends $pb.GeneratedMessage {
+  factory GetOfferingsRequest({
+    $core.String? offering,
+  }) {
+    final result = create();
+    if (offering != null) result.offering = offering;
+    return result;
+  }
+
+  GetOfferingsRequest._();
+
+  factory GetOfferingsRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory GetOfferingsRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetOfferingsRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'offering')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetOfferingsRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetOfferingsRequest copyWith(void Function(GetOfferingsRequest) updates) =>
+      super.copyWith((message) => updates(message as GetOfferingsRequest))
+          as GetOfferingsRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetOfferingsRequest create() => GetOfferingsRequest._();
+  @$core.override
+  GetOfferingsRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static GetOfferingsRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetOfferingsRequest>(create);
+  static GetOfferingsRequest? _defaultInstance;
+
+  /// Offering tag; empty selects the project's default offering.
+  @$pb.TagNumber(1)
+  $core.String get offering => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set offering($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOffering() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOffering() => $_clearField(1);
+}
+
+class GetOfferingsResponse extends $pb.GeneratedMessage {
+  factory GetOfferingsResponse({
+    Offering? offering,
+  }) {
+    final result = create();
+    if (offering != null) result.offering = offering;
+    return result;
+  }
+
+  GetOfferingsResponse._();
+
+  factory GetOfferingsResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory GetOfferingsResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetOfferingsResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOM<Offering>(1, _omitFieldNames ? '' : 'offering',
+        subBuilder: Offering.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetOfferingsResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetOfferingsResponse copyWith(void Function(GetOfferingsResponse) updates) =>
+      super.copyWith((message) => updates(message as GetOfferingsResponse))
+          as GetOfferingsResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetOfferingsResponse create() => GetOfferingsResponse._();
+  @$core.override
+  GetOfferingsResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static GetOfferingsResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetOfferingsResponse>(create);
+  static GetOfferingsResponse? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  Offering get offering => $_getN(0);
+  @$pb.TagNumber(1)
+  set offering(Offering value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasOffering() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearOffering() => $_clearField(1);
+  @$pb.TagNumber(1)
+  Offering ensureOffering() => $_ensure(0);
+}
+
+class GetPaywallRequest extends $pb.GeneratedMessage {
+  factory GetPaywallRequest({
+    $core.String? knownPaywallRevision,
+  }) {
+    final result = create();
+    if (knownPaywallRevision != null)
+      result.knownPaywallRevision = knownPaywallRevision;
+    return result;
+  }
+
+  GetPaywallRequest._();
+
+  factory GetPaywallRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory GetPaywallRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetPaywallRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'knownPaywallRevision')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetPaywallRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetPaywallRequest copyWith(void Function(GetPaywallRequest) updates) =>
+      super.copyWith((message) => updates(message as GetPaywallRequest))
+          as GetPaywallRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetPaywallRequest create() => GetPaywallRequest._();
+  @$core.override
+  GetPaywallRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static GetPaywallRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetPaywallRequest>(create);
+  static GetPaywallRequest? _defaultInstance;
+
+  /// The revision_id of the paywall the client has cached (empty on first
+  /// call). When it still matches the current revision, the response omits
+  /// `paywall`; see the caching contract on GetPaywall.
+  @$pb.TagNumber(1)
+  $core.String get knownPaywallRevision => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set knownPaywallRevision($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasKnownPaywallRevision() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKnownPaywallRevision() => $_clearField(1);
+}
+
+class GetPaywallResponse extends $pb.GeneratedMessage {
+  factory GetPaywallResponse({
+    Paywall? paywall,
+  }) {
+    final result = create();
+    if (paywall != null) result.paywall = paywall;
+    return result;
+  }
+
+  GetPaywallResponse._();
+
+  factory GetPaywallResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory GetPaywallResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'GetPaywallResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOM<Paywall>(1, _omitFieldNames ? '' : 'paywall',
+        subBuilder: Paywall.create)
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetPaywallResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  GetPaywallResponse copyWith(void Function(GetPaywallResponse) updates) =>
+      super.copyWith((message) => updates(message as GetPaywallResponse))
+          as GetPaywallResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static GetPaywallResponse create() => GetPaywallResponse._();
+  @$core.override
+  GetPaywallResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static GetPaywallResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<GetPaywallResponse>(create);
+  static GetPaywallResponse? _defaultInstance;
+
+  /// Omitted when GetPaywallRequest.known_paywall_revision matches the current
+  /// revision; present otherwise (including for projects on the built-in
+  /// default paywall config).
+  @$pb.TagNumber(1)
+  Paywall get paywall => $_getN(0);
+  @$pb.TagNumber(1)
+  set paywall(Paywall value) => $_setField(1, value);
+  @$pb.TagNumber(1)
+  $core.bool hasPaywall() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPaywall() => $_clearField(1);
+  @$pb.TagNumber(1)
+  Paywall ensurePaywall() => $_ensure(0);
+}
 
 /// CustomerInfo is the complete subscription picture for one user. Apps gate
 /// features on active_entitlements (never on a product id): check whether the

@@ -66,12 +66,14 @@ func (s *Store) SetProjectTheme(ctx context.Context, rev ThemeRevision, prevRevi
 		rev.ID, rev.ProjectID, rev.Theme, formatTime(rev.CreatedAt)); err != nil {
 		return fmt.Errorf("insert theme revision: %w", err)
 	}
-	// UUIDv7 ids order like created_at, so the id tie-breaker keeps the
-	// pruning deterministic for equal timestamps.
+	// Order by the UUIDv7 id, which is monotonic and lexically sortable in
+	// creation order. created_at is RFC3339Nano TEXT: trailing zeros in the
+	// fractional seconds are trimmed, so ".5Z" sorts after ".54Z" and a text
+	// sort is not chronological. The id is the reliable newest-first key.
 	if _, err := tx.ExecContext(ctx,
 		`DELETE FROM theme_revisions WHERE project_id = ? AND id NOT IN (
 			SELECT id FROM theme_revisions WHERE project_id = ?
-			ORDER BY created_at DESC, id DESC LIMIT ?
+			ORDER BY id DESC LIMIT ?
 		)`, rev.ProjectID, rev.ProjectID, ThemeRevisionKeep); err != nil {
 		return fmt.Errorf("prune theme revisions: %w", err)
 	}
@@ -112,7 +114,7 @@ func (s *Store) ListThemeRevisions(ctx context.Context, projectID string, limit 
 	}
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT id, project_id, theme, created_at FROM theme_revisions
-		 WHERE project_id = ? ORDER BY created_at DESC, id DESC LIMIT ?`,
+		 WHERE project_id = ? ORDER BY id DESC LIMIT ?`,
 		projectID, limit)
 	if err != nil {
 		return nil, fmt.Errorf("list theme revisions: %w", err)

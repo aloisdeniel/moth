@@ -17,6 +17,8 @@ import 'package:grpc/src/generated/google/rpc/status.pb.dart' as rpc;
 import 'package:moth_auth/moth_auth.dart';
 import 'package:moth_auth/src/gen/moth/auth/v1/auth.pbgrpc.dart';
 import 'package:moth_auth/src/gen/moth/auth/v1/config.pbgrpc.dart';
+import 'package:moth_auth/src/gen/moth/billing/v1/billing.pbgrpc.dart'
+    as billing;
 
 /// A syntactically valid JWT with [payload] and a fake signature — the SDK
 /// only ever decodes the payload.
@@ -331,12 +333,183 @@ class FakeConfigService extends ConfigServiceBase {
   }
 }
 
+/// In-process fake for moth.billing.v1. Tests set [customerInfo], [offering]
+/// and [paywall] and drive success/error paths via [nextError],
+/// [purchaseError] and [customerInfoAfterPurchase].
+class FakeBillingService extends billing.BillingServiceBase {
+  /// Returned by GetCustomerInfo / SubmitPurchase / RestorePurchases. Free
+  /// (empty entitlements) by default.
+  billing.CustomerInfo customerInfo = billing.CustomerInfo();
+
+  /// Returned by GetOfferings for the default (empty) tag.
+  billing.Offering offering = billing.Offering(
+    identifier: 'default',
+    isDefault: true,
+  );
+
+  /// Per-tag offerings; a request whose tag is present here wins over
+  /// [offering]. Lets tests give a non-default offering distinct products.
+  final offeringsByTag = <String, billing.Offering>{};
+
+  /// Returned by GetPaywall; omitted when the request's known revision matches.
+  billing.Paywall paywall = billing.Paywall(
+    revisionId: 'pw-1',
+    headline: 'Unlock Premium',
+    subtitle: 'Get the full experience with a subscription.',
+    layout: billing.PaywallLayout.PAYWALL_LAYOUT_TILES,
+  );
+
+  /// When set, SubmitPurchase installs it as the new [customerInfo] and returns
+  /// it (simulating the server deriving entitlements from the receipt).
+  billing.CustomerInfo? customerInfoAfterPurchase;
+
+  /// Thrown once by the next RPC (any method), then cleared.
+  GrpcError? nextError;
+
+  /// Thrown by every SubmitPurchase while set.
+  GrpcError? purchaseError;
+
+  /// While set, GetCustomerInfo waits for the gate before replying — lets
+  /// tests observe the cached snapshot rendering while the refresh is held.
+  Completer<void>? getCustomerInfoGate;
+
+  final metadataByMethod = <String, Map<String, String>>{};
+  billing.SubmitPurchaseRequest? lastSubmit;
+  billing.RestorePurchasesRequest? lastRestore;
+  billing.GetOfferingsRequest? lastOfferingsRequest;
+  billing.GetPaywallRequest? lastPaywallRequest;
+  int getCustomerInfoCalls = 0;
+  int getOfferingsCalls = 0;
+  int getPaywallCalls = 0;
+
+  void _enter(String method, ServiceCall call) {
+    metadataByMethod[method] = Map.of(call.clientMetadata ?? const {});
+    final err = nextError;
+    if (err != null) {
+      nextError = null;
+      throw err;
+    }
+  }
+
+  @override
+  Future<billing.GetCustomerInfoResponse> getCustomerInfo(
+    ServiceCall call,
+    billing.GetCustomerInfoRequest request,
+  ) async {
+    _enter('GetCustomerInfo', call);
+    getCustomerInfoCalls++;
+    final gate = getCustomerInfoGate;
+    if (gate != null) await gate.future;
+    return billing.GetCustomerInfoResponse(customerInfo: customerInfo);
+  }
+
+  @override
+  Future<billing.SubmitPurchaseResponse> submitPurchase(
+    ServiceCall call,
+    billing.SubmitPurchaseRequest request,
+  ) async {
+    _enter('SubmitPurchase', call);
+    lastSubmit = request;
+    final err = purchaseError;
+    if (err != null) throw err;
+    final next = customerInfoAfterPurchase;
+    if (next != null) customerInfo = next;
+    return billing.SubmitPurchaseResponse(customerInfo: customerInfo);
+  }
+
+  @override
+  Future<billing.RestorePurchasesResponse> restorePurchases(
+    ServiceCall call,
+    billing.RestorePurchasesRequest request,
+  ) async {
+    _enter('RestorePurchases', call);
+    lastRestore = request;
+    return billing.RestorePurchasesResponse(customerInfo: customerInfo);
+  }
+
+  @override
+  Future<billing.GetOfferingsResponse> getOfferings(
+    ServiceCall call,
+    billing.GetOfferingsRequest request,
+  ) async {
+    _enter('GetOfferings', call);
+    getOfferingsCalls++;
+    lastOfferingsRequest = request;
+    final tagged = offeringsByTag[request.offering];
+    return billing.GetOfferingsResponse(offering: tagged ?? offering);
+  }
+
+  @override
+  Future<billing.GetPaywallResponse> getPaywall(
+    ServiceCall call,
+    billing.GetPaywallRequest request,
+  ) async {
+    _enter('GetPaywall', call);
+    getPaywallCalls++;
+    lastPaywallRequest = request;
+    final resp = billing.GetPaywallResponse();
+    if (request.knownPaywallRevision != paywall.revisionId) {
+      resp.paywall = paywall;
+    }
+    return resp;
+  }
+}
+
+/// A [MothBillingAdapter] whose native outcomes are set by the test: returns
+/// [nextReceipt] (a signed Apple transaction by default), null when [cancel]
+/// is set, or throws [throwOnPurchase].
+class FakeBillingAdapter implements MothBillingAdapter {
+  MothPurchaseReceipt? nextReceipt;
+  MothBillingException? throwOnPurchase;
+  bool cancel = false;
+  MothRestoreReceipts restoreResult = const MothRestoreReceipts(
+    store: MothStore.apple,
+    receipts: ['restore-jws'],
+  );
+
+  /// Store products returned by [productsFor] (empty = not implemented).
+  List<MothStoreProduct> storeProducts = const [];
+
+  MothOfferingProduct? lastProduct;
+  int purchaseCalls = 0;
+  int restoreCalls = 0;
+  int productsForCalls = 0;
+
+  @override
+  Future<MothPurchaseReceipt?> purchase(MothOfferingProduct product) async {
+    purchaseCalls++;
+    lastProduct = product;
+    final err = throwOnPurchase;
+    if (err != null) throw err;
+    if (cancel) return null;
+    return nextReceipt ??
+        MothPurchaseReceipt(
+          store: MothStore.apple,
+          productIdentifier: product.identifier,
+          appleJwsTransaction: 'jws-${product.identifier}',
+        );
+  }
+
+  @override
+  Future<MothRestoreReceipts> restore() async {
+    restoreCalls++;
+    return restoreResult;
+  }
+
+  @override
+  Future<List<MothStoreProduct>> productsFor(MothOffering offering) async {
+    productsForCalls++;
+    return storeProducts;
+  }
+}
+
 class FakeMoth {
-  FakeMoth(this.server, this.auth, this.config);
+  FakeMoth(this.server, this.auth, this.config, this.billing);
 
   final Server server;
   final FakeAuthService auth;
   final FakeConfigService config;
+  final FakeBillingService billing;
 
   int get port => server.port!;
 
@@ -346,9 +519,10 @@ class FakeMoth {
 Future<FakeMoth> startFakeMoth() async {
   final auth = FakeAuthService();
   final config = FakeConfigService();
-  final server = Server.create(services: [auth, config]);
+  final billingService = FakeBillingService();
+  final server = Server.create(services: [auth, config, billingService]);
   await server.serve(address: 'localhost', port: 0);
-  return FakeMoth(server, auth, config);
+  return FakeMoth(server, auth, config, billingService);
 }
 
 MothClient newClient(

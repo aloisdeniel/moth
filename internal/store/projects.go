@@ -24,8 +24,15 @@ type Project struct {
 	// ThemeRevisionID identifies the revision Theme came from ("" when
 	// Theme is empty).
 	ThemeRevisionID string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	// Paywall is the raw paywall-config JSON document (internal/paywall
+	// schema); empty means the built-in default paywall. Written through
+	// SetProjectPaywall, never UpdateProject.
+	Paywall string
+	// PaywallRevisionID identifies the revision Paywall came from ("" when
+	// Paywall is empty).
+	PaywallRevisionID string
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 }
 
 // ProjectKey is one ES256 signing keypair belonging to a project. The
@@ -91,7 +98,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme, theme_revision, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme, theme_revision, paywall, paywall_revision, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
@@ -352,7 +359,7 @@ func scanProjectRow(row rowScanner) (Project, error) {
 	var p Project
 	var settings, createdAt, updatedAt string
 	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.PublishableKey, &p.SecretKeyHash,
-		&settings, &p.Theme, &p.ThemeRevisionID, &createdAt, &updatedAt)
+		&settings, &p.Theme, &p.ThemeRevisionID, &p.Paywall, &p.PaywallRevisionID, &createdAt, &updatedAt)
 	if err != nil {
 		return Project{}, err
 	}

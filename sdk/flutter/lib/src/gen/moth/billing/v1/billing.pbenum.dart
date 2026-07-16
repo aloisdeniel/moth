@@ -14,6 +14,39 @@ import 'dart:core' as $core;
 
 import 'package:protobuf/protobuf.dart' as $pb;
 
+/// PaywallLayout is the rendering variant the paywall screen uses; the token
+/// space (colors/spacing/radius) always comes from the theme.
+class PaywallLayout extends $pb.ProtobufEnum {
+  static const PaywallLayout PAYWALL_LAYOUT_UNSPECIFIED =
+      PaywallLayout._(0, _omitEnumNames ? '' : 'PAYWALL_LAYOUT_UNSPECIFIED');
+
+  /// One card per tier, side by side (the default).
+  static const PaywallLayout PAYWALL_LAYOUT_TILES =
+      PaywallLayout._(1, _omitEnumNames ? '' : 'PAYWALL_LAYOUT_TILES');
+
+  /// Tiers stacked as full-width rows.
+  static const PaywallLayout PAYWALL_LAYOUT_LIST =
+      PaywallLayout._(2, _omitEnumNames ? '' : 'PAYWALL_LAYOUT_LIST');
+
+  /// A single selected tier with a period toggle.
+  static const PaywallLayout PAYWALL_LAYOUT_COMPACT =
+      PaywallLayout._(3, _omitEnumNames ? '' : 'PAYWALL_LAYOUT_COMPACT');
+
+  static const $core.List<PaywallLayout> values = <PaywallLayout>[
+    PAYWALL_LAYOUT_UNSPECIFIED,
+    PAYWALL_LAYOUT_TILES,
+    PAYWALL_LAYOUT_LIST,
+    PAYWALL_LAYOUT_COMPACT,
+  ];
+
+  static final $core.List<PaywallLayout?> _byValue =
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
+  static PaywallLayout? valueOf($core.int value) =>
+      value < 0 || value >= _byValue.length ? null : _byValue[value];
+
+  const PaywallLayout._(super.value, super.name);
+}
+
 /// Store identifies which app store a purchase or subscription belongs to.
 class Store extends $pb.ProtobufEnum {
   static const Store STORE_UNSPECIFIED =

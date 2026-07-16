@@ -32,6 +32,124 @@ service BillingService {
   // account (new device, reinstall, account change), applying the store's own
   // transfer rules, then returns the fresh CustomerInfo.
   rpc RestorePurchases(RestorePurchasesRequest) returns (RestorePurchasesResponse);
+  // GetOfferings returns an offering's products for the paywall to display:
+  // per product the catalog identifier, display name, store SKUs (so the SDK
+  // can match the native store products), price/period metadata, trial/intro
+  // descriptor, the entitlements it grants, sort order and the "most popular"
+  // highlight flag. Unlike the three RPCs above this is publishable-key only
+  // (no Bearer): a paywall renders before the user signs in.
+  rpc GetOfferings(GetOfferingsRequest) returns (GetOfferingsResponse);
+  // GetPaywall returns the project's public paywall configuration (copy,
+  // benefit bullets, offering ref, layout, highlighted tier, legal links) with
+  // a revision id, for the SDK's batteries-included paywall screen. Colors and
+  // typography are NOT here — the paywall inherits them from the theme
+  // (GetProjectConfig, milestone 06).
+  //
+  // Caching contract (identical to GetProjectConfig + theme): the client caches
+  // the paywall keyed by revision_id and echoes it as
+  // GetPaywallRequest.known_paywall_revision. When it still matches, the
+  // response omits `paywall` and the client keeps rendering its cache
+  // (stale-while-revalidate); when it differs (or was empty on first call),
+  // `paywall` is present and the client replaces its cache. Publishable-key
+  // only, like GetOfferings.
+  rpc GetPaywall(GetPaywallRequest) returns (GetPaywallResponse);
+}
+
+// Offering is the ordered set of products a paywall presents — the products
+// sharing an `offering` tag, in sort order. Every project has a default
+// offering ("default").
+message Offering {
+  // Offering tag; "default" for the project's default offering.
+  string identifier = 1;
+  bool is_default = 2;
+  // The products to display, in paywall order.
+  repeated OfferingProduct products = 3;
+}
+
+// OfferingProduct is one purchasable tier as the paywall needs it: enough to
+// render a card and match the native store product. Price/period are display
+// + analytics metadata; the native store read stays authoritative for the
+// localized price actually charged.
+message OfferingProduct {
+  // Stable moth catalog identifier (e.g. "monthly"); the app never gates on
+  // this — it gates on entitlements — but the SDK uses it to drive purchases.
+  string identifier = 1;
+  string display_name = 2;
+  // Store SKUs so the SDK can pair this tier with the native store product;
+  // either may be empty when the tier ships on one store only.
+  string apple_product_id = 3;
+  string google_product_id = 4;
+  string billing_period = 5;
+  int64 price_amount_micros = 6;
+  string currency = 7;
+  // Trial/intro descriptor (display + analytics only).
+  string trial_period = 8;
+  int64 intro_price_amount_micros = 9;
+  string intro_period = 10;
+  // The stable entitlement identifiers this product grants while active (e.g.
+  // "pro"), so the paywall can label what a tier unlocks.
+  repeated string entitlements = 11;
+  int32 sort_order = 12;
+  // Whether this tier is the paywall's highlighted "most popular" tier (from
+  // the paywall config's highlighted_product_identifier).
+  bool highlighted = 13;
+}
+
+// PaywallLayout is the rendering variant the paywall screen uses; the token
+// space (colors/spacing/radius) always comes from the theme.
+enum PaywallLayout {
+  PAYWALL_LAYOUT_UNSPECIFIED = 0;
+  // One card per tier, side by side (the default).
+  PAYWALL_LAYOUT_TILES = 1;
+  // Tiers stacked as full-width rows.
+  PAYWALL_LAYOUT_LIST = 2;
+  // A single selected tier with a period toggle.
+  PAYWALL_LAYOUT_COMPACT = 3;
+}
+
+// Paywall is the public, render-ready paywall configuration. Copy and layout
+// only — colors/typography inherit from the theme.
+message Paywall {
+  // Identifies this version of the paywall config; changes on every admin
+  // edit. Cache the paywall keyed by this value and echo it as
+  // GetPaywallRequest.known_paywall_revision.
+  string revision_id = 1;
+  string headline = 2;
+  string subtitle = 3;
+  // Feature/benefit bullets, in display order.
+  repeated string benefits = 4;
+  // The offering tag whose products this paywall lists; pass it to
+  // GetOfferings.offering. Empty selects the default offering.
+  string offering = 5;
+  // The product identifier to render as "most popular"; empty for none.
+  string highlighted_product_identifier = 6;
+  PaywallLayout layout = 7;
+  // Optional legal links rendered in the paywall footer.
+  string terms_url = 8;
+  string privacy_url = 9;
+}
+
+message GetOfferingsRequest {
+  // Offering tag; empty selects the project's default offering.
+  string offering = 1;
+}
+
+message GetOfferingsResponse {
+  Offering offering = 1;
+}
+
+message GetPaywallRequest {
+  // The revision_id of the paywall the client has cached (empty on first
+  // call). When it still matches the current revision, the response omits
+  // `paywall`; see the caching contract on GetPaywall.
+  string known_paywall_revision = 1;
+}
+
+message GetPaywallResponse {
+  // Omitted when GetPaywallRequest.known_paywall_revision matches the current
+  // revision; present otherwise (including for projects on the built-in
+  // default paywall config).
+  Paywall paywall = 1;
 }
 
 // Store identifies which app store a purchase or subscription belongs to.

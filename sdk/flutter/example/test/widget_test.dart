@@ -42,6 +42,14 @@ void main() {
     expect(find.text('verified'), findsOneWidget);
     expect(find.text('role: admin'), findsOneWidget);
     expect(find.text('Call my backend'), findsOneWidget);
+    // The subscription card reads the (free by default) entitlement state.
+    expect(find.text('Free tier'), findsOneWidget);
+    // "Delete account" sits below the fold of the lazy ListView.
+    await tester.scrollUntilVisible(
+      find.text('Delete account'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('Delete account'), findsOneWidget);
   });
 }

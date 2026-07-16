@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moth_auth/moth_auth.dart';
 
+import 'billing_adapter.dart';
 import 'home_screen.dart';
 import 'oauth_adapter.dart';
 
@@ -43,8 +44,23 @@ void main() {
   runApp(const ExampleApp());
 }
 
-class ExampleApp extends StatelessWidget {
+class ExampleApp extends StatefulWidget {
   const ExampleApp({super.key});
+
+  @override
+  State<ExampleApp> createState() => _ExampleAppState();
+}
+
+class _ExampleAppState extends State<ExampleApp> {
+  // The store billing adapter subscribes to the purchase stream for its
+  // lifetime, so own it here rather than rebuilding it every frame.
+  final _billingAdapter = ExampleBillingAdapter();
+
+  @override
+  void dispose() {
+    _billingAdapter.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,6 +71,8 @@ class ExampleApp extends StatelessWidget {
         publishableKey: mothPublishableKey,
       ),
       oauthAdapter: ExampleOAuthAdapter(),
+      // Runs native store purchases for MothScope.purchase and the paywall.
+      billingAdapter: _billingAdapter,
       // Signed out -> the SDK's default MothLoginScreen; signed in -> child.
       child: MaterialApp(
         title: 'moth example',

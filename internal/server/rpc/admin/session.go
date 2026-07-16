@@ -35,6 +35,7 @@ type Store interface {
 	store.RefreshTokenStore
 	store.ProviderSecretStore
 	store.ThemeStore
+	store.PaywallStore
 	store.EventStore
 	store.StatsStore
 	store.EntitlementStore

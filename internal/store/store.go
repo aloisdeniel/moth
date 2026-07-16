@@ -195,6 +195,15 @@ type ThemeStore interface {
 	ListThemeRevisions(ctx context.Context, projectID string, limit int) ([]ThemeRevision, error)
 }
 
+// PaywallStore persists per-project paywall configs and their revision
+// history (raw internal/paywall JSON documents). Mirrors ThemeStore.
+type PaywallStore interface {
+	SetProjectPaywall(ctx context.Context, rev PaywallRevision, prevRevisionID string) error
+	ClearProjectPaywall(ctx context.Context, projectID string, now time.Time) error
+	GetPaywallRevision(ctx context.Context, projectID, revisionID string) (PaywallRevision, error)
+	ListPaywallRevisions(ctx context.Context, projectID string, limit int) ([]PaywallRevision, error)
+}
+
 // EventStore records and reads the raw analytics event stream.
 type EventStore interface {
 	InsertEvent(ctx context.Context, e Event) error
@@ -333,6 +342,7 @@ var (
 	_ OAuthTokenStore          = (*Store)(nil)
 	_ ProviderSecretStore      = (*Store)(nil)
 	_ ThemeStore               = (*Store)(nil)
+	_ PaywallStore             = (*Store)(nil)
 	_ EventStore               = (*Store)(nil)
 	_ StatsStore               = (*Store)(nil)
 	_ EntitlementStore         = (*Store)(nil)

@@ -915,6 +915,195 @@ textarea.input {
   color: var(--p-primary);
 }
 
+/*
+ * Paywall-screen replica (MothPaywallScreen). Like .mothpv, everything inside
+ * .mothpw is styled exclusively from the --p-* custom properties set inline
+ * from the project's theme tokens — never from the admin tokens above.
+ */
+.mothpw {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--p-background);
+  color: var(--p-on-background);
+  font-family: var(--p-font);
+  font-size: var(--p-body);
+  line-height: 1.5;
+  overflow: hidden;
+}
+
+.mothpw__scroll {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--p-unit) * 1.5);
+  padding: calc(var(--p-unit) * 2.5) calc(var(--p-unit) * 2);
+  overflow: hidden;
+}
+
+.mothpw__logo {
+  align-self: center;
+  height: 40px;
+  max-width: 60%;
+  object-fit: contain;
+}
+
+.mothpw__logo-fallback {
+  align-self: center;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--p-primary);
+  color: var(--p-on-primary);
+  border-radius: calc(var(--p-radius) * 0.75);
+  font-weight: 700;
+  font-size: calc(var(--p-body) * 1.3);
+}
+
+.mothpw__headline {
+  text-align: center;
+  font-weight: 700;
+  font-size: calc(var(--p-body) * 1.35);
+}
+
+.mothpw__subtitle {
+  text-align: center;
+  font-size: calc(var(--p-body) * 0.9);
+  color: color-mix(in srgb, var(--p-on-background) 75%, transparent);
+}
+
+.mothpw__benefits {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--p-unit) * 0.75);
+  margin: 0;
+  padding: 0;
+}
+
+.mothpw__benefit {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--p-unit) * 1);
+  font-size: calc(var(--p-body) * 0.9);
+}
+
+.mothpw__check {
+  flex: none;
+  width: calc(var(--p-body) * 1.15);
+  height: calc(var(--p-body) * 1.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--p-primary);
+  color: var(--p-on-primary);
+  font-size: calc(var(--p-body) * 0.7);
+  font-weight: 700;
+}
+
+.mothpw__tiers {
+  display: flex;
+  gap: var(--p-unit);
+}
+.mothpw__tiers[data-layout="tiles"] {
+  flex-direction: row;
+}
+.mothpw__tiers[data-layout="list"],
+.mothpw__tiers[data-layout="compact"] {
+  flex-direction: column;
+}
+
+.mothpw__tier {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--p-unit) * 0.35);
+  padding: calc(var(--p-unit) * 1.5) calc(var(--p-unit) * 1.25);
+  background: var(--p-surface);
+  color: var(--p-on-surface);
+  border: 1px solid color-mix(in srgb, var(--p-on-surface) 18%, transparent);
+  border-radius: var(--p-radius);
+}
+.mothpw__tier[data-highlighted] {
+  border-color: var(--p-primary);
+  border-width: 2px;
+}
+
+.mothpw__ribbon {
+  position: absolute;
+  top: 0;
+  right: calc(var(--p-unit) * 1);
+  transform: translateY(-50%);
+  padding: 2px calc(var(--p-unit) * 0.75);
+  background: var(--p-primary);
+  color: var(--p-on-primary);
+  border-radius: calc(var(--p-radius) * 0.5);
+  font-size: calc(var(--p-body) * 0.62);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.mothpw__tier-name {
+  font-weight: 600;
+  font-size: calc(var(--p-body) * 0.95);
+}
+
+.mothpw__tier-price {
+  font-weight: 700;
+}
+
+.mothpw__tier-period {
+  font-weight: 400;
+  color: color-mix(in srgb, var(--p-on-surface) 65%, transparent);
+}
+
+.mothpw__tier-trial {
+  font-size: calc(var(--p-body) * 0.78);
+  color: var(--p-primary);
+}
+
+.mothpw__empty {
+  text-align: center;
+  padding: calc(var(--p-unit) * 2) 0;
+  font-size: calc(var(--p-body) * 0.85);
+  color: color-mix(in srgb, var(--p-on-background) 60%, transparent);
+}
+
+.mothpw__btn {
+  margin-top: auto;
+  padding: calc(var(--p-unit) * 1.5);
+  background: var(--p-primary);
+  color: var(--p-on-primary);
+  border-radius: calc(var(--p-radius) * 0.6);
+  text-align: center;
+  font-weight: 600;
+}
+
+.mothpw__link {
+  text-align: center;
+  color: var(--p-primary);
+  font-size: calc(var(--p-body) * 0.85);
+}
+
+.mothpw__footer {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--p-unit) * 0.5);
+  padding: 0 calc(var(--p-unit) * 2) calc(var(--p-unit) * 1.5);
+  text-align: center;
+  font-size: calc(var(--p-body) * 0.72);
+  color: color-mix(in srgb, var(--p-on-background) 65%, transparent);
+}
+
+.mothpw__footer-link {
+  color: var(--p-primary);
+}
+
 /* ---------- Analytics (charts, tiles, feed) ---------- */
 
 .stat-tiles {

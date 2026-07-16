@@ -117,6 +117,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          _PremiumCard(scope: scope),
+          const SizedBox(height: 16),
           FilledButton.icon(
             icon: const Icon(Icons.cloud),
             label: const Text('Call my backend'),
@@ -158,6 +160,109 @@ class _HomeScreenState extends State<HomeScreen> {
             onPressed: () => showMothDeleteAccountDialog(context),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shows the current entitlement (from [MothScope.hasEntitlement]) and a
+/// button into a feature gated behind the `pro` entitlement.
+class _PremiumCard extends StatelessWidget {
+  const _PremiumCard({required this.scope});
+
+  final MothScope scope;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isPro = scope.hasEntitlement('pro');
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Subscription', style: theme.textTheme.labelMedium),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                Icon(
+                  isPro ? Icons.workspace_premium : Icons.lock_outline,
+                  color: isPro ? theme.colorScheme.primary : null,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isPro ? 'Pro — active' : 'Free tier',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              icon: const Icon(Icons.star),
+              label: const Text('Open premium feature'),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const PremiumScreen()),
+              ),
+            ),
+            const SizedBox(height: 4),
+            OutlinedButton(
+              onPressed: () async {
+                final result = await scope.restorePurchases();
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      result.activeEntitlements.isEmpty
+                          ? 'No purchases to restore.'
+                          : 'Purchases restored.',
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Restore purchases'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A feature gated behind the `pro` entitlement. Reads [MothScope] so it
+/// rebuilds the instant a purchase flips the entitlement: a free user sees the
+/// themed [MothPaywallScreen], and once entitled the unlocked content appears
+/// automatically. A project with no products would show the paywall's empty
+/// state — nothing to buy, gracefully handled by the SDK.
+class PremiumScreen extends StatelessWidget {
+  const PremiumScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final scope = MothScope.of(context);
+    if (!scope.hasEntitlement('pro')) {
+      return MothPaywallScreen(onClose: () => Navigator.of(context).maybePop());
+    }
+    return Scaffold(
+      appBar: AppBar(title: const Text('Premium')),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.workspace_premium,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Pro unlocked!',
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 8),
+            const Text('This screen is gated behind the "pro" entitlement.'),
+          ],
+        ),
       ),
     );
   }

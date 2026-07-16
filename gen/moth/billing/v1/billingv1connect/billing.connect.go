@@ -42,6 +42,12 @@ const (
 	// BillingServiceRestorePurchasesProcedure is the fully-qualified name of the BillingService's
 	// RestorePurchases RPC.
 	BillingServiceRestorePurchasesProcedure = "/moth.billing.v1.BillingService/RestorePurchases"
+	// BillingServiceGetOfferingsProcedure is the fully-qualified name of the BillingService's
+	// GetOfferings RPC.
+	BillingServiceGetOfferingsProcedure = "/moth.billing.v1.BillingService/GetOfferings"
+	// BillingServiceGetPaywallProcedure is the fully-qualified name of the BillingService's GetPaywall
+	// RPC.
+	BillingServiceGetPaywallProcedure = "/moth.billing.v1.BillingService/GetPaywall"
 )
 
 // BillingServiceClient is a client for the moth.billing.v1.BillingService service.
@@ -58,6 +64,27 @@ type BillingServiceClient interface {
 	// account (new device, reinstall, account change), applying the store's own
 	// transfer rules, then returns the fresh CustomerInfo.
 	RestorePurchases(context.Context, *connect.Request[v1.RestorePurchasesRequest]) (*connect.Response[v1.RestorePurchasesResponse], error)
+	// GetOfferings returns an offering's products for the paywall to display:
+	// per product the catalog identifier, display name, store SKUs (so the SDK
+	// can match the native store products), price/period metadata, trial/intro
+	// descriptor, the entitlements it grants, sort order and the "most popular"
+	// highlight flag. Unlike the three RPCs above this is publishable-key only
+	// (no Bearer): a paywall renders before the user signs in.
+	GetOfferings(context.Context, *connect.Request[v1.GetOfferingsRequest]) (*connect.Response[v1.GetOfferingsResponse], error)
+	// GetPaywall returns the project's public paywall configuration (copy,
+	// benefit bullets, offering ref, layout, highlighted tier, legal links) with
+	// a revision id, for the SDK's batteries-included paywall screen. Colors and
+	// typography are NOT here — the paywall inherits them from the theme
+	// (GetProjectConfig, milestone 06).
+	//
+	// Caching contract (identical to GetProjectConfig + theme): the client caches
+	// the paywall keyed by revision_id and echoes it as
+	// GetPaywallRequest.known_paywall_revision. When it still matches, the
+	// response omits `paywall` and the client keeps rendering its cache
+	// (stale-while-revalidate); when it differs (or was empty on first call),
+	// `paywall` is present and the client replaces its cache. Publishable-key
+	// only, like GetOfferings.
+	GetPaywall(context.Context, *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error)
 }
 
 // NewBillingServiceClient constructs a client for the moth.billing.v1.BillingService service. By
@@ -89,6 +116,18 @@ func NewBillingServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(billingServiceMethods.ByName("RestorePurchases")),
 			connect.WithClientOptions(opts...),
 		),
+		getOfferings: connect.NewClient[v1.GetOfferingsRequest, v1.GetOfferingsResponse](
+			httpClient,
+			baseURL+BillingServiceGetOfferingsProcedure,
+			connect.WithSchema(billingServiceMethods.ByName("GetOfferings")),
+			connect.WithClientOptions(opts...),
+		),
+		getPaywall: connect.NewClient[v1.GetPaywallRequest, v1.GetPaywallResponse](
+			httpClient,
+			baseURL+BillingServiceGetPaywallProcedure,
+			connect.WithSchema(billingServiceMethods.ByName("GetPaywall")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -97,6 +136,8 @@ type billingServiceClient struct {
 	getCustomerInfo  *connect.Client[v1.GetCustomerInfoRequest, v1.GetCustomerInfoResponse]
 	submitPurchase   *connect.Client[v1.SubmitPurchaseRequest, v1.SubmitPurchaseResponse]
 	restorePurchases *connect.Client[v1.RestorePurchasesRequest, v1.RestorePurchasesResponse]
+	getOfferings     *connect.Client[v1.GetOfferingsRequest, v1.GetOfferingsResponse]
+	getPaywall       *connect.Client[v1.GetPaywallRequest, v1.GetPaywallResponse]
 }
 
 // GetCustomerInfo calls moth.billing.v1.BillingService.GetCustomerInfo.
@@ -114,6 +155,16 @@ func (c *billingServiceClient) RestorePurchases(ctx context.Context, req *connec
 	return c.restorePurchases.CallUnary(ctx, req)
 }
 
+// GetOfferings calls moth.billing.v1.BillingService.GetOfferings.
+func (c *billingServiceClient) GetOfferings(ctx context.Context, req *connect.Request[v1.GetOfferingsRequest]) (*connect.Response[v1.GetOfferingsResponse], error) {
+	return c.getOfferings.CallUnary(ctx, req)
+}
+
+// GetPaywall calls moth.billing.v1.BillingService.GetPaywall.
+func (c *billingServiceClient) GetPaywall(ctx context.Context, req *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error) {
+	return c.getPaywall.CallUnary(ctx, req)
+}
+
 // BillingServiceHandler is an implementation of the moth.billing.v1.BillingService service.
 type BillingServiceHandler interface {
 	// GetCustomerInfo returns the signed-in user's active entitlements and
@@ -128,6 +179,27 @@ type BillingServiceHandler interface {
 	// account (new device, reinstall, account change), applying the store's own
 	// transfer rules, then returns the fresh CustomerInfo.
 	RestorePurchases(context.Context, *connect.Request[v1.RestorePurchasesRequest]) (*connect.Response[v1.RestorePurchasesResponse], error)
+	// GetOfferings returns an offering's products for the paywall to display:
+	// per product the catalog identifier, display name, store SKUs (so the SDK
+	// can match the native store products), price/period metadata, trial/intro
+	// descriptor, the entitlements it grants, sort order and the "most popular"
+	// highlight flag. Unlike the three RPCs above this is publishable-key only
+	// (no Bearer): a paywall renders before the user signs in.
+	GetOfferings(context.Context, *connect.Request[v1.GetOfferingsRequest]) (*connect.Response[v1.GetOfferingsResponse], error)
+	// GetPaywall returns the project's public paywall configuration (copy,
+	// benefit bullets, offering ref, layout, highlighted tier, legal links) with
+	// a revision id, for the SDK's batteries-included paywall screen. Colors and
+	// typography are NOT here — the paywall inherits them from the theme
+	// (GetProjectConfig, milestone 06).
+	//
+	// Caching contract (identical to GetProjectConfig + theme): the client caches
+	// the paywall keyed by revision_id and echoes it as
+	// GetPaywallRequest.known_paywall_revision. When it still matches, the
+	// response omits `paywall` and the client keeps rendering its cache
+	// (stale-while-revalidate); when it differs (or was empty on first call),
+	// `paywall` is present and the client replaces its cache. Publishable-key
+	// only, like GetOfferings.
+	GetPaywall(context.Context, *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error)
 }
 
 // NewBillingServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -155,6 +227,18 @@ func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.Handler
 		connect.WithSchema(billingServiceMethods.ByName("RestorePurchases")),
 		connect.WithHandlerOptions(opts...),
 	)
+	billingServiceGetOfferingsHandler := connect.NewUnaryHandler(
+		BillingServiceGetOfferingsProcedure,
+		svc.GetOfferings,
+		connect.WithSchema(billingServiceMethods.ByName("GetOfferings")),
+		connect.WithHandlerOptions(opts...),
+	)
+	billingServiceGetPaywallHandler := connect.NewUnaryHandler(
+		BillingServiceGetPaywallProcedure,
+		svc.GetPaywall,
+		connect.WithSchema(billingServiceMethods.ByName("GetPaywall")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.billing.v1.BillingService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BillingServiceGetCustomerInfoProcedure:
@@ -163,6 +247,10 @@ func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.Handler
 			billingServiceSubmitPurchaseHandler.ServeHTTP(w, r)
 		case BillingServiceRestorePurchasesProcedure:
 			billingServiceRestorePurchasesHandler.ServeHTTP(w, r)
+		case BillingServiceGetOfferingsProcedure:
+			billingServiceGetOfferingsHandler.ServeHTTP(w, r)
+		case BillingServiceGetPaywallProcedure:
+			billingServiceGetPaywallHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -182,4 +270,12 @@ func (UnimplementedBillingServiceHandler) SubmitPurchase(context.Context, *conne
 
 func (UnimplementedBillingServiceHandler) RestorePurchases(context.Context, *connect.Request[v1.RestorePurchasesRequest]) (*connect.Response[v1.RestorePurchasesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.billing.v1.BillingService.RestorePurchases is not implemented"))
+}
+
+func (UnimplementedBillingServiceHandler) GetOfferings(context.Context, *connect.Request[v1.GetOfferingsRequest]) (*connect.Response[v1.GetOfferingsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.billing.v1.BillingService.GetOfferings is not implemented"))
+}
+
+func (UnimplementedBillingServiceHandler) GetPaywall(context.Context, *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.billing.v1.BillingService.GetPaywall is not implemented"))
 }

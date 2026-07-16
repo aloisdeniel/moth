@@ -15,6 +15,23 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
+@$core.Deprecated('Use paywallLayoutDescriptor instead')
+const PaywallLayout$json = {
+  '1': 'PaywallLayout',
+  '2': [
+    {'1': 'PAYWALL_LAYOUT_UNSPECIFIED', '2': 0},
+    {'1': 'PAYWALL_LAYOUT_TILES', '2': 1},
+    {'1': 'PAYWALL_LAYOUT_LIST', '2': 2},
+    {'1': 'PAYWALL_LAYOUT_COMPACT', '2': 3},
+  ],
+};
+
+/// Descriptor for `PaywallLayout`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List paywallLayoutDescriptor = $convert.base64Decode(
+    'Cg1QYXl3YWxsTGF5b3V0Eh4KGlBBWVdBTExfTEFZT1VUX1VOU1BFQ0lGSUVEEAASGAoUUEFZV0'
+    'FMTF9MQVlPVVRfVElMRVMQARIXChNQQVlXQUxMX0xBWU9VVF9MSVNUEAISGgoWUEFZV0FMTF9M'
+    'QVlPVVRfQ09NUEFDVBAD');
+
 @$core.Deprecated('Use storeDescriptor instead')
 const Store$json = {
   '1': 'Store',
@@ -70,6 +87,185 @@ final $typed_data.Uint8List entitlementSourceDescriptor = $convert.base64Decode(
     'ChFFbnRpdGxlbWVudFNvdXJjZRIiCh5FTlRJVExFTUVOVF9TT1VSQ0VfVU5TUEVDSUZJRUQQAB'
     'IcChhFTlRJVExFTUVOVF9TT1VSQ0VfU1RPUkUQARIcChhFTlRJVExFTUVOVF9TT1VSQ0VfR1JB'
     'TlQQAhIbChdFTlRJVExFTUVOVF9TT1VSQ0VfTk9ORRAD');
+
+@$core.Deprecated('Use offeringDescriptor instead')
+const Offering$json = {
+  '1': 'Offering',
+  '2': [
+    {'1': 'identifier', '3': 1, '4': 1, '5': 9, '10': 'identifier'},
+    {'1': 'is_default', '3': 2, '4': 1, '5': 8, '10': 'isDefault'},
+    {
+      '1': 'products',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.moth.billing.v1.OfferingProduct',
+      '10': 'products'
+    },
+  ],
+};
+
+/// Descriptor for `Offering`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List offeringDescriptor = $convert.base64Decode(
+    'CghPZmZlcmluZxIeCgppZGVudGlmaWVyGAEgASgJUgppZGVudGlmaWVyEh0KCmlzX2RlZmF1bH'
+    'QYAiABKAhSCWlzRGVmYXVsdBI8Cghwcm9kdWN0cxgDIAMoCzIgLm1vdGguYmlsbGluZy52MS5P'
+    'ZmZlcmluZ1Byb2R1Y3RSCHByb2R1Y3Rz');
+
+@$core.Deprecated('Use offeringProductDescriptor instead')
+const OfferingProduct$json = {
+  '1': 'OfferingProduct',
+  '2': [
+    {'1': 'identifier', '3': 1, '4': 1, '5': 9, '10': 'identifier'},
+    {'1': 'display_name', '3': 2, '4': 1, '5': 9, '10': 'displayName'},
+    {'1': 'apple_product_id', '3': 3, '4': 1, '5': 9, '10': 'appleProductId'},
+    {'1': 'google_product_id', '3': 4, '4': 1, '5': 9, '10': 'googleProductId'},
+    {'1': 'billing_period', '3': 5, '4': 1, '5': 9, '10': 'billingPeriod'},
+    {
+      '1': 'price_amount_micros',
+      '3': 6,
+      '4': 1,
+      '5': 3,
+      '10': 'priceAmountMicros'
+    },
+    {'1': 'currency', '3': 7, '4': 1, '5': 9, '10': 'currency'},
+    {'1': 'trial_period', '3': 8, '4': 1, '5': 9, '10': 'trialPeriod'},
+    {
+      '1': 'intro_price_amount_micros',
+      '3': 9,
+      '4': 1,
+      '5': 3,
+      '10': 'introPriceAmountMicros'
+    },
+    {'1': 'intro_period', '3': 10, '4': 1, '5': 9, '10': 'introPeriod'},
+    {'1': 'entitlements', '3': 11, '4': 3, '5': 9, '10': 'entitlements'},
+    {'1': 'sort_order', '3': 12, '4': 1, '5': 5, '10': 'sortOrder'},
+    {'1': 'highlighted', '3': 13, '4': 1, '5': 8, '10': 'highlighted'},
+  ],
+};
+
+/// Descriptor for `OfferingProduct`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List offeringProductDescriptor = $convert.base64Decode(
+    'Cg9PZmZlcmluZ1Byb2R1Y3QSHgoKaWRlbnRpZmllchgBIAEoCVIKaWRlbnRpZmllchIhCgxkaX'
+    'NwbGF5X25hbWUYAiABKAlSC2Rpc3BsYXlOYW1lEigKEGFwcGxlX3Byb2R1Y3RfaWQYAyABKAlS'
+    'DmFwcGxlUHJvZHVjdElkEioKEWdvb2dsZV9wcm9kdWN0X2lkGAQgASgJUg9nb29nbGVQcm9kdW'
+    'N0SWQSJQoOYmlsbGluZ19wZXJpb2QYBSABKAlSDWJpbGxpbmdQZXJpb2QSLgoTcHJpY2VfYW1v'
+    'dW50X21pY3JvcxgGIAEoA1IRcHJpY2VBbW91bnRNaWNyb3MSGgoIY3VycmVuY3kYByABKAlSCG'
+    'N1cnJlbmN5EiEKDHRyaWFsX3BlcmlvZBgIIAEoCVILdHJpYWxQZXJpb2QSOQoZaW50cm9fcHJp'
+    'Y2VfYW1vdW50X21pY3JvcxgJIAEoA1IWaW50cm9QcmljZUFtb3VudE1pY3JvcxIhCgxpbnRyb1'
+    '9wZXJpb2QYCiABKAlSC2ludHJvUGVyaW9kEiIKDGVudGl0bGVtZW50cxgLIAMoCVIMZW50aXRs'
+    'ZW1lbnRzEh0KCnNvcnRfb3JkZXIYDCABKAVSCXNvcnRPcmRlchIgCgtoaWdobGlnaHRlZBgNIA'
+    'EoCFILaGlnaGxpZ2h0ZWQ=');
+
+@$core.Deprecated('Use paywallDescriptor instead')
+const Paywall$json = {
+  '1': 'Paywall',
+  '2': [
+    {'1': 'revision_id', '3': 1, '4': 1, '5': 9, '10': 'revisionId'},
+    {'1': 'headline', '3': 2, '4': 1, '5': 9, '10': 'headline'},
+    {'1': 'subtitle', '3': 3, '4': 1, '5': 9, '10': 'subtitle'},
+    {'1': 'benefits', '3': 4, '4': 3, '5': 9, '10': 'benefits'},
+    {'1': 'offering', '3': 5, '4': 1, '5': 9, '10': 'offering'},
+    {
+      '1': 'highlighted_product_identifier',
+      '3': 6,
+      '4': 1,
+      '5': 9,
+      '10': 'highlightedProductIdentifier'
+    },
+    {
+      '1': 'layout',
+      '3': 7,
+      '4': 1,
+      '5': 14,
+      '6': '.moth.billing.v1.PaywallLayout',
+      '10': 'layout'
+    },
+    {'1': 'terms_url', '3': 8, '4': 1, '5': 9, '10': 'termsUrl'},
+    {'1': 'privacy_url', '3': 9, '4': 1, '5': 9, '10': 'privacyUrl'},
+  ],
+};
+
+/// Descriptor for `Paywall`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List paywallDescriptor = $convert.base64Decode(
+    'CgdQYXl3YWxsEh8KC3JldmlzaW9uX2lkGAEgASgJUgpyZXZpc2lvbklkEhoKCGhlYWRsaW5lGA'
+    'IgASgJUghoZWFkbGluZRIaCghzdWJ0aXRsZRgDIAEoCVIIc3VidGl0bGUSGgoIYmVuZWZpdHMY'
+    'BCADKAlSCGJlbmVmaXRzEhoKCG9mZmVyaW5nGAUgASgJUghvZmZlcmluZxJECh5oaWdobGlnaH'
+    'RlZF9wcm9kdWN0X2lkZW50aWZpZXIYBiABKAlSHGhpZ2hsaWdodGVkUHJvZHVjdElkZW50aWZp'
+    'ZXISNgoGbGF5b3V0GAcgASgOMh4ubW90aC5iaWxsaW5nLnYxLlBheXdhbGxMYXlvdXRSBmxheW'
+    '91dBIbCgl0ZXJtc191cmwYCCABKAlSCHRlcm1zVXJsEh8KC3ByaXZhY3lfdXJsGAkgASgJUgpw'
+    'cml2YWN5VXJs');
+
+@$core.Deprecated('Use getOfferingsRequestDescriptor instead')
+const GetOfferingsRequest$json = {
+  '1': 'GetOfferingsRequest',
+  '2': [
+    {'1': 'offering', '3': 1, '4': 1, '5': 9, '10': 'offering'},
+  ],
+};
+
+/// Descriptor for `GetOfferingsRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getOfferingsRequestDescriptor =
+    $convert.base64Decode(
+        'ChNHZXRPZmZlcmluZ3NSZXF1ZXN0EhoKCG9mZmVyaW5nGAEgASgJUghvZmZlcmluZw==');
+
+@$core.Deprecated('Use getOfferingsResponseDescriptor instead')
+const GetOfferingsResponse$json = {
+  '1': 'GetOfferingsResponse',
+  '2': [
+    {
+      '1': 'offering',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.billing.v1.Offering',
+      '10': 'offering'
+    },
+  ],
+};
+
+/// Descriptor for `GetOfferingsResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getOfferingsResponseDescriptor = $convert.base64Decode(
+    'ChRHZXRPZmZlcmluZ3NSZXNwb25zZRI1CghvZmZlcmluZxgBIAEoCzIZLm1vdGguYmlsbGluZy'
+    '52MS5PZmZlcmluZ1IIb2ZmZXJpbmc=');
+
+@$core.Deprecated('Use getPaywallRequestDescriptor instead')
+const GetPaywallRequest$json = {
+  '1': 'GetPaywallRequest',
+  '2': [
+    {
+      '1': 'known_paywall_revision',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '10': 'knownPaywallRevision'
+    },
+  ],
+};
+
+/// Descriptor for `GetPaywallRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getPaywallRequestDescriptor = $convert.base64Decode(
+    'ChFHZXRQYXl3YWxsUmVxdWVzdBI0ChZrbm93bl9wYXl3YWxsX3JldmlzaW9uGAEgASgJUhRrbm'
+    '93blBheXdhbGxSZXZpc2lvbg==');
+
+@$core.Deprecated('Use getPaywallResponseDescriptor instead')
+const GetPaywallResponse$json = {
+  '1': 'GetPaywallResponse',
+  '2': [
+    {
+      '1': 'paywall',
+      '3': 1,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.billing.v1.Paywall',
+      '10': 'paywall'
+    },
+  ],
+};
+
+/// Descriptor for `GetPaywallResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List getPaywallResponseDescriptor = $convert.base64Decode(
+    'ChJHZXRQYXl3YWxsUmVzcG9uc2USMgoHcGF5d2FsbBgBIAEoCzIYLm1vdGguYmlsbGluZy52MS'
+    '5QYXl3YWxsUgdwYXl3YWxs');
 
 @$core.Deprecated('Use customerInfoDescriptor instead')
 const CustomerInfo$json = {

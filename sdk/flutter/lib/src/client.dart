@@ -8,11 +8,14 @@ import 'channel/channel_stub.dart'
     if (dart.library.io) 'channel/channel_io.dart'
     if (dart.library.js_interop) 'channel/channel_web.dart';
 import 'config.dart';
+import 'customer_info.dart';
 import 'errors.dart';
 import 'exceptions.dart';
 import 'gen/moth/auth/v1/auth.pbgrpc.dart' as pb;
 import 'gen/moth/auth/v1/config.pbgrpc.dart' as pbconfig;
+import 'gen/moth/billing/v1/billing.pbgrpc.dart' as pbbilling;
 import 'jwt.dart';
+import 'offering.dart';
 import 'platform/platform_stub.dart'
     if (dart.library.io) 'platform/platform_io.dart'
     if (dart.library.js_interop) 'platform/platform_web.dart';
@@ -87,6 +90,11 @@ class MothClient {
       options: options,
       interceptors: interceptors,
     );
+    _billing = pbbilling.BillingServiceClient(
+      _channel,
+      options: options,
+      interceptors: interceptors,
+    );
   }
 
   final MothConfig config;
@@ -99,11 +107,15 @@ class MothClient {
   late final grpc.ClientChannel _channel;
   late final pb.AuthServiceClient _auth;
   late final pbconfig.ConfigServiceClient _projectConfig;
+  late final pbbilling.BillingServiceClient _billing;
 
   MothAuthState _state = const MothAuthLoading();
   final _states = StreamController<MothAuthState>.broadcast();
   StoredSession? _session;
   Future<String>? _refreshing;
+
+  MothCustomerInfo _customerInfo = const MothCustomerInfo.free();
+  final _customerInfos = StreamController<MothCustomerInfo>.broadcast();
 
   /// Bumped on every sign-out so an in-flight refresh that completes
   /// afterwards can tell the session it started from is gone and must not
@@ -128,6 +140,42 @@ class MothClient {
       onListen: () {
         controller.add(_state);
         forward = _states.stream.listen(
+          controller.add,
+          onError: controller.addError,
+          onDone: controller.close,
+        );
+      },
+      onCancel: () => forward?.cancel(),
+    );
+    return controller.stream;
+  }
+
+  // ------------------------------------------------------------ entitlements
+
+  /// The signed-in user's current subscription state. Always valid — an empty
+  /// [MothCustomerInfo] (the free `none` tier) until the first
+  /// [getCustomerInfo], and while signed out.
+  MothCustomerInfo get currentCustomerInfo => _customerInfo;
+
+  /// Seeds [currentCustomerInfo] from an on-device cache (stale-while-
+  /// revalidate) so both [currentCustomerInfo] and [customerInfoChanges]
+  /// reflect the last known entitlements before the first [getCustomerInfo]
+  /// lands — non-widget subscribers then agree with the cached widget state.
+  /// Deduplicated; the server stays authoritative and overwrites on the next
+  /// billing RPC. Called by [MothSubscriptionController]; rarely needed
+  /// directly.
+  void primeCustomerInfo(MothCustomerInfo info) => _setCustomerInfo(info);
+
+  /// Subscription-state changes. Like [authStateChanges], every listener
+  /// immediately receives the current value, then every subsequent change
+  /// (cache hit on launch, background refresh, purchase, restore, sign-out).
+  Stream<MothCustomerInfo> get customerInfoChanges {
+    late StreamController<MothCustomerInfo> controller;
+    StreamSubscription<MothCustomerInfo>? forward;
+    controller = StreamController<MothCustomerInfo>(
+      onListen: () {
+        controller.add(_customerInfo);
+        forward = _customerInfos.stream.listen(
           controller.add,
           onError: controller.addError,
           onDone: controller.close,
@@ -451,10 +499,91 @@ class MothClient {
     );
   });
 
+  // --------------------------------------------------------------- billing
+
+  /// Fetches the signed-in user's subscription state, updates
+  /// [currentCustomerInfo] and notifies [customerInfoChanges]. Cheap and safe
+  /// to call on every launch. Throws [StateError] when signed out.
+  ///
+  /// On-device caching (stale-while-revalidate) and background refresh on
+  /// launch are done by [MothSubscriptionController] — inserted automatically
+  /// by [MothApp] — not by this raw RPC.
+  Future<MothCustomerInfo> getCustomerInfo() => _authed(() async {
+    final resp = await _billing.getCustomerInfo(
+      pbbilling.GetCustomerInfoRequest(),
+    );
+    return _applyCustomerInfo(resp.customerInfo);
+  });
+
+  /// The products of [offering] (empty selects the project's default), for a
+  /// paywall to display. Publishable-key only — safe before sign-in.
+  Future<MothOffering> getOfferings({String offering = ''}) => _run(() async {
+    final resp = await _billing.getOfferings(
+      pbbilling.GetOfferingsRequest(offering: offering),
+    );
+    return MothOffering.fromProto(resp.offering);
+  });
+
+  /// The project's public paywall configuration, or null when
+  /// [knownPaywallRevision] still matches the current revision (keep the
+  /// cached copy — stale-while-revalidate, like the theme). Publishable-key
+  /// only — safe before sign-in.
+  Future<MothPaywall?> getPaywall({String knownPaywallRevision = ''}) => _run(
+    () async {
+      final resp = await _billing.getPaywall(
+        pbbilling.GetPaywallRequest(knownPaywallRevision: knownPaywallRevision),
+      );
+      return resp.hasPaywall() ? MothPaywall.fromProto(resp.paywall) : null;
+    },
+  );
+
+  /// Hands moth the receipt of a purchase the app just completed natively;
+  /// the server validates it, re-derives entitlements and returns the fresh
+  /// state. Prefer `MothScope.of(context).purchase` — it runs the native
+  /// purchase through the [MothBillingAdapter] first.
+  Future<MothCustomerInfo> submitPurchase({
+    required MothStore store,
+    required String productIdentifier,
+    String? appleJwsTransaction,
+    String? googlePurchaseToken,
+    String? googleSubscriptionId,
+  }) => _authed(() async {
+    final req = pbbilling.SubmitPurchaseRequest(
+      store: store.proto,
+      productIdentifier: productIdentifier,
+    );
+    if (appleJwsTransaction != null) {
+      req.appleJwsTransaction = appleJwsTransaction;
+    }
+    if (googlePurchaseToken != null) {
+      req.googlePurchaseToken = googlePurchaseToken;
+    }
+    if (googleSubscriptionId != null) {
+      req.googleSubscriptionId = googleSubscriptionId;
+    }
+    final resp = await _billing.submitPurchase(req);
+    return _applyCustomerInfo(resp.customerInfo);
+  });
+
+  /// Re-links the store's existing purchases (identified by [receipts]) to the
+  /// current user and returns the fresh state. Prefer
+  /// `MothScope.of(context).restorePurchases` — it reads the receipts from the
+  /// [MothBillingAdapter] first.
+  Future<MothCustomerInfo> restorePurchases({
+    required MothStore store,
+    required List<String> receipts,
+  }) => _authed(() async {
+    final resp = await _billing.restorePurchases(
+      pbbilling.RestorePurchasesRequest(store: store.proto, receipts: receipts),
+    );
+    return _applyCustomerInfo(resp.customerInfo);
+  });
+
   /// Shuts down the channel and closes [authStateChanges].
   Future<void> dispose() async {
     await _channel.shutdown();
     await _states.close();
+    await _customerInfos.close();
   }
 
   // -------------------------------------------------------------- internals
@@ -609,7 +738,33 @@ class MothClient {
       // Sign-out must complete locally even when storage misbehaves.
       _logStorageFailure('clear', err);
     }
+    // Emit the signed-out auth state BEFORE the free customer-info reset: a
+    // MothSubscriptionController listens to both, and it must observe the
+    // sign-out (which drops its user id) before the free snapshot arrives, so
+    // it does not persist the empty snapshot over the outgoing user's cached
+    // entitlements (breaking instant gating when they sign back in).
     _setState(const MothSignedOut());
+    _setCustomerInfo(const MothCustomerInfo.free());
+  }
+
+  // Publishes a fresh CustomerInfo from a billing RPC. Always emits — even
+  // when it equals the last value — so a stale-while-revalidate controller
+  // that rendered a cached snapshot still learns the confirmed server truth.
+  // Server is authority; on-device caching lives in
+  // MothSubscriptionController.
+  MothCustomerInfo _applyCustomerInfo(pbbilling.CustomerInfo proto) {
+    final info = MothCustomerInfo.fromProto(proto);
+    _customerInfo = info;
+    if (!_customerInfos.isClosed) _customerInfos.add(info);
+    return info;
+  }
+
+  // Resets to a value on a lifecycle change (sign-out); deduplicated, so a
+  // no-op reset does not churn listeners.
+  void _setCustomerInfo(MothCustomerInfo info) {
+    if (info == _customerInfo) return;
+    _customerInfo = info;
+    if (!_customerInfos.isClosed) _customerInfos.add(info);
   }
 
   void _logStorageFailure(String op, Object err) {
