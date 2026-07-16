@@ -101,7 +101,7 @@ func (h *TokenHandler) IntrospectToken(ctx context.Context, req *connect.Request
 
 func (h *TokenHandler) publicKeyLookup(ctx context.Context, projectID string) func(kid string) (*ecdsa.PublicKey, error) {
 	return func(kid string) (*ecdsa.PublicKey, error) {
-		active, err := h.store.ListActiveProjectKeys(ctx, projectID)
+		active, err := h.store.ListActiveAndGraceKeys(ctx, projectID, h.now())
 		if err != nil {
 			return nil, err
 		}

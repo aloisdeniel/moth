@@ -163,6 +163,42 @@ moth is CGO-free (pure-Go SQLite driver), so the static/distroless base
 works without glibc. Mount `/data` — it is the entire state of the
 instance.
 
+### Docker Compose
+
+A minimal stack with a named volume for the data directory and Caddy in
+front for automatic TLS:
+
+```yaml title="docker-compose.yml"
+services:
+  moth:
+    image: ghcr.io/aloisdeniel/moth:latest   # or `build: .`
+    restart: unless-stopped
+    environment:
+      MOTH_BASE_URL: https://auth.example.com
+      MOTH_MASTER_KEY: ${MOTH_MASTER_KEY}     # from a .env file / secret
+    volumes:
+      - moth-data:/data
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    command: caddy reverse-proxy --from auth.example.com --to h2c://moth:8080
+    volumes:
+      - caddy-data:/data
+
+volumes:
+  moth-data:
+  caddy-data:
+```
+
+`caddy:2`'s `reverse-proxy --to h2c://…` keeps the upstream on HTTP/2 so
+native gRPC from the mobile SDK works end to end. Generate a master key once
+(`openssl rand -base64 32`) and keep it in the `.env` — losing it means
+losing every project's signing keys.
+
 ## Reverse proxy & TLS
 
 moth listens on plain HTTP and speaks **HTTP/2 without TLS (h2c)** on the

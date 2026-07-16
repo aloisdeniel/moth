@@ -1,0 +1,178 @@
+# GoReleaser configuration for moth (milestone 10).
+#
+# Produces, on every `vX.Y.Z` tag (see .github/workflows/release.yml):
+#   - CGO-free binaries for darwin/linux/windows × amd64/arm64 (6 targets)
+#   - .tar.gz / .zip archives with the README, LICENSE and CHANGELOG
+#   - a SHA-256 checksums file, cosign-signed (keyless, GitHub OIDC)
+#   - a Homebrew formula pushed to the tap repo
+#   - scratch-based multi-arch Docker images (~15 MB), cosign-signed
+#
+# The binary embeds the admin SPA, the hosted pages, the fonts, the Flutter
+# SDK tarball and the /docs content, so the scratch image needs nothing but
+# the binary and a CA bundle (for outbound OAuth/JWKS calls).
+#
+# Validate locally with `goreleaser check`; dry-run a build with
+# `goreleaser release --snapshot --clean`.
+version: 2
+
+project_name: moth
+
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - id: moth
+    main: ./cmd/moth
+    binary: moth
+    env:
+      # Pure-Go SQLite (modernc.org/sqlite) means no cgo, so every target
+      # cross-compiles from one Linux runner and the scratch image is static.
+      - CGO_ENABLED=0
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+    flags:
+      - -trimpath
+    ldflags:
+      # Stamp the build version so the binary — and the pub tarball it serves
+      # (internal/server/pub.go) and its embedded /docs — all report the tag.
+      - -s -w -X github.com/aloisdeniel/moth/internal/version.Version=v{{ .Version }}
+    mod_timestamp: "{{ .CommitTimestamp }}"
+
+archives:
+  - id: moth
+    ids: [moth]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: "checksums.txt"
+  algorithm: sha256
+
+# Keyless cosign signature over the checksums file. In GitHub Actions the
+# OIDC token identifies the workflow; verifiers check the certificate
+# identity instead of a long-lived key. `cosign` must be on PATH (the
+# release workflow installs it via sigstore/cosign-installer).
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+# One entry builds and pushes a multi-arch (amd64+arm64) manifest in the
+# current goreleaser schema. Images are cosign-signed via `sign:` below.
+dockers_v2:
+  - id: moth
+    images:
+      - "ghcr.io/aloisdeniel/moth"
+    tags:
+      - "{{ .Version }}"
+      - "latest"
+    dockerfile: Dockerfile.goreleaser
+    platforms:
+      - "linux/amd64"
+      - "linux/arm64"
+    labels:
+      org.opencontainers.image.title: "{{ .ProjectName }}"
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.source: "https://github.com/aloisdeniel/moth"
+      org.opencontainers.image.licenses: "MIT"
+
+# Keyless signature over the published image manifests.
+docker_signs:
+  - cmd: cosign
+    artifacts: manifests
+    args:
+      - sign
+      - "${artifact}@${digest}"
+      - "--yes"
+    output: true
+
+homebrew_casks:
+  - name: moth
+    ids: [moth]
+    # PLACEHOLDER: create a public tap repository named `homebrew-tap` under
+    # your account (github.com/aloisdeniel/homebrew-tap) and provide a
+    # HOMEBREW_TAP_TOKEN with push rights in the release workflow. Until then
+    # skip_upload keeps the cask artifact built and validated but NOT pushed,
+    # so `goreleaser release --clean` does not fail trying to push to a tap
+    # that does not exist yet. Flip this to "false" once the tap is created.
+    skip_upload: "true"
+    repository:
+      owner: aloisdeniel
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: "https://github.com/aloisdeniel/moth"
+    description: "Self-hosted authentication for mobile apps, in one binary"
+    license: "MIT"
+    # moth ships unsigned, so remove the quarantine attribute on install
+    # (otherwise Gatekeeper blocks the just-downloaded binary).
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system "xattr", "-dr", "com.apple.quarantine", "#{staged_path}/moth"
+          end
+
+changelog:
+  # Grouped from conventional-commit subjects. cliff.toml holds the richer
+  # config used to (re)generate the committed CHANGELOG.md.
+  sort: asc
+  use: git
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"
+      - "Merge pull request"
+      - "Merge branch"
+  groups:
+    - title: Features
+      regexp: "^.*feat[(:].*"
+      order: 0
+    - title: Bug fixes
+      regexp: "^.*fix[(:].*"
+      order: 1
+    - title: Security
+      regexp: "^.*sec[(:].*"
+      order: 2
+    - title: Others
+      order: 999
+
+release:
+  github:
+    owner: aloisdeniel
+    name: moth
+  draft: false
+  prerelease: auto
+  footer: |
+    ---
+    Verify the checksums signature (keyless cosign):
+
+    ```
+    cosign verify-blob \
+      --certificate checksums.txt.pem \
+      --signature checksums.txt.sig \
+      --certificate-identity-regexp 'https://github.com/aloisdeniel/moth/.*' \
+      --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+      checksums.txt
+    ```
+
+    The pub SDK served at `/pub` and the embedded `/docs` both match this
+    release's version exactly.

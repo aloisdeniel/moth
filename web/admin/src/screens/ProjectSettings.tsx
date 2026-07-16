@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
-import { Field, Status } from "../components/ui";
+import { Field, Status, StringListField } from "../components/ui";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService, SmtpSource } from "../gen/moth/admin/v1/settings_pb";
@@ -22,6 +22,9 @@ export function ProjectSettings({ project }: { project: Project }) {
   const [refreshTTL, setRefreshTTL] = useState(String(s?.refreshTokenTtlDays ?? 30));
   const [retention, setRetention] = useState(String(s?.analyticsRetentionDays || 90));
   const [rollupTz, setRollupTz] = useState(s?.rollupTimezone || "UTC");
+  const [allowlist, setAllowlist] = useState<string[]>(s?.signupEmailAllowlist ?? []);
+  const [blocklist, setBlocklist] = useState<string[]>(s?.signupEmailBlocklist ?? []);
+  const [captchaUrl, setCaptchaUrl] = useState(s?.captchaVerifyUrl ?? "");
   const [saved, setSaved] = useState(false);
 
   const update = useMutation(ProjectService.method.updateProject, {
@@ -56,6 +59,9 @@ export function ProjectSettings({ project }: { project: Project }) {
         apple: s?.apple,
         autoLinkVerifiedEmail: s?.autoLinkVerifiedEmail,
         redirectSchemes: s?.redirectSchemes ?? [],
+        signupEmailAllowlist: allowlist,
+        signupEmailBlocklist: blocklist,
+        captchaVerifyUrl: captchaUrl.trim(),
       },
       updateMask: { paths: ["name", "settings"] },
     });
@@ -126,6 +132,39 @@ export function ProjectSettings({ project }: { project: Project }) {
             </span>
           </span>
         </label>
+      </section>
+
+      <section className="card card--pad stack-16">
+        <h3 className="card__title">Abuse controls</h3>
+        <StringListField
+          label="Allowed email domains"
+          values={allowlist}
+          onChange={setAllowlist}
+          placeholder="example.com"
+          help={
+            "When non-empty, sign-up is restricted to these email domains — " +
+            'every other domain is rejected. Glob patterns allowed (e.g. "*.acme.io").'
+          }
+        />
+        <StringListField
+          label="Blocked email domains"
+          values={blocklist}
+          onChange={setBlocklist}
+          placeholder="mailinator.com"
+          help="Email domains rejected at sign-up, evaluated after the allowlist. Glob patterns allowed."
+        />
+        <Field
+          label="CAPTCHA verification URL"
+          help="Optional, off by default in v1. Documented hook: a verification endpoint moth POSTs the CAPTCHA token to. Stored but not yet enforced."
+        >
+          <input
+            className="input input--mono"
+            value={captchaUrl}
+            onChange={(e) => setCaptchaUrl(e.target.value)}
+            placeholder="https://example.com/captcha/verify"
+            spellCheck={false}
+          />
+        </Field>
       </section>
 
       <section className="card card--pad stack-16">

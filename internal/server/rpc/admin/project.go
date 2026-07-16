@@ -27,12 +27,13 @@ type ProjectHandler struct {
 	store   Store
 	master  keys.MasterKey
 	baseURL string // no trailing slash; JWKS/issuer values hang off it
+	audit   *Auditor
 }
 
 // NewProjectHandler builds the project service. The master key encrypts
 // each new project's signing key at rest.
-func NewProjectHandler(st Store, master keys.MasterKey, baseURL string) *ProjectHandler {
-	return &ProjectHandler{store: st, master: master, baseURL: strings.TrimSuffix(baseURL, "/")}
+func NewProjectHandler(st Store, master keys.MasterKey, baseURL string, auditor *Auditor) *ProjectHandler {
+	return &ProjectHandler{store: st, master: master, baseURL: strings.TrimSuffix(baseURL, "/"), audit: auditor}
 }
 
 func (h *ProjectHandler) CreateProject(ctx context.Context, req *connect.Request[adminv1.CreateProjectRequest]) (*connect.Response[adminv1.CreateProjectResponse], error) {
@@ -92,6 +93,11 @@ func (h *ProjectHandler) CreateProject(ctx context.Context, req *connect.Request
 	if err := h.store.CreateProject(ctx, project, projectKey); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionProjectCreate, TargetType: "project", TargetID: project.ID,
+		ProjectID: project.ID,
+		Summary:   fmt.Sprintf("Created project %q (slug %s)", project.Name, project.Slug),
+	})
 	msg, err := h.projectProto(ctx, project, 0)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -143,6 +149,7 @@ func (h *ProjectHandler) UpdateProject(ctx context.Context, req *connect.Request
 	if err != nil {
 		return nil, projectErr(err)
 	}
+	beforeSettings := p.Settings
 	paths := []string{"name"}
 	if req.Msg.Settings != nil {
 		paths = append(paths, "settings")
@@ -194,6 +201,23 @@ func (h *ProjectHandler) UpdateProject(ctx context.Context, req *connect.Request
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionProjectUpdate, TargetType: "project", TargetID: p.ID,
+		ProjectID: p.ID, Summary: fmt.Sprintf("Updated project %q", p.Name),
+	})
+	// A change to social-provider configuration (or a rotated provider
+	// secret) is security-relevant, so it is called out with its own record.
+	if len(pendingSecrets) > 0 || beforeSettings.Google != p.Settings.Google ||
+		beforeSettings.Apple.Enabled != p.Settings.Apple.Enabled ||
+		beforeSettings.Apple.ServicesID != p.Settings.Apple.ServicesID ||
+		beforeSettings.Apple.TeamID != p.Settings.Apple.TeamID ||
+		beforeSettings.Apple.KeyID != p.Settings.Apple.KeyID {
+		h.audit.record(ctx, entry{
+			Action: ActionProviderUpdate, TargetType: "project", TargetID: p.ID,
+			ProjectID: p.ID,
+			Summary:   fmt.Sprintf("Changed social-provider configuration for %q", p.Name),
+		})
+	}
 	count, err := h.store.CountUsers(ctx, p.ID, "")
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -215,6 +239,11 @@ func (h *ProjectHandler) RegenerateSecretKey(ctx context.Context, req *connect.R
 	if err := h.store.UpdateProjectSecretKey(ctx, p.ID, token.Hash(secretKey), now); err != nil {
 		return nil, projectErr(err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionSecretKeyRegen, TargetType: "project", TargetID: p.ID,
+		ProjectID: p.ID,
+		Summary:   fmt.Sprintf("Regenerated the secret key for %q", p.Name),
+	})
 	p.UpdatedAt = now
 	count, err := h.store.CountUsers(ctx, p.ID, "")
 	if err != nil {
@@ -275,15 +304,31 @@ func (h *ProjectHandler) ResetSigningKey(ctx context.Context, req *connect.Reque
 	if err := h.store.ResetProjectSigningKey(ctx, p.ID, projectKey, now); err != nil {
 		return nil, projectErr(err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionSigningKeyReset, TargetType: "signing_key", TargetID: projectKey.Kid,
+		ProjectID: p.ID,
+		Summary:   fmt.Sprintf("Reset the signing key for %q (all sessions invalidated)", p.Name),
+	})
 	return connect.NewResponse(&adminv1.ResetSigningKeyResponse{
 		Key: signingKeyProto(projectKey),
 	}), nil
 }
 
 func (h *ProjectHandler) DeleteProject(ctx context.Context, req *connect.Request[adminv1.DeleteProjectRequest]) (*connect.Response[adminv1.DeleteProjectResponse], error) {
+	// Read the project first so the audit line can name what was removed; a
+	// missing project is reported the same as a failed delete.
+	p, err := h.store.GetProject(ctx, req.Msg.Id)
+	if err != nil {
+		return nil, projectErr(err)
+	}
 	if err := h.store.DeleteProject(ctx, req.Msg.Id); err != nil {
 		return nil, projectErr(err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionProjectDelete, TargetType: "project", TargetID: p.ID,
+		ProjectID: p.ID,
+		Summary:   fmt.Sprintf("Deleted project %q (slug %s) and all its data", p.Name, p.Slug),
+	})
 	return connect.NewResponse(&adminv1.DeleteProjectResponse{}), nil
 }
 
@@ -412,6 +457,9 @@ func (h *ProjectHandler) settingsProto(ctx context.Context, projectID string, s 
 		RedirectSchemes:        s.RedirectSchemes,
 		AnalyticsRetentionDays: int32(s.AnalyticsRetentionDays),
 		RollupTimezone:         s.RollupTimezone,
+		SignupEmailAllowlist:   s.SignupEmailAllowlist,
+		SignupEmailBlocklist:   s.SignupEmailBlocklist,
+		CaptchaVerifyUrl:       s.CaptchaVerifyURL,
 	}, nil
 }
 
@@ -509,7 +557,26 @@ func settingsFromProto(s *adminv1.ProjectSettings) (store.ProjectSettings, error
 		}
 		out.RedirectSchemes = append(out.RedirectSchemes, scheme)
 	}
+	// Abuse controls: normalize domain patterns (trim + lowercase, drop
+	// blanks). The matcher in internal/server/rpc/auth/abuse.go accepts exact
+	// domains and "*.acme.io"/".acme.io" wildcards; storing them lowercased
+	// keeps matching case-insensitive.
+	out.SignupEmailAllowlist = normalizeDomainList(s.SignupEmailAllowlist)
+	out.SignupEmailBlocklist = normalizeDomainList(s.SignupEmailBlocklist)
+	out.CaptchaVerifyURL = strings.TrimSpace(s.CaptchaVerifyUrl)
 	return out, nil
+}
+
+// normalizeDomainList trims and lowercases each domain pattern, dropping blank
+// entries. A nil/empty input yields nil so an unset list stays unset.
+func normalizeDomainList(in []string) []string {
+	var out []string
+	for _, d := range in {
+		if d = strings.ToLower(strings.TrimSpace(d)); d != "" {
+			out = append(out, d)
+		}
+	}
+	return out
 }
 
 // providerSecretsFromProto extracts and validates the write-only secret

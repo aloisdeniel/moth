@@ -8,15 +8,14 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/spf13/cobra"
-	"google.golang.org/protobuf/types/known/fieldmaskpb"
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
-	"github.com/aloisdeniel/moth/internal/token"
 )
 
 // exportDoc is the users-JSON document `moth project export` writes and
-// `moth project import` reads. Milestone 10's migration format extends it
-// (foreign password hashes); until then credentials never round-trip.
+// `moth project import` reads. It carries each account's (possibly foreign)
+// password hash so a migration off — or between — moth instances keeps users
+// signed in without a password reset.
 type exportDoc struct {
 	Project    string       `json:"project"`
 	ExportedAt time.Time    `json:"exported_at"`
@@ -26,15 +25,28 @@ type exportDoc struct {
 type exportUser struct {
 	Email         string `json:"email"`
 	DisplayName   string `json:"display_name,omitempty"`
+	AvatarURL     string `json:"avatar_url,omitempty"`
 	EmailVerified bool   `json:"email_verified"`
 	Disabled      bool   `json:"disabled"`
 	// CustomClaims is the JSON object embedded in the JWT `claims` claim.
 	CustomClaims string `json:"custom_claims,omitempty"`
-	// Providers is informational ("password", "google", "apple"): social
-	// identities re-link on the user's next social sign-in and password
-	// credentials cannot be exported.
-	Providers []string  `json:"providers,omitempty"`
-	CreatedAt time.Time `json:"created_at"`
+	// PasswordHash is the encoded credential; empty for social-only accounts.
+	PasswordHash string `json:"password_hash,omitempty"`
+	// PasswordAlgorithm is the scheme that produced PasswordHash: "argon2id"
+	// for a native moth hash, or the foreign algorithm ("bcrypt", "scrypt",
+	// "argon2", "pbkdf2") a migration import declared. A foreign hash is
+	// verified with its original algorithm on the user's first sign-in, then
+	// transparently rehashed to argon2id.
+	PasswordAlgorithm string           `json:"password_algorithm,omitempty"`
+	Identities        []exportIdentity `json:"identities,omitempty"`
+	CreatedAt         time.Time        `json:"created_at"`
+	LastLoginAt       *time.Time       `json:"last_login_at,omitempty"`
+}
+
+type exportIdentity struct {
+	Provider        string `json:"provider"`
+	ProviderSubject string `json:"provider_subject,omitempty"`
+	Email           string `json:"email,omitempty"`
 }
 
 func newProjectExportCmd(opts *clientOpts) *cobra.Command {
@@ -43,13 +55,15 @@ func newProjectExportCmd(opts *clientOpts) *cobra.Command {
 		Use:   "export <slug|id>",
 		Short: "Export a project's users as JSON (import them with 'moth project import')",
 		Long: `Export writes the project's user accounts — email, display name,
-verification/disabled state, custom claims — as one JSON document, the
-input of 'moth project import'.
+verification/disabled state, custom claims, provider identities and the
+encoded password hash — as one JSON document, the input of
+'moth project import'.
 
-Credentials never leave the server: password hashes are not exported (the
-milestone-10 migration format will carry foreign hashes), and social
-identities re-link automatically on the user's next social sign-in.
-Project configuration is a separate concern: see 'moth project dump'.`,
+Password hashes travel with the users (a native argon2id hash, tagged
+"argon2id"), so migrating between moth instances keeps everyone signed in
+without a reset. Social identities also re-link automatically on the
+user's next social sign-in. Project configuration is a separate concern:
+see 'moth project dump'.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			client, err := opts.dial()
@@ -60,29 +74,38 @@ Project configuration is a separate concern: see 'moth project dump'.`,
 			if err != nil {
 				return err
 			}
+			resp, err := client.Projects.ExportProject(cmd.Context(),
+				connect.NewRequest(&adminv1.ExportProjectRequest{ProjectId: p.Id}))
+			if err != nil {
+				return err
+			}
 			doc := exportDoc{Project: p.Slug, ExportedAt: time.Now().UTC(), Users: []exportUser{}}
-			pageToken := ""
-			for {
-				resp, err := client.Users.ListUsers(cmd.Context(), connect.NewRequest(&adminv1.ListUsersRequest{
-					ProjectId: p.Id, PageSize: 200, PageToken: pageToken,
-				}))
-				if err != nil {
-					return err
+			for _, u := range resp.Msg.Users {
+				eu := exportUser{
+					Email:             u.Email,
+					DisplayName:       u.DisplayName,
+					AvatarURL:         u.AvatarUrl,
+					EmailVerified:     u.EmailVerified,
+					Disabled:          u.Disabled,
+					CustomClaims:      u.CustomClaims,
+					PasswordHash:      u.PasswordHash,
+					PasswordAlgorithm: u.PasswordAlgorithm,
 				}
-				for _, u := range resp.Msg.Users {
-					doc.Users = append(doc.Users, exportUser{
-						Email:         u.Email,
-						DisplayName:   u.DisplayName,
-						EmailVerified: u.EmailVerified,
-						Disabled:      u.Disabled,
-						CustomClaims:  u.CustomClaims,
-						Providers:     u.Providers,
-						CreatedAt:     u.CreateTime.AsTime(),
+				if u.CreateTime != nil {
+					eu.CreatedAt = u.CreateTime.AsTime()
+				}
+				if u.LastLoginTime != nil {
+					t := u.LastLoginTime.AsTime()
+					eu.LastLoginAt = &t
+				}
+				for _, id := range u.Identities {
+					eu.Identities = append(eu.Identities, exportIdentity{
+						Provider:        id.Provider,
+						ProviderSubject: id.ProviderSubject,
+						Email:           id.Email,
 					})
 				}
-				if pageToken = resp.Msg.NextPageToken; pageToken == "" {
-					break
-				}
+				doc.Users = append(doc.Users, eu)
 			}
 			data, err := jsonMarshalIndent(doc)
 			if err != nil {
@@ -113,19 +136,20 @@ type importResult struct {
 
 func newProjectImportCmd(opts *clientOpts) *cobra.Command {
 	var file string
-	var invite, yes bool
+	var yes bool
 	cmd := &cobra.Command{
 		Use:   "import <slug|id> -f <export.json>",
 		Short: "Import users from a 'moth project export' document (idempotent)",
 		Long: `Import creates the document's users in the target project, restoring
-display name, email verification, disabled state and custom claims. A
-user whose email already exists in the project is skipped, so re-running
-an import is safe.
+display name, avatar, email verification, disabled state, custom claims,
+provider identities and the encoded password hash. A user whose email
+already exists in the project is skipped, so re-running an import is safe.
 
-Passwords do not round-trip (moth never exports hashes): pass --invite to
-send each newly created user a set-password email; without it each user
-gets an unusable random password and recovers through "forgot password"
-or a social sign-in, which re-links automatically.`,
+Foreign password hashes (bcrypt, scrypt, argon2, pbkdf2 — tagged per user
+in the document's password_algorithm field) are accepted: each is
+verified with its original algorithm on the user's first sign-in and then
+transparently rehashed to argon2id, so teams can migrate from another
+auth system without forcing a password reset.`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			data, err := os.ReadFile(file)
@@ -149,43 +173,35 @@ or a social sign-in, which re-links automatically.`,
 				return err
 			}
 
-			result := importResult{Project: p.Slug}
+			req := &adminv1.ImportProjectRequest{ProjectId: p.Id}
 			for _, u := range doc.Users {
-				req := &adminv1.CreateUserRequest{
-					ProjectId: p.Id, Email: u.Email, DisplayName: u.DisplayName,
-					EmailVerified: u.EmailVerified, SendInvite: invite,
+				iu := &adminv1.ImportedUser{
+					Email:             u.Email,
+					EmailVerified:     u.EmailVerified,
+					DisplayName:       u.DisplayName,
+					AvatarUrl:         u.AvatarURL,
+					CustomClaims:      u.CustomClaims,
+					PasswordHash:      u.PasswordHash,
+					PasswordAlgorithm: u.PasswordAlgorithm,
+					Disabled:          u.Disabled,
 				}
-				if !invite {
-					// Hashes never round-trip; an unusable random password
-					// creates the account, recovered via reset or social.
-					req.Password = token.Random(32)
+				for _, id := range u.Identities {
+					iu.Identities = append(iu.Identities, &adminv1.ExportedIdentity{
+						Provider:        id.Provider,
+						ProviderSubject: id.ProviderSubject,
+						Email:           id.Email,
+					})
 				}
-				created, err := client.Users.CreateUser(cmd.Context(), connect.NewRequest(req))
-				if connect.CodeOf(err) == connect.CodeAlreadyExists {
-					result.Skipped++
-					continue
-				}
-				if err != nil {
-					return fmt.Errorf("create %s: %w", u.Email, err)
-				}
-				result.Created++
-				id := created.Msg.User.Id
-				if u.CustomClaims != "" && u.CustomClaims != "{}" {
-					if _, err := client.Users.UpdateUser(cmd.Context(), connect.NewRequest(&adminv1.UpdateUserRequest{
-						ProjectId: p.Id, UserId: id,
-						User:       &adminv1.User{CustomClaims: u.CustomClaims},
-						UpdateMask: &fieldmaskpb.FieldMask{Paths: []string{"custom_claims"}},
-					})); err != nil {
-						return fmt.Errorf("restore claims of %s: %w", u.Email, err)
-					}
-				}
-				if u.Disabled {
-					if _, err := client.Users.DisableUser(cmd.Context(), connect.NewRequest(&adminv1.DisableUserRequest{
-						ProjectId: p.Id, UserId: id,
-					})); err != nil {
-						return fmt.Errorf("disable %s: %w", u.Email, err)
-					}
-				}
+				req.Users = append(req.Users, iu)
+			}
+			resp, err := client.Projects.ImportProject(cmd.Context(), connect.NewRequest(req))
+			if err != nil {
+				return err
+			}
+			result := importResult{
+				Project: p.Slug,
+				Created: int(resp.Msg.ImportedCount),
+				Skipped: int(resp.Msg.SkippedCount),
 			}
 			if opts.json {
 				return printJSONValue(cmd, result)
@@ -196,7 +212,6 @@ or a social sign-in, which re-links automatically.`,
 		},
 	}
 	cmd.Flags().StringVarP(&file, "file", "f", "", "export JSON file (required)")
-	cmd.Flags().BoolVar(&invite, "invite", false, "send each created user a set-password invite email")
 	cmd.Flags().BoolVar(&yes, "yes", false, "skip the confirmation prompt")
 	_ = cmd.MarkFlagRequired("file") // flag is registered just above
 	return cmd

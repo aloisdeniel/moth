@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// AuditService exposes the append-only audit log to the admin console. Every
+// admin action (through a browser session or a personal access token) and
+// security-relevant server event is recorded and readable here. All RPCs
+// require an authenticated admin session.
+//
+// CSV export is served as a plain-HTTP endpoint (GET /admin/audit.csv,
+// added by the milestone-10 build stage), not as an RPC, so the browser can
+// stream and download it directly.
+service AuditService {
+  // ListAuditLog returns audit entries newest-first, narrowed by the
+  // optional filters and paged with page_size / page_token.
+  rpc ListAuditLog(ListAuditLogRequest) returns (ListAuditLogResponse);
+}
+
+// AuditEntry is one immutable audit record.
+message AuditEntry {
+  string id = 1;
+  // Credential kind that performed the action: "cookie" (browser session),
+  // "pat" (personal access token) or "system" (the server itself).
+  string actor_type = 2;
+  // Identifier of the actor (admin id, or empty for system events).
+  string actor_id = 3;
+  // Human-readable actor label (admin email, PAT name).
+  string actor_label = 4;
+  // Machine action name, e.g. "project.create", "user.disable",
+  // "signing_key.rotate", "provider.update".
+  string action = 5;
+  // Kind of the affected object ("project", "user", "signing_key", ...).
+  string target_type = 6;
+  // Identifier of the affected object.
+  string target_id = 7;
+  // Owning project; empty for instance-level actions.
+  string project_id = 8;
+  // Short human-readable description of what happened.
+  string summary = 9;
+  // Optional JSON object describing the before/after of the change.
+  string before_after = 10;
+  // Coarse or hashed client IP.
+  string ip = 11;
+  google.protobuf.Timestamp create_time = 12;
+}
+
+message ListAuditLogRequest {
+  // Optional: only entries of this project.
+  string project_id = 1;
+  // Optional: only entries by this actor id.
+  string actor_id = 2;
+  // Optional: only entries with this exact action name.
+  string action = 3;
+  // Optional inclusive lower bound on create_time.
+  google.protobuf.Timestamp start_time = 4;
+  // Optional exclusive upper bound on create_time.
+  google.protobuf.Timestamp end_time = 5;
+  // Page size, 1–200; 0 means the default (50).
+  int32 page_size = 6;
+  // next_page_token of the previous response; empty for the first page.
+  string page_token = 7;
+}
+
+message ListAuditLogResponse {
+  repeated AuditEntry entries = 1;
+  // Empty when this is the last page.
+  string next_page_token = 2;
+}

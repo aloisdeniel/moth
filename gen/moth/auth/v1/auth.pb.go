@@ -230,7 +230,10 @@ type SignUpRequest struct {
 	Password    string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
 	DisplayName string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
 	// Free-form device description stored with the session, e.g. "iPhone 15".
-	DeviceInfo    string `protobuf:"bytes,4,opt,name=device_info,json=deviceInfo,proto3" json:"device_info,omitempty"`
+	DeviceInfo string `protobuf:"bytes,4,opt,name=device_info,json=deviceInfo,proto3" json:"device_info,omitempty"`
+	// Optional CAPTCHA solution, verified when the project configures a
+	// captcha_verify_url (off by default; enforcement is a documented hook).
+	CaptchaToken  string `protobuf:"bytes,5,opt,name=captcha_token,json=captchaToken,proto3" json:"captcha_token,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -289,6 +292,13 @@ func (x *SignUpRequest) GetDisplayName() string {
 func (x *SignUpRequest) GetDeviceInfo() string {
 	if x != nil {
 		return x.DeviceInfo
+	}
+	return ""
+}
+
+func (x *SignUpRequest) GetCaptchaToken() string {
+	if x != nil {
+		return x.CaptchaToken
 	}
 	return ""
 }
@@ -1847,13 +1857,14 @@ const file_moth_auth_v1_auth_proto_rawDesc = "" +
 	"\faccess_token\x18\x01 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x12\x1d\n" +
 	"\n" +
-	"expires_in\x18\x03 \x01(\x03R\texpiresIn\"\x85\x01\n" +
+	"expires_in\x18\x03 \x01(\x03R\texpiresIn\"\xaa\x01\n" +
 	"\rSignUpRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
 	"\bpassword\x18\x02 \x01(\tR\bpassword\x12!\n" +
 	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12\x1f\n" +
 	"\vdevice_info\x18\x04 \x01(\tR\n" +
-	"deviceInfo\"i\n" +
+	"deviceInfo\x12#\n" +
+	"\rcaptcha_token\x18\x05 \x01(\tR\fcaptchaToken\"i\n" +
 	"\x0eSignUpResponse\x12&\n" +
 	"\x04user\x18\x01 \x01(\v2\x12.moth.auth.v1.UserR\x04user\x12/\n" +
 	"\x06tokens\x18\x02 \x01(\v2\x17.moth.auth.v1.TokenPairR\x06tokens\"b\n" +

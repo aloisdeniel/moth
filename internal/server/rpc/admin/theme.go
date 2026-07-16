@@ -27,6 +27,7 @@ type ThemeHandler struct {
 	// {uploadsDir}/{projectID}/logo-{variant}.{png|svg}, served back at
 	// /assets/{projectID}/....
 	uploadsDir string
+	audit      *Auditor
 	now        func() time.Time
 }
 
@@ -34,8 +35,8 @@ var _ adminv1connect.ThemeServiceHandler = (*ThemeHandler)(nil)
 
 // NewThemeHandler builds the theme service. uploadsDir is created lazily on
 // the first logo upload.
-func NewThemeHandler(st Store, uploadsDir string) *ThemeHandler {
-	return &ThemeHandler{store: st, uploadsDir: uploadsDir, now: time.Now}
+func NewThemeHandler(st Store, uploadsDir string, auditor *Auditor) *ThemeHandler {
+	return &ThemeHandler{store: st, uploadsDir: uploadsDir, audit: auditor, now: time.Now}
 }
 
 func (h *ThemeHandler) GetTheme(ctx context.Context, req *connect.Request[adminv1.GetThemeRequest]) (*connect.Response[adminv1.GetThemeResponse], error) {
@@ -72,6 +73,10 @@ func (h *ThemeHandler) UpdateTheme(ctx context.Context, req *connect.Request[adm
 	if err != nil {
 		return nil, err
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionThemeUpdate, TargetType: "theme", TargetID: req.Msg.ProjectId,
+		ProjectID: req.Msg.ProjectId, Summary: "Updated the login theme",
+	})
 	return connect.NewResponse(&adminv1.UpdateThemeResponse{
 		Theme:      themeProto(t),
 		RevisionId: rev,
@@ -134,6 +139,11 @@ func (h *ThemeHandler) RestoreThemeRevision(ctx context.Context, req *connect.Re
 	if err != nil {
 		return nil, err
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionThemeRestore, TargetType: "theme", TargetID: req.Msg.ProjectId,
+		ProjectID: req.Msg.ProjectId,
+		Summary:   fmt.Sprintf("Restored login theme revision %s", req.Msg.RevisionId),
+	})
 	return connect.NewResponse(&adminv1.RestoreThemeRevisionResponse{
 		Theme:      themeProto(t),
 		RevisionId: newRev,
@@ -146,6 +156,10 @@ func (h *ThemeHandler) ResetTheme(ctx context.Context, req *connect.Request[admi
 	if err := h.store.ClearProjectTheme(ctx, req.Msg.ProjectId, h.now()); err != nil {
 		return nil, projectErr(err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionThemeReset, TargetType: "theme", TargetID: req.Msg.ProjectId,
+		ProjectID: req.Msg.ProjectId, Summary: "Reset the login theme to defaults",
+	})
 	return connect.NewResponse(&adminv1.ResetThemeResponse{
 		Theme: themeProto(theme.Default()),
 	}), nil
@@ -211,6 +225,10 @@ func (h *ThemeHandler) UploadLogo(ctx context.Context, req *connect.Request[admi
 	if err != nil {
 		return nil, err
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionThemeLogoUpload, TargetType: "theme", TargetID: p.ID,
+		ProjectID: p.ID, Summary: fmt.Sprintf("Uploaded the %s login logo", variant),
+	})
 	return connect.NewResponse(&adminv1.UploadLogoResponse{
 		Theme:      themeProto(t),
 		RevisionId: rev,
@@ -250,6 +268,10 @@ func (h *ThemeHandler) DeleteLogo(ctx context.Context, req *connect.Request[admi
 	if err != nil {
 		return nil, err
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionThemeLogoDelete, TargetType: "theme", TargetID: p.ID,
+		ProjectID: p.ID, Summary: fmt.Sprintf("Removed the %s login logo", variant),
+	})
 	return connect.NewResponse(&adminv1.DeleteLogoResponse{
 		Theme:      themeProto(t),
 		RevisionId: rev,

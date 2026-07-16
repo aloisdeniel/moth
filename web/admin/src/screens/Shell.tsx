@@ -57,6 +57,9 @@ export function Shell() {
           Projects
         </Link>
         <span className="topbar__spacer" />
+        <Link to="/audit" className="caption" style={{ color: "var(--text-secondary)" }}>
+          Audit
+        </Link>
         <Link to="/settings" className="caption" style={{ color: "var(--text-secondary)" }}>
           Instance settings
         </Link>

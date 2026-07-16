@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
 
+import { Audit } from "./screens/Audit";
 import { InstanceSettings } from "./screens/InstanceSettings";
 import { InviteAccept } from "./screens/InviteAccept";
 import { Login } from "./screens/Login";
@@ -17,6 +18,7 @@ export function App() {
       <Route element={<Shell />}>
         <Route index element={<ProjectsList />} />
         <Route path="/projects/:projectId/:tab?" element={<Project />} />
+        <Route path="/audit" element={<Audit />} />
         <Route path="/settings" element={<InstanceSettings />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

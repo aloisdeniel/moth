@@ -239,10 +239,9 @@ func withProviderDoubles(pd *providerDoubles) func(*Options) {
 			GoogleAuthURL:  "https://google-consent.test/auth",
 			AppleBaseURL:   pd.apple.URL,
 		}
-		o.RateLimits = authrpc.RateLimits{
-			PerIP:      ratelimit.New(10_000, 10_000),
-			PerAccount: ratelimit.New(10_000, 10_000),
-		}
+		// Disabled tiers: OAuth flow tests fire many requests and must not be
+		// throttled (the throttle itself is covered by TestOAuthHTTPRateLimited).
+		o.RateLimit = &ratelimit.Config{}
 	}
 }
 
@@ -1345,9 +1344,8 @@ func TestOAuthStartRejections(t *testing.T) {
 func TestOAuthHTTPRateLimited(t *testing.T) {
 	pd := newProviderDoubles(t)
 	e := newTestEnv(t, "tok", withProviderDoubles(pd), func(o *Options) {
-		o.RateLimits = authrpc.RateLimits{
-			PerIP:      ratelimit.New(1, 2),
-			PerAccount: ratelimit.New(10_000, 10_000),
+		o.RateLimit = &ratelimit.Config{
+			IP: ratelimit.Tier{Limit: 2, Window: time.Minute},
 		}
 	})
 	e.setup(t, "tok")
@@ -1361,6 +1359,7 @@ func TestOAuthHTTPRateLimited(t *testing.T) {
 	hc := noRedirectClient()
 
 	codes := make([]int, 0, 3)
+	var retryAfter string
 	for range 3 {
 		resp, err := hc.Get(e.url + "/oauth/google/start?project=" + p.Slug +
 			"&redirect=" + url.QueryEscape("myapp://auth"))
@@ -1369,11 +1368,16 @@ func TestOAuthHTTPRateLimited(t *testing.T) {
 		}
 		resp.Body.Close()
 		codes = append(codes, resp.StatusCode)
+		retryAfter = resp.Header.Get("Retry-After")
 	}
 	if codes[0] != http.StatusFound || codes[1] != http.StatusFound {
 		t.Fatalf("first two starts should pass: %v", codes)
 	}
 	if codes[2] != http.StatusTooManyRequests {
 		t.Fatalf("third start should be throttled: %v", codes)
+	}
+	// The 429 must advertise a Retry-After so browsers/clients can back off.
+	if retryAfter == "" {
+		t.Fatal("throttled response missing Retry-After header")
 	}
 }

@@ -75,7 +75,7 @@ func TestUploadLogoRetriesLostRace(t *testing.T) {
 		},
 	}
 
-	h := NewThemeHandler(racing, t.TempDir())
+	h := NewThemeHandler(racing, t.TempDir(), nil)
 	got, err := h.UploadLogo(ctx, connect.NewRequest(&adminv1.UploadLogoRequest{
 		ProjectId: "p1", Variant: adminv1.LogoVariant_LOGO_VARIANT_LIGHT,
 		Data: testPNG(t, 32, 32, ""), ContentType: "image/png",

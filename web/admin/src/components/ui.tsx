@@ -247,6 +247,74 @@ export function PasswordInput({
   );
 }
 
+// ---------- StringListField ----------
+
+// StringListField is a small multi-value editor: current values render as
+// removable rows, plus an input that adds on Enter (intercepted so the
+// surrounding form does not submit). Shared by the Providers redirect-scheme
+// editor and the Settings email allow/block lists.
+export function StringListField({
+  label,
+  values,
+  onChange,
+  placeholder,
+  help,
+}: {
+  label: string;
+  values: string[];
+  onChange: (values: string[]) => void;
+  placeholder?: string;
+  help?: string;
+}) {
+  const [draft, setDraft] = useState("");
+
+  function add() {
+    const v = draft.trim();
+    if (v === "" || values.includes(v)) return;
+    onChange([...values, v]);
+    setDraft("");
+  }
+
+  return (
+    <div className="field">
+      <span className="field__label">{label}</span>
+      {values.map((v) => (
+        <div key={v} className="keywell">
+          <span className="keywell__value">{v}</span>
+          <button
+            type="button"
+            className="btn btn--ghost btn--compact"
+            onClick={() => onChange(values.filter((x) => x !== v))}
+          >
+            Remove
+          </button>
+        </div>
+      ))}
+      <div className="row-8">
+        <input
+          className="input input--mono"
+          style={{ flex: 1 }}
+          aria-label={label}
+          value={draft}
+          placeholder={placeholder}
+          spellCheck={false}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              add();
+            }
+          }}
+        />
+        <button type="button" className="btn btn--secondary btn--compact" onClick={add}>
+          Add
+        </button>
+      </div>
+      {help && <span className="field__help">{help}</span>}
+    </div>
+  );
+}
+
 // ---------- Loading / error placeholders ----------
 
 export function Loading() {

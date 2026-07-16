@@ -162,8 +162,18 @@ type ProjectSettings struct {
 	// IANA timezone name (e.g. "Europe/Paris") the analytics rollup buckets
 	// days in (default "UTC").
 	RollupTimezone string `protobuf:"bytes,12,opt,name=rollup_timezone,json=rollupTimezone,proto3" json:"rollup_timezone,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// When non-empty, signup is restricted to email addresses whose domain
+	// matches one of these glob patterns (e.g. "example.com", "*.acme.io");
+	// every other domain is rejected.
+	SignupEmailAllowlist []string `protobuf:"bytes,13,rep,name=signup_email_allowlist,json=signupEmailAllowlist,proto3" json:"signup_email_allowlist,omitempty"`
+	// Email-domain glob patterns rejected at signup, evaluated after the
+	// allowlist.
+	SignupEmailBlocklist []string `protobuf:"bytes,14,rep,name=signup_email_blocklist,json=signupEmailBlocklist,proto3" json:"signup_email_blocklist,omitempty"`
+	// Optional CAPTCHA verification endpoint. The CAPTCHA hook is documented
+	// but off by default in v1: this field is stored but not yet wired.
+	CaptchaVerifyUrl string `protobuf:"bytes,15,opt,name=captcha_verify_url,json=captchaVerifyUrl,proto3" json:"captcha_verify_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ProjectSettings) Reset() {
@@ -276,6 +286,27 @@ func (x *ProjectSettings) GetAnalyticsRetentionDays() int32 {
 func (x *ProjectSettings) GetRollupTimezone() string {
 	if x != nil {
 		return x.RollupTimezone
+	}
+	return ""
+}
+
+func (x *ProjectSettings) GetSignupEmailAllowlist() []string {
+	if x != nil {
+		return x.SignupEmailAllowlist
+	}
+	return nil
+}
+
+func (x *ProjectSettings) GetSignupEmailBlocklist() []string {
+	if x != nil {
+		return x.SignupEmailBlocklist
+	}
+	return nil
+}
+
+func (x *ProjectSettings) GetCaptchaVerifyUrl() string {
+	if x != nil {
+		return x.CaptchaVerifyUrl
 	}
 	return ""
 }
@@ -1407,6 +1438,626 @@ func (x *ResetSigningKeyResponse) GetKey() *SigningKey {
 	return nil
 }
 
+type RotateSigningKeyRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// Grace period, in seconds, the previous key stays in the JWKS. 0 uses the
+	// server default (access-token TTL + clock skew).
+	GraceSeconds  int32 `protobuf:"varint,2,opt,name=grace_seconds,json=graceSeconds,proto3" json:"grace_seconds,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RotateSigningKeyRequest) Reset() {
+	*x = RotateSigningKeyRequest{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[22]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RotateSigningKeyRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RotateSigningKeyRequest) ProtoMessage() {}
+
+func (x *RotateSigningKeyRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[22]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RotateSigningKeyRequest.ProtoReflect.Descriptor instead.
+func (*RotateSigningKeyRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{22}
+}
+
+func (x *RotateSigningKeyRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *RotateSigningKeyRequest) GetGraceSeconds() int32 {
+	if x != nil {
+		return x.GraceSeconds
+	}
+	return 0
+}
+
+type RotateSigningKeyResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The new active signing key.
+	Key *SigningKey `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// When the previous key leaves the JWKS and becomes eligible for pruning.
+	GraceExpireTime *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=grace_expire_time,json=graceExpireTime,proto3" json:"grace_expire_time,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *RotateSigningKeyResponse) Reset() {
+	*x = RotateSigningKeyResponse{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[23]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RotateSigningKeyResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RotateSigningKeyResponse) ProtoMessage() {}
+
+func (x *RotateSigningKeyResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[23]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RotateSigningKeyResponse.ProtoReflect.Descriptor instead.
+func (*RotateSigningKeyResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{23}
+}
+
+func (x *RotateSigningKeyResponse) GetKey() *SigningKey {
+	if x != nil {
+		return x.Key
+	}
+	return nil
+}
+
+func (x *RotateSigningKeyResponse) GetGraceExpireTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.GraceExpireTime
+	}
+	return nil
+}
+
+// ExportedIdentity is one linked provider of an exported/imported user.
+type ExportedIdentity struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "password", "google" or "apple".
+	Provider string `protobuf:"bytes,1,opt,name=provider,proto3" json:"provider,omitempty"`
+	// Provider-issued subject (the user id for password identities).
+	ProviderSubject string `protobuf:"bytes,2,opt,name=provider_subject,json=providerSubject,proto3" json:"provider_subject,omitempty"`
+	// Email the provider asserted when the identity was linked.
+	Email         string `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportedIdentity) Reset() {
+	*x = ExportedIdentity{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[24]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportedIdentity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportedIdentity) ProtoMessage() {}
+
+func (x *ExportedIdentity) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[24]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportedIdentity.ProtoReflect.Descriptor instead.
+func (*ExportedIdentity) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *ExportedIdentity) GetProvider() string {
+	if x != nil {
+		return x.Provider
+	}
+	return ""
+}
+
+func (x *ExportedIdentity) GetProviderSubject() string {
+	if x != nil {
+		return x.ProviderSubject
+	}
+	return ""
+}
+
+func (x *ExportedIdentity) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+// ExportedUser is one user in an export document, with everything needed to
+// recreate the account on another system.
+type ExportedUser struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
+	EmailVerified bool                   `protobuf:"varint,3,opt,name=email_verified,json=emailVerified,proto3" json:"email_verified,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,4,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,5,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	// JSON object embedded in the JWT `claims` claim.
+	CustomClaims  string                 `protobuf:"bytes,6,opt,name=custom_claims,json=customClaims,proto3" json:"custom_claims,omitempty"`
+	Disabled      bool                   `protobuf:"varint,7,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	CreateTime    *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	LastLoginTime *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=last_login_time,json=lastLoginTime,proto3" json:"last_login_time,omitempty"`
+	// Encoded password hash; empty for social-only accounts.
+	PasswordHash string `protobuf:"bytes,10,opt,name=password_hash,json=passwordHash,proto3" json:"password_hash,omitempty"`
+	// Algorithm that produced password_hash: "argon2id" for a native moth
+	// hash, or the foreign algorithm it was imported with.
+	PasswordAlgorithm string              `protobuf:"bytes,11,opt,name=password_algorithm,json=passwordAlgorithm,proto3" json:"password_algorithm,omitempty"`
+	Identities        []*ExportedIdentity `protobuf:"bytes,12,rep,name=identities,proto3" json:"identities,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *ExportedUser) Reset() {
+	*x = ExportedUser{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[25]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportedUser) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportedUser) ProtoMessage() {}
+
+func (x *ExportedUser) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[25]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportedUser.ProtoReflect.Descriptor instead.
+func (*ExportedUser) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *ExportedUser) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetEmailVerified() bool {
+	if x != nil {
+		return x.EmailVerified
+	}
+	return false
+}
+
+func (x *ExportedUser) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetCustomClaims() string {
+	if x != nil {
+		return x.CustomClaims
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetDisabled() bool {
+	if x != nil {
+		return x.Disabled
+	}
+	return false
+}
+
+func (x *ExportedUser) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *ExportedUser) GetLastLoginTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastLoginTime
+	}
+	return nil
+}
+
+func (x *ExportedUser) GetPasswordHash() string {
+	if x != nil {
+		return x.PasswordHash
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetPasswordAlgorithm() string {
+	if x != nil {
+		return x.PasswordAlgorithm
+	}
+	return ""
+}
+
+func (x *ExportedUser) GetIdentities() []*ExportedIdentity {
+	if x != nil {
+		return x.Identities
+	}
+	return nil
+}
+
+// ImportedUser is one user to create, optionally carrying a foreign password
+// hash. A foreign hash is verified with its original algorithm on the user's
+// first sign-in, then transparently rehashed to argon2id.
+type ImportedUser struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	EmailVerified bool                   `protobuf:"varint,2,opt,name=email_verified,json=emailVerified,proto3" json:"email_verified,omitempty"`
+	DisplayName   string                 `protobuf:"bytes,3,opt,name=display_name,json=displayName,proto3" json:"display_name,omitempty"`
+	AvatarUrl     string                 `protobuf:"bytes,4,opt,name=avatar_url,json=avatarUrl,proto3" json:"avatar_url,omitempty"`
+	// JSON object embedded in the JWT `claims` claim (defaults to "{}").
+	CustomClaims string `protobuf:"bytes,5,opt,name=custom_claims,json=customClaims,proto3" json:"custom_claims,omitempty"`
+	// Encoded password hash; empty for users without a password.
+	PasswordHash string `protobuf:"bytes,6,opt,name=password_hash,json=passwordHash,proto3" json:"password_hash,omitempty"`
+	// Algorithm that produced password_hash: "bcrypt", "scrypt", "argon2" or
+	// "pbkdf2" for a foreign hash, or "argon2id"/"" for a native moth hash.
+	PasswordAlgorithm string              `protobuf:"bytes,7,opt,name=password_algorithm,json=passwordAlgorithm,proto3" json:"password_algorithm,omitempty"`
+	Identities        []*ExportedIdentity `protobuf:"bytes,8,rep,name=identities,proto3" json:"identities,omitempty"`
+	// Whether the account is created disabled (blocked from signing in).
+	Disabled      bool `protobuf:"varint,9,opt,name=disabled,proto3" json:"disabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportedUser) Reset() {
+	*x = ImportedUser{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[26]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportedUser) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportedUser) ProtoMessage() {}
+
+func (x *ImportedUser) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[26]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportedUser.ProtoReflect.Descriptor instead.
+func (*ImportedUser) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *ImportedUser) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *ImportedUser) GetEmailVerified() bool {
+	if x != nil {
+		return x.EmailVerified
+	}
+	return false
+}
+
+func (x *ImportedUser) GetDisplayName() string {
+	if x != nil {
+		return x.DisplayName
+	}
+	return ""
+}
+
+func (x *ImportedUser) GetAvatarUrl() string {
+	if x != nil {
+		return x.AvatarUrl
+	}
+	return ""
+}
+
+func (x *ImportedUser) GetCustomClaims() string {
+	if x != nil {
+		return x.CustomClaims
+	}
+	return ""
+}
+
+func (x *ImportedUser) GetPasswordHash() string {
+	if x != nil {
+		return x.PasswordHash
+	}
+	return ""
+}
+
+func (x *ImportedUser) GetPasswordAlgorithm() string {
+	if x != nil {
+		return x.PasswordAlgorithm
+	}
+	return ""
+}
+
+func (x *ImportedUser) GetIdentities() []*ExportedIdentity {
+	if x != nil {
+		return x.Identities
+	}
+	return nil
+}
+
+func (x *ImportedUser) GetDisabled() bool {
+	if x != nil {
+		return x.Disabled
+	}
+	return false
+}
+
+type ExportProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportProjectRequest) Reset() {
+	*x = ExportProjectRequest{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[27]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportProjectRequest) ProtoMessage() {}
+
+func (x *ExportProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[27]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportProjectRequest.ProtoReflect.Descriptor instead.
+func (*ExportProjectRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{27}
+}
+
+func (x *ExportProjectRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+type ExportProjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Users         []*ExportedUser        `protobuf:"bytes,1,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExportProjectResponse) Reset() {
+	*x = ExportProjectResponse{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExportProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExportProjectResponse) ProtoMessage() {}
+
+func (x *ExportProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExportProjectResponse.ProtoReflect.Descriptor instead.
+func (*ExportProjectResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *ExportProjectResponse) GetUsers() []*ExportedUser {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+type ImportProjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	Users         []*ImportedUser        `protobuf:"bytes,2,rep,name=users,proto3" json:"users,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportProjectRequest) Reset() {
+	*x = ImportProjectRequest{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportProjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportProjectRequest) ProtoMessage() {}
+
+func (x *ImportProjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportProjectRequest.ProtoReflect.Descriptor instead.
+func (*ImportProjectRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *ImportProjectRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ImportProjectRequest) GetUsers() []*ImportedUser {
+	if x != nil {
+		return x.Users
+	}
+	return nil
+}
+
+type ImportProjectResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Number of users actually created.
+	ImportedCount int32 `protobuf:"varint,1,opt,name=imported_count,json=importedCount,proto3" json:"imported_count,omitempty"`
+	// Number skipped because their email was already registered.
+	SkippedCount  int32 `protobuf:"varint,2,opt,name=skipped_count,json=skippedCount,proto3" json:"skipped_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ImportProjectResponse) Reset() {
+	*x = ImportProjectResponse{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ImportProjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ImportProjectResponse) ProtoMessage() {}
+
+func (x *ImportProjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ImportProjectResponse.ProtoReflect.Descriptor instead.
+func (*ImportProjectResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ImportProjectResponse) GetImportedCount() int32 {
+	if x != nil {
+		return x.ImportedCount
+	}
+	return 0
+}
+
+func (x *ImportProjectResponse) GetSkippedCount() int32 {
+	if x != nil {
+		return x.SkippedCount
+	}
+	return 0
+}
+
 var File_moth_admin_v1_project_proto protoreflect.FileDescriptor
 
 const file_moth_admin_v1_project_proto_rawDesc = "" +
@@ -1423,7 +2074,7 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"updateTime\x12:\n" +
 	"\bsettings\x18\a \x01(\v2\x1e.moth.admin.v1.ProjectSettingsR\bsettings\x12\x1d\n" +
 	"\n" +
-	"user_count\x18\b \x01(\x03R\tuserCount\"\xb5\x05\n" +
+	"user_count\x18\b \x01(\x03R\tuserCount\"\xcf\x06\n" +
 	"\x0fProjectSettings\x12.\n" +
 	"\x13password_min_length\x18\x01 \x01(\x05R\x11passwordMinLength\x12<\n" +
 	"\x1arequire_email_verification\x18\x02 \x01(\bR\x18requireEmailVerification\x12.\n" +
@@ -1437,7 +2088,10 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"\x10redirect_schemes\x18\n" +
 	" \x03(\tR\x0fredirectSchemes\x128\n" +
 	"\x18analytics_retention_days\x18\v \x01(\x05R\x16analyticsRetentionDays\x12'\n" +
-	"\x0frollup_timezone\x18\f \x01(\tR\x0erollupTimezoneB\x1b\n" +
+	"\x0frollup_timezone\x18\f \x01(\tR\x0erollupTimezone\x124\n" +
+	"\x16signup_email_allowlist\x18\r \x03(\tR\x14signupEmailAllowlist\x124\n" +
+	"\x16signup_email_blocklist\x18\x0e \x03(\tR\x14signupEmailBlocklist\x12,\n" +
+	"\x12captcha_verify_url\x18\x0f \x01(\tR\x10captchaVerifyUrlB\x1b\n" +
 	"\x19_auto_link_verified_email\"\x83\x02\n" +
 	"\x14GoogleProviderConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\"\n" +
@@ -1512,7 +2166,61 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\"F\n" +
 	"\x17ResetSigningKeyResponse\x12+\n" +
-	"\x03key\x18\x01 \x01(\v2\x19.moth.admin.v1.SigningKeyR\x03key2\xfc\x05\n" +
+	"\x03key\x18\x01 \x01(\v2\x19.moth.admin.v1.SigningKeyR\x03key\"]\n" +
+	"\x17RotateSigningKeyRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12#\n" +
+	"\rgrace_seconds\x18\x02 \x01(\x05R\fgraceSeconds\"\x8f\x01\n" +
+	"\x18RotateSigningKeyResponse\x12+\n" +
+	"\x03key\x18\x01 \x01(\v2\x19.moth.admin.v1.SigningKeyR\x03key\x12F\n" +
+	"\x11grace_expire_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\x0fgraceExpireTime\"o\n" +
+	"\x10ExportedIdentity\x12\x1a\n" +
+	"\bprovider\x18\x01 \x01(\tR\bprovider\x12)\n" +
+	"\x10provider_subject\x18\x02 \x01(\tR\x0fproviderSubject\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\"\xf4\x03\n" +
+	"\fExportedUser\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12%\n" +
+	"\x0eemail_verified\x18\x03 \x01(\bR\remailVerified\x12!\n" +
+	"\fdisplay_name\x18\x04 \x01(\tR\vdisplayName\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x05 \x01(\tR\tavatarUrl\x12#\n" +
+	"\rcustom_claims\x18\x06 \x01(\tR\fcustomClaims\x12\x1a\n" +
+	"\bdisabled\x18\a \x01(\bR\bdisabled\x12;\n" +
+	"\vcreate_time\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12B\n" +
+	"\x0flast_login_time\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\rlastLoginTime\x12#\n" +
+	"\rpassword_hash\x18\n" +
+	" \x01(\tR\fpasswordHash\x12-\n" +
+	"\x12password_algorithm\x18\v \x01(\tR\x11passwordAlgorithm\x12?\n" +
+	"\n" +
+	"identities\x18\f \x03(\v2\x1f.moth.admin.v1.ExportedIdentityR\n" +
+	"identities\"\xe3\x02\n" +
+	"\fImportedUser\x12\x14\n" +
+	"\x05email\x18\x01 \x01(\tR\x05email\x12%\n" +
+	"\x0eemail_verified\x18\x02 \x01(\bR\remailVerified\x12!\n" +
+	"\fdisplay_name\x18\x03 \x01(\tR\vdisplayName\x12\x1d\n" +
+	"\n" +
+	"avatar_url\x18\x04 \x01(\tR\tavatarUrl\x12#\n" +
+	"\rcustom_claims\x18\x05 \x01(\tR\fcustomClaims\x12#\n" +
+	"\rpassword_hash\x18\x06 \x01(\tR\fpasswordHash\x12-\n" +
+	"\x12password_algorithm\x18\a \x01(\tR\x11passwordAlgorithm\x12?\n" +
+	"\n" +
+	"identities\x18\b \x03(\v2\x1f.moth.admin.v1.ExportedIdentityR\n" +
+	"identities\x12\x1a\n" +
+	"\bdisabled\x18\t \x01(\bR\bdisabled\"5\n" +
+	"\x14ExportProjectRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"J\n" +
+	"\x15ExportProjectResponse\x121\n" +
+	"\x05users\x18\x01 \x03(\v2\x1b.moth.admin.v1.ExportedUserR\x05users\"h\n" +
+	"\x14ImportProjectRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x121\n" +
+	"\x05users\x18\x02 \x03(\v2\x1b.moth.admin.v1.ImportedUserR\x05users\"c\n" +
+	"\x15ImportProjectResponse\x12%\n" +
+	"\x0eimported_count\x18\x01 \x01(\x05R\rimportedCount\x12#\n" +
+	"\rskipped_count\x18\x02 \x01(\x05R\fskippedCount2\x99\b\n" +
 	"\x0eProjectService\x12Z\n" +
 	"\rCreateProject\x12#.moth.admin.v1.CreateProjectRequest\x1a$.moth.admin.v1.CreateProjectResponse\x12Q\n" +
 	"\n" +
@@ -1522,7 +2230,10 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"\rDeleteProject\x12#.moth.admin.v1.DeleteProjectRequest\x1a$.moth.admin.v1.DeleteProjectResponse\x12l\n" +
 	"\x13RegenerateSecretKey\x12).moth.admin.v1.RegenerateSecretKeyRequest\x1a*.moth.admin.v1.RegenerateSecretKeyResponse\x12Z\n" +
 	"\rGetSigningKey\x12#.moth.admin.v1.GetSigningKeyRequest\x1a$.moth.admin.v1.GetSigningKeyResponse\x12`\n" +
-	"\x0fResetSigningKey\x12%.moth.admin.v1.ResetSigningKeyRequest\x1a&.moth.admin.v1.ResetSigningKeyResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
+	"\x0fResetSigningKey\x12%.moth.admin.v1.ResetSigningKeyRequest\x1a&.moth.admin.v1.ResetSigningKeyResponse\x12c\n" +
+	"\x10RotateSigningKey\x12&.moth.admin.v1.RotateSigningKeyRequest\x1a'.moth.admin.v1.RotateSigningKeyResponse\x12Z\n" +
+	"\rExportProject\x12#.moth.admin.v1.ExportProjectRequest\x1a$.moth.admin.v1.ExportProjectResponse\x12Z\n" +
+	"\rImportProject\x12#.moth.admin.v1.ImportProjectRequest\x1a$.moth.admin.v1.ImportProjectResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_moth_admin_v1_project_proto_rawDescOnce sync.Once
@@ -1536,7 +2247,7 @@ func file_moth_admin_v1_project_proto_rawDescGZIP() []byte {
 	return file_moth_admin_v1_project_proto_rawDescData
 }
 
-var file_moth_admin_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
+var file_moth_admin_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 31)
 var file_moth_admin_v1_project_proto_goTypes = []any{
 	(*Project)(nil),                     // 0: moth.admin.v1.Project
 	(*ProjectSettings)(nil),             // 1: moth.admin.v1.ProjectSettings
@@ -1560,49 +2271,72 @@ var file_moth_admin_v1_project_proto_goTypes = []any{
 	(*GetSigningKeyResponse)(nil),       // 19: moth.admin.v1.GetSigningKeyResponse
 	(*ResetSigningKeyRequest)(nil),      // 20: moth.admin.v1.ResetSigningKeyRequest
 	(*ResetSigningKeyResponse)(nil),     // 21: moth.admin.v1.ResetSigningKeyResponse
-	(*timestamppb.Timestamp)(nil),       // 22: google.protobuf.Timestamp
-	(*Theme)(nil),                       // 23: moth.admin.v1.Theme
-	(*fieldmaskpb.FieldMask)(nil),       // 24: google.protobuf.FieldMask
+	(*RotateSigningKeyRequest)(nil),     // 22: moth.admin.v1.RotateSigningKeyRequest
+	(*RotateSigningKeyResponse)(nil),    // 23: moth.admin.v1.RotateSigningKeyResponse
+	(*ExportedIdentity)(nil),            // 24: moth.admin.v1.ExportedIdentity
+	(*ExportedUser)(nil),                // 25: moth.admin.v1.ExportedUser
+	(*ImportedUser)(nil),                // 26: moth.admin.v1.ImportedUser
+	(*ExportProjectRequest)(nil),        // 27: moth.admin.v1.ExportProjectRequest
+	(*ExportProjectResponse)(nil),       // 28: moth.admin.v1.ExportProjectResponse
+	(*ImportProjectRequest)(nil),        // 29: moth.admin.v1.ImportProjectRequest
+	(*ImportProjectResponse)(nil),       // 30: moth.admin.v1.ImportProjectResponse
+	(*timestamppb.Timestamp)(nil),       // 31: google.protobuf.Timestamp
+	(*Theme)(nil),                       // 32: moth.admin.v1.Theme
+	(*fieldmaskpb.FieldMask)(nil),       // 33: google.protobuf.FieldMask
 }
 var file_moth_admin_v1_project_proto_depIdxs = []int32{
-	22, // 0: moth.admin.v1.Project.create_time:type_name -> google.protobuf.Timestamp
-	22, // 1: moth.admin.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	31, // 0: moth.admin.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	31, // 1: moth.admin.v1.Project.update_time:type_name -> google.protobuf.Timestamp
 	1,  // 2: moth.admin.v1.Project.settings:type_name -> moth.admin.v1.ProjectSettings
 	2,  // 3: moth.admin.v1.ProjectSettings.google:type_name -> moth.admin.v1.GoogleProviderConfig
 	3,  // 4: moth.admin.v1.ProjectSettings.apple:type_name -> moth.admin.v1.AppleProviderConfig
-	22, // 5: moth.admin.v1.SigningKey.create_time:type_name -> google.protobuf.Timestamp
+	31, // 5: moth.admin.v1.SigningKey.create_time:type_name -> google.protobuf.Timestamp
 	1,  // 6: moth.admin.v1.ProjectSpec.settings:type_name -> moth.admin.v1.ProjectSettings
-	23, // 7: moth.admin.v1.ProjectSpec.theme:type_name -> moth.admin.v1.Theme
+	32, // 7: moth.admin.v1.ProjectSpec.theme:type_name -> moth.admin.v1.Theme
 	0,  // 8: moth.admin.v1.CreateProjectResponse.project:type_name -> moth.admin.v1.Project
 	0,  // 9: moth.admin.v1.GetProjectResponse.project:type_name -> moth.admin.v1.Project
 	0,  // 10: moth.admin.v1.ListProjectsResponse.projects:type_name -> moth.admin.v1.Project
 	1,  // 11: moth.admin.v1.UpdateProjectRequest.settings:type_name -> moth.admin.v1.ProjectSettings
-	24, // 12: moth.admin.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	33, // 12: moth.admin.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
 	0,  // 13: moth.admin.v1.UpdateProjectResponse.project:type_name -> moth.admin.v1.Project
 	0,  // 14: moth.admin.v1.RegenerateSecretKeyResponse.project:type_name -> moth.admin.v1.Project
 	4,  // 15: moth.admin.v1.GetSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
 	4,  // 16: moth.admin.v1.ResetSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
-	6,  // 17: moth.admin.v1.ProjectService.CreateProject:input_type -> moth.admin.v1.CreateProjectRequest
-	8,  // 18: moth.admin.v1.ProjectService.GetProject:input_type -> moth.admin.v1.GetProjectRequest
-	10, // 19: moth.admin.v1.ProjectService.ListProjects:input_type -> moth.admin.v1.ListProjectsRequest
-	12, // 20: moth.admin.v1.ProjectService.UpdateProject:input_type -> moth.admin.v1.UpdateProjectRequest
-	14, // 21: moth.admin.v1.ProjectService.DeleteProject:input_type -> moth.admin.v1.DeleteProjectRequest
-	16, // 22: moth.admin.v1.ProjectService.RegenerateSecretKey:input_type -> moth.admin.v1.RegenerateSecretKeyRequest
-	18, // 23: moth.admin.v1.ProjectService.GetSigningKey:input_type -> moth.admin.v1.GetSigningKeyRequest
-	20, // 24: moth.admin.v1.ProjectService.ResetSigningKey:input_type -> moth.admin.v1.ResetSigningKeyRequest
-	7,  // 25: moth.admin.v1.ProjectService.CreateProject:output_type -> moth.admin.v1.CreateProjectResponse
-	9,  // 26: moth.admin.v1.ProjectService.GetProject:output_type -> moth.admin.v1.GetProjectResponse
-	11, // 27: moth.admin.v1.ProjectService.ListProjects:output_type -> moth.admin.v1.ListProjectsResponse
-	13, // 28: moth.admin.v1.ProjectService.UpdateProject:output_type -> moth.admin.v1.UpdateProjectResponse
-	15, // 29: moth.admin.v1.ProjectService.DeleteProject:output_type -> moth.admin.v1.DeleteProjectResponse
-	17, // 30: moth.admin.v1.ProjectService.RegenerateSecretKey:output_type -> moth.admin.v1.RegenerateSecretKeyResponse
-	19, // 31: moth.admin.v1.ProjectService.GetSigningKey:output_type -> moth.admin.v1.GetSigningKeyResponse
-	21, // 32: moth.admin.v1.ProjectService.ResetSigningKey:output_type -> moth.admin.v1.ResetSigningKeyResponse
-	25, // [25:33] is the sub-list for method output_type
-	17, // [17:25] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	4,  // 17: moth.admin.v1.RotateSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
+	31, // 18: moth.admin.v1.RotateSigningKeyResponse.grace_expire_time:type_name -> google.protobuf.Timestamp
+	31, // 19: moth.admin.v1.ExportedUser.create_time:type_name -> google.protobuf.Timestamp
+	31, // 20: moth.admin.v1.ExportedUser.last_login_time:type_name -> google.protobuf.Timestamp
+	24, // 21: moth.admin.v1.ExportedUser.identities:type_name -> moth.admin.v1.ExportedIdentity
+	24, // 22: moth.admin.v1.ImportedUser.identities:type_name -> moth.admin.v1.ExportedIdentity
+	25, // 23: moth.admin.v1.ExportProjectResponse.users:type_name -> moth.admin.v1.ExportedUser
+	26, // 24: moth.admin.v1.ImportProjectRequest.users:type_name -> moth.admin.v1.ImportedUser
+	6,  // 25: moth.admin.v1.ProjectService.CreateProject:input_type -> moth.admin.v1.CreateProjectRequest
+	8,  // 26: moth.admin.v1.ProjectService.GetProject:input_type -> moth.admin.v1.GetProjectRequest
+	10, // 27: moth.admin.v1.ProjectService.ListProjects:input_type -> moth.admin.v1.ListProjectsRequest
+	12, // 28: moth.admin.v1.ProjectService.UpdateProject:input_type -> moth.admin.v1.UpdateProjectRequest
+	14, // 29: moth.admin.v1.ProjectService.DeleteProject:input_type -> moth.admin.v1.DeleteProjectRequest
+	16, // 30: moth.admin.v1.ProjectService.RegenerateSecretKey:input_type -> moth.admin.v1.RegenerateSecretKeyRequest
+	18, // 31: moth.admin.v1.ProjectService.GetSigningKey:input_type -> moth.admin.v1.GetSigningKeyRequest
+	20, // 32: moth.admin.v1.ProjectService.ResetSigningKey:input_type -> moth.admin.v1.ResetSigningKeyRequest
+	22, // 33: moth.admin.v1.ProjectService.RotateSigningKey:input_type -> moth.admin.v1.RotateSigningKeyRequest
+	27, // 34: moth.admin.v1.ProjectService.ExportProject:input_type -> moth.admin.v1.ExportProjectRequest
+	29, // 35: moth.admin.v1.ProjectService.ImportProject:input_type -> moth.admin.v1.ImportProjectRequest
+	7,  // 36: moth.admin.v1.ProjectService.CreateProject:output_type -> moth.admin.v1.CreateProjectResponse
+	9,  // 37: moth.admin.v1.ProjectService.GetProject:output_type -> moth.admin.v1.GetProjectResponse
+	11, // 38: moth.admin.v1.ProjectService.ListProjects:output_type -> moth.admin.v1.ListProjectsResponse
+	13, // 39: moth.admin.v1.ProjectService.UpdateProject:output_type -> moth.admin.v1.UpdateProjectResponse
+	15, // 40: moth.admin.v1.ProjectService.DeleteProject:output_type -> moth.admin.v1.DeleteProjectResponse
+	17, // 41: moth.admin.v1.ProjectService.RegenerateSecretKey:output_type -> moth.admin.v1.RegenerateSecretKeyResponse
+	19, // 42: moth.admin.v1.ProjectService.GetSigningKey:output_type -> moth.admin.v1.GetSigningKeyResponse
+	21, // 43: moth.admin.v1.ProjectService.ResetSigningKey:output_type -> moth.admin.v1.ResetSigningKeyResponse
+	23, // 44: moth.admin.v1.ProjectService.RotateSigningKey:output_type -> moth.admin.v1.RotateSigningKeyResponse
+	28, // 45: moth.admin.v1.ProjectService.ExportProject:output_type -> moth.admin.v1.ExportProjectResponse
+	30, // 46: moth.admin.v1.ProjectService.ImportProject:output_type -> moth.admin.v1.ImportProjectResponse
+	36, // [36:47] is the sub-list for method output_type
+	25, // [25:36] is the sub-list for method input_type
+	25, // [25:25] is the sub-list for extension type_name
+	25, // [25:25] is the sub-list for extension extendee
+	0,  // [0:25] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_project_proto_init() }
@@ -1618,7 +2352,7 @@ func file_moth_admin_v1_project_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_admin_v1_project_proto_rawDesc), len(file_moth_admin_v1_project_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   22,
+			NumMessages:   31,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

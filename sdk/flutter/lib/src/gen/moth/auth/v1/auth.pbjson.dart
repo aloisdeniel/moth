@@ -81,6 +81,7 @@ const SignUpRequest$json = {
     {'1': 'password', '3': 2, '4': 1, '5': 9, '10': 'password'},
     {'1': 'display_name', '3': 3, '4': 1, '5': 9, '10': 'displayName'},
     {'1': 'device_info', '3': 4, '4': 1, '5': 9, '10': 'deviceInfo'},
+    {'1': 'captcha_token', '3': 5, '4': 1, '5': 9, '10': 'captchaToken'},
   ],
 };
 
@@ -88,7 +89,8 @@ const SignUpRequest$json = {
 final $typed_data.Uint8List signUpRequestDescriptor = $convert.base64Decode(
     'Cg1TaWduVXBSZXF1ZXN0EhQKBWVtYWlsGAEgASgJUgVlbWFpbBIaCghwYXNzd29yZBgCIAEoCV'
     'IIcGFzc3dvcmQSIQoMZGlzcGxheV9uYW1lGAMgASgJUgtkaXNwbGF5TmFtZRIfCgtkZXZpY2Vf'
-    'aW5mbxgEIAEoCVIKZGV2aWNlSW5mbw==');
+    'aW5mbxgEIAEoCVIKZGV2aWNlSW5mbxIjCg1jYXB0Y2hhX3Rva2VuGAUgASgJUgxjYXB0Y2hhVG'
+    '9rZW4=');
 
 @$core.Deprecated('Use signUpResponseDescriptor instead')
 const SignUpResponse$json = {

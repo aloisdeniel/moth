@@ -14,6 +14,7 @@ import (
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
+	"github.com/aloisdeniel/moth/internal/audit"
 	"github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/password"
 	"github.com/aloisdeniel/moth/internal/store"
@@ -41,7 +42,8 @@ func newPATTestServer(t *testing.T) (*store.Store, *httptest.Server) {
 	mux.Handle(sessPath, sessHandler)
 	acctPath, acctHandler := adminv1connect.NewAdminAccountServiceHandler(
 		NewAccountHandler(st, mail.Console{Log: slog.Default()}, "http://moth.test",
-			false, func() bool { return false }), interceptors)
+			false, func() bool { return false },
+			NewAuditor(audit.New(st, slog.Default(), nil))), interceptors)
 	mux.Handle(acctPath, acctHandler)
 
 	srv := httptest.NewServer(mux)

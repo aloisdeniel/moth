@@ -9,6 +9,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/aloisdeniel/moth/internal/audit"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
 )
@@ -77,6 +78,10 @@ var publicProcedures = map[string]bool{
 func NewAuthInterceptor(st Store) connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			// Tag the request with a coarse client IP so any action it
+			// performs (including the public Login / AcceptAdminInvite paths)
+			// can be audited with a location.
+			ctx = withClientIP(ctx, audit.CoarseIP(req.Peer().Addr))
 			if publicProcedures[req.Spec().Procedure] {
 				return next(ctx, req)
 			}

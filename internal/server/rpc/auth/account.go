@@ -11,6 +11,7 @@ import (
 	"github.com/aloisdeniel/moth/internal/events"
 	mailpkg "github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/password"
+	"github.com/aloisdeniel/moth/internal/pwimport"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
 )
@@ -33,7 +34,16 @@ func (h *Handler) SignUp(ctx context.Context, req *connect.Request[authv1.SignUp
 	if err != nil {
 		return nil, err
 	}
+	if err := checkSignupEmail(email, settings); err != nil {
+		return nil, err
+	}
 	if err := validPassword(req.Msg.Password, settings); err != nil {
+		return nil, err
+	}
+	// CAPTCHA hook (documented no-op in v1; see verifyCaptcha). No CAPTCHA
+	// token rides the request yet, so the token is empty until the SDK and
+	// proto gain the field post-v1.
+	if err := h.verifyCaptcha(ctx, settings, ""); err != nil {
 		return nil, err
 	}
 
@@ -114,7 +124,7 @@ func (h *Handler) SignIn(ctx context.Context, req *connect.Request[authv1.SignIn
 			events.ReasonInvalidCredentials))
 		return nil, errInvalidCredentials()
 	}
-	if !password.Verify(req.Msg.Password, user.PasswordHash) {
+	if !h.verifyPassword(ctx, user, req.Msg.Password) {
 		h.emit(events.LoginFailed(ctx, project.ID, store.IdentityProviderPassword,
 			events.ReasonInvalidCredentials))
 		return nil, errInvalidCredentials()
@@ -137,6 +147,13 @@ func (h *Handler) SignIn(ctx context.Context, req *connect.Request[authv1.SignIn
 	}
 	if err := h.store.SetUserLastLogin(ctx, project.ID, user.ID, h.now()); err != nil {
 		h.log.ErrorContext(ctx, "set last login", "error", err.Error())
+	}
+	// Now that the sign-in is fully accepted, transparently upgrade a foreign
+	// imported hash to native argon2id via a targeted UPDATE. Doing it here
+	// (not inside verifyPassword) means rejected sign-ins never rewrite the row,
+	// and the narrow update cannot clobber a concurrent profile edit.
+	if user.PasswordAlgo != store.PasswordAlgoNative {
+		h.rehashImported(ctx, project.ID, user.ID, req.Msg.Password)
 	}
 	h.emit(events.Login(ctx, project.ID, user.ID, store.IdentityProviderPassword))
 	return connect.NewResponse(&authv1.SignInResponse{
@@ -168,6 +185,7 @@ func (h *Handler) RefreshToken(ctx context.Context, req *connect.Request[authv1.
 		}
 		h.log.WarnContext(ctx, "refresh token reuse detected; family revoked",
 			"project_id", project.ID, "user_id", rt.UserID, "family_id", rt.FamilyID)
+		h.auditFamilyRevoked(ctx, req.Peer().Addr, rt)
 		return nil, newError(connect.CodeUnauthenticated, ReasonRefreshTokenReused,
 			"refresh token was already used; all sessions of this device were revoked")
 	}
@@ -200,6 +218,7 @@ func (h *Handler) RefreshToken(ctx context.Context, req *connect.Request[authv1.
 			if err := h.store.RevokeRefreshTokenFamily(ctx, project.ID, rt.FamilyID, now); err != nil {
 				return nil, errInternal(err)
 			}
+			h.auditFamilyRevoked(ctx, req.Peer().Addr, rt)
 			return nil, newError(connect.CodeUnauthenticated, ReasonRefreshTokenReused,
 				"refresh token was already used; all sessions of this device were revoked")
 		}
@@ -245,6 +264,40 @@ func (h *Handler) SignOut(ctx context.Context, req *connect.Request[authv1.SignO
 		return nil, errInternal(err)
 	}
 	return connect.NewResponse(&authv1.SignOutResponse{}), nil
+}
+
+// verifyPassword checks pw against the user's stored credential. Native
+// (argon2id) hashes verify directly. A foreign hash imported from another auth
+// system (user.PasswordAlgo set) is verified with its original algorithm; the
+// caller upgrades it to native argon2id (via rehashImported) only once the
+// sign-in is fully accepted.
+func (h *Handler) verifyPassword(ctx context.Context, user store.User, pw string) bool {
+	if user.PasswordAlgo == store.PasswordAlgoNative {
+		return password.Verify(pw, user.PasswordHash)
+	}
+	ok, err := pwimport.Verify(user.PasswordAlgo, user.PasswordHash, pw)
+	if err != nil {
+		h.log.ErrorContext(ctx, "verify imported password hash",
+			"algo", user.PasswordAlgo, "user_id", user.ID, "error", err.Error())
+		return false
+	}
+	return ok
+}
+
+// rehashImported replaces a just-verified foreign password hash with a fresh
+// argon2id hash and clears the algorithm marker, using a targeted UPDATE that
+// touches only the credential columns so a concurrent profile edit is never
+// clobbered. A failure here is logged but never fails the sign-in: the foreign
+// hash still authenticates next time.
+func (h *Handler) rehashImported(ctx context.Context, projectID, userID, pw string) {
+	native, err := password.Hash(pw)
+	if err != nil {
+		h.log.ErrorContext(ctx, "rehash imported password", "user_id", userID, "error", err.Error())
+		return
+	}
+	if err := h.store.SetUserPasswordHash(ctx, projectID, userID, native, store.PasswordAlgoNative, h.now()); err != nil {
+		h.log.ErrorContext(ctx, "persist rehashed password", "user_id", userID, "error", err.Error())
+	}
 }
 
 func validEmail(email string) (string, error) {

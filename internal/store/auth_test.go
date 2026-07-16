@@ -40,6 +40,58 @@ func passwordIdentity(u User) Identity {
 	}
 }
 
+// TestSetUserPasswordHashIsNarrow verifies the first-login rehash update
+// touches only the credential columns, so it cannot clobber a concurrent
+// profile edit (the lost-update race SetUserLastLogin was written to avoid).
+func TestSetUserPasswordHashIsNarrow(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	p1, _ := twoProjects(t, s)
+
+	u := testUser(p1, "u1", "u@example.com")
+	u.PasswordAlgo = PasswordAlgoBcrypt
+	u.PasswordHash = "$2a$foreign"
+	u.DisplayName = "Original"
+	if err := s.CreateUser(ctx, u, passwordIdentity(u)); err != nil {
+		t.Fatal(err)
+	}
+
+	// Simulate a concurrent profile edit landing first (e.g. email verification).
+	verified := time.Now().UTC().Truncate(time.Second)
+	edited := u
+	edited.DisplayName = "Renamed"
+	edited.EmailVerifiedAt = &verified
+	edited.UpdatedAt = verified
+	if err := s.UpdateUser(ctx, edited); err != nil {
+		t.Fatal(err)
+	}
+
+	// The rehash writes only the credential columns from the OLD load-time copy.
+	if err := s.SetUserPasswordHash(ctx, p1, u.ID, "$argon2id$native", PasswordAlgoNative, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := s.GetUser(ctx, p1, u.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.PasswordHash != "$argon2id$native" || got.PasswordAlgo != PasswordAlgoNative {
+		t.Fatalf("credential not upgraded: hash=%q algo=%q", got.PasswordHash, got.PasswordAlgo)
+	}
+	// The concurrent profile edit must survive — not be reverted to load-time.
+	if got.DisplayName != "Renamed" {
+		t.Fatalf("display name clobbered: %q, want Renamed", got.DisplayName)
+	}
+	if got.EmailVerifiedAt == nil {
+		t.Fatal("email verification clobbered by the rehash write")
+	}
+
+	// A cross-project rehash writes nothing.
+	if err := s.SetUserPasswordHash(ctx, "other", u.ID, "x", PasswordAlgoNative, time.Now()); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("cross-project SetUserPasswordHash: got %v, want ErrNotFound", err)
+	}
+}
+
 func TestUsersAreProjectScoped(t *testing.T) {
 	s := openTestStore(t)
 	ctx := context.Background()

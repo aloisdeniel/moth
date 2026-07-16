@@ -2,9 +2,11 @@ package authrpc
 
 import (
 	"errors"
+	"time"
 
 	"connectrpc.com/connect"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/protobuf/types/known/durationpb"
 )
 
 // ErrorDomain identifies moth in google.rpc.ErrorInfo details.
@@ -31,7 +33,25 @@ const (
 	ReasonInvalidOAuthCode     = "INVALID_OAUTH_CODE"
 	ReasonInvalidRedirect      = "INVALID_REDIRECT"
 	ReasonLastLoginMethod      = "LAST_LOGIN_METHOD"
+	// Milestone 10 — abuse controls.
+	ReasonEmailDomainNotAllowed = "EMAIL_DOMAIN_NOT_ALLOWED"
 )
+
+// rateLimitError builds the CodeResourceExhausted error the rate-limit
+// interceptor returns: the stable RATE_LIMITED reason plus a
+// google.rpc.RetryInfo detail carrying how long the caller should wait.
+func rateLimitError(retryAfter time.Duration) *connect.Error {
+	err := newError(connect.CodeResourceExhausted, ReasonRateLimited,
+		"too many attempts, retry later")
+	if retryAfter > 0 {
+		if detail, derr := connect.NewErrorDetail(&errdetails.RetryInfo{
+			RetryDelay: durationpb.New(retryAfter),
+		}); derr == nil {
+			err.AddDetail(detail)
+		}
+	}
+	return err
+}
 
 // newError builds a connect error carrying a stable reason detail.
 func newError(code connect.Code, reason, msg string) *connect.Error {

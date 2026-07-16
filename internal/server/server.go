@@ -6,8 +6,10 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -22,11 +24,17 @@ import (
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/server/v1/serverv1connect"
 	"github.com/aloisdeniel/moth/internal/analytics"
+	"github.com/aloisdeniel/moth/internal/audit"
 	"github.com/aloisdeniel/moth/internal/config"
+	"github.com/aloisdeniel/moth/internal/docs"
 	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/fonts"
+	"github.com/aloisdeniel/moth/internal/httpsec"
 	"github.com/aloisdeniel/moth/internal/keys"
 	"github.com/aloisdeniel/moth/internal/mail"
+	"github.com/aloisdeniel/moth/internal/metrics"
+	"github.com/aloisdeniel/moth/internal/netutil"
+	"github.com/aloisdeniel/moth/internal/ratelimit"
 	adminrpc "github.com/aloisdeniel/moth/internal/server/rpc/admin"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/server/rpc/serverapi"
@@ -48,6 +56,7 @@ type Store interface {
 	adminrpc.Store
 	store.EmailTokenStore
 	store.OAuthTokenStore
+	store.RateLimitStore
 }
 
 // Options configures a Server.
@@ -59,9 +68,10 @@ type Options struct {
 	// Mailer delivers auth emails; nil falls back to the console
 	// transport (dev default).
 	Mailer mail.Mailer
-	// RateLimits override the auth-service throttles; zero value means
-	// defaults.
-	RateLimits authrpc.RateLimits
+	// RateLimit overrides the credential-facing rate-limit tiers. Nil means
+	// the tiers resolved from Config (production) or, for the zero-value test
+	// config, disabled. Tests point it at tiny limits to exercise throttling.
+	RateLimit *ratelimit.Config
 	// SetupToken guards the first-run admin setup screen. Empty when an
 	// admin account already exists.
 	SetupToken string
@@ -70,6 +80,11 @@ type Options struct {
 	AuthEndpoints authrpc.ProviderEndpoints
 	// Now is injectable for tests; defaults to time.Now.
 	Now func() time.Time
+	// Metrics is the instrumentation registry; nil creates a fresh one.
+	Metrics *metrics.Registry
+	// Reflection enables gRPC server reflection in release builds (dev
+	// builds always enable it).
+	Reflection bool
 }
 
 // Server is the assembled moth server.
@@ -84,9 +99,10 @@ type Server struct {
 	// pub is the embedded moth_auth Flutter package, built once so the
 	// sha256 in the /pub version listing always matches the served bytes.
 	pub *pubArchive
-	// rateLimits also throttles the plain-HTTP OAuth endpoints, which sit
-	// outside the connect interceptor chain.
-	rateLimits authrpc.RateLimits
+	// limiter is the shared, SQLite-backed rate limiter driving both the
+	// gRPC interceptor and the plain-HTTP throttle (OAuth redirects, hosted
+	// pages, pub repository) that sit outside the connect interceptor chain.
+	limiter *ratelimit.Limiter
 	// uploads is where theme assets (project logos) live on disk; served
 	// back at /assets/{projectID}/....
 	uploads string
@@ -98,6 +114,12 @@ type Server struct {
 	// rollup is the analytics aggregate-and-prune job, shared by the
 	// AnalyticsService handler and the serve-loop scheduler.
 	rollup *analytics.Rollup
+	// metrics is the Prometheus instrumentation registry, mounted at
+	// /metrics and fed by the metrics interceptor and app counters.
+	metrics *metrics.Registry
+	// health memoises the liveness probe so the unauthenticated /healthz and
+	// gRPC health endpoints cannot be spammed into sustained disk + DB load.
+	health *healthCache
 }
 
 // New assembles the full handler.
@@ -108,22 +130,39 @@ func New(o Options) (*Server, error) {
 	if o.Mailer == nil {
 		o.Mailer = mail.Console{Log: o.Logger}
 	}
-	if o.RateLimits.PerIP == nil || o.RateLimits.PerAccount == nil {
-		o.RateLimits = authrpc.DefaultRateLimits()
+	if o.Metrics == nil {
+		o.Metrics = metrics.New()
 	}
+	// The client-IP extractor honours X-Forwarded-For only from configured
+	// reverse proxies, so a spoofed header cannot dodge a per-IP bucket.
+	proxies, err := netutil.ParseTrustedProxies(o.Config.TrustedProxies)
+	if err != nil {
+		return nil, fmt.Errorf("parse trusted proxies: %w", err)
+	}
+	rlCfg := rateLimitConfigFrom(o.Config)
+	if o.RateLimit != nil {
+		rlCfg = *o.RateLimit
+	}
+	limiter := ratelimit.New(o.Store, rlCfg, proxies, o.Now)
 	s := &Server{
-		cfg:        o.Config,
-		store:      o.Store,
-		master:     o.Master,
-		log:        o.Logger,
-		rateLimits: o.RateLimits,
-		uploads:    filepath.Join(o.Config.DataDir, "uploads"),
-		fonts:      http.StripPrefix("/assets/fonts/", fonts.Handler()),
+		cfg:     o.Config,
+		store:   o.Store,
+		master:  o.Master,
+		log:     o.Logger,
+		limiter: limiter,
+		uploads: filepath.Join(o.Config.DataDir, "uploads"),
+		fonts:   http.StripPrefix("/assets/fonts/", fonts.Handler()),
 		// Analytics events flow through a bounded async writer so emission
 		// never adds latency to auth; Server.Close drains it on shutdown.
-		events: events.NewWriter(eventSink{o.Store}, events.Config{Logger: o.Logger}),
-		rollup: analytics.NewRollup(o.Store, o.Logger, o.Now),
+		events:  events.NewWriter(eventSink{o.Store}, events.Config{Logger: o.Logger}),
+		rollup:  analytics.NewRollup(o.Store, o.Logger, o.Now),
+		metrics: o.Metrics,
 	}
+	nowFn := o.Now
+	if nowFn == nil {
+		nowFn = time.Now
+	}
+	s.health = &healthCache{now: nowFn, probe: s.runHealthProbe}
 	s.setupToken.Store(o.SetupToken)
 
 	// The moth_auth Flutter SDK served at /pub; its version tracks the
@@ -134,13 +173,19 @@ func New(o Options) (*Server, error) {
 	}
 	s.pub = pub
 
+	// One shared audit sink behind every admin mutation and the security
+	// events (refresh-token reuse). Writes are fire-and-forget: an audit
+	// failure is logged, never surfaced to the request.
+	auditSink := audit.New(o.Store, o.Logger, o.Now)
+	auditor := adminrpc.NewAuditor(auditSink)
+
 	// Every email goes through one swappable transport so the admin
 	// console can reconfigure SMTP at runtime. Options.Mailer is the
 	// transport of last resort (console logger, or a recording mailer in
 	// tests); the settings handler points dyn at the effective SMTP.
 	dynMailer := mail.NewDynamic(o.Mailer)
 	settingsHandler, err := adminrpc.NewSettingsHandler(
-		context.Background(), o.Store, o.Config, dynMailer, o.Mailer)
+		context.Background(), o.Store, o.Config, dynMailer, o.Mailer, o.Master, auditor)
 	if err != nil {
 		return nil, fmt.Errorf("resolve smtp settings: %w", err)
 	}
@@ -158,6 +203,7 @@ func New(o Options) (*Server, error) {
 		HTTPClient: httpc,
 		Endpoints:  o.AuthEndpoints,
 		Events:     s.events,
+		Audit:      auditSink,
 	})
 
 	// chain prepends the shared observability interceptors to a service's
@@ -172,6 +218,7 @@ func New(o Options) (*Server, error) {
 			newVersionInterceptor(),
 			newRecoveryInterceptor(o.Logger),
 			newLoggingInterceptor(o.Logger),
+			o.Metrics.Interceptor(),
 		}
 		return connect.WithOptions(
 			connect.WithReadMaxBytes(rpcReadMaxBytes),
@@ -181,7 +228,8 @@ func New(o Options) (*Server, error) {
 	adminInterceptors := chain(adminrpc.NewAuthInterceptor(o.Store))
 	authInterceptors := chain(
 		authrpc.NewProjectInterceptor(o.Store),
-		authrpc.NewRateLimitInterceptor(o.RateLimits))
+		authrpc.NewRateLimitInterceptor(limiter, o.Logger),
+		newAuthMetricsInterceptor(o.Metrics))
 	serverInterceptors := chain(serverapi.NewSecretKeyInterceptor(o.Store))
 
 	mux := http.NewServeMux()
@@ -191,24 +239,27 @@ func New(o Options) (*Server, error) {
 		adminrpc.NewSessionHandler(o.Store, o.Config.Secure()), adminInterceptors)
 	mux.Handle(sessionPath, sessionHandler)
 	projectPath, projectHandler := adminv1connect.NewProjectServiceHandler(
-		adminrpc.NewProjectHandler(o.Store, o.Master, o.Config.BaseURL), adminInterceptors)
+		adminrpc.NewProjectHandler(o.Store, o.Master, o.Config.BaseURL, auditor), adminInterceptors)
 	mux.Handle(projectPath, projectHandler)
 	adminUserPath, adminUserHandler := adminv1connect.NewUserServiceHandler(
-		adminrpc.NewUserHandler(o.Store, s.auth, dynMailer, s.events), adminInterceptors)
+		adminrpc.NewUserHandler(o.Store, s.auth, dynMailer, s.events, auditor), adminInterceptors)
 	mux.Handle(adminUserPath, adminUserHandler)
 	accountPath, accountHandler := adminv1connect.NewAdminAccountServiceHandler(
 		adminrpc.NewAccountHandler(o.Store, dynMailer, o.Config.BaseURL,
-			o.Config.Secure(), settingsHandler.SMTPConfigured), adminInterceptors)
+			o.Config.Secure(), settingsHandler.SMTPConfigured, auditor), adminInterceptors)
 	mux.Handle(accountPath, accountHandler)
 	settingsPath, settingsSvcHandler := adminv1connect.NewInstanceSettingsServiceHandler(
 		settingsHandler, adminInterceptors)
 	mux.Handle(settingsPath, settingsSvcHandler)
 	themePath, themeHandler := adminv1connect.NewThemeServiceHandler(
-		adminrpc.NewThemeHandler(o.Store, s.uploads), adminInterceptors)
+		adminrpc.NewThemeHandler(o.Store, s.uploads, auditor), adminInterceptors)
 	mux.Handle(themePath, themeHandler)
 	analyticsPath, analyticsHandler := adminv1connect.NewAnalyticsServiceHandler(
 		adminrpc.NewAnalyticsHandler(o.Store, s.rollup, o.Now), adminInterceptors)
 	mux.Handle(analyticsPath, analyticsHandler)
+	auditPath, auditHandler := adminv1connect.NewAuditServiceHandler(
+		adminrpc.NewAuditHandler(o.Store), adminInterceptors)
+	mux.Handle(auditPath, auditHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -232,20 +283,36 @@ func New(o Options) (*Server, error) {
 		adminv1connect.InstanceSettingsServiceName,
 		adminv1connect.ThemeServiceName,
 		adminv1connect.AnalyticsServiceName,
+		adminv1connect.AuditServiceName,
 		authv1connect.AuthServiceName,
 		authv1connect.ConfigServiceName,
 		serverv1connect.TokenServiceName,
 		serverv1connect.UserServiceName,
 	}
-	mux.Handle(grpchealth.NewHandler(grpchealth.NewStaticChecker(serviceNames...)))
-	if version.IsDev() {
+	// The gRPC health service reports live status: a broken database or a
+	// non-writable data dir flips every service to NOT_SERVING so load
+	// balancers drain the instance instead of routing to a wedged process.
+	mux.Handle(grpchealth.NewHandler(newHealthChecker(s.healthProbe, serviceNames...)))
+	// Reflection is dev-only by default; --reflection turns it on in
+	// release builds for grpcurl-style debugging in production.
+	if version.IsDev() || o.Reflection {
 		reflector := grpcreflect.NewStaticReflector(serviceNames...)
 		mux.Handle(grpcreflect.NewHandlerV1(reflector))
 		mux.Handle(grpcreflect.NewHandlerV1Alpha(reflector))
 	}
 
+	// Prometheus metrics: per-RPC counts/latencies/codes (interceptor),
+	// auth attempts, event-buffer drops and rollup runs (app counters).
+	mux.Handle("GET /metrics", s.metricsHandler())
+
 	// The .proto sources, offered for download from the setup page.
 	mux.Handle("GET /protos/", http.StripPrefix("/protos/", http.HandlerFunc(s.handleProtoFile)))
+
+	// The embedded documentation, rendered from markdown single-sourced from
+	// the public website (internal/docs). Version-matched to this binary.
+	docsHandler := http.StripPrefix("/docs", docs.Handler())
+	mux.Handle("GET /docs", docsHandler)
+	mux.Handle("GET /docs/", docsHandler)
 
 	// The pub hosted repository serving the moth_auth Flutter SDK
 	// (`dart pub` speaks plain HTTP; see plan/05).
@@ -273,6 +340,7 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)
 	mux.HandleFunc("GET /admin/export/stats.csv", s.handleExportStats)
+	mux.HandleFunc("GET /admin/export/audit.csv", s.handleExportAudit)
 	mux.HandleFunc("POST /admin/setup", s.handleAdminSetup)
 	mux.HandleFunc("/", s.handleRoot)
 
@@ -302,16 +370,89 @@ func New(o Options) (*Server, error) {
 		MaxAge:           7200,
 	})
 
+	// Strict security headers. HSTS is only asserted when the instance is
+	// served over https (Config.Secure), never on a plain-http dev instance.
+	// The admin SPA and JSON APIs take the no-inline admin policy; the hosted
+	// pages take the nonce policy for their single inline <style> block (the
+	// template stamps httpsec.NonceFromContext onto that element).
+	adminPolicy := httpsec.DefaultAdminPolicy()
+	hostedPolicy := httpsec.DefaultHostedPolicy()
+	if o.Config.Secure() {
+		adminPolicy.HSTS = true
+		hostedPolicy.HSTS = true
+	}
+
 	publicHandler := publicCORS.Handler(mux)
 	adminHandler := adminCORS.Handler(mux)
+	// The security headers wrap the CORS-wrapped mux. Hosted pages (/p/) get
+	// the nonce policy; every other public API surface and the admin surface
+	// get the strict no-inline policy.
+	hostedSecured := hostedPolicy.Wrap(publicHandler)
+	publicSecured := adminPolicy.Wrap(publicHandler)
+	adminSecured := adminPolicy.Wrap(adminHandler)
 	s.handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if isPublicSurface(r.URL.Path) {
-			publicHandler.ServeHTTP(w, r)
+		// The plain-HTTP credential-facing surfaces (OAuth redirects, hosted
+		// pages, the pub repository) bypass the connect interceptor chain, so
+		// they carry their own per-IP throttle here. gRPC/Connect calls to
+		// /moth.* are already rate-limited by the interceptor.
+		if httpThrottled(r.URL.Path) && !s.allowHTTP(w, r) {
 			return
 		}
-		adminHandler.ServeHTTP(w, r)
+		switch {
+		case strings.HasPrefix(r.URL.Path, "/p/"):
+			hostedSecured.ServeHTTP(w, r)
+		case isPublicSurface(r.URL.Path):
+			publicSecured.ServeHTTP(w, r)
+		default:
+			adminSecured.ServeHTTP(w, r)
+		}
 	})
 	return s, nil
+}
+
+// rateLimitConfigFrom maps the resolved config tiers onto per-minute windows.
+func rateLimitConfigFrom(c config.Config) ratelimit.Config {
+	win := time.Minute
+	return ratelimit.Config{
+		IP:      ratelimit.Tier{Limit: c.RateLimit.IPPerMinute, Window: win},
+		Account: ratelimit.Tier{Limit: c.RateLimit.AccountPerMinute, Window: win},
+		Project: ratelimit.Tier{Limit: c.RateLimit.ProjectPerMinute, Window: win},
+	}
+}
+
+// httpThrottled reports whether a plain-HTTP path is a credential-facing
+// surface that must carry the per-IP throttle.
+func httpThrottled(path string) bool {
+	return strings.HasPrefix(path, "/oauth/") ||
+		strings.HasPrefix(path, "/p/") ||
+		strings.HasPrefix(path, "/pub/")
+}
+
+// allowHTTP applies the per-IP rate limit to a plain-HTTP request. It writes a
+// 429 with a Retry-After header and returns false when the caller is over the
+// limit. These are credential-facing surfaces (OAuth redirects, hosted pages,
+// the pub repository), so a limiter storage error fails CLOSED (returns false,
+// 429): if the throttle cannot be evaluated the request is denied rather than
+// let through unthrottled, matching the gRPC interceptor's fail-closed policy.
+func (s *Server) allowHTTP(w http.ResponseWriter, r *http.Request) bool {
+	ip := s.limiter.ClientIP(r.RemoteAddr, r.Header.Get("X-Forwarded-For"))
+	if ip == "" {
+		return true
+	}
+	d, err := s.limiter.IP(r.Context(), ip)
+	if err != nil {
+		s.log.ErrorContext(r.Context(), "http rate limit check failed; denying", "error", err.Error())
+		http.Error(w, "rate limit temporarily unavailable, retry later", http.StatusTooManyRequests)
+		return false
+	}
+	if d.Allowed {
+		return true
+	}
+	if d.RetryAfter > 0 {
+		w.Header().Set("Retry-After", strconv.Itoa(int(math.Ceil(d.RetryAfter.Seconds()))))
+	}
+	http.Error(w, "too many requests, retry later", http.StatusTooManyRequests)
+	return false
 }
 
 // isPublicSurface reports whether the path belongs to the end-user API or

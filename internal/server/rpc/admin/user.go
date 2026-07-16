@@ -39,12 +39,13 @@ type UserHandler struct {
 	auth   *authrpc.Handler // issues hosted-page reset/invite links
 	mailer mailpkg.Mailer
 	events *events.Writer // async analytics writer; nil disables emission
+	audit  *Auditor
 	now    func() time.Time
 }
 
 // NewUserHandler builds the admin user service. events may be nil (tests).
-func NewUserHandler(st Store, auth *authrpc.Handler, mailer mailpkg.Mailer, ev *events.Writer) *UserHandler {
-	return &UserHandler{store: st, auth: auth, mailer: mailer, events: ev, now: time.Now}
+func NewUserHandler(st Store, auth *authrpc.Handler, mailer mailpkg.Mailer, ev *events.Writer, auditor *Auditor) *UserHandler {
+	return &UserHandler{store: st, auth: auth, mailer: mailer, events: ev, audit: auditor, now: time.Now}
 }
 
 func (h *UserHandler) ListUsers(ctx context.Context, req *connect.Request[adminv1.ListUsersRequest]) (*connect.Response[adminv1.ListUsersResponse], error) {
@@ -194,6 +195,10 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *connect.Request[admin
 				fmt.Errorf("the account was created but the invite email failed: %w", err))
 		}
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserCreate, TargetType: "user", TargetID: user.ID,
+		ProjectID: project.ID, Summary: fmt.Sprintf("Created user %s", user.Email),
+	})
 	return connect.NewResponse(&adminv1.CreateUserResponse{
 		User: adminUserProto(user, identities),
 	}), nil
@@ -231,6 +236,11 @@ func (h *UserHandler) UpdateUser(ctx context.Context, req *connect.Request[admin
 	if err := h.store.UpdateUser(ctx, user); err != nil {
 		return nil, userErr(err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserUpdate, TargetType: "user", TargetID: user.ID,
+		ProjectID: user.ProjectID,
+		Summary:   fmt.Sprintf("Updated user %s (%s)", user.Email, strings.Join(req.Msg.UpdateMask.Paths, ", ")),
+	})
 	identities, err := h.identitiesFor(ctx, user.ProjectID, []store.User{user})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -245,6 +255,11 @@ func (h *UserHandler) DisableUser(ctx context.Context, req *connect.Request[admi
 	if err != nil {
 		return nil, err
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserDisable, TargetType: "user", TargetID: user.ID,
+		ProjectID: user.ProjectID,
+		Summary:   fmt.Sprintf("Disabled user %s (all sessions revoked)", user.Email),
+	})
 	identities, err := h.identitiesFor(ctx, user.ProjectID, []store.User{user})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -257,6 +272,10 @@ func (h *UserHandler) EnableUser(ctx context.Context, req *connect.Request[admin
 	if err != nil {
 		return nil, err
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserEnable, TargetType: "user", TargetID: user.ID,
+		ProjectID: user.ProjectID, Summary: fmt.Sprintf("Re-enabled user %s", user.Email),
+	})
 	identities, err := h.identitiesFor(ctx, user.ProjectID, []store.User{user})
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -268,9 +287,18 @@ func (h *UserHandler) DeleteUser(ctx context.Context, req *connect.Request[admin
 	if _, err := h.store.GetProject(ctx, req.Msg.ProjectId); err != nil {
 		return nil, projectErr(err)
 	}
+	// Read the user first so the audit line can name who was removed.
+	user, err := h.getUser(ctx, req.Msg.ProjectId, req.Msg.UserId)
+	if err != nil {
+		return nil, err
+	}
 	if err := h.store.DeleteUser(ctx, req.Msg.ProjectId, req.Msg.UserId); err != nil {
 		return nil, userErr(err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserDelete, TargetType: "user", TargetID: user.ID,
+		ProjectID: req.Msg.ProjectId, Summary: fmt.Sprintf("Deleted user %s", user.Email),
+	})
 	if h.events != nil {
 		h.events.Emit(events.UserDeleted(ctx, req.Msg.ProjectId, req.Msg.UserId))
 	}
@@ -290,6 +318,11 @@ func (h *UserHandler) RevokeUserSessions(ctx context.Context, req *connect.Reque
 	if err := h.store.RevokeUserRefreshTokens(ctx, user.ProjectID, user.ID, now); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserSessionsRvk, TargetType: "user", TargetID: user.ID,
+		ProjectID: user.ProjectID,
+		Summary:   fmt.Sprintf("Revoked %d session(s) for %s", len(active), user.Email),
+	})
 	return connect.NewResponse(&adminv1.RevokeUserSessionsResponse{
 		RevokedCount: int64(len(active)),
 	}), nil
@@ -328,6 +361,10 @@ func (h *UserHandler) SendPasswordReset(ctx context.Context, req *connect.Reques
 		return nil, connect.NewError(connect.CodeUnavailable,
 			fmt.Errorf("send password reset email: %w", err))
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionUserPwReset, TargetType: "user", TargetID: user.ID,
+		ProjectID: project.ID, Summary: fmt.Sprintf("Sent a password-reset email to %s", user.Email),
+	})
 	return connect.NewResponse(&adminv1.SendPasswordResetResponse{}), nil
 }
 

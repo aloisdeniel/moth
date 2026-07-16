@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -21,9 +20,6 @@ import (
 // handleOAuthStart begins the flow:
 // GET /oauth/{provider}/start?project={slug}&redirect={registered-scheme URI}.
 func (s *Server) handleOAuthStart(w http.ResponseWriter, r *http.Request) {
-	if !s.allowOAuthRequest(w, r) {
-		return
-	}
 	provider := r.PathValue("provider")
 	project, err := s.store.GetProjectBySlug(r.Context(), r.URL.Query().Get("project"))
 	if errors.Is(err, store.ErrNotFound) {
@@ -48,9 +44,6 @@ func (s *Server) handleOAuthStart(w http.ResponseWriter, r *http.Request) {
 // state's slug prefix (the full state value is still what was stored
 // hashed, so a tampered prefix cannot survive the claim).
 func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
-	if !s.allowOAuthRequest(w, r) {
-		return
-	}
 	provider := r.PathValue("provider")
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "invalid form", http.StatusBadRequest)
@@ -126,33 +119,6 @@ func (s *Server) oauthErrorPage(w http.ResponseWriter, r *http.Request, project 
 		}
 	}
 	s.renderPageStatus(w, r, status, project, data)
-}
-
-// allowOAuthRequest applies the per-IP rate limit to the plain-HTTP OAuth
-// endpoints, which bypass the connect interceptor chain: start is fully
-// unauthenticated and inserts a state row (and decrypts provider secrets)
-// on every hit, so it needs the same abuse protection as the throttled
-// RPCs. Writes a 429 and returns false when the caller is over the limit.
-func (s *Server) allowOAuthRequest(w http.ResponseWriter, r *http.Request) bool {
-	if ip := httpClientIP(r); ip != "" && !s.rateLimits.PerIP.Allow(ip) {
-		http.Error(w, "too many requests, retry later", http.StatusTooManyRequests)
-		return false
-	}
-	return true
-}
-
-// httpClientIP mirrors the RPC interceptor's client-IP extraction: the
-// first X-Forwarded-For hop when present (reverse-proxy deployments),
-// otherwise the connection peer.
-func httpClientIP(r *http.Request) string {
-	if fwd := r.Header.Get("X-Forwarded-For"); fwd != "" {
-		first, _, _ := strings.Cut(fwd, ",")
-		return strings.TrimSpace(first)
-	}
-	if host, _, err := net.SplitHostPort(r.RemoteAddr); err == nil {
-		return host
-	}
-	return r.RemoteAddr
 }
 
 // appendCodeParam adds the one-time code query parameter to the app's

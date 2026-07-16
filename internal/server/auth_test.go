@@ -14,9 +14,11 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	gojwt "github.com/golang-jwt/jwt/v5"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/protobuf/types/known/structpb"
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
@@ -861,9 +863,9 @@ func asConnectErr(err error, target **connect.Error) bool {
 
 func TestSignInRateLimited(t *testing.T) {
 	e := newTestEnv(t, "tok", func(o *Options) {
-		o.RateLimits = authrpc.RateLimits{
-			PerIP:      ratelimit.New(1, 3),
-			PerAccount: ratelimit.New(1, 100),
+		o.RateLimit = &ratelimit.Config{
+			IP:      ratelimit.Tier{Limit: 3, Window: time.Minute},
+			Account: ratelimit.Tier{Limit: 100, Window: time.Minute},
 		}
 	})
 	e.setup(t, "tok")
@@ -880,4 +882,59 @@ func TestSignInRateLimited(t *testing.T) {
 		}
 	}
 	wantReason(t, last, connect.CodeResourceExhausted, authrpc.ReasonRateLimited)
+	// The RESOURCE_EXHAUSTED error must carry a google.rpc.RetryInfo detail so
+	// clients can back off for the advertised delay.
+	var cerr *connect.Error
+	if !asConnectErr(last, &cerr) {
+		t.Fatalf("expected a connect error, got %v", last)
+	}
+	foundRetry := false
+	for _, d := range cerr.Details() {
+		if msg, err := d.Value(); err == nil {
+			if ri, ok := msg.(*errdetails.RetryInfo); ok {
+				foundRetry = true
+				if ri.GetRetryDelay().AsDuration() <= 0 {
+					t.Fatal("RetryInfo must advertise a positive delay")
+				}
+			}
+		}
+	}
+	if !foundRetry {
+		t.Fatal("rate-limit error missing RetryInfo detail")
+	}
+}
+
+// TestSignupEmailDomainLists: an allowlist admits only its domains; a
+// blocklist rejects its domains. The lists are enforced on password SignUp.
+func TestSignupEmailDomainLists(t *testing.T) {
+	e := newTestEnv(t, "tok")
+	e.setup(t, "tok")
+	p, _ := e.createProject(t, "Gated App")
+	ctx := context.Background()
+
+	// Restrict signup to example.com, and block one subdomain of it.
+	proj, err := e.store.GetProject(ctx, p.Id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	proj.Settings.SignupEmailAllowlist = []string{"example.com"}
+	proj.Settings.SignupEmailBlocklist = []string{"blocked.example.com"}
+	if err := e.store.UpdateProject(ctx, proj); err != nil {
+		t.Fatal(err)
+	}
+	auth := e.authClient(p.PublishableKey)
+
+	// Allowed domain succeeds.
+	if _, err := auth.SignUp(ctx, connect.NewRequest(&authv1.SignUpRequest{
+		Email: "jane@example.com", Password: "password-1"})); err != nil {
+		t.Fatalf("allowed domain rejected: %v", err)
+	}
+	// Domain outside the allowlist is refused.
+	_, err = auth.SignUp(ctx, connect.NewRequest(&authv1.SignUpRequest{
+		Email: "bob@other.com", Password: "password-1"}))
+	wantReason(t, err, connect.CodePermissionDenied, authrpc.ReasonEmailDomainNotAllowed)
+	// A blocklisted subdomain of the allowed domain is also refused.
+	_, err = auth.SignUp(ctx, connect.NewRequest(&authv1.SignUpRequest{
+		Email: "eve@blocked.example.com", Password: "password-1"}))
+	wantReason(t, err, connect.CodePermissionDenied, authrpc.ReasonEmailDomainNotAllowed)
 }

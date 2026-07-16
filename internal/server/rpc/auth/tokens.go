@@ -37,11 +37,13 @@ func (h *Handler) signingKey(ctx context.Context, projectID string) (store.Proje
 	return newest, priv, nil
 }
 
-// publicKeyLookup resolves a kid to one of the project's active public
-// keys, for access-token verification.
+// publicKeyLookup resolves a kid to one of the project's active or in-grace
+// public keys, for access-token verification. Including grace keys means a
+// token signed by a key a graceful rotation retired keeps verifying until its
+// grace expires.
 func (h *Handler) publicKeyLookup(ctx context.Context, projectID string) func(kid string) (*ecdsa.PublicKey, error) {
 	return func(kid string) (*ecdsa.PublicKey, error) {
-		active, err := h.store.ListActiveProjectKeys(ctx, projectID)
+		active, err := h.store.ListActiveAndGraceKeys(ctx, projectID, h.now())
 		if err != nil {
 			return nil, err
 		}

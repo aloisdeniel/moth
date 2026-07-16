@@ -93,6 +93,35 @@ Flags:
       --json              print machine-readable JSON
 ```
 
+## moth backup
+
+Write a single gzip-compressed tar archive containing an
+online-consistent snapshot of the SQLite database (taken with VACUUM INTO, so
+it is safe to run against a live server) plus the uploads and key material.
+
+The archive is self-contained; restore it with "moth restore".
+
+Cron example — a daily backup at 03:30, keeping the last 14 days:
+
+  30 3 * * *  moth backup --data-dir /var/lib/moth --to /backups/moth-$(date +\%F).tar.gz && find /backups -name 'moth-*.tar.gz' -mtime +14 -delete
+
+For unattended backups without cron, set backup_dir (and optionally
+backup_interval) in the config so "moth serve" writes them itself.
+
+```
+moth backup [flags]
+```
+
+Flags:
+
+```
+      --addr string       listen address (default ":8080")
+      --base-url string   public base URL of this instance (default "http://localhost:8080")
+      --config string     config file (default moth.toml if present)
+      --data-dir string   data directory (database, keys, uploads) (default "./data")
+      --to string         archive path (default moth-backup-<timestamp>.tar.gz in the working directory)
+```
+
 ## moth doctor
 
 Runs the support checklist for "login stopped working": admin API
@@ -291,13 +320,15 @@ moth project dump [slug|id]
 ## moth project export
 
 Export writes the project's user accounts — email, display name,
-verification/disabled state, custom claims — as one JSON document, the
-input of 'moth project import'.
+verification/disabled state, custom claims, provider identities and the
+encoded password hash — as one JSON document, the input of
+'moth project import'.
 
-Credentials never leave the server: password hashes are not exported (the
-milestone-10 migration format will carry foreign hashes), and social
-identities re-link automatically on the user's next social sign-in.
-Project configuration is a separate concern: see 'moth project dump'.
+Password hashes travel with the users (a native argon2id hash, tagged
+"argon2id"), so migrating between moth instances keeps everyone signed in
+without a reset. Social identities also re-link automatically on the
+user's next social sign-in. Project configuration is a separate concern:
+see 'moth project dump'.
 
 ```
 moth project export <slug|id> [flags]
@@ -320,14 +351,15 @@ moth project get <slug|id>
 ## moth project import
 
 Import creates the document's users in the target project, restoring
-display name, email verification, disabled state and custom claims. A
-user whose email already exists in the project is skipped, so re-running
-an import is safe.
+display name, avatar, email verification, disabled state, custom claims,
+provider identities and the encoded password hash. A user whose email
+already exists in the project is skipped, so re-running an import is safe.
 
-Passwords do not round-trip (moth never exports hashes): pass --invite to
-send each newly created user a set-password email; without it each user
-gets an unusable random password and recovers through "forgot password"
-or a social sign-in, which re-links automatically.
+Foreign password hashes (bcrypt, scrypt, argon2, pbkdf2 — tagged per user
+in the document's password_algorithm field) are accepted: each is
+verified with its original algorithm on the user's first sign-in and then
+transparently rehashed to argon2id, so teams can migrate from another
+auth system without forcing a password reset.
 
 ```
 moth project import <slug|id> -f <export.json> [flags]
@@ -337,7 +369,6 @@ Flags:
 
 ```
   -f, --file string   export JSON file (required)
-      --invite        send each created user a set-password invite email
       --yes           skip the confirmation prompt
 ```
 
@@ -374,6 +405,27 @@ Flags:
       --yes   skip the confirmation prompt
 ```
 
+## moth project keys rotate
+
+Rotate mints a fresh ES256 signing key that signs new tokens from now
+on, while the previous public key stays in the project JWKS for a grace
+period so in-flight access tokens keep validating and no user is signed
+out. Expired grace keys are pruned automatically.
+
+Unlike 'moth project keys reset-signing', rotate never invalidates
+existing sessions. Pass --grace-seconds to override the default grace
+(the project's access-token TTL plus a clock-skew margin).
+
+```
+moth project keys rotate <slug|id> [flags]
+```
+
+Flags:
+
+```
+      --grace-seconds int32   seconds the previous key stays in the JWKS (0 = access-token TTL + clock skew)
+```
+
 ## moth project keys show
 
 Show the active token-signing key and JWKS/issuer values
@@ -404,6 +456,29 @@ Flags:
       --name string   new display name
 ```
 
+## moth restore
+
+Extract a "moth backup" archive into the data directory, recreating
+the database, uploads and keys.
+
+For safety the restore refuses to write into a non-empty data directory unless
+--force is given, so an accidental restore cannot clobber a running instance.
+Stop "moth serve" before restoring over an existing data directory.
+
+```
+moth restore <archive> [flags]
+```
+
+Flags:
+
+```
+      --addr string       listen address (default ":8080")
+      --base-url string   public base URL of this instance (default "http://localhost:8080")
+      --config string     config file (default moth.toml if present)
+      --data-dir string   data directory (database, keys, uploads) (default "./data")
+      --force             overwrite a non-empty data directory
+```
+
 ## moth serve
 
 Start the moth server
@@ -415,10 +490,16 @@ moth serve [flags]
 Flags:
 
 ```
-      --addr string       listen address (default ":8080")
-      --base-url string   public base URL of this instance (default "http://localhost:8080")
-      --config string     config file (default moth.toml if present)
-      --data-dir string   data directory (database, keys, uploads) (default "./data")
+      --acme-domain string         comma-separated hostname(s) to obtain a Let's Encrypt certificate for; enables built-in HTTPS on :443 and http-01 on :80
+      --addr string                listen address (default ":8080")
+      --backup-dir string          directory for scheduled automatic backups (empty disables)
+      --backup-interval duration   interval between scheduled backups (default 24h0m0s)
+      --base-url string            public base URL of this instance (default "http://localhost:8080")
+      --config string              config file (default moth.toml if present)
+      --data-dir string            data directory (database, keys, uploads) (default "./data")
+      --log-format string          log handler: text or json (default "text")
+      --reflection                 enable gRPC server reflection in release builds
+      --trusted-proxies string     comma-separated CIDRs/IPs whose X-Forwarded-For is trusted for client-IP rate limiting
 ```
 
 ## moth setup

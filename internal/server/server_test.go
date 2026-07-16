@@ -29,6 +29,7 @@ type testEnv struct {
 	store    *store.Store
 	mails    *captureMailer
 	srv      *Server // e.g. to drain the async event writer
+	master   keys.MasterKey
 }
 
 func newTestEnv(t *testing.T, setupToken string, opts ...func(*Options)) *testEnv {
@@ -80,6 +81,7 @@ func newTestEnv(t *testing.T, setupToken string, opts ...func(*Options)) *testEn
 		store:    st,
 		mails:    mails,
 		srv:      srv,
+		master:   master,
 	}
 }
 

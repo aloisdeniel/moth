@@ -59,6 +59,10 @@ func (h *AccountHandler) CreatePersonalAccessToken(ctx context.Context, req *con
 	if err := h.store.CreatePAT(ctx, pat); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionPATCreate, TargetType: "personal_access_token", TargetID: pat.ID,
+		Summary: fmt.Sprintf("Created personal access token %q", pat.Name),
+	})
 	return connect.NewResponse(&adminv1.CreatePersonalAccessTokenResponse{
 		Token:    plain,
 		Metadata: PATProto(pat),
@@ -92,6 +96,10 @@ func (h *AccountHandler) RevokePersonalAccessToken(ctx context.Context, req *con
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionPATRevoke, TargetType: "personal_access_token", TargetID: req.Msg.Id,
+		Summary: "Revoked a personal access token",
+	})
 	return connect.NewResponse(&adminv1.RevokePersonalAccessTokenResponse{}), nil
 }
 

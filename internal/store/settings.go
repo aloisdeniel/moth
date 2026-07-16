@@ -43,6 +43,17 @@ type ProjectSettings struct {
 	// RollupTimezone is the IANA timezone name (e.g. "Europe/Paris") the
 	// daily analytics rollup buckets days in (default "UTC").
 	RollupTimezone string `json:"rollup_timezone"`
+	// SignupEmailAllowlist, when non-empty, restricts signup to addresses
+	// whose domain matches one of these patterns; every other domain is
+	// rejected. Patterns are domain globs (e.g. "example.com", "*.acme.io").
+	SignupEmailAllowlist []string `json:"signup_email_allowlist,omitempty"`
+	// SignupEmailBlocklist rejects signup from addresses whose domain matches
+	// any of these patterns, evaluated after the allowlist.
+	SignupEmailBlocklist []string `json:"signup_email_blocklist,omitempty"`
+	// CaptchaVerifyURL is an optional CAPTCHA verification endpoint. Left
+	// empty (and unwired) by default: the abuse-controls CAPTCHA hook is
+	// documented but off in v1.
+	CaptchaVerifyURL string `json:"captcha_verify_url,omitempty"`
 }
 
 // RollupLocation resolves RollupTimezone, falling back to UTC when the

@@ -13,6 +13,7 @@ import (
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/internal/config"
+	"github.com/aloisdeniel/moth/internal/keys"
 	mailpkg "github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/version"
@@ -32,19 +33,67 @@ type SettingsHandler struct {
 	// fallback is what dyn falls back to when no SMTP is configured
 	// anywhere (the console logger, or a recording mailer in tests).
 	fallback mailpkg.Mailer
-	now      func() time.Time
+	// master encrypts the SMTP relay password at rest (stored in
+	// instance_secrets, never in the plaintext settings JSON).
+	master keys.MasterKey
+	audit  *Auditor
+	now    func() time.Time
 }
 
 // NewSettingsHandler builds the instance settings service and points dyn
 // at the effective SMTP transport.
-func NewSettingsHandler(ctx context.Context, st Store, cfg config.Config, dyn *mailpkg.Dynamic, fallback mailpkg.Mailer) (*SettingsHandler, error) {
-	h := &SettingsHandler{store: st, cfg: cfg, dyn: dyn, fallback: fallback, now: time.Now}
+func NewSettingsHandler(ctx context.Context, st Store, cfg config.Config, dyn *mailpkg.Dynamic, fallback mailpkg.Mailer, master keys.MasterKey, auditor *Auditor) (*SettingsHandler, error) {
+	h := &SettingsHandler{store: st, cfg: cfg, dyn: dyn, fallback: fallback, master: master, audit: auditor, now: time.Now}
+	// Upgrade installs predate the secrets-at-rest hardening: an SMTP password
+	// set before milestone 10 still lives in cleartext inside the settings JSON.
+	// Re-encrypt it into instance_secrets and strip it from the JSON at startup
+	// rather than leaving it in plaintext until an admin next saves.
+	if err := h.migratePlaintextSMTPPassword(ctx); err != nil {
+		return nil, fmt.Errorf("migrate smtp password at rest: %w", err)
+	}
 	smtp, source, err := h.effectiveSMTP(ctx)
 	if err != nil {
 		return nil, err
 	}
 	h.apply(smtp, source)
 	return h, nil
+}
+
+// migratePlaintextSMTPPassword moves a pre-encryption plaintext SMTP password
+// out of the instance_settings JSON and into the encrypted instance_secrets
+// row, then rewrites the JSON without it. It is a no-op when no override is
+// stored or the JSON already carries no password.
+func (h *SettingsHandler) migratePlaintextSMTPPassword(ctx context.Context) error {
+	raw, err := h.store.GetInstanceSetting(ctx, store.InstanceSettingSMTP)
+	if errors.Is(err, store.ErrNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var smtp config.SMTP
+	if err := json.Unmarshal([]byte(raw), &smtp); err != nil {
+		return fmt.Errorf("parse stored smtp settings: %w", err)
+	}
+	if smtp.Password == "" {
+		return nil
+	}
+	// Only seed the encrypted secret when none exists yet, so an already-migrated
+	// (authoritative) ciphertext is never overwritten by a stale JSON value.
+	if _, serr := h.store.GetInstanceSecret(ctx, store.InstanceSecretSMTPPassword); errors.Is(serr, store.ErrNotFound) {
+		if err := h.storeSMTPPassword(ctx, smtp.Password); err != nil {
+			return err
+		}
+	} else if serr != nil {
+		return serr
+	}
+	stripped := smtp
+	stripped.Password = ""
+	b, err := json.Marshal(stripped)
+	if err != nil {
+		return err
+	}
+	return h.store.SetInstanceSetting(ctx, store.InstanceSettingSMTP, string(b), h.now())
 }
 
 // SMTPConfigured reports whether a real SMTP transport is currently
@@ -75,6 +124,9 @@ func (h *SettingsHandler) UpdateSmtpSettings(ctx context.Context, req *connect.R
 		if err := h.store.DeleteInstanceSetting(ctx, store.InstanceSettingSMTP); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
+		if err := h.store.DeleteInstanceSecret(ctx, store.InstanceSecretSMTPPassword); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
 	} else {
 		smtp := config.SMTP{
 			Host:     strings.TrimSpace(msg.Host),
@@ -103,11 +155,19 @@ func (h *SettingsHandler) UpdateSmtpSettings(ctx context.Context, req *connect.R
 				return nil, connect.NewError(connect.CodeInternal, err)
 			}
 		}
-		raw, err := json.Marshal(smtp)
+		// The password is persisted separately as ciphertext under the master
+		// key; the settings JSON never carries it in plaintext.
+		password := smtp.Password
+		persisted := smtp
+		persisted.Password = ""
+		raw, err := json.Marshal(persisted)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 		if err := h.store.SetInstanceSetting(ctx, store.InstanceSettingSMTP, string(raw), h.now()); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		if err := h.storeSMTPPassword(ctx, password); err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
 	}
@@ -117,6 +177,10 @@ func (h *SettingsHandler) UpdateSmtpSettings(ctx context.Context, req *connect.R
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	h.apply(smtp, source)
+	h.audit.record(ctx, entry{
+		Action: ActionSMTPUpdate, TargetType: "instance_settings", TargetID: "smtp",
+		Summary: "Updated the outgoing SMTP relay settings",
+	})
 	return connect.NewResponse(&adminv1.UpdateSmtpSettingsResponse{
 		Smtp:            smtpProto(smtp),
 		SmtpSource:      source,
@@ -137,7 +201,9 @@ func (h *SettingsHandler) SendTestEmail(ctx context.Context, req *connect.Reques
 	return connect.NewResponse(&adminv1.SendTestEmailResponse{}), nil
 }
 
-// storedSMTP reads the database SMTP override.
+// storedSMTP reads the database SMTP override. The relay password lives
+// encrypted in instance_secrets (never in the settings JSON); it is decrypted
+// and overlaid here so callers see a complete config.
 func (h *SettingsHandler) storedSMTP(ctx context.Context) (config.SMTP, error) {
 	raw, err := h.store.GetInstanceSetting(ctx, store.InstanceSettingSMTP)
 	if err != nil {
@@ -147,7 +213,45 @@ func (h *SettingsHandler) storedSMTP(ctx context.Context) (config.SMTP, error) {
 	if err := json.Unmarshal([]byte(raw), &smtp); err != nil {
 		return config.SMTP{}, fmt.Errorf("parse stored smtp settings: %w", err)
 	}
+	// The password moved out of the JSON into instance_secrets. Pre-encryption
+	// rows are migrated at startup (migratePlaintextSMTPPassword); a value still
+	// present in the JSON here is only a defensive fallback. Prefer the
+	// decrypted secret when one exists.
+	pw, perr := h.loadSMTPPassword(ctx)
+	if perr != nil && !errors.Is(perr, store.ErrNotFound) {
+		return config.SMTP{}, perr
+	}
+	if pw != "" {
+		smtp.Password = pw
+	}
 	return smtp, nil
+}
+
+// loadSMTPPassword returns the decrypted SMTP relay password, or "" when none
+// is stored. Returns store.ErrNotFound when no secret row exists.
+func (h *SettingsHandler) loadSMTPPassword(ctx context.Context) (string, error) {
+	enc, err := h.store.GetInstanceSecret(ctx, store.InstanceSecretSMTPPassword)
+	if err != nil {
+		return "", err
+	}
+	plain, err := h.master.Decrypt(enc)
+	if err != nil {
+		return "", fmt.Errorf("decrypt smtp password: %w", err)
+	}
+	return string(plain), nil
+}
+
+// storeSMTPPassword encrypts plain under the master key and upserts it into
+// instance_secrets; an empty password deletes the secret.
+func (h *SettingsHandler) storeSMTPPassword(ctx context.Context, plain string) error {
+	if plain == "" {
+		return h.store.DeleteInstanceSecret(ctx, store.InstanceSecretSMTPPassword)
+	}
+	enc, err := h.master.Encrypt([]byte(plain))
+	if err != nil {
+		return fmt.Errorf("encrypt smtp password: %w", err)
+	}
+	return h.store.SetInstanceSecret(ctx, store.InstanceSecretSMTPPassword, enc, h.now())
 }
 
 // effectiveSMTP resolves the SMTP configuration and where it comes from.

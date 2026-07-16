@@ -27,8 +27,11 @@ type Store interface {
 	store.SessionStore
 	store.PersonalAccessTokenStore
 	store.InstanceSettingStore
+	store.InstanceSecretStore
+	store.AuditStore
 	store.ProjectStore
 	store.UserStore
+	store.UserMigrationStore
 	store.RefreshTokenStore
 	store.ProviderSecretStore
 	store.ThemeStore

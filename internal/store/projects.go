@@ -38,11 +38,23 @@ type ProjectKey struct {
 	PublicKeyPEM  string
 	PrivateKeyEnc []byte
 	Status        string
-	CreatedAt     time.Time
+	// RotatedAt is when a graceful rotation stopped this key signing; nil
+	// while the key is active or was hard-retired.
+	RotatedAt *time.Time
+	// NotAfter is when a grace-period key leaves the JWKS and becomes
+	// eligible for pruning; nil for active and hard-retired keys.
+	NotAfter  *time.Time
+	CreatedAt time.Time
 }
 
-// ProjectKeyStatusActive marks keys currently served in the project JWKS.
+// ProjectKeyStatusActive marks the key currently signing new tokens and
+// served in the project JWKS.
 const ProjectKeyStatusActive = "active"
+
+// ProjectKeyStatusGrace marks a key retired by a graceful rotation: it no
+// longer signs but stays in the JWKS until NotAfter so tokens it already
+// signed keep validating until they expire.
+const ProjectKeyStatusGrace = "grace"
 
 // ProjectKeyStatusRetired marks keys dropped from the JWKS by a signing
 // key reset; tokens they signed no longer validate.
@@ -167,9 +179,13 @@ func (s *Store) ResetProjectSigningKey(ctx context.Context, projectID string, k 
 	}
 	defer tx.Rollback()
 
+	// Retire every key that could still validate a token — the active key AND
+	// any grace-period keys left by an earlier graceful rotation. A hard reset
+	// means every access token dies, so no rotated-out key may survive in the
+	// JWKS to keep validating tokens signed by it.
 	if _, err := tx.ExecContext(ctx,
-		`UPDATE project_keys SET status = ? WHERE project_id = ? AND status = ?`,
-		ProjectKeyStatusRetired, projectID, ProjectKeyStatusActive); err != nil {
+		`UPDATE project_keys SET status = ? WHERE project_id = ? AND status != ?`,
+		ProjectKeyStatusRetired, projectID, ProjectKeyStatusRetired); err != nil {
 		return fmt.Errorf("retire project keys: %w", err)
 	}
 	if _, err := tx.ExecContext(ctx,
@@ -199,26 +215,37 @@ func (s *Store) SlugExists(ctx context.Context, slug string) (bool, error) {
 	return exists, nil
 }
 
-func (s *Store) ListActiveProjectKeys(ctx context.Context, projectID string) ([]ProjectKey, error) {
-	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, kid, algorithm, public_key_pem, private_key_enc, status, created_at
-		 FROM project_keys WHERE project_id = ? AND status = ? ORDER BY created_at, id`,
-		projectID, ProjectKeyStatusActive)
-	if err != nil {
-		return nil, fmt.Errorf("list project keys: %w", err)
-	}
-	defer rows.Close()
+const projectKeyColumns = `id, project_id, kid, algorithm, public_key_pem,
+	private_key_enc, status, rotated_at, not_after, created_at`
 
+func scanProjectKeyRow(row rowScanner) (ProjectKey, error) {
+	var k ProjectKey
+	var rotatedAt, notAfter sql.NullString
+	var createdAt string
+	if err := row.Scan(&k.ID, &k.ProjectID, &k.Kid, &k.Algorithm,
+		&k.PublicKeyPEM, &k.PrivateKeyEnc, &k.Status, &rotatedAt, &notAfter, &createdAt); err != nil {
+		return ProjectKey{}, err
+	}
+	var err error
+	if k.RotatedAt, err = parseNullTime(rotatedAt); err != nil {
+		return ProjectKey{}, fmt.Errorf("parse project key rotated_at: %w", err)
+	}
+	if k.NotAfter, err = parseNullTime(notAfter); err != nil {
+		return ProjectKey{}, fmt.Errorf("parse project key not_after: %w", err)
+	}
+	if k.CreatedAt, err = parseTime(createdAt); err != nil {
+		return ProjectKey{}, fmt.Errorf("parse project key created_at: %w", err)
+	}
+	return k, nil
+}
+
+func scanProjectKeys(rows *sql.Rows) ([]ProjectKey, error) {
+	defer rows.Close()
 	var keys []ProjectKey
 	for rows.Next() {
-		var k ProjectKey
-		var createdAt string
-		if err := rows.Scan(&k.ID, &k.ProjectID, &k.Kid, &k.Algorithm,
-			&k.PublicKeyPEM, &k.PrivateKeyEnc, &k.Status, &createdAt); err != nil {
+		k, err := scanProjectKeyRow(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan project key: %w", err)
-		}
-		if k.CreatedAt, err = parseTime(createdAt); err != nil {
-			return nil, fmt.Errorf("parse project key created_at: %w", err)
 		}
 		keys = append(keys, k)
 	}
@@ -226,6 +253,87 @@ func (s *Store) ListActiveProjectKeys(ctx context.Context, projectID string) ([]
 		return nil, fmt.Errorf("list project keys: %w", err)
 	}
 	return keys, nil
+}
+
+// ListActiveProjectKeys returns only the keys signing new tokens (status
+// "active"), excluding grace-period keys.
+func (s *Store) ListActiveProjectKeys(ctx context.Context, projectID string) ([]ProjectKey, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT `+projectKeyColumns+`
+		 FROM project_keys WHERE project_id = ? AND status = ? ORDER BY created_at, id`,
+		projectID, ProjectKeyStatusActive)
+	if err != nil {
+		return nil, fmt.Errorf("list project keys: %w", err)
+	}
+	return scanProjectKeys(rows)
+}
+
+// ListActiveAndGraceKeys returns the keys a project's JWKS must publish: the
+// active signing key plus any grace-period keys whose grace has not expired
+// at now. Callers build the JWKS from these so tokens signed by a rotated-out
+// key keep validating until they expire.
+func (s *Store) ListActiveAndGraceKeys(ctx context.Context, projectID string, now time.Time) ([]ProjectKey, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT `+projectKeyColumns+`
+		 FROM project_keys
+		 WHERE project_id = ?
+		   AND (status = ? OR (status = ? AND (not_after IS NULL OR not_after > ?)))
+		 ORDER BY created_at, id`,
+		projectID, ProjectKeyStatusActive, ProjectKeyStatusGrace, formatTime(now))
+	if err != nil {
+		return nil, fmt.Errorf("list active and grace keys: %w", err)
+	}
+	return scanProjectKeys(rows)
+}
+
+// RotateSigningKey installs k as the project's new active signing key while
+// moving the current active key(s) to grace status (kept in the JWKS until
+// graceUntil). Unlike ResetProjectSigningKey, it does NOT revoke refresh
+// tokens: existing sessions and in-flight access tokens survive so no user
+// is signed out.
+func (s *Store) RotateSigningKey(ctx context.Context, projectID string, k ProjectKey, graceUntil, now time.Time) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin rotate signing key: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx,
+		`UPDATE project_keys SET status = ?, rotated_at = ?, not_after = ?
+		 WHERE project_id = ? AND status = ?`,
+		ProjectKeyStatusGrace, formatTime(now), formatTime(graceUntil),
+		projectID, ProjectKeyStatusActive); err != nil {
+		return fmt.Errorf("move active keys to grace: %w", err)
+	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO project_keys (id, project_id, kid, algorithm, public_key_pem, private_key_enc, status, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		k.ID, k.ProjectID, k.Kid, k.Algorithm, k.PublicKeyPEM, k.PrivateKeyEnc,
+		k.Status, formatTime(k.CreatedAt)); err != nil {
+		return fmt.Errorf("insert rotated signing key: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("commit rotate signing key: %w", err)
+	}
+	return nil
+}
+
+// PruneExpiredKeys deletes grace-period keys whose grace ended at or before
+// now, across all projects, and reports how many were removed. Active and
+// hard-retired keys are untouched. Run periodically by the maintenance loop.
+func (s *Store) PruneExpiredKeys(ctx context.Context, now time.Time) (int64, error) {
+	res, err := s.db.ExecContext(ctx,
+		`DELETE FROM project_keys
+		 WHERE status = ? AND not_after IS NOT NULL AND not_after <= ?`,
+		ProjectKeyStatusGrace, formatTime(now))
+	if err != nil {
+		return 0, fmt.Errorf("prune expired keys: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("prune expired keys: %w", err)
+	}
+	return n, nil
 }
 
 type rowScanner interface {

@@ -518,10 +518,13 @@ func (h *Handler) resolveOAuthUser(ctx context.Context, project store.Project, p
 	}
 
 	// (c) New user + identity. Social sign-up respects the same
-	// public-signup gate as SignUp.
+	// public-signup gate and email-domain allow/block lists as SignUp.
 	if !project.Settings.AllowPublicSignup {
 		return store.User{}, store.Identity{}, false, newError(connect.CodePermissionDenied,
 			ReasonSignupClosed, "public signup is closed for this project")
+	}
+	if err := checkSignupEmail(email, project.Settings); err != nil {
+		return store.User{}, store.Identity{}, false, err
 	}
 	now := h.now()
 	user := store.User{

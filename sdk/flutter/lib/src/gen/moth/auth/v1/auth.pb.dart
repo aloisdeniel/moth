@@ -226,12 +226,14 @@ class SignUpRequest extends $pb.GeneratedMessage {
     $core.String? password,
     $core.String? displayName,
     $core.String? deviceInfo,
+    $core.String? captchaToken,
   }) {
     final result = create();
     if (email != null) result.email = email;
     if (password != null) result.password = password;
     if (displayName != null) result.displayName = displayName;
     if (deviceInfo != null) result.deviceInfo = deviceInfo;
+    if (captchaToken != null) result.captchaToken = captchaToken;
     return result;
   }
 
@@ -252,6 +254,7 @@ class SignUpRequest extends $pb.GeneratedMessage {
     ..aOS(2, _omitFieldNames ? '' : 'password')
     ..aOS(3, _omitFieldNames ? '' : 'displayName')
     ..aOS(4, _omitFieldNames ? '' : 'deviceInfo')
+    ..aOS(5, _omitFieldNames ? '' : 'captchaToken')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -309,6 +312,17 @@ class SignUpRequest extends $pb.GeneratedMessage {
   $core.bool hasDeviceInfo() => $_has(3);
   @$pb.TagNumber(4)
   void clearDeviceInfo() => $_clearField(4);
+
+  /// Optional CAPTCHA solution, verified when the project configures a
+  /// captcha_verify_url (off by default; enforcement is a documented hook).
+  @$pb.TagNumber(5)
+  $core.String get captchaToken => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set captchaToken($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasCaptchaToken() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearCaptchaToken() => $_clearField(5);
 }
 
 class SignUpResponse extends $pb.GeneratedMessage {

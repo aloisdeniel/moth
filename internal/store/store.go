@@ -69,6 +69,36 @@ type InstanceSettingStore interface {
 	DeleteInstanceSetting(ctx context.Context, key string) error
 }
 
+// InstanceSecretStore persists instance-wide secrets (e.g. the SMTP relay
+// password) as ciphertext encrypted by the caller under the master key.
+type InstanceSecretStore interface {
+	SetInstanceSecret(ctx context.Context, key string, secretEnc []byte, now time.Time) error
+	GetInstanceSecret(ctx context.Context, key string) ([]byte, error)
+	DeleteInstanceSecret(ctx context.Context, key string) error
+}
+
+// RateLimitStore persists restart-surviving rate-limit buckets shared by the
+// gRPC interceptor and HTTP middleware.
+type RateLimitStore interface {
+	// TakeRateLimit atomically records n hits against key's fixed window and
+	// reports whether the bucket stays within limit.
+	TakeRateLimit(ctx context.Context, key string, n, limit int, window time.Duration, now time.Time) (RateLimitResult, error)
+	DeleteStaleRateLimits(ctx context.Context, cutoff time.Time) (int64, error)
+}
+
+// AuditStore persists the append-only admin/security audit log.
+type AuditStore interface {
+	AppendAudit(ctx context.Context, e AuditEntry) error
+	ListAudit(ctx context.Context, filter AuditFilter) ([]AuditEntry, error)
+}
+
+// UserMigrationStore bulk-reads and bulk-writes users for project data
+// export/import (migration on and off moth).
+type UserMigrationStore interface {
+	ExportUsers(ctx context.Context, projectID string) ([]UserExport, error)
+	ImportUsers(ctx context.Context, projectID string, users []UserImport, now time.Time) (ImportResult, error)
+}
+
 // ProjectStore persists projects and their signing keys.
 type ProjectStore interface {
 	// CreateProject inserts the project and its first signing key in one
@@ -87,6 +117,15 @@ type ProjectStore interface {
 	DeleteProject(ctx context.Context, id string) error
 	SlugExists(ctx context.Context, slug string) (bool, error)
 	ListActiveProjectKeys(ctx context.Context, projectID string) ([]ProjectKey, error)
+	// RotateSigningKey installs a new active key and moves the current one to
+	// a grace period (kept in the JWKS until graceUntil); refresh tokens are
+	// preserved, unlike ResetProjectSigningKey.
+	RotateSigningKey(ctx context.Context, projectID string, k ProjectKey, graceUntil, now time.Time) error
+	// ListActiveAndGraceKeys returns the keys the project JWKS must publish:
+	// the active key plus grace keys not yet expired at now.
+	ListActiveAndGraceKeys(ctx context.Context, projectID string, now time.Time) ([]ProjectKey, error)
+	// PruneExpiredKeys deletes grace keys whose grace ended by now.
+	PruneExpiredKeys(ctx context.Context, now time.Time) (int64, error)
 }
 
 // UserStore persists a project's end users and their provider identities.
@@ -107,6 +146,7 @@ type UserStore interface {
 	ListIdentitiesForUsers(ctx context.Context, projectID string, userIDs []string) (map[string][]Identity, error)
 	UpdateUser(ctx context.Context, u User) error
 	SetUserLastLogin(ctx context.Context, projectID, id string, at time.Time) error
+	SetUserPasswordHash(ctx context.Context, projectID, id, hash, algo string, at time.Time) error
 	DeleteUser(ctx context.Context, projectID, id string) error
 }
 
@@ -194,6 +234,10 @@ var (
 	_ SessionStore             = (*Store)(nil)
 	_ PersonalAccessTokenStore = (*Store)(nil)
 	_ InstanceSettingStore     = (*Store)(nil)
+	_ InstanceSecretStore      = (*Store)(nil)
+	_ RateLimitStore           = (*Store)(nil)
+	_ AuditStore               = (*Store)(nil)
+	_ UserMigrationStore       = (*Store)(nil)
 	_ ProjectStore             = (*Store)(nil)
 	_ UserStore                = (*Store)(nil)
 	_ RefreshTokenStore        = (*Store)(nil)

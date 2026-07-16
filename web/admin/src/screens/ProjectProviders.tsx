@@ -2,7 +2,7 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
-import { Badge, Field, KeyWell, PasswordInput } from "../components/ui";
+import { Badge, Field, KeyWell, PasswordInput, StringListField } from "../components/ui";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService } from "../gen/moth/admin/v1/settings_pb";
@@ -81,6 +81,11 @@ export function ProjectProviders({ project }: { project: Project }) {
         },
         autoLinkVerifiedEmail: autoLink,
         redirectSchemes,
+        // Owned by the Settings tab; carried through so a providers save
+        // does not wipe the abuse-control lists.
+        signupEmailAllowlist: s?.signupEmailAllowlist ?? [],
+        signupEmailBlocklist: s?.signupEmailBlocklist ?? [],
+        captchaVerifyUrl: s?.captchaVerifyUrl ?? "",
       },
       updateMask: { paths: ["settings"] },
     });
@@ -402,70 +407,5 @@ export function ProjectProviders({ project }: { project: Project }) {
         {update.isError && <span className="field__error">{errorMessage(update.error)}</span>}
       </div>
     </form>
-  );
-}
-
-// StringListField is a small multi-value editor: current values as removable
-// rows plus an input that adds on Enter (intercepted so the surrounding form
-// does not submit).
-function StringListField({
-  label,
-  values,
-  onChange,
-  placeholder,
-  help,
-}: {
-  label: string;
-  values: string[];
-  onChange: (values: string[]) => void;
-  placeholder?: string;
-  help?: string;
-}) {
-  const [draft, setDraft] = useState("");
-
-  function add() {
-    const v = draft.trim();
-    if (v === "" || values.includes(v)) return;
-    onChange([...values, v]);
-    setDraft("");
-  }
-
-  return (
-    <div className="field">
-      <span className="field__label">{label}</span>
-      {values.map((v) => (
-        <div key={v} className="keywell">
-          <span className="keywell__value">{v}</span>
-          <button
-            type="button"
-            className="btn btn--ghost btn--compact"
-            onClick={() => onChange(values.filter((x) => x !== v))}
-          >
-            Remove
-          </button>
-        </div>
-      ))}
-      <div className="row-8">
-        <input
-          className="input input--mono"
-          style={{ flex: 1 }}
-          aria-label={label}
-          value={draft}
-          placeholder={placeholder}
-          spellCheck={false}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              add();
-            }
-          }}
-        />
-        <button type="button" className="btn btn--secondary btn--compact" onClick={add}>
-          Add
-        </button>
-      </div>
-      {help && <span className="field__help">{help}</span>}
-    </div>
   );
 }

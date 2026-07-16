@@ -1,7 +1,7 @@
 VERSION ?= dev
 LDFLAGS := -s -w -X github.com/aloisdeniel/moth/internal/version.Version=$(VERSION)
 
-.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens website website-screenshots website-check
+.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens website website-screenshots website-check docs-embed docs-proto
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/moth ./cmd/moth
@@ -101,6 +101,18 @@ website-screenshots: build
 # Run after `make website`. External links are verified by lychee in CI.
 website-check:
 	cd website && node scripts/check-links.mjs
+
+# Regenerates the API reference (docs/api/reference.md) from the .proto
+# sources with protoc-gen-doc via a buf remote plugin (needs network, no
+# local install). Commit the result; never hand-edit it.
+docs-proto:
+	buf generate --template buf.gen.docs.yaml
+
+# Re-syncs the binary's embedded /docs (internal/docs/content) from the
+# public website content and the generated CLI reference. Commit the result —
+# `make build` embeds whatever is there, and CI fails when it is stale.
+docs-embed:
+	node website/scripts/sync-embedded-docs.mjs
 
 clean:
 	rm -rf bin

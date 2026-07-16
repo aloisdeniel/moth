@@ -17,11 +17,13 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go test ./...
-      # The async event writer (channels, atomics, concurrent Close/Emit)
-      # and the server that drives it end-to-end run under the race
-      # detector; without -race their concurrency tests cannot fail on a
-      # data race.
-      - run: go test -race ./internal/events/... ./internal/server/...
+      # The async event writer (channels, atomics, concurrent Close/Emit),
+      # the server that drives it end-to-end, and the shared persistent rate
+      # limiter (one SQLite-backed limiter behind concurrent gRPC + HTTP
+      # callers) run under the race detector; without -race their concurrency
+      # tests — including TestTakeRateLimitConcurrent — cannot fail on a data
+      # race.
+      - run: go test -race ./internal/events/... ./internal/server/... ./internal/store/... ./internal/ratelimit/...
 
   lint:
     runs-on: ubuntu-latest
@@ -176,3 +178,37 @@ jobs:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
           CGO_ENABLED: "0"
+
+  # Known-vulnerability scan against the Go vuln database. govulncheck is
+  # call-graph aware, so it only fails on advisories that reach code moth
+  # actually executes.
+  govulncheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      # Pinned to an explicit version so the security gate is deterministic and
+      # auditable: a floating @latest lets a newly published advisory turn CI
+      # red on an untouched commit, and a scanner regression silently weaken it.
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+      - run: govulncheck ./...
+
+  # Static security analysis. Fails only on high-severity, high-confidence
+  # findings so the gate is actionable; the generated code under gen/ is
+  # excluded. -no-fail keeps gosec from exiting non-zero on lower findings.
+  gosec:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Run gosec
+        # Pinned to an explicit release (not @master) so a new gosec rule cannot
+        # turn CI red on an untouched commit and a regression cannot silently
+        # weaken the gate.
+        uses: securego/gosec@v2.22.5
+        with:
+          args: -severity high -confidence high -exclude-dir=gen -exclude-dir=web ./...

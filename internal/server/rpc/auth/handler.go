@@ -19,6 +19,7 @@ import (
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
+	"github.com/aloisdeniel/moth/internal/audit"
 	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/jwt"
 	"github.com/aloisdeniel/moth/internal/keys"
@@ -49,6 +50,7 @@ type Handler struct {
 	log     *slog.Logger
 	now     func() time.Time
 	events  *events.Writer // async analytics writer; nil disables emission
+	audit   *audit.Sink    // security-event audit sink; nil disables emission
 
 	// Social sign-in: shared outbound HTTP client, one verifier per
 	// provider (each caches that provider's JWKS) and the OAuth endpoint
@@ -105,6 +107,9 @@ type Options struct {
 	// Events receives the analytics events emitted by the handlers; nil
 	// disables emission (unit tests).
 	Events *events.Writer
+	// Audit receives security-relevant events (refresh-token family
+	// revocation on reuse); nil disables emission (unit tests).
+	Audit *audit.Sink
 }
 
 // defaultGoogleAuthURL is Google's OAuth consent page.
@@ -147,6 +152,7 @@ func New(o Options) *Handler {
 		log:            o.Logger,
 		now:            o.Now,
 		events:         o.Events,
+		audit:          o.Audit,
 		httpc:          o.HTTPClient,
 		googleVerifier: oidc.NewVerifier(google, o.HTTPClient, o.Now),
 		appleVerifier:  oidc.NewVerifier(apple, o.HTTPClient, o.Now),
@@ -217,6 +223,21 @@ func bearerToken(header http.Header) (string, bool) {
 		return "", false
 	}
 	return strings.TrimSpace(auth[len(prefix):]), true
+}
+
+// auditFamilyRevoked records the security-relevant event of a refresh-token
+// family being revoked because a rotated token was reused (theft evidence).
+// The actor is the server itself. Fire-and-forget and nil-safe.
+func (h *Handler) auditFamilyRevoked(ctx context.Context, peerAddr string, rt store.RefreshToken) {
+	h.audit.Append(ctx, store.AuditEntry{
+		ActorType:  store.AuditActorSystem,
+		Action:     "refresh_token.family_revoked",
+		TargetType: "user",
+		TargetID:   rt.UserID,
+		ProjectID:  rt.ProjectID,
+		Summary:    "Refresh-token reuse detected; all sessions of the device family were revoked",
+		IP:         audit.CoarseIP(peerAddr),
+	})
 }
 
 // emit hands an analytics event to the async writer. Fire-and-forget: Emit

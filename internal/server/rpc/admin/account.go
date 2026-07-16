@@ -36,17 +36,19 @@ type AccountHandler struct {
 	// behind the mailer, so InviteAdmin can say whether the invite was
 	// actually emailed.
 	smtpOn func() bool
+	audit  *Auditor
 	now    func() time.Time
 }
 
 // NewAccountHandler builds the admin account service.
-func NewAccountHandler(st Store, mailer mailpkg.Mailer, baseURL string, secure bool, smtpOn func() bool) *AccountHandler {
+func NewAccountHandler(st Store, mailer mailpkg.Mailer, baseURL string, secure bool, smtpOn func() bool, auditor *Auditor) *AccountHandler {
 	return &AccountHandler{
 		store:   st,
 		mailer:  mailer,
 		baseURL: strings.TrimSuffix(baseURL, "/"),
 		secure:  secure,
 		smtpOn:  smtpOn,
+		audit:   auditor,
 		now:     time.Now,
 	}
 }
@@ -89,6 +91,10 @@ func (h *AccountHandler) InviteAdmin(ctx context.Context, req *connect.Request[a
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	inviteURL := h.baseURL + "/admin/invite?token=" + url.QueryEscape(plain)
+	h.audit.record(ctx, entry{
+		Action: ActionAdminInvite, TargetType: "admin_invite", TargetID: inv.ID,
+		Summary: fmt.Sprintf("Invited admin %s", email),
+	})
 
 	emailed := false
 	if h.smtpOn() {
@@ -163,6 +169,11 @@ func (h *AccountHandler) AcceptAdminInvite(ctx context.Context, req *connect.Req
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
+	h.audit.recordAs(ctx, store.AuditActorCookie, admin.ID, admin.Email, entry{
+		Action: ActionAdminAccept, TargetType: "admin", TargetID: admin.ID,
+		Summary: fmt.Sprintf("Accepted admin invite and created account %s", admin.Email),
+	})
+
 	cookie, err := IssueSession(ctx, h.store, admin.ID, h.secure)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -200,6 +211,10 @@ func (h *AccountHandler) ChangePassword(ctx context.Context, req *connect.Reques
 	if err := h.store.DeleteAdminSessionsExcept(ctx, admin.ID, current); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	h.audit.record(ctx, entry{
+		Action: ActionAdminPassword, TargetType: "admin", TargetID: admin.ID,
+		Summary: "Changed own password (other sessions signed out)",
+	})
 	return connect.NewResponse(&adminv1.ChangePasswordResponse{}), nil
 }
 

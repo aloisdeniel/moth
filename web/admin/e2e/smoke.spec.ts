@@ -330,3 +330,40 @@ test("analytics tab renders the empty state for a zero-traffic project", async (
   await expect(page.getByText("Login success rate")).toBeVisible();
   await expect(page.getByText("No activity yet")).toBeVisible();
 });
+
+test("audit log viewer renders with filters and log card", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Audit" }).click();
+  await expect(page.getByRole("heading", { name: "Audit", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Apply filters" })).toBeVisible();
+
+  // The log card renders whether the earlier scenarios produced entries or
+  // the filters match nothing (empty state) — either way it is present.
+  await expect(page.getByRole("heading", { name: "Audit log" })).toBeVisible();
+});
+
+test("abuse controls: an allowed email domain saves and persists", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Settings" }).click();
+
+  const domain = "e2e-allowed.example";
+  const allow = page.getByLabel("Allowed email domains");
+  await allow.fill(domain);
+  await allow.press("Enter");
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+
+  // Survives a full reload — the URL keeps the Settings tab active.
+  await page.reload();
+  await expect(page.getByText(domain)).toBeVisible();
+});

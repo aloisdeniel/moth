@@ -57,6 +57,15 @@ const (
 	// ProjectServiceResetSigningKeyProcedure is the fully-qualified name of the ProjectService's
 	// ResetSigningKey RPC.
 	ProjectServiceResetSigningKeyProcedure = "/moth.admin.v1.ProjectService/ResetSigningKey"
+	// ProjectServiceRotateSigningKeyProcedure is the fully-qualified name of the ProjectService's
+	// RotateSigningKey RPC.
+	ProjectServiceRotateSigningKeyProcedure = "/moth.admin.v1.ProjectService/RotateSigningKey"
+	// ProjectServiceExportProjectProcedure is the fully-qualified name of the ProjectService's
+	// ExportProject RPC.
+	ProjectServiceExportProjectProcedure = "/moth.admin.v1.ProjectService/ExportProject"
+	// ProjectServiceImportProjectProcedure is the fully-qualified name of the ProjectService's
+	// ImportProject RPC.
+	ProjectServiceImportProjectProcedure = "/moth.admin.v1.ProjectService/ImportProject"
 )
 
 // ProjectServiceClient is a client for the moth.admin.v1.ProjectService service.
@@ -78,6 +87,21 @@ type ProjectServiceClient interface {
 	// Every access token ever issued becomes invalid and all users must sign
 	// in again.
 	ResetSigningKey(context.Context, *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error)
+	// RotateSigningKey generates a fresh ES256 keypair that signs new tokens
+	// from now on, while the previous key stays in the project JWKS for a
+	// grace period (default: access-token TTL + clock skew). Tokens already
+	// issued keep validating until they expire, so — unlike ResetSigningKey —
+	// no user is signed out. Expired grace keys are pruned automatically.
+	RotateSigningKey(context.Context, *connect.Request[v1.RotateSigningKeyRequest]) (*connect.Response[v1.RotateSigningKeyResponse], error)
+	// ExportProject returns the project's users as JSON for migration off moth
+	// (no lock-in). Password hashes are included so accounts can be recreated
+	// elsewhere. Large projects should prefer the CLI, which pages.
+	ExportProject(context.Context, *connect.Request[v1.ExportProjectRequest]) (*connect.Response[v1.ExportProjectResponse], error)
+	// ImportProject bulk-creates users from a JSON document, optionally
+	// carrying foreign password hashes (bcrypt/scrypt/argon2/pbkdf2) so teams
+	// can migrate from another provider without a forced password reset. A
+	// user whose email already exists is skipped.
+	ImportProject(context.Context, *connect.Request[v1.ImportProjectRequest]) (*connect.Response[v1.ImportProjectResponse], error)
 }
 
 // NewProjectServiceClient constructs a client for the moth.admin.v1.ProjectService service. By
@@ -139,6 +163,24 @@ func NewProjectServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(projectServiceMethods.ByName("ResetSigningKey")),
 			connect.WithClientOptions(opts...),
 		),
+		rotateSigningKey: connect.NewClient[v1.RotateSigningKeyRequest, v1.RotateSigningKeyResponse](
+			httpClient,
+			baseURL+ProjectServiceRotateSigningKeyProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("RotateSigningKey")),
+			connect.WithClientOptions(opts...),
+		),
+		exportProject: connect.NewClient[v1.ExportProjectRequest, v1.ExportProjectResponse](
+			httpClient,
+			baseURL+ProjectServiceExportProjectProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("ExportProject")),
+			connect.WithClientOptions(opts...),
+		),
+		importProject: connect.NewClient[v1.ImportProjectRequest, v1.ImportProjectResponse](
+			httpClient,
+			baseURL+ProjectServiceImportProjectProcedure,
+			connect.WithSchema(projectServiceMethods.ByName("ImportProject")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -152,6 +194,9 @@ type projectServiceClient struct {
 	regenerateSecretKey *connect.Client[v1.RegenerateSecretKeyRequest, v1.RegenerateSecretKeyResponse]
 	getSigningKey       *connect.Client[v1.GetSigningKeyRequest, v1.GetSigningKeyResponse]
 	resetSigningKey     *connect.Client[v1.ResetSigningKeyRequest, v1.ResetSigningKeyResponse]
+	rotateSigningKey    *connect.Client[v1.RotateSigningKeyRequest, v1.RotateSigningKeyResponse]
+	exportProject       *connect.Client[v1.ExportProjectRequest, v1.ExportProjectResponse]
+	importProject       *connect.Client[v1.ImportProjectRequest, v1.ImportProjectResponse]
 }
 
 // CreateProject calls moth.admin.v1.ProjectService.CreateProject.
@@ -194,6 +239,21 @@ func (c *projectServiceClient) ResetSigningKey(ctx context.Context, req *connect
 	return c.resetSigningKey.CallUnary(ctx, req)
 }
 
+// RotateSigningKey calls moth.admin.v1.ProjectService.RotateSigningKey.
+func (c *projectServiceClient) RotateSigningKey(ctx context.Context, req *connect.Request[v1.RotateSigningKeyRequest]) (*connect.Response[v1.RotateSigningKeyResponse], error) {
+	return c.rotateSigningKey.CallUnary(ctx, req)
+}
+
+// ExportProject calls moth.admin.v1.ProjectService.ExportProject.
+func (c *projectServiceClient) ExportProject(ctx context.Context, req *connect.Request[v1.ExportProjectRequest]) (*connect.Response[v1.ExportProjectResponse], error) {
+	return c.exportProject.CallUnary(ctx, req)
+}
+
+// ImportProject calls moth.admin.v1.ProjectService.ImportProject.
+func (c *projectServiceClient) ImportProject(ctx context.Context, req *connect.Request[v1.ImportProjectRequest]) (*connect.Response[v1.ImportProjectResponse], error) {
+	return c.importProject.CallUnary(ctx, req)
+}
+
 // ProjectServiceHandler is an implementation of the moth.admin.v1.ProjectService service.
 type ProjectServiceHandler interface {
 	CreateProject(context.Context, *connect.Request[v1.CreateProjectRequest]) (*connect.Response[v1.CreateProjectResponse], error)
@@ -213,6 +273,21 @@ type ProjectServiceHandler interface {
 	// Every access token ever issued becomes invalid and all users must sign
 	// in again.
 	ResetSigningKey(context.Context, *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error)
+	// RotateSigningKey generates a fresh ES256 keypair that signs new tokens
+	// from now on, while the previous key stays in the project JWKS for a
+	// grace period (default: access-token TTL + clock skew). Tokens already
+	// issued keep validating until they expire, so — unlike ResetSigningKey —
+	// no user is signed out. Expired grace keys are pruned automatically.
+	RotateSigningKey(context.Context, *connect.Request[v1.RotateSigningKeyRequest]) (*connect.Response[v1.RotateSigningKeyResponse], error)
+	// ExportProject returns the project's users as JSON for migration off moth
+	// (no lock-in). Password hashes are included so accounts can be recreated
+	// elsewhere. Large projects should prefer the CLI, which pages.
+	ExportProject(context.Context, *connect.Request[v1.ExportProjectRequest]) (*connect.Response[v1.ExportProjectResponse], error)
+	// ImportProject bulk-creates users from a JSON document, optionally
+	// carrying foreign password hashes (bcrypt/scrypt/argon2/pbkdf2) so teams
+	// can migrate from another provider without a forced password reset. A
+	// user whose email already exists is skipped.
+	ImportProject(context.Context, *connect.Request[v1.ImportProjectRequest]) (*connect.Response[v1.ImportProjectResponse], error)
 }
 
 // NewProjectServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -270,6 +345,24 @@ func NewProjectServiceHandler(svc ProjectServiceHandler, opts ...connect.Handler
 		connect.WithSchema(projectServiceMethods.ByName("ResetSigningKey")),
 		connect.WithHandlerOptions(opts...),
 	)
+	projectServiceRotateSigningKeyHandler := connect.NewUnaryHandler(
+		ProjectServiceRotateSigningKeyProcedure,
+		svc.RotateSigningKey,
+		connect.WithSchema(projectServiceMethods.ByName("RotateSigningKey")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceExportProjectHandler := connect.NewUnaryHandler(
+		ProjectServiceExportProjectProcedure,
+		svc.ExportProject,
+		connect.WithSchema(projectServiceMethods.ByName("ExportProject")),
+		connect.WithHandlerOptions(opts...),
+	)
+	projectServiceImportProjectHandler := connect.NewUnaryHandler(
+		ProjectServiceImportProjectProcedure,
+		svc.ImportProject,
+		connect.WithSchema(projectServiceMethods.ByName("ImportProject")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.admin.v1.ProjectService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ProjectServiceCreateProjectProcedure:
@@ -288,6 +381,12 @@ func NewProjectServiceHandler(svc ProjectServiceHandler, opts ...connect.Handler
 			projectServiceGetSigningKeyHandler.ServeHTTP(w, r)
 		case ProjectServiceResetSigningKeyProcedure:
 			projectServiceResetSigningKeyHandler.ServeHTTP(w, r)
+		case ProjectServiceRotateSigningKeyProcedure:
+			projectServiceRotateSigningKeyHandler.ServeHTTP(w, r)
+		case ProjectServiceExportProjectProcedure:
+			projectServiceExportProjectHandler.ServeHTTP(w, r)
+		case ProjectServiceImportProjectProcedure:
+			projectServiceImportProjectHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -327,4 +426,16 @@ func (UnimplementedProjectServiceHandler) GetSigningKey(context.Context, *connec
 
 func (UnimplementedProjectServiceHandler) ResetSigningKey(context.Context, *connect.Request[v1.ResetSigningKeyRequest]) (*connect.Response[v1.ResetSigningKeyResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.ResetSigningKey is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) RotateSigningKey(context.Context, *connect.Request[v1.RotateSigningKeyRequest]) (*connect.Response[v1.RotateSigningKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.RotateSigningKey is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) ExportProject(context.Context, *connect.Request[v1.ExportProjectRequest]) (*connect.Response[v1.ExportProjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.ExportProject is not implemented"))
+}
+
+func (UnimplementedProjectServiceHandler) ImportProject(context.Context, *connect.Request[v1.ImportProjectRequest]) (*connect.Response[v1.ImportProjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.ProjectService.ImportProject is not implemented"))
 }

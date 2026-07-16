@@ -17,13 +17,17 @@ type User struct {
 	Email           string // stored lowercased
 	EmailVerifiedAt *time.Time
 	PasswordHash    string // empty for social-only accounts
-	DisplayName     string
-	AvatarURL       string
-	CustomClaims    string // JSON object embedded in the JWT `claims` claim
-	DisabledAt      *time.Time
-	LastLoginAt     *time.Time
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	// PasswordAlgo marks a foreign hash imported from another auth system
+	// (see the PasswordAlgo* constants). Empty means the native argon2id
+	// format; the auth path rehashes a foreign hash to native on first login.
+	PasswordAlgo string
+	DisplayName  string
+	AvatarURL    string
+	CustomClaims string // JSON object embedded in the JWT `claims` claim
+	DisabledAt   *time.Time
+	LastLoginAt  *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 // Verified reports whether the user's email address is verified.
@@ -49,6 +53,24 @@ type Identity struct {
 	AppleRefreshTokenEnc []byte
 	CreatedAt            time.Time
 }
+
+// Password hash algorithms for the PasswordAlgo marker. The empty string is
+// the native moth format (argon2id, verified by internal/password); a
+// non-empty value marks a foreign hash carried in by a migration import,
+// verified with its original algorithm then rehashed to native on first
+// login.
+const (
+	// PasswordAlgoNative is the native argon2id format (empty marker).
+	PasswordAlgoNative = ""
+	// PasswordAlgoBcrypt marks a bcrypt hash.
+	PasswordAlgoBcrypt = "bcrypt"
+	// PasswordAlgoScrypt marks an scrypt hash.
+	PasswordAlgoScrypt = "scrypt"
+	// PasswordAlgoArgon2 marks an argon2/argon2i/argon2id foreign hash.
+	PasswordAlgoArgon2 = "argon2"
+	// PasswordAlgoPBKDF2 marks a PBKDF2 hash.
+	PasswordAlgoPBKDF2 = "pbkdf2"
+)
 
 // Identity providers.
 const (
@@ -84,10 +106,10 @@ func (s *Store) CreateUser(ctx context.Context, u User, identities ...Identity) 
 	defer tx.Rollback()
 
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO users (id, project_id, email, email_verified_at, password_hash,
+		`INSERT INTO users (id, project_id, email, email_verified_at, password_hash, password_algo,
 		                    display_name, avatar_url, custom_claims, disabled_at, last_login_at, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		u.ID, u.ProjectID, u.Email, formatNullTime(u.EmailVerifiedAt), nullString(u.PasswordHash),
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		u.ID, u.ProjectID, u.Email, formatNullTime(u.EmailVerifiedAt), nullString(u.PasswordHash), u.PasswordAlgo,
 		u.DisplayName, u.AvatarURL, u.CustomClaims, formatNullTime(u.DisabledAt),
 		formatNullTime(u.LastLoginAt), formatTime(u.CreatedAt), formatTime(u.UpdatedAt)); err != nil {
 		if err := conflictErr(err); errors.Is(err, ErrConflict) {
@@ -129,7 +151,7 @@ func insertIdentity(ctx context.Context, db execer, id Identity) error {
 	return nil
 }
 
-const userColumns = `id, project_id, email, email_verified_at, password_hash,
+const userColumns = `id, project_id, email, email_verified_at, password_hash, password_algo,
 	display_name, avatar_url, custom_claims, disabled_at, last_login_at, created_at, updated_at`
 
 func (s *Store) GetUser(ctx context.Context, projectID, id string) (User, error) {
@@ -168,10 +190,10 @@ func (s *Store) ListUsers(ctx context.Context, projectID string) ([]User, error)
 // returned by a Get and pass it back.
 func (s *Store) UpdateUser(ctx context.Context, u User) error {
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE users SET email = ?, email_verified_at = ?, password_hash = ?,
+		`UPDATE users SET email = ?, email_verified_at = ?, password_hash = ?, password_algo = ?,
 		        display_name = ?, avatar_url = ?, custom_claims = ?, disabled_at = ?, updated_at = ?
 		 WHERE project_id = ? AND id = ?`,
-		u.Email, formatNullTime(u.EmailVerifiedAt), nullString(u.PasswordHash),
+		u.Email, formatNullTime(u.EmailVerifiedAt), nullString(u.PasswordHash), u.PasswordAlgo,
 		u.DisplayName, u.AvatarURL, u.CustomClaims, formatNullTime(u.DisabledAt),
 		formatTime(u.UpdatedAt), u.ProjectID, u.ID)
 	if err != nil {
@@ -179,6 +201,21 @@ func (s *Store) UpdateUser(ctx context.Context, u User) error {
 			return err
 		}
 		return fmt.Errorf("update user: %w", err)
+	}
+	return requireRow(res)
+}
+
+// SetUserPasswordHash replaces only the credential columns (password_hash,
+// password_algo) and updated_at with a targeted UPDATE, so a concurrent
+// profile edit cannot be clobbered by a stale full-row write. Used by the
+// first-login rehash of an imported foreign hash to argon2id.
+func (s *Store) SetUserPasswordHash(ctx context.Context, projectID, id, hash, algo string, at time.Time) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE users SET password_hash = ?, password_algo = ?, updated_at = ?
+		 WHERE project_id = ? AND id = ?`,
+		nullString(hash), algo, formatTime(at), projectID, id)
+	if err != nil {
+		return fmt.Errorf("set user password hash: %w", err)
 	}
 	return requireRow(res)
 }
@@ -438,7 +475,7 @@ func scanUserRow(row rowScanner) (User, error) {
 	var u User
 	var verifiedAt, passwordHash, disabledAt, lastLoginAt sql.NullString
 	var createdAt, updatedAt string
-	err := row.Scan(&u.ID, &u.ProjectID, &u.Email, &verifiedAt, &passwordHash,
+	err := row.Scan(&u.ID, &u.ProjectID, &u.Email, &verifiedAt, &passwordHash, &u.PasswordAlgo,
 		&u.DisplayName, &u.AvatarURL, &u.CustomClaims, &disabledAt, &lastLoginAt, &createdAt, &updatedAt)
 	if err != nil {
 		return User{}, err

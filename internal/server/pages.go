@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	"github.com/aloisdeniel/moth/internal/httpsec"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
 )
@@ -25,6 +26,10 @@ type pageData struct {
 	Error         string
 	ShowResetForm bool
 	Token         string
+	// Nonce is the per-request CSP nonce stamped onto the inline <style>
+	// element so the strict hosted-page policy admits it without
+	// 'unsafe-inline'.
+	Nonce string
 	// Theme fields, filled by themedData from the project's design system.
 	ThemeCSS   template.CSS
 	LogoLight  string
@@ -136,6 +141,9 @@ func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, p store.Proj
 func (s *Server) renderPageStatus(w http.ResponseWriter, r *http.Request, status int, p store.Project, data pageData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Referrer-Policy", "no-referrer")
+	// The security middleware minted a CSP nonce for this request; the inline
+	// <style> block carries it so the strict policy admits it.
+	data.Nonce = httpsec.NonceFromContext(r.Context())
 	w.WriteHeader(status)
 	if err := pageTemplate.Execute(w, themedData(p, data)); err != nil {
 		s.log.Error("render page", "path", r.URL.Path, "error", err.Error())

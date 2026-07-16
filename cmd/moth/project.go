@@ -228,9 +228,53 @@ func newProjectKeysCmd(opts *clientOpts) *cobra.Command {
 	}
 	cmd.AddCommand(
 		newProjectKeysShowCmd(opts),
+		newProjectKeysRotateSigningCmd(opts),
 		newProjectKeysResetSigningCmd(opts),
 		newProjectKeysRegenerateSecretCmd(opts),
 	)
+	return cmd
+}
+
+func newProjectKeysRotateSigningCmd(opts *clientOpts) *cobra.Command {
+	var graceSeconds int32
+	cmd := &cobra.Command{
+		Use:   "rotate <slug|id>",
+		Short: "Rotate the signing key gracefully (old key stays in the JWKS during a grace period; no user is signed out)",
+		Long: `Rotate mints a fresh ES256 signing key that signs new tokens from now
+on, while the previous public key stays in the project JWKS for a grace
+period so in-flight access tokens keep validating and no user is signed
+out. Expired grace keys are pruned automatically.
+
+Unlike 'moth project keys reset-signing', rotate never invalidates
+existing sessions. Pass --grace-seconds to override the default grace
+(the project's access-token TTL plus a clock-skew margin).`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := opts.dial()
+			if err != nil {
+				return err
+			}
+			p, err := resolveProject(cmd.Context(), client, args[0])
+			if err != nil {
+				return err
+			}
+			resp, err := client.Projects.RotateSigningKey(cmd.Context(),
+				connect.NewRequest(&adminv1.RotateSigningKeyRequest{
+					ProjectId: p.Id, GraceSeconds: graceSeconds,
+				}))
+			if err != nil {
+				return err
+			}
+			if opts.json {
+				return printJSON(cmd, resp.Msg)
+			}
+			fmt.Printf("rotated signing key of %s (new kid %s)\n", p.Slug, resp.Msg.Key.GetKid())
+			fmt.Printf("previous key stays in the JWKS until %s\n", fmtTime(resp.Msg.GraceExpireTime))
+			return nil
+		},
+	}
+	cmd.Flags().Int32Var(&graceSeconds, "grace-seconds", 0,
+		"seconds the previous key stays in the JWKS (0 = access-token TTL + clock skew)")
 	return cmd
 }
 

@@ -24,7 +24,16 @@ var webFS embed.FS
 
 const minPasswordLen = 8
 
-func (s *Server) handleHealthz(w http.ResponseWriter, _ *http.Request) {
+func (s *Server) handleHealthz(w http.ResponseWriter, r *http.Request) {
+	if err := s.healthProbe(r.Context()); err != nil {
+		// The probe error carries internal detail (data-directory path, storage
+		// backend). /healthz is unauthenticated, so log the detail server-side
+		// and return only a coarse status to the caller.
+		s.log.WarnContext(r.Context(), "healthz probe failed", "error", err.Error())
+		writeJSON(w, http.StatusServiceUnavailable,
+			map[string]string{"status": "unavailable"})
+		return
+	}
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }
 
@@ -59,7 +68,9 @@ func (s *Server) handleJWKS(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, err)
 		return
 	}
-	projectKeys, err := s.store.ListActiveProjectKeys(r.Context(), project.ID)
+	// Publish active plus in-grace keys so tokens signed by a key that a
+	// graceful rotation retired keep verifying until their grace expires.
+	projectKeys, err := s.store.ListActiveAndGraceKeys(r.Context(), project.ID, time.Now())
 	if err != nil {
 		s.internalError(w, r, err)
 		return

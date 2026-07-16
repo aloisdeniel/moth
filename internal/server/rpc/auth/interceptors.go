@@ -3,7 +3,7 @@ package authrpc
 import (
 	"context"
 	"errors"
-	"net"
+	"log/slog"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -45,29 +45,6 @@ func NewProjectInterceptor(st store.ProjectStore) connect.UnaryInterceptorFunc {
 	}
 }
 
-// Default rate limits for the credential-facing RPCs (full hardening in
-// milestone 10).
-const (
-	DefaultIPRatePerMinute      = 30
-	DefaultIPBurst              = 15
-	DefaultAccountRatePerMinute = 10
-	DefaultAccountBurst         = 5
-)
-
-// RateLimits holds the two token-bucket limiters of the auth service.
-type RateLimits struct {
-	PerIP      *ratelimit.Limiter
-	PerAccount *ratelimit.Limiter
-}
-
-// DefaultRateLimits returns the standard limits.
-func DefaultRateLimits() RateLimits {
-	return RateLimits{
-		PerIP:      ratelimit.New(DefaultIPRatePerMinute, DefaultIPBurst),
-		PerAccount: ratelimit.New(DefaultAccountRatePerMinute, DefaultAccountBurst),
-	}
-}
-
 // throttledProcedures are the RPCs that accept credentials or trigger
 // emails and therefore need brute-force / abuse protection.
 var throttledProcedures = map[string]bool{
@@ -79,46 +56,58 @@ var throttledProcedures = map[string]bool{
 	"/moth.auth.v1.AuthService/RequestEmailVerification": true,
 }
 
-// NewRateLimitInterceptor throttles the sensitive RPCs per client IP and,
-// when the request carries an email, per account. It runs after the
-// project interceptor so account keys are project-scoped.
-func NewRateLimitInterceptor(limits RateLimits) connect.UnaryInterceptorFunc {
+// NewRateLimitInterceptor throttles the sensitive RPCs against the shared,
+// persistent limiter: per client IP, per project, and — when the request
+// carries an email — per account. It runs after the project interceptor so
+// the account and project buckets are project-scoped. Over-limit calls fail
+// with CodeResourceExhausted carrying the RATE_LIMITED reason and a
+// google.rpc.RetryInfo detail.
+//
+// These are credential-facing RPCs, so a limiter storage error fails CLOSED:
+// if the throttle cannot be evaluated (a locked/full/corrupt rate_limits
+// table) the call is denied with RATE_LIMITED rather than let through
+// unthrottled, which would otherwise re-open unlimited brute force during
+// exactly the window the database is stressed.
+func NewRateLimitInterceptor(limiter *ratelimit.Limiter, log *slog.Logger) connect.UnaryInterceptorFunc {
+	if log == nil {
+		log = slog.Default()
+	}
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-			if !throttledProcedures[req.Spec().Procedure] {
+			if limiter == nil || !throttledProcedures[req.Spec().Procedure] {
 				return next(ctx, req)
 			}
-			limited := newError(connect.CodeResourceExhausted, ReasonRateLimited,
-				"too many attempts, retry later")
-			if ip := clientIP(req); ip != "" && !limits.PerIP.Allow(ip) {
-				return nil, limited
+			check := func(d ratelimit.Decision, err error) error {
+				if err != nil {
+					log.ErrorContext(ctx, "rate limit check failed; denying request",
+						"procedure", req.Spec().Procedure, "error", err.Error())
+					return rateLimitError(0)
+				}
+				if !d.Allowed {
+					return rateLimitError(d.RetryAfter)
+				}
+				return nil
+			}
+			if ip := limiter.ClientIP(req.Peer().Addr, req.Header().Get("X-Forwarded-For")); ip != "" {
+				if err := check(limiter.IP(ctx, ip)); err != nil {
+					return nil, err
+				}
+			}
+			projectID := ""
+			if p, ok := ProjectFromContext(ctx); ok {
+				projectID = p.ID
+				if err := check(limiter.Project(ctx, projectID)); err != nil {
+					return nil, err
+				}
 			}
 			if email := requestEmail(req.Any()); email != "" {
-				key := email
-				if p, ok := ProjectFromContext(ctx); ok {
-					key = p.ID + "/" + email
-				}
-				if !limits.PerAccount.Allow(key) {
-					return nil, limited
+				if err := check(limiter.Account(ctx, projectID, email)); err != nil {
+					return nil, err
 				}
 			}
 			return next(ctx, req)
 		}
 	}
-}
-
-// clientIP extracts the caller address: the first X-Forwarded-For hop when
-// present (reverse-proxy deployments), otherwise the connection peer.
-func clientIP(req connect.AnyRequest) string {
-	if fwd := req.Header().Get("X-Forwarded-For"); fwd != "" {
-		first, _, _ := strings.Cut(fwd, ",")
-		return strings.TrimSpace(first)
-	}
-	addr := req.Peer().Addr
-	if host, _, err := net.SplitHostPort(addr); err == nil {
-		return host
-	}
-	return addr
 }
 
 // requestEmail pulls the account email out of the throttled request types.

@@ -28,6 +28,21 @@ service ProjectService {
   // Every access token ever issued becomes invalid and all users must sign
   // in again.
   rpc ResetSigningKey(ResetSigningKeyRequest) returns (ResetSigningKeyResponse);
+  // RotateSigningKey generates a fresh ES256 keypair that signs new tokens
+  // from now on, while the previous key stays in the project JWKS for a
+  // grace period (default: access-token TTL + clock skew). Tokens already
+  // issued keep validating until they expire, so — unlike ResetSigningKey —
+  // no user is signed out. Expired grace keys are pruned automatically.
+  rpc RotateSigningKey(RotateSigningKeyRequest) returns (RotateSigningKeyResponse);
+  // ExportProject returns the project's users as JSON for migration off moth
+  // (no lock-in). Password hashes are included so accounts can be recreated
+  // elsewhere. Large projects should prefer the CLI, which pages.
+  rpc ExportProject(ExportProjectRequest) returns (ExportProjectResponse);
+  // ImportProject bulk-creates users from a JSON document, optionally
+  // carrying foreign password hashes (bcrypt/scrypt/argon2/pbkdf2) so teams
+  // can migrate from another provider without a forced password reset. A
+  // user whose email already exists is skipped.
+  rpc ImportProject(ImportProjectRequest) returns (ImportProjectResponse);
 }
 
 message Project {
@@ -79,6 +94,16 @@ message ProjectSettings {
   // IANA timezone name (e.g. "Europe/Paris") the analytics rollup buckets
   // days in (default "UTC").
   string rollup_timezone = 12;
+  // When non-empty, signup is restricted to email addresses whose domain
+  // matches one of these glob patterns (e.g. "example.com", "*.acme.io");
+  // every other domain is rejected.
+  repeated string signup_email_allowlist = 13;
+  // Email-domain glob patterns rejected at signup, evaluated after the
+  // allowlist.
+  repeated string signup_email_blocklist = 14;
+  // Optional CAPTCHA verification endpoint. The CAPTCHA hook is documented
+  // but off by default in v1: this field is stored but not yet wired.
+  string captcha_verify_url = 15;
 }
 
 // GoogleProviderConfig configures Sign in with Google for one project. The
@@ -236,4 +261,89 @@ message ResetSigningKeyRequest {
 message ResetSigningKeyResponse {
   // The replacement signing key.
   SigningKey key = 1;
+}
+
+message RotateSigningKeyRequest {
+  string project_id = 1;
+  // Grace period, in seconds, the previous key stays in the JWKS. 0 uses the
+  // server default (access-token TTL + clock skew).
+  int32 grace_seconds = 2;
+}
+
+message RotateSigningKeyResponse {
+  // The new active signing key.
+  SigningKey key = 1;
+  // When the previous key leaves the JWKS and becomes eligible for pruning.
+  google.protobuf.Timestamp grace_expire_time = 2;
+}
+
+// ExportedIdentity is one linked provider of an exported/imported user.
+message ExportedIdentity {
+  // "password", "google" or "apple".
+  string provider = 1;
+  // Provider-issued subject (the user id for password identities).
+  string provider_subject = 2;
+  // Email the provider asserted when the identity was linked.
+  string email = 3;
+}
+
+// ExportedUser is one user in an export document, with everything needed to
+// recreate the account on another system.
+message ExportedUser {
+  string id = 1;
+  string email = 2;
+  bool email_verified = 3;
+  string display_name = 4;
+  string avatar_url = 5;
+  // JSON object embedded in the JWT `claims` claim.
+  string custom_claims = 6;
+  bool disabled = 7;
+  google.protobuf.Timestamp create_time = 8;
+  google.protobuf.Timestamp last_login_time = 9;
+  // Encoded password hash; empty for social-only accounts.
+  string password_hash = 10;
+  // Algorithm that produced password_hash: "argon2id" for a native moth
+  // hash, or the foreign algorithm it was imported with.
+  string password_algorithm = 11;
+  repeated ExportedIdentity identities = 12;
+}
+
+// ImportedUser is one user to create, optionally carrying a foreign password
+// hash. A foreign hash is verified with its original algorithm on the user's
+// first sign-in, then transparently rehashed to argon2id.
+message ImportedUser {
+  string email = 1;
+  bool email_verified = 2;
+  string display_name = 3;
+  string avatar_url = 4;
+  // JSON object embedded in the JWT `claims` claim (defaults to "{}").
+  string custom_claims = 5;
+  // Encoded password hash; empty for users without a password.
+  string password_hash = 6;
+  // Algorithm that produced password_hash: "bcrypt", "scrypt", "argon2" or
+  // "pbkdf2" for a foreign hash, or "argon2id"/"" for a native moth hash.
+  string password_algorithm = 7;
+  repeated ExportedIdentity identities = 8;
+  // Whether the account is created disabled (blocked from signing in).
+  bool disabled = 9;
+}
+
+message ExportProjectRequest {
+  string project_id = 1;
+}
+
+message ExportProjectResponse {
+  repeated ExportedUser users = 1;
+}
+
+message ImportProjectRequest {
+  string project_id = 1;
+  repeated ImportedUser users = 2;
+}
+
+message ImportProjectResponse {
+  // Number of users actually created.
+  int32 imported_count = 1;
+  // Number skipped because their email was already registered.
+  int32 skipped_count = 2;
 }

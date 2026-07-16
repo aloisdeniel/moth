@@ -127,6 +127,9 @@ message SignUpRequest {
   string display_name = 3;
   // Free-form device description stored with the session, e.g. "iPhone 15".
   string device_info = 4;
+  // Optional CAPTCHA solution, verified when the project configures a
+  // captcha_verify_url (off by default; enforcement is a documented hook).
+  string captcha_token = 5;
 }
 
 message SignUpResponse {

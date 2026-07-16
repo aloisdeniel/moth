@@ -198,7 +198,9 @@ const (
 // runs just re-roll the newest day (idempotent, one small query). The first
 // run happens after the initial jitter so a restarted instance catches up
 // quickly. Failures are logged, never fatal.
-func (r *Rollup) RunPeriodically(ctx context.Context) {
+// observers, when supplied, are notified of each run's outcome (nil error on
+// success) so callers can record it (e.g. a metrics counter).
+func (r *Rollup) RunPeriodically(ctx context.Context, observers ...func(error)) {
 	delay := jitter()
 	for {
 		select {
@@ -206,8 +208,14 @@ func (r *Rollup) RunPeriodically(ctx context.Context) {
 			return
 		case <-time.After(delay):
 		}
-		if _, err := r.Run(ctx, ""); err != nil && ctx.Err() == nil {
+		_, err := r.Run(ctx, "")
+		if err != nil && ctx.Err() == nil {
 			r.log.ErrorContext(ctx, "scheduled analytics rollup", "error", err.Error())
+		}
+		if ctx.Err() == nil {
+			for _, obs := range observers {
+				obs(err)
+			}
 		}
 		delay = rollupInterval + jitter()
 	}

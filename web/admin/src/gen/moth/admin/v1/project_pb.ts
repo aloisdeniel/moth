@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/project.proto.
  */
 export const file_moth_admin_v1_project: GenFile = /*@__PURE__*/
-  fileDesc("Chttb3RoL2FkbWluL3YxL3Byb2plY3QucHJvdG8SDW1vdGguYWRtaW4udjEi8gEKB1Byb2plY3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJEhcKD3B1Ymxpc2hhYmxlX2tleRgEIAEoCRIvCgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKCHNldHRpbmdzGAcgASgLMh4ubW90aC5hZG1pbi52MS5Qcm9qZWN0U2V0dGluZ3MSEgoKdXNlcl9jb3VudBgIIAEoAyLTAwoPUHJvamVjdFNldHRpbmdzEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYASABKAUSIgoacmVxdWlyZV9lbWFpbF92ZXJpZmljYXRpb24YAiABKAgSGwoTYWxsb3dfcHVibGljX3NpZ251cBgDIAEoCBIfChdlbnVtZXJhdGlvbl9zYWZlX3NpZ251cBgEIAEoCBIgChhhY2Nlc3NfdG9rZW5fdHRsX3NlY29uZHMYBSABKAUSHgoWcmVmcmVzaF90b2tlbl90dGxfZGF5cxgGIAEoBRIzCgZnb29nbGUYByABKAsyIy5tb3RoLmFkbWluLnYxLkdvb2dsZVByb3ZpZGVyQ29uZmlnEjEKBWFwcGxlGAggASgLMiIubW90aC5hZG1pbi52MS5BcHBsZVByb3ZpZGVyQ29uZmlnEiUKGGF1dG9fbGlua192ZXJpZmllZF9lbWFpbBgJIAEoCEgAiAEBEhgKEHJlZGlyZWN0X3NjaGVtZXMYCiADKAkSIAoYYW5hbHl0aWNzX3JldGVudGlvbl9kYXlzGAsgASgFEhcKD3JvbGx1cF90aW1lem9uZRgMIAEoCUIbChlfYXV0b19saW5rX3ZlcmlmaWVkX2VtYWlsIqoBChRHb29nbGVQcm92aWRlckNvbmZpZxIPCgdlbmFibGVkGAEgASgIEhUKDXdlYl9jbGllbnRfaWQYAiABKAkSFQoNaW9zX2NsaWVudF9pZBgDIAEoCRIZChFhbmRyb2lkX2NsaWVudF9pZBgEIAEoCRIZChF3ZWJfY2xpZW50X3NlY3JldBgFIAEoCRIdChVoYXNfd2ViX2NsaWVudF9zZWNyZXQYBiABKAgioQEKE0FwcGxlUHJvdmlkZXJDb25maWcSDwoHZW5hYmxlZBgBIAEoCBITCgtzZXJ2aWNlc19pZBgCIAEoCRIPCgd0ZWFtX2lkGAMgASgJEg4KBmtleV9pZBgEIAEoCRIWCg5wcml2YXRlX2tleV9wOBgFIAEoCRIXCg9oYXNfcHJpdmF0ZV9rZXkYBiABKAgSEgoKYnVuZGxlX2lkcxgHIAMoCSJ1CgpTaWduaW5nS2V5EgsKA2tpZBgBIAEoCRIRCglhbGdvcml0aG0YAiABKAkSFgoOcHVibGljX2tleV9wZW0YAyABKAkSLwoLY3JlYXRlX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIoABCgtQcm9qZWN0U3BlYxIMCgRuYW1lGAEgASgJEgwKBHNsdWcYAiABKAkSMAoIc2V0dGluZ3MYAyABKAsyHi5tb3RoLmFkbWluLnYxLlByb2plY3RTZXR0aW5ncxIjCgV0aGVtZRgEIAEoCzIULm1vdGguYWRtaW4udjEuVGhlbWUiMgoUQ3JlYXRlUHJvamVjdFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIMCgRzbHVnGAIgASgJIlQKFUNyZWF0ZVByb2plY3RSZXNwb25zZRInCgdwcm9qZWN0GAEgASgLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0EhIKCnNlY3JldF9rZXkYAiABKAkiHwoRR2V0UHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkiPQoSR2V0UHJvamVjdFJlc3BvbnNlEicKB3Byb2plY3QYASABKAsyFi5tb3RoLmFkbWluLnYxLlByb2plY3QiFQoTTGlzdFByb2plY3RzUmVxdWVzdCJAChRMaXN0UHJvamVjdHNSZXNwb25zZRIoCghwcm9qZWN0cxgBIAMoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdCKTAQoUVXBkYXRlUHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIwCghzZXR0aW5ncxgDIAEoCzIeLm1vdGguYWRtaW4udjEuUHJvamVjdFNldHRpbmdzEi8KC3VwZGF0ZV9tYXNrGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayJAChVVcGRhdGVQcm9qZWN0UmVzcG9uc2USJwoHcHJvamVjdBgBIAEoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdCIiChREZWxldGVQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoCSIXChVEZWxldGVQcm9qZWN0UmVzcG9uc2UiMAoaUmVnZW5lcmF0ZVNlY3JldEtleVJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSJaChtSZWdlbmVyYXRlU2VjcmV0S2V5UmVzcG9uc2USJwoHcHJvamVjdBgBIAEoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdBISCgpzZWNyZXRfa2V5GAIgASgJIioKFEdldFNpZ25pbmdLZXlSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkicwoVR2V0U2lnbmluZ0tleVJlc3BvbnNlEiYKA2tleRgBIAEoCzIZLm1vdGguYWRtaW4udjEuU2lnbmluZ0tleRIQCghqd2tzX3VybBgCIAEoCRIOCgZpc3N1ZXIYAyABKAkSEAoIYXVkaWVuY2UYBCABKAkiLAoWUmVzZXRTaWduaW5nS2V5UmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIkEKF1Jlc2V0U2lnbmluZ0tleVJlc3BvbnNlEiYKA2tleRgBIAEoCzIZLm1vdGguYWRtaW4udjEuU2lnbmluZ0tleTL8BQoOUHJvamVjdFNlcnZpY2USWgoNQ3JlYXRlUHJvamVjdBIjLm1vdGguYWRtaW4udjEuQ3JlYXRlUHJvamVjdFJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLkNyZWF0ZVByb2plY3RSZXNwb25zZRJRCgpHZXRQcm9qZWN0EiAubW90aC5hZG1pbi52MS5HZXRQcm9qZWN0UmVxdWVzdBohLm1vdGguYWRtaW4udjEuR2V0UHJvamVjdFJlc3BvbnNlElcKDExpc3RQcm9qZWN0cxIiLm1vdGguYWRtaW4udjEuTGlzdFByb2plY3RzUmVxdWVzdBojLm1vdGguYWRtaW4udjEuTGlzdFByb2plY3RzUmVzcG9uc2USWgoNVXBkYXRlUHJvamVjdBIjLm1vdGguYWRtaW4udjEuVXBkYXRlUHJvamVjdFJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLlVwZGF0ZVByb2plY3RSZXNwb25zZRJaCg1EZWxldGVQcm9qZWN0EiMubW90aC5hZG1pbi52MS5EZWxldGVQcm9qZWN0UmVxdWVzdBokLm1vdGguYWRtaW4udjEuRGVsZXRlUHJvamVjdFJlc3BvbnNlEmwKE1JlZ2VuZXJhdGVTZWNyZXRLZXkSKS5tb3RoLmFkbWluLnYxLlJlZ2VuZXJhdGVTZWNyZXRLZXlSZXF1ZXN0GioubW90aC5hZG1pbi52MS5SZWdlbmVyYXRlU2VjcmV0S2V5UmVzcG9uc2USWgoNR2V0U2lnbmluZ0tleRIjLm1vdGguYWRtaW4udjEuR2V0U2lnbmluZ0tleVJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLkdldFNpZ25pbmdLZXlSZXNwb25zZRJgCg9SZXNldFNpZ25pbmdLZXkSJS5tb3RoLmFkbWluLnYxLlJlc2V0U2lnbmluZ0tleVJlcXVlc3QaJi5tb3RoLmFkbWluLnYxLlJlc2V0U2lnbmluZ0tleVJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hZG1pbi92MTthZG1pbnYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_moth_admin_v1_theme]);
+  fileDesc("Chttb3RoL2FkbWluL3YxL3Byb2plY3QucHJvdG8SDW1vdGguYWRtaW4udjEi8gEKB1Byb2plY3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJEhcKD3B1Ymxpc2hhYmxlX2tleRgEIAEoCRIvCgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKCHNldHRpbmdzGAcgASgLMh4ubW90aC5hZG1pbi52MS5Qcm9qZWN0U2V0dGluZ3MSEgoKdXNlcl9jb3VudBgIIAEoAyKvBAoPUHJvamVjdFNldHRpbmdzEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYASABKAUSIgoacmVxdWlyZV9lbWFpbF92ZXJpZmljYXRpb24YAiABKAgSGwoTYWxsb3dfcHVibGljX3NpZ251cBgDIAEoCBIfChdlbnVtZXJhdGlvbl9zYWZlX3NpZ251cBgEIAEoCBIgChhhY2Nlc3NfdG9rZW5fdHRsX3NlY29uZHMYBSABKAUSHgoWcmVmcmVzaF90b2tlbl90dGxfZGF5cxgGIAEoBRIzCgZnb29nbGUYByABKAsyIy5tb3RoLmFkbWluLnYxLkdvb2dsZVByb3ZpZGVyQ29uZmlnEjEKBWFwcGxlGAggASgLMiIubW90aC5hZG1pbi52MS5BcHBsZVByb3ZpZGVyQ29uZmlnEiUKGGF1dG9fbGlua192ZXJpZmllZF9lbWFpbBgJIAEoCEgAiAEBEhgKEHJlZGlyZWN0X3NjaGVtZXMYCiADKAkSIAoYYW5hbHl0aWNzX3JldGVudGlvbl9kYXlzGAsgASgFEhcKD3JvbGx1cF90aW1lem9uZRgMIAEoCRIeChZzaWdudXBfZW1haWxfYWxsb3dsaXN0GA0gAygJEh4KFnNpZ251cF9lbWFpbF9ibG9ja2xpc3QYDiADKAkSGgoSY2FwdGNoYV92ZXJpZnlfdXJsGA8gASgJQhsKGV9hdXRvX2xpbmtfdmVyaWZpZWRfZW1haWwiqgEKFEdvb2dsZVByb3ZpZGVyQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJEhkKEXdlYl9jbGllbnRfc2VjcmV0GAUgASgJEh0KFWhhc193ZWJfY2xpZW50X3NlY3JldBgGIAEoCCKhAQoTQXBwbGVQcm92aWRlckNvbmZpZxIPCgdlbmFibGVkGAEgASgIEhMKC3NlcnZpY2VzX2lkGAIgASgJEg8KB3RlYW1faWQYAyABKAkSDgoGa2V5X2lkGAQgASgJEhYKDnByaXZhdGVfa2V5X3A4GAUgASgJEhcKD2hhc19wcml2YXRlX2tleRgGIAEoCBISCgpidW5kbGVfaWRzGAcgAygJInUKClNpZ25pbmdLZXkSCwoDa2lkGAEgASgJEhEKCWFsZ29yaXRobRgCIAEoCRIWCg5wdWJsaWNfa2V5X3BlbRgDIAEoCRIvCgtjcmVhdGVfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAigAEKC1Byb2plY3RTcGVjEgwKBG5hbWUYASABKAkSDAoEc2x1ZxgCIAEoCRIwCghzZXR0aW5ncxgDIAEoCzIeLm1vdGguYWRtaW4udjEuUHJvamVjdFNldHRpbmdzEiMKBXRoZW1lGAQgASgLMhQubW90aC5hZG1pbi52MS5UaGVtZSIyChRDcmVhdGVQcm9qZWN0UmVxdWVzdBIMCgRuYW1lGAEgASgJEgwKBHNsdWcYAiABKAkiVAoVQ3JlYXRlUHJvamVjdFJlc3BvbnNlEicKB3Byb2plY3QYASABKAsyFi5tb3RoLmFkbWluLnYxLlByb2plY3QSEgoKc2VjcmV0X2tleRgCIAEoCSIfChFHZXRQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoCSI9ChJHZXRQcm9qZWN0UmVzcG9uc2USJwoHcHJvamVjdBgBIAEoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdCIVChNMaXN0UHJvamVjdHNSZXF1ZXN0IkAKFExpc3RQcm9qZWN0c1Jlc3BvbnNlEigKCHByb2plY3RzGAEgAygLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0IpMBChRVcGRhdGVQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEjAKCHNldHRpbmdzGAMgASgLMh4ubW90aC5hZG1pbi52MS5Qcm9qZWN0U2V0dGluZ3MSLwoLdXBkYXRlX21hc2sYBCABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIkAKFVVwZGF0ZVByb2plY3RSZXNwb25zZRInCgdwcm9qZWN0GAEgASgLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0IiIKFERlbGV0ZVByb2plY3RSZXF1ZXN0EgoKAmlkGAEgASgJIhcKFURlbGV0ZVByb2plY3RSZXNwb25zZSIwChpSZWdlbmVyYXRlU2VjcmV0S2V5UmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIloKG1JlZ2VuZXJhdGVTZWNyZXRLZXlSZXNwb25zZRInCgdwcm9qZWN0GAEgASgLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0EhIKCnNlY3JldF9rZXkYAiABKAkiKgoUR2V0U2lnbmluZ0tleVJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSJzChVHZXRTaWduaW5nS2V5UmVzcG9uc2USJgoDa2V5GAEgASgLMhkubW90aC5hZG1pbi52MS5TaWduaW5nS2V5EhAKCGp3a3NfdXJsGAIgASgJEg4KBmlzc3VlchgDIAEoCRIQCghhdWRpZW5jZRgEIAEoCSIsChZSZXNldFNpZ25pbmdLZXlSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkiQQoXUmVzZXRTaWduaW5nS2V5UmVzcG9uc2USJgoDa2V5GAEgASgLMhkubW90aC5hZG1pbi52MS5TaWduaW5nS2V5IkQKF1JvdGF0ZVNpZ25pbmdLZXlSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSFQoNZ3JhY2Vfc2Vjb25kcxgCIAEoBSJ5ChhSb3RhdGVTaWduaW5nS2V5UmVzcG9uc2USJgoDa2V5GAEgASgLMhkubW90aC5hZG1pbi52MS5TaWduaW5nS2V5EjUKEWdyYWNlX2V4cGlyZV90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJNChBFeHBvcnRlZElkZW50aXR5EhAKCHByb3ZpZGVyGAEgASgJEhgKEHByb3ZpZGVyX3N1YmplY3QYAiABKAkSDQoFZW1haWwYAyABKAki4gIKDEV4cG9ydGVkVXNlchIKCgJpZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgDIAEoCBIUCgxkaXNwbGF5X25hbWUYBCABKAkSEgoKYXZhdGFyX3VybBgFIAEoCRIVCg1jdXN0b21fY2xhaW1zGAYgASgJEhAKCGRpc2FibGVkGAcgASgIEi8KC2NyZWF0ZV90aW1lGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIzCg9sYXN0X2xvZ2luX3RpbWUYCSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhUKDXBhc3N3b3JkX2hhc2gYCiABKAkSGgoScGFzc3dvcmRfYWxnb3JpdGhtGAsgASgJEjMKCmlkZW50aXRpZXMYDCADKAsyHy5tb3RoLmFkbWluLnYxLkV4cG9ydGVkSWRlbnRpdHki8AEKDEltcG9ydGVkVXNlchINCgVlbWFpbBgBIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgCIAEoCBIUCgxkaXNwbGF5X25hbWUYAyABKAkSEgoKYXZhdGFyX3VybBgEIAEoCRIVCg1jdXN0b21fY2xhaW1zGAUgASgJEhUKDXBhc3N3b3JkX2hhc2gYBiABKAkSGgoScGFzc3dvcmRfYWxnb3JpdGhtGAcgASgJEjMKCmlkZW50aXRpZXMYCCADKAsyHy5tb3RoLmFkbWluLnYxLkV4cG9ydGVkSWRlbnRpdHkSEAoIZGlzYWJsZWQYCSABKAgiKgoURXhwb3J0UHJvamVjdFJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSJDChVFeHBvcnRQcm9qZWN0UmVzcG9uc2USKgoFdXNlcnMYASADKAsyGy5tb3RoLmFkbWluLnYxLkV4cG9ydGVkVXNlciJWChRJbXBvcnRQcm9qZWN0UmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEioKBXVzZXJzGAIgAygLMhsubW90aC5hZG1pbi52MS5JbXBvcnRlZFVzZXIiRgoVSW1wb3J0UHJvamVjdFJlc3BvbnNlEhYKDmltcG9ydGVkX2NvdW50GAEgASgFEhUKDXNraXBwZWRfY291bnQYAiABKAUymQgKDlByb2plY3RTZXJ2aWNlEloKDUNyZWF0ZVByb2plY3QSIy5tb3RoLmFkbWluLnYxLkNyZWF0ZVByb2plY3RSZXF1ZXN0GiQubW90aC5hZG1pbi52MS5DcmVhdGVQcm9qZWN0UmVzcG9uc2USUQoKR2V0UHJvamVjdBIgLm1vdGguYWRtaW4udjEuR2V0UHJvamVjdFJlcXVlc3QaIS5tb3RoLmFkbWluLnYxLkdldFByb2plY3RSZXNwb25zZRJXCgxMaXN0UHJvamVjdHMSIi5tb3RoLmFkbWluLnYxLkxpc3RQcm9qZWN0c1JlcXVlc3QaIy5tb3RoLmFkbWluLnYxLkxpc3RQcm9qZWN0c1Jlc3BvbnNlEloKDVVwZGF0ZVByb2plY3QSIy5tb3RoLmFkbWluLnYxLlVwZGF0ZVByb2plY3RSZXF1ZXN0GiQubW90aC5hZG1pbi52MS5VcGRhdGVQcm9qZWN0UmVzcG9uc2USWgoNRGVsZXRlUHJvamVjdBIjLm1vdGguYWRtaW4udjEuRGVsZXRlUHJvamVjdFJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLkRlbGV0ZVByb2plY3RSZXNwb25zZRJsChNSZWdlbmVyYXRlU2VjcmV0S2V5EikubW90aC5hZG1pbi52MS5SZWdlbmVyYXRlU2VjcmV0S2V5UmVxdWVzdBoqLm1vdGguYWRtaW4udjEuUmVnZW5lcmF0ZVNlY3JldEtleVJlc3BvbnNlEloKDUdldFNpZ25pbmdLZXkSIy5tb3RoLmFkbWluLnYxLkdldFNpZ25pbmdLZXlSZXF1ZXN0GiQubW90aC5hZG1pbi52MS5HZXRTaWduaW5nS2V5UmVzcG9uc2USYAoPUmVzZXRTaWduaW5nS2V5EiUubW90aC5hZG1pbi52MS5SZXNldFNpZ25pbmdLZXlSZXF1ZXN0GiYubW90aC5hZG1pbi52MS5SZXNldFNpZ25pbmdLZXlSZXNwb25zZRJjChBSb3RhdGVTaWduaW5nS2V5EiYubW90aC5hZG1pbi52MS5Sb3RhdGVTaWduaW5nS2V5UmVxdWVzdBonLm1vdGguYWRtaW4udjEuUm90YXRlU2lnbmluZ0tleVJlc3BvbnNlEloKDUV4cG9ydFByb2plY3QSIy5tb3RoLmFkbWluLnYxLkV4cG9ydFByb2plY3RSZXF1ZXN0GiQubW90aC5hZG1pbi52MS5FeHBvcnRQcm9qZWN0UmVzcG9uc2USWgoNSW1wb3J0UHJvamVjdBIjLm1vdGguYWRtaW4udjEuSW1wb3J0UHJvamVjdFJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLkltcG9ydFByb2plY3RSZXNwb25zZUI3WjVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_field_mask, file_google_protobuf_timestamp, file_moth_admin_v1_theme]);
 
 /**
  * @generated from message moth.admin.v1.Project
@@ -172,6 +172,31 @@ export type ProjectSettings = Message<"moth.admin.v1.ProjectSettings"> & {
    * @generated from field: string rollup_timezone = 12;
    */
   rollupTimezone: string;
+
+  /**
+   * When non-empty, signup is restricted to email addresses whose domain
+   * matches one of these glob patterns (e.g. "example.com", "*.acme.io");
+   * every other domain is rejected.
+   *
+   * @generated from field: repeated string signup_email_allowlist = 13;
+   */
+  signupEmailAllowlist: string[];
+
+  /**
+   * Email-domain glob patterns rejected at signup, evaluated after the
+   * allowlist.
+   *
+   * @generated from field: repeated string signup_email_blocklist = 14;
+   */
+  signupEmailBlocklist: string[];
+
+  /**
+   * Optional CAPTCHA verification endpoint. The CAPTCHA hook is documented
+   * but off by default in v1: this field is stored but not yet wired.
+   *
+   * @generated from field: string captcha_verify_url = 15;
+   */
+  captchaVerifyUrl: string;
 };
 
 /**
@@ -728,6 +753,326 @@ export const ResetSigningKeyResponseSchema: GenMessage<ResetSigningKeyResponse> 
   messageDesc(file_moth_admin_v1_project, 21);
 
 /**
+ * @generated from message moth.admin.v1.RotateSigningKeyRequest
+ */
+export type RotateSigningKeyRequest = Message<"moth.admin.v1.RotateSigningKeyRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * Grace period, in seconds, the previous key stays in the JWKS. 0 uses the
+   * server default (access-token TTL + clock skew).
+   *
+   * @generated from field: int32 grace_seconds = 2;
+   */
+  graceSeconds: number;
+};
+
+/**
+ * Describes the message moth.admin.v1.RotateSigningKeyRequest.
+ * Use `create(RotateSigningKeyRequestSchema)` to create a new message.
+ */
+export const RotateSigningKeyRequestSchema: GenMessage<RotateSigningKeyRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 22);
+
+/**
+ * @generated from message moth.admin.v1.RotateSigningKeyResponse
+ */
+export type RotateSigningKeyResponse = Message<"moth.admin.v1.RotateSigningKeyResponse"> & {
+  /**
+   * The new active signing key.
+   *
+   * @generated from field: moth.admin.v1.SigningKey key = 1;
+   */
+  key?: SigningKey | undefined;
+
+  /**
+   * When the previous key leaves the JWKS and becomes eligible for pruning.
+   *
+   * @generated from field: google.protobuf.Timestamp grace_expire_time = 2;
+   */
+  graceExpireTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message moth.admin.v1.RotateSigningKeyResponse.
+ * Use `create(RotateSigningKeyResponseSchema)` to create a new message.
+ */
+export const RotateSigningKeyResponseSchema: GenMessage<RotateSigningKeyResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 23);
+
+/**
+ * ExportedIdentity is one linked provider of an exported/imported user.
+ *
+ * @generated from message moth.admin.v1.ExportedIdentity
+ */
+export type ExportedIdentity = Message<"moth.admin.v1.ExportedIdentity"> & {
+  /**
+   * "password", "google" or "apple".
+   *
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+
+  /**
+   * Provider-issued subject (the user id for password identities).
+   *
+   * @generated from field: string provider_subject = 2;
+   */
+  providerSubject: string;
+
+  /**
+   * Email the provider asserted when the identity was linked.
+   *
+   * @generated from field: string email = 3;
+   */
+  email: string;
+};
+
+/**
+ * Describes the message moth.admin.v1.ExportedIdentity.
+ * Use `create(ExportedIdentitySchema)` to create a new message.
+ */
+export const ExportedIdentitySchema: GenMessage<ExportedIdentity> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 24);
+
+/**
+ * ExportedUser is one user in an export document, with everything needed to
+ * recreate the account on another system.
+ *
+ * @generated from message moth.admin.v1.ExportedUser
+ */
+export type ExportedUser = Message<"moth.admin.v1.ExportedUser"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string email = 2;
+   */
+  email: string;
+
+  /**
+   * @generated from field: bool email_verified = 3;
+   */
+  emailVerified: boolean;
+
+  /**
+   * @generated from field: string display_name = 4;
+   */
+  displayName: string;
+
+  /**
+   * @generated from field: string avatar_url = 5;
+   */
+  avatarUrl: string;
+
+  /**
+   * JSON object embedded in the JWT `claims` claim.
+   *
+   * @generated from field: string custom_claims = 6;
+   */
+  customClaims: string;
+
+  /**
+   * @generated from field: bool disabled = 7;
+   */
+  disabled: boolean;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp create_time = 8;
+   */
+  createTime?: Timestamp | undefined;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp last_login_time = 9;
+   */
+  lastLoginTime?: Timestamp | undefined;
+
+  /**
+   * Encoded password hash; empty for social-only accounts.
+   *
+   * @generated from field: string password_hash = 10;
+   */
+  passwordHash: string;
+
+  /**
+   * Algorithm that produced password_hash: "argon2id" for a native moth
+   * hash, or the foreign algorithm it was imported with.
+   *
+   * @generated from field: string password_algorithm = 11;
+   */
+  passwordAlgorithm: string;
+
+  /**
+   * @generated from field: repeated moth.admin.v1.ExportedIdentity identities = 12;
+   */
+  identities: ExportedIdentity[];
+};
+
+/**
+ * Describes the message moth.admin.v1.ExportedUser.
+ * Use `create(ExportedUserSchema)` to create a new message.
+ */
+export const ExportedUserSchema: GenMessage<ExportedUser> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 25);
+
+/**
+ * ImportedUser is one user to create, optionally carrying a foreign password
+ * hash. A foreign hash is verified with its original algorithm on the user's
+ * first sign-in, then transparently rehashed to argon2id.
+ *
+ * @generated from message moth.admin.v1.ImportedUser
+ */
+export type ImportedUser = Message<"moth.admin.v1.ImportedUser"> & {
+  /**
+   * @generated from field: string email = 1;
+   */
+  email: string;
+
+  /**
+   * @generated from field: bool email_verified = 2;
+   */
+  emailVerified: boolean;
+
+  /**
+   * @generated from field: string display_name = 3;
+   */
+  displayName: string;
+
+  /**
+   * @generated from field: string avatar_url = 4;
+   */
+  avatarUrl: string;
+
+  /**
+   * JSON object embedded in the JWT `claims` claim (defaults to "{}").
+   *
+   * @generated from field: string custom_claims = 5;
+   */
+  customClaims: string;
+
+  /**
+   * Encoded password hash; empty for users without a password.
+   *
+   * @generated from field: string password_hash = 6;
+   */
+  passwordHash: string;
+
+  /**
+   * Algorithm that produced password_hash: "bcrypt", "scrypt", "argon2" or
+   * "pbkdf2" for a foreign hash, or "argon2id"/"" for a native moth hash.
+   *
+   * @generated from field: string password_algorithm = 7;
+   */
+  passwordAlgorithm: string;
+
+  /**
+   * @generated from field: repeated moth.admin.v1.ExportedIdentity identities = 8;
+   */
+  identities: ExportedIdentity[];
+
+  /**
+   * Whether the account is created disabled (blocked from signing in).
+   *
+   * @generated from field: bool disabled = 9;
+   */
+  disabled: boolean;
+};
+
+/**
+ * Describes the message moth.admin.v1.ImportedUser.
+ * Use `create(ImportedUserSchema)` to create a new message.
+ */
+export const ImportedUserSchema: GenMessage<ImportedUser> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 26);
+
+/**
+ * @generated from message moth.admin.v1.ExportProjectRequest
+ */
+export type ExportProjectRequest = Message<"moth.admin.v1.ExportProjectRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+};
+
+/**
+ * Describes the message moth.admin.v1.ExportProjectRequest.
+ * Use `create(ExportProjectRequestSchema)` to create a new message.
+ */
+export const ExportProjectRequestSchema: GenMessage<ExportProjectRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 27);
+
+/**
+ * @generated from message moth.admin.v1.ExportProjectResponse
+ */
+export type ExportProjectResponse = Message<"moth.admin.v1.ExportProjectResponse"> & {
+  /**
+   * @generated from field: repeated moth.admin.v1.ExportedUser users = 1;
+   */
+  users: ExportedUser[];
+};
+
+/**
+ * Describes the message moth.admin.v1.ExportProjectResponse.
+ * Use `create(ExportProjectResponseSchema)` to create a new message.
+ */
+export const ExportProjectResponseSchema: GenMessage<ExportProjectResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 28);
+
+/**
+ * @generated from message moth.admin.v1.ImportProjectRequest
+ */
+export type ImportProjectRequest = Message<"moth.admin.v1.ImportProjectRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * @generated from field: repeated moth.admin.v1.ImportedUser users = 2;
+   */
+  users: ImportedUser[];
+};
+
+/**
+ * Describes the message moth.admin.v1.ImportProjectRequest.
+ * Use `create(ImportProjectRequestSchema)` to create a new message.
+ */
+export const ImportProjectRequestSchema: GenMessage<ImportProjectRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 29);
+
+/**
+ * @generated from message moth.admin.v1.ImportProjectResponse
+ */
+export type ImportProjectResponse = Message<"moth.admin.v1.ImportProjectResponse"> & {
+  /**
+   * Number of users actually created.
+   *
+   * @generated from field: int32 imported_count = 1;
+   */
+  importedCount: number;
+
+  /**
+   * Number skipped because their email was already registered.
+   *
+   * @generated from field: int32 skipped_count = 2;
+   */
+  skippedCount: number;
+};
+
+/**
+ * Describes the message moth.admin.v1.ImportProjectResponse.
+ * Use `create(ImportProjectResponseSchema)` to create a new message.
+ */
+export const ImportProjectResponseSchema: GenMessage<ImportProjectResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 30);
+
+/**
  * ProjectService manages the projects (one per mobile app) hosted by this
  * moth instance. All RPCs require an authenticated admin session.
  *
@@ -809,6 +1154,45 @@ export const ProjectService: GenService<{
     methodKind: "unary";
     input: typeof ResetSigningKeyRequestSchema;
     output: typeof ResetSigningKeyResponseSchema;
+  },
+  /**
+   * RotateSigningKey generates a fresh ES256 keypair that signs new tokens
+   * from now on, while the previous key stays in the project JWKS for a
+   * grace period (default: access-token TTL + clock skew). Tokens already
+   * issued keep validating until they expire, so — unlike ResetSigningKey —
+   * no user is signed out. Expired grace keys are pruned automatically.
+   *
+   * @generated from rpc moth.admin.v1.ProjectService.RotateSigningKey
+   */
+  rotateSigningKey: {
+    methodKind: "unary";
+    input: typeof RotateSigningKeyRequestSchema;
+    output: typeof RotateSigningKeyResponseSchema;
+  },
+  /**
+   * ExportProject returns the project's users as JSON for migration off moth
+   * (no lock-in). Password hashes are included so accounts can be recreated
+   * elsewhere. Large projects should prefer the CLI, which pages.
+   *
+   * @generated from rpc moth.admin.v1.ProjectService.ExportProject
+   */
+  exportProject: {
+    methodKind: "unary";
+    input: typeof ExportProjectRequestSchema;
+    output: typeof ExportProjectResponseSchema;
+  },
+  /**
+   * ImportProject bulk-creates users from a JSON document, optionally
+   * carrying foreign password hashes (bcrypt/scrypt/argon2/pbkdf2) so teams
+   * can migrate from another provider without a forced password reset. A
+   * user whose email already exists is skipped.
+   *
+   * @generated from rpc moth.admin.v1.ProjectService.ImportProject
+   */
+  importProject: {
+    methodKind: "unary";
+    input: typeof ImportProjectRequestSchema;
+    output: typeof ImportProjectResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_moth_admin_v1_project, 0);
