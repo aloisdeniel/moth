@@ -6,23 +6,43 @@
   <meta name="robots" content="noindex">
   <title>{{.Title}} — {{.Project}}</title>
   <style>
-    body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f6f6f4;
-           color: #1a1a1a; display: flex; justify-content: center; padding: 48px 16px; margin: 0; }
-    main { background: #ffffff; border: 1px solid #e4e4e0; border-radius: 12px;
-           padding: 32px; max-width: 380px; width: 100%; }
-    h1 { font-size: 18px; margin: 0 0 12px; }
-    p { font-size: 14px; line-height: 1.6; margin: 0 0 12px; color: #444; }
-    .err { color: #b3261e; }
-    label { display: block; font-size: 13px; margin: 16px 0 6px; }
-    input[type=password] { width: 100%; box-sizing: border-box; padding: 10px 12px; font-size: 14px;
-            border: 1px solid #ccc; border-radius: 8px; }
-    button { margin-top: 16px; width: 100%; background: #1a1a1a; color: #fff; border: 0;
-             border-radius: 8px; padding: 11px 0; font-size: 14px; cursor: pointer; }
-    footer { margin-top: 20px; font-size: 12px; color: #999; text-align: center; }
+{{.ThemeCSS}}
+    body { font-family: var(--font-family); background: var(--background); color: var(--on-background);
+           display: flex; justify-content: center;
+           padding: calc(var(--space) * 6) calc(var(--space) * 2); margin: 0; }
+    main { background: var(--surface); color: var(--on-surface);
+           border: 1px solid rgba(128, 128, 128, 0.25); border-radius: var(--radius);
+           padding: calc(var(--space) * 4); max-width: 380px; width: 100%; }
+    .logo { display: block; max-height: 48px; max-width: 200px; margin: 0 0 calc(var(--space) * 2); }
+    .logo-dark { display: none; }
+    @media (prefers-color-scheme: dark) {
+      .logo-light { display: none; }
+      .logo-dark { display: block; }
+    }
+    h1 { font-size: calc(18px * var(--font-scale)); margin: 0 0 calc(var(--space) * 1.5); }
+    p { font-size: calc(14px * var(--font-scale)); line-height: 1.6; margin: 0 0 calc(var(--space) * 1.5); }
+    .err { color: var(--error); }
+    label { display: block; font-size: calc(13px * var(--font-scale)); margin: calc(var(--space) * 2) 0 calc(var(--space) * 0.75); }
+    input[type=password] { width: 100%; box-sizing: border-box; padding: 10px 12px;
+            font-size: calc(14px * var(--font-scale)); font-family: inherit;
+            background: var(--background); color: var(--on-background);
+            border: 1px solid rgba(128, 128, 128, 0.5); border-radius: calc(var(--radius) * 0.66); }
+    button { margin-top: calc(var(--space) * 2); width: 100%; background: var(--primary); color: var(--on-primary);
+             border: 0; border-radius: calc(var(--radius) * 0.66); padding: 11px 0;
+             font-size: calc(14px * var(--font-scale)); font-family: inherit; cursor: pointer; }
+    footer { margin-top: calc(var(--space) * 2.5); font-size: calc(12px * var(--font-scale));
+             color: var(--on-surface); opacity: 0.6; text-align: center; }
+    footer a { color: inherit; margin: 0 6px; }
   </style>
 </head>
 <body>
   <main>
+    {{- if .LogoLight}}
+    <img class="logo logo-light" src="{{.LogoLight}}" alt="">
+    {{- end}}
+    {{- if .LogoDark}}
+    <img class="logo logo-dark" src="{{.LogoDark}}" alt="">
+    {{- end}}
     <h1>{{.Title}}</h1>
     {{- if .Error}}
     <p class="err">{{.Error}}</p>
@@ -37,7 +57,15 @@
       <button type="submit">Set new password</button>
     </form>
     {{- end}}
-    <footer>{{.Project}}</footer>
+    <footer>
+      {{.Project}}
+      {{- if or .TermsURL .PrivacyURL}}
+      <div>
+        {{- if .TermsURL}}<a href="{{.TermsURL}}" rel="noopener">Terms of Service</a>{{end}}
+        {{- if .PrivacyURL}}<a href="{{.PrivacyURL}}" rel="noopener">Privacy Policy</a>{{end}}
+      </div>
+      {{- end}}
+    </footer>
   </main>
 </body>
 </html>

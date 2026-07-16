@@ -1,6 +1,7 @@
 // In-process fake moth server implementing the generated service bases, so
 // client tests exercise the real wire path (channel, metadata, status
 // details) without a Go binary.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:fixnum/fixnum.dart';
@@ -289,6 +290,13 @@ class FakeAuthService extends AuthServiceBase {
 
 class FakeConfigService extends ConfigServiceBase {
   Map<String, String>? lastMetadata;
+  GetProjectConfigRequest? lastRequest;
+  int calls = 0;
+
+  /// While set, every GetProjectConfig call waits for the gate before
+  /// replying — lets tests assert on intermediate client state (e.g. the
+  /// cached theme rendering) while the network response is held back.
+  Completer<void>? gate;
 
   /// Served to every GetProjectConfig call; tests mutate it for variants.
   GetProjectConfigResponse response = GetProjectConfigResponse(
@@ -308,7 +316,18 @@ class FakeConfigService extends ConfigServiceBase {
     GetProjectConfigRequest request,
   ) async {
     lastMetadata = Map.of(call.clientMetadata ?? const {});
-    return response;
+    lastRequest = request;
+    calls++;
+    final gate = this.gate;
+    if (gate != null) await gate.future;
+    // The theme caching contract: a matching known revision omits the
+    // theme body, exactly like internal/server/rpc/auth/config.go.
+    final resp = response.deepCopy();
+    if (resp.hasTheme() &&
+        request.knownThemeRevision == resp.theme.revisionId) {
+      resp.clearTheme();
+    }
+    return resp;
   }
 }
 

@@ -17,6 +17,7 @@ import 'platform/platform_stub.dart'
     if (dart.library.io) 'platform/platform_io.dart'
     if (dart.library.js_interop) 'platform/platform_web.dart';
 import 'project_config.dart';
+import 'theme.dart';
 import 'token_store.dart';
 import 'transport/grpc.dart' show GrpcError;
 import 'user.dart';
@@ -424,10 +425,16 @@ class MothClient {
   // ----------------------------------------------------------------- config
 
   /// Fetches the project's public configuration (enabled providers, client
-  /// IDs, password policy) so login UI adapts without an app release.
-  Future<MothProjectConfig> getProjectConfig() => _run(() async {
+  /// IDs, password policy, theme) so login UI adapts without an app
+  /// release. Pass the [MothTheme.revisionId] already cached as
+  /// [knownThemeRevision]: when it still matches, the server omits the
+  /// theme body and [MothProjectConfig.theme] is null (keep the cached
+  /// copy).
+  Future<MothProjectConfig> getProjectConfig({
+    String knownThemeRevision = '',
+  }) => _run(() async {
     final resp = await _projectConfig.getProjectConfig(
-      pbconfig.GetProjectConfigRequest(),
+      pbconfig.GetProjectConfigRequest(knownThemeRevision: knownThemeRevision),
     );
     String? blank(String s) => s.isEmpty ? null : s;
     return MothProjectConfig(
@@ -440,6 +447,7 @@ class MothClient {
       apple: MothAppleConfig(enabled: resp.apple.enabled),
       passwordMinLength: resp.passwordMinLength,
       signUpOpen: resp.signUpOpen,
+      theme: resp.hasTheme() ? MothTheme.fromProto(resp.theme) : null,
     );
   });
 

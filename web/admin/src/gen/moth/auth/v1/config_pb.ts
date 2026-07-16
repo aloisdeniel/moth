@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/auth/v1/config.proto.
  */
 export const file_moth_auth_v1_config: GenFile = /*@__PURE__*/
-  fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgiGQoXR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QiowEKGEdldFByb2plY3RDb25maWdSZXNwb25zZRIqCgZnb29nbGUYASABKAsyGi5tb3RoLmF1dGgudjEuR29vZ2xlQ29uZmlnEigKBWFwcGxlGAIgASgLMhkubW90aC5hdXRoLnYxLkFwcGxlQ29uZmlnEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYAyABKAUSFAoMc2lnbl91cF9vcGVuGAQgASgIMnIKDUNvbmZpZ1NlcnZpY2USYQoQR2V0UHJvamVjdENvbmZpZxIlLm1vdGguYXV0aC52MS5HZXRQcm9qZWN0Q29uZmlnUmVxdWVzdBomLm1vdGguYXV0aC52MS5HZXRQcm9qZWN0Q29uZmlnUmVzcG9uc2VCNVozZ2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2F1dGgvdjE7YXV0aHYxYgZwcm90bzM");
+  fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgitgIKBVRoZW1lEhMKC3JldmlzaW9uX2lkGAEgASgJEikKBmNvbG9ycxgCIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxIuCgtkYXJrX2NvbG9ycxgDIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxITCgtmb250X2ZhbWlseRgEIAEoCRIQCghmb250X3VybBgFIAEoCRISCgpmb250X3NjYWxlGAYgASgBEhQKDHNwYWNpbmdfdW5pdBgHIAEoBRIVCg1jb3JuZXJfcmFkaXVzGAggASgFEhYKDmxvZ29fbGlnaHRfdXJsGAkgASgJEhUKDWxvZ29fZGFya191cmwYCiABKAkSEQoJdGVybXNfdXJsGAsgASgJEhMKC3ByaXZhY3lfdXJsGAwgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSI3ChdHZXRQcm9qZWN0Q29uZmlnUmVxdWVzdBIcChRrbm93bl90aGVtZV9yZXZpc2lvbhgBIAEoCSLHAQoYR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlEioKBmdvb2dsZRgBIAEoCzIaLm1vdGguYXV0aC52MS5Hb29nbGVDb25maWcSKAoFYXBwbGUYAiABKAsyGS5tb3RoLmF1dGgudjEuQXBwbGVDb25maWcSGwoTcGFzc3dvcmRfbWluX2xlbmd0aBgDIAEoBRIUCgxzaWduX3VwX29wZW4YBCABKAgSIgoFdGhlbWUYBSABKAsyEy5tb3RoLmF1dGgudjEuVGhlbWUycgoNQ29uZmlnU2VydmljZRJhChBHZXRQcm9qZWN0Q29uZmlnEiUubW90aC5hdXRoLnYxLkdldFByb2plY3RDb25maWdSZXF1ZXN0GiYubW90aC5hdXRoLnYxLkdldFByb2plY3RDb25maWdSZXNwb25zZUI1WjNnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYXV0aC92MTthdXRodjFiBnByb3RvMw");
 
 /**
  * GoogleConfig is the public part of a project's Sign in with Google
@@ -71,9 +71,176 @@ export const AppleConfigSchema: GenMessage<AppleConfig> = /*@__PURE__*/
   messageDesc(file_moth_auth_v1_config, 1);
 
 /**
+ * Theme is the public, fully resolved form of the project's design system,
+ * ready to render: dark colors are already derived server-side, asset
+ * references are absolute URLs. Binary assets (logo images, font files)
+ * stay plain-HTTP downloads with cache headers — they don't belong in RPC
+ * responses.
+ *
+ * @generated from message moth.auth.v1.Theme
+ */
+export type Theme = Message<"moth.auth.v1.Theme"> & {
+  /**
+   * Identifies this version of the theme; changes on every admin edit.
+   * Cache the theme keyed by this value and echo it as
+   * GetProjectConfigRequest.known_theme_revision.
+   *
+   * @generated from field: string revision_id = 1;
+   */
+  revisionId: string;
+
+  /**
+   * Light palette, "#RRGGBB" values.
+   *
+   * @generated from field: moth.auth.v1.ThemeColors colors = 2;
+   */
+  colors?: ThemeColors | undefined;
+
+  /**
+   * Dark palette, fully resolved (admin overrides merged with derived
+   * values); render it when the device is in dark mode.
+   *
+   * @generated from field: moth.auth.v1.ThemeColors dark_colors = 3;
+   */
+  darkColors?: ThemeColors | undefined;
+
+  /**
+   * Font family name (from the server's curated set).
+   *
+   * @generated from field: string font_family = 4;
+   */
+  fontFamily: string;
+
+  /**
+   * Absolute URL of the font file to download and register; cacheable.
+   *
+   * @generated from field: string font_url = 5;
+   */
+  fontUrl: string;
+
+  /**
+   * Global text-size multiplier.
+   *
+   * @generated from field: double font_scale = 6;
+   */
+  fontScale: number;
+
+  /**
+   * Base spacing step in logical pixels.
+   *
+   * @generated from field: int32 spacing_unit = 7;
+   */
+  spacingUnit: number;
+
+  /**
+   * Component corner radius in logical pixels.
+   *
+   * @generated from field: int32 corner_radius = 8;
+   */
+  cornerRadius: number;
+
+  /**
+   * Absolute logo URLs per color scheme; empty when no logo is set.
+   *
+   * @generated from field: string logo_light_url = 9;
+   */
+  logoLightUrl: string;
+
+  /**
+   * @generated from field: string logo_dark_url = 10;
+   */
+  logoDarkUrl: string;
+
+  /**
+   * Optional legal links rendered in the login screen footer.
+   *
+   * @generated from field: string terms_url = 11;
+   */
+  termsUrl: string;
+
+  /**
+   * @generated from field: string privacy_url = 12;
+   */
+  privacyUrl: string;
+};
+
+/**
+ * Describes the message moth.auth.v1.Theme.
+ * Use `create(ThemeSchema)` to create a new message.
+ */
+export const ThemeSchema: GenMessage<Theme> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_config, 2);
+
+/**
+ * ThemeColors is a complete palette: each color role and its "on"
+ * (foreground) counterpart. Server-side validation guarantees WCAG AA
+ * contrast (>= 4.5:1) between every pair.
+ *
+ * @generated from message moth.auth.v1.ThemeColors
+ */
+export type ThemeColors = Message<"moth.auth.v1.ThemeColors"> & {
+  /**
+   * @generated from field: string primary = 1;
+   */
+  primary: string;
+
+  /**
+   * @generated from field: string on_primary = 2;
+   */
+  onPrimary: string;
+
+  /**
+   * @generated from field: string background = 3;
+   */
+  background: string;
+
+  /**
+   * @generated from field: string on_background = 4;
+   */
+  onBackground: string;
+
+  /**
+   * @generated from field: string surface = 5;
+   */
+  surface: string;
+
+  /**
+   * @generated from field: string on_surface = 6;
+   */
+  onSurface: string;
+
+  /**
+   * @generated from field: string error = 7;
+   */
+  error: string;
+
+  /**
+   * @generated from field: string on_error = 8;
+   */
+  onError: string;
+};
+
+/**
+ * Describes the message moth.auth.v1.ThemeColors.
+ * Use `create(ThemeColorsSchema)` to create a new message.
+ */
+export const ThemeColorsSchema: GenMessage<ThemeColors> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_config, 3);
+
+/**
  * @generated from message moth.auth.v1.GetProjectConfigRequest
  */
 export type GetProjectConfigRequest = Message<"moth.auth.v1.GetProjectConfigRequest"> & {
+  /**
+   * Theme caching contract: pass the revision_id of the theme the client
+   * has cached (empty on first call). When it still matches the current
+   * revision, the response omits `theme` entirely — the client keeps
+   * rendering its cached copy. When it differs (or was empty), `theme` is
+   * present and the client replaces its cache.
+   *
+   * @generated from field: string known_theme_revision = 1;
+   */
+  knownThemeRevision: string;
 };
 
 /**
@@ -81,7 +248,7 @@ export type GetProjectConfigRequest = Message<"moth.auth.v1.GetProjectConfigRequ
  * Use `create(GetProjectConfigRequestSchema)` to create a new message.
  */
 export const GetProjectConfigRequestSchema: GenMessage<GetProjectConfigRequest> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 2);
+  messageDesc(file_moth_auth_v1_config, 4);
 
 /**
  * @generated from message moth.auth.v1.GetProjectConfigResponse
@@ -110,6 +277,16 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
    * @generated from field: bool sign_up_open = 4;
    */
   signUpOpen: boolean;
+
+  /**
+   * The project's design system. Omitted when
+   * GetProjectConfigRequest.known_theme_revision matches the current
+   * revision (see the caching contract there); always present otherwise,
+   * including for projects on the built-in default theme.
+   *
+   * @generated from field: moth.auth.v1.Theme theme = 5;
+   */
+  theme?: Theme | undefined;
 };
 
 /**
@@ -117,7 +294,7 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
  * Use `create(GetProjectConfigResponseSchema)` to create a new message.
  */
 export const GetProjectConfigResponseSchema: GenMessage<GetProjectConfigResponse> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 3);
+  messageDesc(file_moth_auth_v1_config, 5);
 
 /**
  * ConfigService exposes a project's public, non-secret configuration to the

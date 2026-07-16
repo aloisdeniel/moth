@@ -135,6 +135,15 @@ type ProviderSecretStore interface {
 	DeleteProviderSecret(ctx context.Context, projectID, name string) error
 }
 
+// ThemeStore persists per-project design-system themes and their revision
+// history (raw internal/theme JSON documents).
+type ThemeStore interface {
+	SetProjectTheme(ctx context.Context, rev ThemeRevision, prevRevisionID string) error
+	ClearProjectTheme(ctx context.Context, projectID string, now time.Time) error
+	GetThemeRevision(ctx context.Context, projectID, revisionID string) (ThemeRevision, error)
+	ListThemeRevisions(ctx context.Context, projectID string, limit int) ([]ThemeRevision, error)
+}
+
 // EventStore records analytics events (stub until milestone 07).
 type EventStore interface {
 	InsertEvent(ctx context.Context, e Event) error
@@ -156,6 +165,7 @@ var (
 	_ EmailTokenStore      = (*Store)(nil)
 	_ OAuthTokenStore      = (*Store)(nil)
 	_ ProviderSecretStore  = (*Store)(nil)
+	_ ThemeStore           = (*Store)(nil)
 	_ EventStore           = (*Store)(nil)
 )
 

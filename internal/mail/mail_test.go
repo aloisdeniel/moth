@@ -8,12 +8,13 @@ import (
 )
 
 func TestEmailsRender(t *testing.T) {
+	brand := Brand{Name: "My App"}
 	msgs := map[string]Message{
-		"verification":  Verification("My App", "u@example.com", "https://moth/p/app/verify?token=t"),
-		"reset":         PasswordReset("My App", "u@example.com", "https://moth/p/app/reset?token=t"),
-		"change":        EmailChangeConfirm("My App", "new@example.com", "https://moth/p/app/confirm-email?token=t"),
-		"changedNotice": EmailChangedNotice("My App", "old@example.com", "new@example.com", "https://moth/p/app/confirm-email?token=r"),
-		"accountExists": AccountExists("My App", "u@example.com"),
+		"verification":  Verification(brand, "u@example.com", "https://moth/p/app/verify?token=t"),
+		"reset":         PasswordReset(brand, "u@example.com", "https://moth/p/app/reset?token=t"),
+		"change":        EmailChangeConfirm(brand, "new@example.com", "https://moth/p/app/confirm-email?token=t"),
+		"changedNotice": EmailChangedNotice(brand, "old@example.com", "new@example.com", "https://moth/p/app/confirm-email?token=r"),
+		"accountExists": AccountExists(brand, "u@example.com"),
 	}
 	for name, m := range msgs {
 		if m.To == "" || m.Subject == "" || m.Text == "" || m.HTML == "" {
@@ -28,6 +29,32 @@ func TestEmailsRender(t *testing.T) {
 	}
 	if !strings.Contains(msgs["verification"].HTML, `href="https://moth/p/app/verify?token=t"`) {
 		t.Error("verification HTML must link the verify URL")
+	}
+}
+
+func TestEmailBranding(t *testing.T) {
+	branded := Verification(Brand{
+		Name:     "My App",
+		LogoURL:  "https://moth/assets/p1/logo-light.png?v=r1",
+		Accent:   "#6750A4",
+		OnAccent: "#FFFFFF",
+	}, "u@example.com", "https://link")
+	for _, want := range []string{
+		`src="https://moth/assets/p1/logo-light.png?v=r1"`,
+		"#6750A4",
+		"#FFFFFF",
+	} {
+		if !strings.Contains(branded.HTML, want) {
+			t.Errorf("branded HTML missing %q:\n%s", want, branded.HTML)
+		}
+	}
+
+	plain := Verification(Brand{Name: "My App"}, "u@example.com", "https://link")
+	if strings.Contains(plain.HTML, "<img") {
+		t.Error("unbranded email must not render a logo")
+	}
+	if !strings.Contains(plain.HTML, defaultAccent) {
+		t.Error("unbranded email must fall back to the neutral accent")
 	}
 }
 
@@ -53,7 +80,7 @@ func TestBuildMIME(t *testing.T) {
 func TestConsoleTransport(t *testing.T) {
 	var sb strings.Builder
 	c := Console{Log: slog.New(slog.NewTextHandler(&sb, nil))}
-	if err := c.Send(context.Background(), Verification("My App", "u@example.com", "https://link")); err != nil {
+	if err := c.Send(context.Background(), Verification(Brand{Name: "My App"}, "u@example.com", "https://link")); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(sb.String(), "https://link") {

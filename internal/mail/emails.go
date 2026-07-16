@@ -16,9 +16,36 @@ var (
 	htmlLayout = htmltemplate.Must(htmltemplate.ParseFS(templateFS, "templates/layout.html.tmpl"))
 )
 
+// Brand is the sender identity an email renders with: the project name
+// plus the optional design-system accents (plan/06). The zero-value accents
+// fall back to moth's neutral defaults, so a Brand{Name: ...} alone always
+// produces a decent email.
+type Brand struct {
+	// Name of the project (or "moth" for instance-level mail).
+	Name string
+	// LogoURL is the absolute URL of the project's light-scheme logo;
+	// empty renders no logo. Email clients overwhelmingly render on white,
+	// so the light variant is the right one.
+	LogoURL string
+	// Accent is the button background (#RRGGBB); theme primary color.
+	Accent string
+	// OnAccent is the button text color (#RRGGBB); theme onPrimary.
+	OnAccent string
+}
+
+// Neutral fallback accents for unbranded email (instance-level mail, or a
+// project that somehow has no theme).
+const (
+	defaultAccent   = "#1a1a1a"
+	defaultOnAccent = "#ffffff"
+)
+
 // layoutData feeds both the plain-text and HTML layout templates.
 type layoutData struct {
 	Project     string
+	LogoURL     string
+	Accent      string
+	OnAccent    string
 	Subject     string
 	Paragraphs  []string
 	ButtonLabel string
@@ -26,12 +53,11 @@ type layoutData struct {
 }
 
 // Verification is the "confirm your email address" email.
-func Verification(project, to, link string) Message {
-	return render(to, layoutData{
-		Project: project,
-		Subject: fmt.Sprintf("Verify your email for %s", project),
+func Verification(brand Brand, to, link string) Message {
+	return render(to, brand, layoutData{
+		Subject: fmt.Sprintf("Verify your email for %s", brand.Name),
 		Paragraphs: []string{
-			fmt.Sprintf("Confirm this email address to finish setting up your %s account.", project),
+			fmt.Sprintf("Confirm this email address to finish setting up your %s account.", brand.Name),
 			"If you did not create this account, you can ignore this email.",
 		},
 		ButtonLabel: "Verify email",
@@ -40,12 +66,11 @@ func Verification(project, to, link string) Message {
 }
 
 // PasswordReset is the "reset your password" email.
-func PasswordReset(project, to, link string) Message {
-	return render(to, layoutData{
-		Project: project,
-		Subject: fmt.Sprintf("Reset your %s password", project),
+func PasswordReset(brand Brand, to, link string) Message {
+	return render(to, brand, layoutData{
+		Subject: fmt.Sprintf("Reset your %s password", brand.Name),
 		Paragraphs: []string{
-			fmt.Sprintf("A password reset was requested for your %s account.", project),
+			fmt.Sprintf("A password reset was requested for your %s account.", brand.Name),
 			"If you did not request this, you can ignore this email — your password is unchanged.",
 		},
 		ButtonLabel: "Reset password",
@@ -55,12 +80,11 @@ func PasswordReset(project, to, link string) Message {
 
 // EmailChangeConfirm goes to the NEW address to prove ownership before the
 // account email switches.
-func EmailChangeConfirm(project, to, link string) Message {
-	return render(to, layoutData{
-		Project: project,
-		Subject: fmt.Sprintf("Confirm your new email for %s", project),
+func EmailChangeConfirm(brand Brand, to, link string) Message {
+	return render(to, brand, layoutData{
+		Subject: fmt.Sprintf("Confirm your new email for %s", brand.Name),
 		Paragraphs: []string{
-			fmt.Sprintf("Confirm that you want to use this address for your %s account.", project),
+			fmt.Sprintf("Confirm that you want to use this address for your %s account.", brand.Name),
 			"If you did not request this change, you can ignore this email.",
 		},
 		ButtonLabel: "Confirm new email",
@@ -70,12 +94,11 @@ func EmailChangeConfirm(project, to, link string) Message {
 
 // EmailChangedNotice goes to the OLD address after the switch, carrying a
 // revert link.
-func EmailChangedNotice(project, to, newEmail, revertLink string) Message {
-	return render(to, layoutData{
-		Project: project,
-		Subject: fmt.Sprintf("Your %s email address was changed", project),
+func EmailChangedNotice(brand Brand, to, newEmail, revertLink string) Message {
+	return render(to, brand, layoutData{
+		Subject: fmt.Sprintf("Your %s email address was changed", brand.Name),
 		Paragraphs: []string{
-			fmt.Sprintf("The email address on your %s account was changed to %s.", project, newEmail),
+			fmt.Sprintf("The email address on your %s account was changed to %s.", brand.Name, newEmail),
 			"If this was you, no action is needed.",
 			"If you did not make this change, you can restore this address within 72 hours:",
 		},
@@ -86,12 +109,11 @@ func EmailChangedNotice(project, to, newEmail, revertLink string) Message {
 
 // AccountExists is sent instead of an error when an enumeration-safe
 // project sees a signup with an already-registered email.
-func AccountExists(project, to string) Message {
-	return render(to, layoutData{
-		Project: project,
-		Subject: fmt.Sprintf("You already have a %s account", project),
+func AccountExists(brand Brand, to string) Message {
+	return render(to, brand, layoutData{
+		Subject: fmt.Sprintf("You already have a %s account", brand.Name),
 		Paragraphs: []string{
-			fmt.Sprintf("Someone (probably you) tried to sign up for %s with this email address, but an account already exists.", project),
+			fmt.Sprintf("Someone (probably you) tried to sign up for %s with this email address, but an account already exists.", brand.Name),
 			"You can simply sign in — and use the \"forgot password\" option if you no longer remember your password.",
 			"If this was not you, no action is needed; your account is unchanged.",
 		},
@@ -100,12 +122,11 @@ func AccountExists(project, to string) Message {
 
 // UserInvite is the "set your password" email for an account created by an
 // operator in the admin console.
-func UserInvite(project, to, link string) Message {
-	return render(to, layoutData{
-		Project: project,
-		Subject: fmt.Sprintf("You've been invited to %s", project),
+func UserInvite(brand Brand, to, link string) Message {
+	return render(to, brand, layoutData{
+		Subject: fmt.Sprintf("You've been invited to %s", brand.Name),
 		Paragraphs: []string{
-			fmt.Sprintf("An account was created for you on %s.", project),
+			fmt.Sprintf("An account was created for you on %s.", brand.Name),
 			"Choose a password to start using it:",
 		},
 		ButtonLabel: "Set your password",
@@ -115,8 +136,7 @@ func UserInvite(project, to, link string) Message {
 
 // AdminInvite is the operator-invitation email for the moth admin console.
 func AdminInvite(to, link string) Message {
-	return render(to, layoutData{
-		Project: "moth",
+	return render(to, Brand{Name: "moth"}, layoutData{
 		Subject: "You've been invited to administer a moth instance",
 		Paragraphs: []string{
 			"You've been invited to become an operator of a moth instance.",
@@ -131,8 +151,7 @@ func AdminInvite(to, link string) Message {
 // Test is the probe email sent by the admin console's "send test email"
 // button.
 func Test(to string) Message {
-	return render(to, layoutData{
-		Project: "moth",
+	return render(to, Brand{Name: "moth"}, layoutData{
 		Subject: "moth test email",
 		Paragraphs: []string{
 			"This is a test email from your moth instance.",
@@ -141,7 +160,17 @@ func Test(to string) Message {
 	})
 }
 
-func render(to string, data layoutData) Message {
+func render(to string, brand Brand, data layoutData) Message {
+	data.Project = brand.Name
+	data.LogoURL = brand.LogoURL
+	data.Accent = brand.Accent
+	data.OnAccent = brand.OnAccent
+	if data.Accent == "" {
+		data.Accent = defaultAccent
+	}
+	if data.OnAccent == "" {
+		data.OnAccent = defaultOnAccent
+	}
 	var text, html bytes.Buffer
 	// The layouts are static and the data is server-built, so rendering
 	// can only fail on a programming error.

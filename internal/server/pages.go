@@ -25,6 +25,12 @@ type pageData struct {
 	Error         string
 	ShowResetForm bool
 	Token         string
+	// Theme fields, filled by themedData from the project's design system.
+	ThemeCSS   template.CSS
+	LogoLight  string
+	LogoDark   string
+	TermsURL   string
+	PrivacyURL string
 }
 
 // handleVerifyPage consumes an email-verification link.
@@ -34,7 +40,7 @@ func (s *Server) handleVerifyPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := authrpc.WithProject(r.Context(), project)
-	data := pageData{Project: project.Name, Title: "Email verified",
+	data := pageData{Title: "Email verified",
 		Message: "Your email address is verified. You can return to the app."}
 	_, err := s.auth.ConfirmEmailVerification(ctx, connect.NewRequest(
 		&authv1.ConfirmEmailVerificationRequest{Token: r.URL.Query().Get("token")}))
@@ -42,7 +48,7 @@ func (s *Server) handleVerifyPage(w http.ResponseWriter, r *http.Request) {
 		data.Title = "Verification failed"
 		data.Error = "This link is invalid or has expired. Request a new verification email from the app."
 	}
-	s.renderPage(w, r, data)
+	s.renderPage(w, r, project, data)
 }
 
 // handleResetPage shows the new-password form of a reset link.
@@ -51,8 +57,7 @@ func (s *Server) handleResetPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.renderPage(w, r, pageData{
-		Project:       project.Name,
+	s.renderPage(w, r, project, pageData{
 		Title:         "Choose a new password",
 		Message:       "Enter a new password for your account.",
 		ShowResetForm: true,
@@ -76,7 +81,7 @@ func (s *Server) handleResetSubmit(w http.ResponseWriter, r *http.Request) {
 		Token:       token,
 		NewPassword: r.PostFormValue("password"),
 	}))
-	data := pageData{Project: project.Name, Title: "Password updated",
+	data := pageData{Title: "Password updated",
 		Message: "Your password was changed. You can now sign in to the app with it. All other sessions were signed out."}
 	switch {
 	case err != nil && authrpc.ErrorReason(err) == authrpc.ReasonWeakPassword:
@@ -89,7 +94,7 @@ func (s *Server) handleResetSubmit(w http.ResponseWriter, r *http.Request) {
 		data.Title = "Reset failed"
 		data.Error = "This link is invalid or has expired. Request a new password reset from the app."
 	}
-	s.renderPage(w, r, data)
+	s.renderPage(w, r, project, data)
 }
 
 // handleConfirmEmailPage consumes email-change confirmation and revert
@@ -100,7 +105,7 @@ func (s *Server) handleConfirmEmailPage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	ctx := authrpc.WithProject(r.Context(), project)
-	data := pageData{Project: project.Name, Title: "Email address updated",
+	data := pageData{Title: "Email address updated",
 		Message: "The email address on your account was updated. Sign in with it from now on."}
 	_, err := s.auth.ConfirmEmailChange(ctx, connect.NewRequest(
 		&authv1.ConfirmEmailChangeRequest{Token: r.URL.Query().Get("token")}))
@@ -108,7 +113,7 @@ func (s *Server) handleConfirmEmailPage(w http.ResponseWriter, r *http.Request) 
 		data.Title = "Update failed"
 		data.Error = "This link is invalid or has expired."
 	}
-	s.renderPage(w, r, data)
+	s.renderPage(w, r, project, data)
 }
 
 func (s *Server) pageProject(w http.ResponseWriter, r *http.Request) (store.Project, bool) {
@@ -124,15 +129,15 @@ func (s *Server) pageProject(w http.ResponseWriter, r *http.Request) (store.Proj
 	return project, true
 }
 
-func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, data pageData) {
-	s.renderPageStatus(w, r, http.StatusOK, data)
+func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, p store.Project, data pageData) {
+	s.renderPageStatus(w, r, http.StatusOK, p, data)
 }
 
-func (s *Server) renderPageStatus(w http.ResponseWriter, r *http.Request, status int, data pageData) {
+func (s *Server) renderPageStatus(w http.ResponseWriter, r *http.Request, status int, p store.Project, data pageData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Referrer-Policy", "no-referrer")
 	w.WriteHeader(status)
-	if err := pageTemplate.Execute(w, data); err != nil {
+	if err := pageTemplate.Execute(w, themedData(p, data)); err != nil {
 		s.log.Error("render page", "path", r.URL.Path, "error", err.Error())
 	}
 }

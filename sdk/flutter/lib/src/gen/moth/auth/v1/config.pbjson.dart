@@ -44,14 +44,93 @@ const AppleConfig$json = {
 final $typed_data.Uint8List appleConfigDescriptor = $convert
     .base64Decode('CgtBcHBsZUNvbmZpZxIYCgdlbmFibGVkGAEgASgIUgdlbmFibGVk');
 
+@$core.Deprecated('Use themeDescriptor instead')
+const Theme$json = {
+  '1': 'Theme',
+  '2': [
+    {'1': 'revision_id', '3': 1, '4': 1, '5': 9, '10': 'revisionId'},
+    {
+      '1': 'colors',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.auth.v1.ThemeColors',
+      '10': 'colors'
+    },
+    {
+      '1': 'dark_colors',
+      '3': 3,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.auth.v1.ThemeColors',
+      '10': 'darkColors'
+    },
+    {'1': 'font_family', '3': 4, '4': 1, '5': 9, '10': 'fontFamily'},
+    {'1': 'font_url', '3': 5, '4': 1, '5': 9, '10': 'fontUrl'},
+    {'1': 'font_scale', '3': 6, '4': 1, '5': 1, '10': 'fontScale'},
+    {'1': 'spacing_unit', '3': 7, '4': 1, '5': 5, '10': 'spacingUnit'},
+    {'1': 'corner_radius', '3': 8, '4': 1, '5': 5, '10': 'cornerRadius'},
+    {'1': 'logo_light_url', '3': 9, '4': 1, '5': 9, '10': 'logoLightUrl'},
+    {'1': 'logo_dark_url', '3': 10, '4': 1, '5': 9, '10': 'logoDarkUrl'},
+    {'1': 'terms_url', '3': 11, '4': 1, '5': 9, '10': 'termsUrl'},
+    {'1': 'privacy_url', '3': 12, '4': 1, '5': 9, '10': 'privacyUrl'},
+  ],
+};
+
+/// Descriptor for `Theme`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List themeDescriptor = $convert.base64Decode(
+    'CgVUaGVtZRIfCgtyZXZpc2lvbl9pZBgBIAEoCVIKcmV2aXNpb25JZBIxCgZjb2xvcnMYAiABKA'
+    'syGS5tb3RoLmF1dGgudjEuVGhlbWVDb2xvcnNSBmNvbG9ycxI6CgtkYXJrX2NvbG9ycxgDIAEo'
+    'CzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9yc1IKZGFya0NvbG9ycxIfCgtmb250X2ZhbWlseR'
+    'gEIAEoCVIKZm9udEZhbWlseRIZCghmb250X3VybBgFIAEoCVIHZm9udFVybBIdCgpmb250X3Nj'
+    'YWxlGAYgASgBUglmb250U2NhbGUSIQoMc3BhY2luZ191bml0GAcgASgFUgtzcGFjaW5nVW5pdB'
+    'IjCg1jb3JuZXJfcmFkaXVzGAggASgFUgxjb3JuZXJSYWRpdXMSJAoObG9nb19saWdodF91cmwY'
+    'CSABKAlSDGxvZ29MaWdodFVybBIiCg1sb2dvX2RhcmtfdXJsGAogASgJUgtsb2dvRGFya1VybB'
+    'IbCgl0ZXJtc191cmwYCyABKAlSCHRlcm1zVXJsEh8KC3ByaXZhY3lfdXJsGAwgASgJUgpwcml2'
+    'YWN5VXJs');
+
+@$core.Deprecated('Use themeColorsDescriptor instead')
+const ThemeColors$json = {
+  '1': 'ThemeColors',
+  '2': [
+    {'1': 'primary', '3': 1, '4': 1, '5': 9, '10': 'primary'},
+    {'1': 'on_primary', '3': 2, '4': 1, '5': 9, '10': 'onPrimary'},
+    {'1': 'background', '3': 3, '4': 1, '5': 9, '10': 'background'},
+    {'1': 'on_background', '3': 4, '4': 1, '5': 9, '10': 'onBackground'},
+    {'1': 'surface', '3': 5, '4': 1, '5': 9, '10': 'surface'},
+    {'1': 'on_surface', '3': 6, '4': 1, '5': 9, '10': 'onSurface'},
+    {'1': 'error', '3': 7, '4': 1, '5': 9, '10': 'error'},
+    {'1': 'on_error', '3': 8, '4': 1, '5': 9, '10': 'onError'},
+  ],
+};
+
+/// Descriptor for `ThemeColors`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List themeColorsDescriptor = $convert.base64Decode(
+    'CgtUaGVtZUNvbG9ycxIYCgdwcmltYXJ5GAEgASgJUgdwcmltYXJ5Eh0KCm9uX3ByaW1hcnkYAi'
+    'ABKAlSCW9uUHJpbWFyeRIeCgpiYWNrZ3JvdW5kGAMgASgJUgpiYWNrZ3JvdW5kEiMKDW9uX2Jh'
+    'Y2tncm91bmQYBCABKAlSDG9uQmFja2dyb3VuZBIYCgdzdXJmYWNlGAUgASgJUgdzdXJmYWNlEh'
+    '0KCm9uX3N1cmZhY2UYBiABKAlSCW9uU3VyZmFjZRIUCgVlcnJvchgHIAEoCVIFZXJyb3ISGQoI'
+    'b25fZXJyb3IYCCABKAlSB29uRXJyb3I=');
+
 @$core.Deprecated('Use getProjectConfigRequestDescriptor instead')
 const GetProjectConfigRequest$json = {
   '1': 'GetProjectConfigRequest',
+  '2': [
+    {
+      '1': 'known_theme_revision',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '10': 'knownThemeRevision'
+    },
+  ],
 };
 
 /// Descriptor for `GetProjectConfigRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List getProjectConfigRequestDescriptor =
-    $convert.base64Decode('ChdHZXRQcm9qZWN0Q29uZmlnUmVxdWVzdA==');
+    $convert.base64Decode(
+        'ChdHZXRQcm9qZWN0Q29uZmlnUmVxdWVzdBIwChRrbm93bl90aGVtZV9yZXZpc2lvbhgBIAEoCV'
+        'ISa25vd25UaGVtZVJldmlzaW9u');
 
 @$core.Deprecated('Use getProjectConfigResponseDescriptor instead')
 const GetProjectConfigResponse$json = {
@@ -81,6 +160,14 @@ const GetProjectConfigResponse$json = {
       '10': 'passwordMinLength'
     },
     {'1': 'sign_up_open', '3': 4, '4': 1, '5': 8, '10': 'signUpOpen'},
+    {
+      '1': 'theme',
+      '3': 5,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.auth.v1.Theme',
+      '10': 'theme'
+    },
   ],
 };
 
@@ -89,4 +176,5 @@ final $typed_data.Uint8List getProjectConfigResponseDescriptor = $convert.base64
     'ChhHZXRQcm9qZWN0Q29uZmlnUmVzcG9uc2USMgoGZ29vZ2xlGAEgASgLMhoubW90aC5hdXRoLn'
     'YxLkdvb2dsZUNvbmZpZ1IGZ29vZ2xlEi8KBWFwcGxlGAIgASgLMhkubW90aC5hdXRoLnYxLkFw'
     'cGxlQ29uZmlnUgVhcHBsZRIuChNwYXNzd29yZF9taW5fbGVuZ3RoGAMgASgFUhFwYXNzd29yZE'
-    '1pbkxlbmd0aBIgCgxzaWduX3VwX29wZW4YBCABKAhSCnNpZ25VcE9wZW4=');
+    '1pbkxlbmd0aBIgCgxzaWduX3VwX29wZW4YBCABKAhSCnNpZ25VcE9wZW4SKQoFdGhlbWUYBSAB'
+    'KAsyEy5tb3RoLmF1dGgudjEuVGhlbWVSBXRoZW1l');

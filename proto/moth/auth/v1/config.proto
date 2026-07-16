@@ -34,7 +34,61 @@ message AppleConfig {
   bool enabled = 1;
 }
 
-message GetProjectConfigRequest {}
+// Theme is the public, fully resolved form of the project's design system,
+// ready to render: dark colors are already derived server-side, asset
+// references are absolute URLs. Binary assets (logo images, font files)
+// stay plain-HTTP downloads with cache headers — they don't belong in RPC
+// responses.
+message Theme {
+  // Identifies this version of the theme; changes on every admin edit.
+  // Cache the theme keyed by this value and echo it as
+  // GetProjectConfigRequest.known_theme_revision.
+  string revision_id = 1;
+  // Light palette, "#RRGGBB" values.
+  ThemeColors colors = 2;
+  // Dark palette, fully resolved (admin overrides merged with derived
+  // values); render it when the device is in dark mode.
+  ThemeColors dark_colors = 3;
+  // Font family name (from the server's curated set).
+  string font_family = 4;
+  // Absolute URL of the font file to download and register; cacheable.
+  string font_url = 5;
+  // Global text-size multiplier.
+  double font_scale = 6;
+  // Base spacing step in logical pixels.
+  int32 spacing_unit = 7;
+  // Component corner radius in logical pixels.
+  int32 corner_radius = 8;
+  // Absolute logo URLs per color scheme; empty when no logo is set.
+  string logo_light_url = 9;
+  string logo_dark_url = 10;
+  // Optional legal links rendered in the login screen footer.
+  string terms_url = 11;
+  string privacy_url = 12;
+}
+
+// ThemeColors is a complete palette: each color role and its "on"
+// (foreground) counterpart. Server-side validation guarantees WCAG AA
+// contrast (>= 4.5:1) between every pair.
+message ThemeColors {
+  string primary = 1;
+  string on_primary = 2;
+  string background = 3;
+  string on_background = 4;
+  string surface = 5;
+  string on_surface = 6;
+  string error = 7;
+  string on_error = 8;
+}
+
+message GetProjectConfigRequest {
+  // Theme caching contract: pass the revision_id of the theme the client
+  // has cached (empty on first call). When it still matches the current
+  // revision, the response omits `theme` entirely — the client keeps
+  // rendering its cached copy. When it differs (or was empty), `theme` is
+  // present and the client replaces its cache.
+  string known_theme_revision = 1;
+}
 
 message GetProjectConfigResponse {
   GoogleConfig google = 1;
@@ -43,4 +97,9 @@ message GetProjectConfigResponse {
   int32 password_min_length = 3;
   // Whether the public SignUp RPC is open.
   bool sign_up_open = 4;
+  // The project's design system. Omitted when
+  // GetProjectConfigRequest.known_theme_revision matches the current
+  // revision (see the caching contract there); always present otherwise,
+  // including for projects on the built-in default theme.
+  Theme theme = 5;
 }

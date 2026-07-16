@@ -1,5 +1,5 @@
 bin/
-data/
+/data/
 *.db
 *.db-shm
 *.db-wal
@@ -11,3 +11,4 @@ sdk/flutter/build/
 sdk/flutter/pubspec.lock
 web/admin/test-results/
 web/admin/playwright-report/
+web/admin/e2e/preview/

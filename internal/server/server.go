@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -21,6 +22,7 @@ import (
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/server/v1/serverv1connect"
 	"github.com/aloisdeniel/moth/internal/config"
+	"github.com/aloisdeniel/moth/internal/fonts"
 	"github.com/aloisdeniel/moth/internal/keys"
 	"github.com/aloisdeniel/moth/internal/mail"
 	adminrpc "github.com/aloisdeniel/moth/internal/server/rpc/admin"
@@ -29,6 +31,13 @@ import (
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/version"
 )
+
+// rpcReadMaxBytes caps the size of a single decoded RPC message on every
+// service. The largest legitimate message is an UploadLogo carrying its
+// 512 KiB image payload (see adminrpc.maxLogoBytes); 1 MiB leaves headroom
+// for encoding overhead while rejecting oversized bodies during the read
+// instead of after they are fully buffered.
+const rpcReadMaxBytes = 1 << 20
 
 // Store is everything the assembled server needs from persistence.
 type Store interface {
@@ -75,6 +84,11 @@ type Server struct {
 	// rateLimits also throttles the plain-HTTP OAuth endpoints, which sit
 	// outside the connect interceptor chain.
 	rateLimits authrpc.RateLimits
+	// uploads is where theme assets (project logos) live on disk; served
+	// back at /assets/{projectID}/....
+	uploads string
+	// fonts serves the embedded font catalogue under /assets/fonts/.
+	fonts http.Handler
 }
 
 // New assembles the full handler.
@@ -94,6 +108,8 @@ func New(o Options) (*Server, error) {
 		master:     o.Master,
 		log:        o.Logger,
 		rateLimits: o.RateLimits,
+		uploads:    filepath.Join(o.Config.DataDir, "uploads"),
+		fonts:      http.StripPrefix("/assets/fonts/", fonts.Handler()),
 	}
 	s.setupToken.Store(o.SetupToken)
 
@@ -131,7 +147,11 @@ func New(o Options) (*Server, error) {
 	})
 
 	// chain prepends the shared observability interceptors to a service's
-	// own auth interceptors.
+	// own auth interceptors, and caps how much of a request body connect
+	// will buffer for a single message: interceptors (auth included) only
+	// run on fully decoded messages, so without a read cap any caller could
+	// make the server buffer an arbitrarily large body before the first
+	// check runs.
 	chain := func(extra ...connect.Interceptor) connect.Option {
 		all := []connect.Interceptor{
 			newRequestIDInterceptor(),
@@ -139,7 +159,10 @@ func New(o Options) (*Server, error) {
 			newRecoveryInterceptor(o.Logger),
 			newLoggingInterceptor(o.Logger),
 		}
-		return connect.WithInterceptors(append(all, extra...)...)
+		return connect.WithOptions(
+			connect.WithReadMaxBytes(rpcReadMaxBytes),
+			connect.WithInterceptors(append(all, extra...)...),
+		)
 	}
 	adminInterceptors := chain(adminrpc.NewAuthInterceptor(o.Store))
 	authInterceptors := chain(
@@ -166,6 +189,9 @@ func New(o Options) (*Server, error) {
 	settingsPath, settingsSvcHandler := adminv1connect.NewInstanceSettingsServiceHandler(
 		settingsHandler, adminInterceptors)
 	mux.Handle(settingsPath, settingsSvcHandler)
+	themePath, themeHandler := adminv1connect.NewThemeServiceHandler(
+		adminrpc.NewThemeHandler(o.Store, s.uploads), adminInterceptors)
+	mux.Handle(themePath, themeHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -187,6 +213,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.UserServiceName,
 		adminv1connect.AdminAccountServiceName,
 		adminv1connect.InstanceSettingsServiceName,
+		adminv1connect.ThemeServiceName,
 		authv1connect.AuthServiceName,
 		authv1connect.ConfigServiceName,
 		serverv1connect.TokenServiceName,
@@ -206,6 +233,11 @@ func New(o Options) (*Server, error) {
 	// (`dart pub` speaks plain HTTP; see plan/05).
 	mux.HandleFunc("GET /pub/api/packages/{package}", s.handlePubVersions)
 	mux.HandleFunc("GET /pub/packages/{package}/versions/{file}", s.handlePubArchive)
+
+	// Theme assets: embedded fonts and uploaded project logos. One wildcard
+	// route because "/assets/fonts/" and "/assets/{project}/{file}" would
+	// overlap ambiguously as separate mux patterns.
+	mux.HandleFunc("GET /assets/{path...}", s.handleAsset)
 
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.HandleFunc("GET /p/{slug}/.well-known/jwks.json", s.handleJWKS)
@@ -265,11 +297,13 @@ func New(o Options) (*Server, error) {
 
 // isPublicSurface reports whether the path belongs to the end-user API or
 // another public resource browsers may fetch cross-origin: the moth.auth.v1
-// services, the pub repository and the per-project hosted pages/JWKS.
+// services, the pub repository, the per-project hosted pages/JWKS and the
+// theme assets (logos, fonts) that Flutter Web apps download.
 func isPublicSurface(path string) bool {
 	return strings.HasPrefix(path, "/moth.auth.v1.") ||
 		strings.HasPrefix(path, "/pub/") ||
-		strings.HasPrefix(path, "/p/")
+		strings.HasPrefix(path, "/p/") ||
+		strings.HasPrefix(path, "/assets/")
 }
 
 // Handler returns the root HTTP handler. Serve it with Protocols() so

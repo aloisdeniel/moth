@@ -139,15 +139,274 @@ func (x *AppleConfig) GetEnabled() bool {
 	return false
 }
 
-type GetProjectConfigRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+// Theme is the public, fully resolved form of the project's design system,
+// ready to render: dark colors are already derived server-side, asset
+// references are absolute URLs. Binary assets (logo images, font files)
+// stay plain-HTTP downloads with cache headers — they don't belong in RPC
+// responses.
+type Theme struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Identifies this version of the theme; changes on every admin edit.
+	// Cache the theme keyed by this value and echo it as
+	// GetProjectConfigRequest.known_theme_revision.
+	RevisionId string `protobuf:"bytes,1,opt,name=revision_id,json=revisionId,proto3" json:"revision_id,omitempty"`
+	// Light palette, "#RRGGBB" values.
+	Colors *ThemeColors `protobuf:"bytes,2,opt,name=colors,proto3" json:"colors,omitempty"`
+	// Dark palette, fully resolved (admin overrides merged with derived
+	// values); render it when the device is in dark mode.
+	DarkColors *ThemeColors `protobuf:"bytes,3,opt,name=dark_colors,json=darkColors,proto3" json:"dark_colors,omitempty"`
+	// Font family name (from the server's curated set).
+	FontFamily string `protobuf:"bytes,4,opt,name=font_family,json=fontFamily,proto3" json:"font_family,omitempty"`
+	// Absolute URL of the font file to download and register; cacheable.
+	FontUrl string `protobuf:"bytes,5,opt,name=font_url,json=fontUrl,proto3" json:"font_url,omitempty"`
+	// Global text-size multiplier.
+	FontScale float64 `protobuf:"fixed64,6,opt,name=font_scale,json=fontScale,proto3" json:"font_scale,omitempty"`
+	// Base spacing step in logical pixels.
+	SpacingUnit int32 `protobuf:"varint,7,opt,name=spacing_unit,json=spacingUnit,proto3" json:"spacing_unit,omitempty"`
+	// Component corner radius in logical pixels.
+	CornerRadius int32 `protobuf:"varint,8,opt,name=corner_radius,json=cornerRadius,proto3" json:"corner_radius,omitempty"`
+	// Absolute logo URLs per color scheme; empty when no logo is set.
+	LogoLightUrl string `protobuf:"bytes,9,opt,name=logo_light_url,json=logoLightUrl,proto3" json:"logo_light_url,omitempty"`
+	LogoDarkUrl  string `protobuf:"bytes,10,opt,name=logo_dark_url,json=logoDarkUrl,proto3" json:"logo_dark_url,omitempty"`
+	// Optional legal links rendered in the login screen footer.
+	TermsUrl      string `protobuf:"bytes,11,opt,name=terms_url,json=termsUrl,proto3" json:"terms_url,omitempty"`
+	PrivacyUrl    string `protobuf:"bytes,12,opt,name=privacy_url,json=privacyUrl,proto3" json:"privacy_url,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
+func (x *Theme) Reset() {
+	*x = Theme{}
+	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Theme) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Theme) ProtoMessage() {}
+
+func (x *Theme) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Theme.ProtoReflect.Descriptor instead.
+func (*Theme) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Theme) GetRevisionId() string {
+	if x != nil {
+		return x.RevisionId
+	}
+	return ""
+}
+
+func (x *Theme) GetColors() *ThemeColors {
+	if x != nil {
+		return x.Colors
+	}
+	return nil
+}
+
+func (x *Theme) GetDarkColors() *ThemeColors {
+	if x != nil {
+		return x.DarkColors
+	}
+	return nil
+}
+
+func (x *Theme) GetFontFamily() string {
+	if x != nil {
+		return x.FontFamily
+	}
+	return ""
+}
+
+func (x *Theme) GetFontUrl() string {
+	if x != nil {
+		return x.FontUrl
+	}
+	return ""
+}
+
+func (x *Theme) GetFontScale() float64 {
+	if x != nil {
+		return x.FontScale
+	}
+	return 0
+}
+
+func (x *Theme) GetSpacingUnit() int32 {
+	if x != nil {
+		return x.SpacingUnit
+	}
+	return 0
+}
+
+func (x *Theme) GetCornerRadius() int32 {
+	if x != nil {
+		return x.CornerRadius
+	}
+	return 0
+}
+
+func (x *Theme) GetLogoLightUrl() string {
+	if x != nil {
+		return x.LogoLightUrl
+	}
+	return ""
+}
+
+func (x *Theme) GetLogoDarkUrl() string {
+	if x != nil {
+		return x.LogoDarkUrl
+	}
+	return ""
+}
+
+func (x *Theme) GetTermsUrl() string {
+	if x != nil {
+		return x.TermsUrl
+	}
+	return ""
+}
+
+func (x *Theme) GetPrivacyUrl() string {
+	if x != nil {
+		return x.PrivacyUrl
+	}
+	return ""
+}
+
+// ThemeColors is a complete palette: each color role and its "on"
+// (foreground) counterpart. Server-side validation guarantees WCAG AA
+// contrast (>= 4.5:1) between every pair.
+type ThemeColors struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Primary       string                 `protobuf:"bytes,1,opt,name=primary,proto3" json:"primary,omitempty"`
+	OnPrimary     string                 `protobuf:"bytes,2,opt,name=on_primary,json=onPrimary,proto3" json:"on_primary,omitempty"`
+	Background    string                 `protobuf:"bytes,3,opt,name=background,proto3" json:"background,omitempty"`
+	OnBackground  string                 `protobuf:"bytes,4,opt,name=on_background,json=onBackground,proto3" json:"on_background,omitempty"`
+	Surface       string                 `protobuf:"bytes,5,opt,name=surface,proto3" json:"surface,omitempty"`
+	OnSurface     string                 `protobuf:"bytes,6,opt,name=on_surface,json=onSurface,proto3" json:"on_surface,omitempty"`
+	Error         string                 `protobuf:"bytes,7,opt,name=error,proto3" json:"error,omitempty"`
+	OnError       string                 `protobuf:"bytes,8,opt,name=on_error,json=onError,proto3" json:"on_error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ThemeColors) Reset() {
+	*x = ThemeColors{}
+	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ThemeColors) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ThemeColors) ProtoMessage() {}
+
+func (x *ThemeColors) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ThemeColors.ProtoReflect.Descriptor instead.
+func (*ThemeColors) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *ThemeColors) GetPrimary() string {
+	if x != nil {
+		return x.Primary
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetOnPrimary() string {
+	if x != nil {
+		return x.OnPrimary
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetBackground() string {
+	if x != nil {
+		return x.Background
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetOnBackground() string {
+	if x != nil {
+		return x.OnBackground
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetSurface() string {
+	if x != nil {
+		return x.Surface
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetOnSurface() string {
+	if x != nil {
+		return x.OnSurface
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
+func (x *ThemeColors) GetOnError() string {
+	if x != nil {
+		return x.OnError
+	}
+	return ""
+}
+
+type GetProjectConfigRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Theme caching contract: pass the revision_id of the theme the client
+	// has cached (empty on first call). When it still matches the current
+	// revision, the response omits `theme` entirely — the client keeps
+	// rendering its cached copy. When it differs (or was empty), `theme` is
+	// present and the client replaces its cache.
+	KnownThemeRevision string `protobuf:"bytes,1,opt,name=known_theme_revision,json=knownThemeRevision,proto3" json:"known_theme_revision,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
 func (x *GetProjectConfigRequest) Reset() {
 	*x = GetProjectConfigRequest{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -159,7 +418,7 @@ func (x *GetProjectConfigRequest) String() string {
 func (*GetProjectConfigRequest) ProtoMessage() {}
 
 func (x *GetProjectConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -172,7 +431,14 @@ func (x *GetProjectConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectConfigRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectConfigRequest) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{2}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GetProjectConfigRequest) GetKnownThemeRevision() string {
+	if x != nil {
+		return x.KnownThemeRevision
+	}
+	return ""
 }
 
 type GetProjectConfigResponse struct {
@@ -182,14 +448,19 @@ type GetProjectConfigResponse struct {
 	// Minimum accepted password length.
 	PasswordMinLength int32 `protobuf:"varint,3,opt,name=password_min_length,json=passwordMinLength,proto3" json:"password_min_length,omitempty"`
 	// Whether the public SignUp RPC is open.
-	SignUpOpen    bool `protobuf:"varint,4,opt,name=sign_up_open,json=signUpOpen,proto3" json:"sign_up_open,omitempty"`
+	SignUpOpen bool `protobuf:"varint,4,opt,name=sign_up_open,json=signUpOpen,proto3" json:"sign_up_open,omitempty"`
+	// The project's design system. Omitted when
+	// GetProjectConfigRequest.known_theme_revision matches the current
+	// revision (see the caching contract there); always present otherwise,
+	// including for projects on the built-in default theme.
+	Theme         *Theme `protobuf:"bytes,5,opt,name=theme,proto3" json:"theme,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetProjectConfigResponse) Reset() {
 	*x = GetProjectConfigResponse{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -201,7 +472,7 @@ func (x *GetProjectConfigResponse) String() string {
 func (*GetProjectConfigResponse) ProtoMessage() {}
 
 func (x *GetProjectConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -214,7 +485,7 @@ func (x *GetProjectConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectConfigResponse) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{3}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetProjectConfigResponse) GetGoogle() *GoogleConfig {
@@ -245,6 +516,13 @@ func (x *GetProjectConfigResponse) GetSignUpOpen() bool {
 	return false
 }
 
+func (x *GetProjectConfigResponse) GetTheme() *Theme {
+	if x != nil {
+		return x.Theme
+	}
+	return nil
+}
+
 var File_moth_auth_v1_config_proto protoreflect.FileDescriptor
 
 const file_moth_auth_v1_config_proto_rawDesc = "" +
@@ -256,14 +534,48 @@ const file_moth_auth_v1_config_proto_rawDesc = "" +
 	"\rios_client_id\x18\x03 \x01(\tR\viosClientId\x12*\n" +
 	"\x11android_client_id\x18\x04 \x01(\tR\x0fandroidClientId\"'\n" +
 	"\vAppleConfig\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\"\x19\n" +
-	"\x17GetProjectConfigRequest\"\xd1\x01\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xc2\x03\n" +
+	"\x05Theme\x12\x1f\n" +
+	"\vrevision_id\x18\x01 \x01(\tR\n" +
+	"revisionId\x121\n" +
+	"\x06colors\x18\x02 \x01(\v2\x19.moth.auth.v1.ThemeColorsR\x06colors\x12:\n" +
+	"\vdark_colors\x18\x03 \x01(\v2\x19.moth.auth.v1.ThemeColorsR\n" +
+	"darkColors\x12\x1f\n" +
+	"\vfont_family\x18\x04 \x01(\tR\n" +
+	"fontFamily\x12\x19\n" +
+	"\bfont_url\x18\x05 \x01(\tR\afontUrl\x12\x1d\n" +
+	"\n" +
+	"font_scale\x18\x06 \x01(\x01R\tfontScale\x12!\n" +
+	"\fspacing_unit\x18\a \x01(\x05R\vspacingUnit\x12#\n" +
+	"\rcorner_radius\x18\b \x01(\x05R\fcornerRadius\x12$\n" +
+	"\x0elogo_light_url\x18\t \x01(\tR\flogoLightUrl\x12\"\n" +
+	"\rlogo_dark_url\x18\n" +
+	" \x01(\tR\vlogoDarkUrl\x12\x1b\n" +
+	"\tterms_url\x18\v \x01(\tR\btermsUrl\x12\x1f\n" +
+	"\vprivacy_url\x18\f \x01(\tR\n" +
+	"privacyUrl\"\xf5\x01\n" +
+	"\vThemeColors\x12\x18\n" +
+	"\aprimary\x18\x01 \x01(\tR\aprimary\x12\x1d\n" +
+	"\n" +
+	"on_primary\x18\x02 \x01(\tR\tonPrimary\x12\x1e\n" +
+	"\n" +
+	"background\x18\x03 \x01(\tR\n" +
+	"background\x12#\n" +
+	"\ron_background\x18\x04 \x01(\tR\fonBackground\x12\x18\n" +
+	"\asurface\x18\x05 \x01(\tR\asurface\x12\x1d\n" +
+	"\n" +
+	"on_surface\x18\x06 \x01(\tR\tonSurface\x12\x14\n" +
+	"\x05error\x18\a \x01(\tR\x05error\x12\x19\n" +
+	"\bon_error\x18\b \x01(\tR\aonError\"K\n" +
+	"\x17GetProjectConfigRequest\x120\n" +
+	"\x14known_theme_revision\x18\x01 \x01(\tR\x12knownThemeRevision\"\xfc\x01\n" +
 	"\x18GetProjectConfigResponse\x122\n" +
 	"\x06google\x18\x01 \x01(\v2\x1a.moth.auth.v1.GoogleConfigR\x06google\x12/\n" +
 	"\x05apple\x18\x02 \x01(\v2\x19.moth.auth.v1.AppleConfigR\x05apple\x12.\n" +
 	"\x13password_min_length\x18\x03 \x01(\x05R\x11passwordMinLength\x12 \n" +
 	"\fsign_up_open\x18\x04 \x01(\bR\n" +
-	"signUpOpen2r\n" +
+	"signUpOpen\x12)\n" +
+	"\x05theme\x18\x05 \x01(\v2\x13.moth.auth.v1.ThemeR\x05theme2r\n" +
 	"\rConfigService\x12a\n" +
 	"\x10GetProjectConfig\x12%.moth.auth.v1.GetProjectConfigRequest\x1a&.moth.auth.v1.GetProjectConfigResponseB5Z3github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1b\x06proto3"
 
@@ -279,23 +591,28 @@ func file_moth_auth_v1_config_proto_rawDescGZIP() []byte {
 	return file_moth_auth_v1_config_proto_rawDescData
 }
 
-var file_moth_auth_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_moth_auth_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_moth_auth_v1_config_proto_goTypes = []any{
 	(*GoogleConfig)(nil),             // 0: moth.auth.v1.GoogleConfig
 	(*AppleConfig)(nil),              // 1: moth.auth.v1.AppleConfig
-	(*GetProjectConfigRequest)(nil),  // 2: moth.auth.v1.GetProjectConfigRequest
-	(*GetProjectConfigResponse)(nil), // 3: moth.auth.v1.GetProjectConfigResponse
+	(*Theme)(nil),                    // 2: moth.auth.v1.Theme
+	(*ThemeColors)(nil),              // 3: moth.auth.v1.ThemeColors
+	(*GetProjectConfigRequest)(nil),  // 4: moth.auth.v1.GetProjectConfigRequest
+	(*GetProjectConfigResponse)(nil), // 5: moth.auth.v1.GetProjectConfigResponse
 }
 var file_moth_auth_v1_config_proto_depIdxs = []int32{
-	0, // 0: moth.auth.v1.GetProjectConfigResponse.google:type_name -> moth.auth.v1.GoogleConfig
-	1, // 1: moth.auth.v1.GetProjectConfigResponse.apple:type_name -> moth.auth.v1.AppleConfig
-	2, // 2: moth.auth.v1.ConfigService.GetProjectConfig:input_type -> moth.auth.v1.GetProjectConfigRequest
-	3, // 3: moth.auth.v1.ConfigService.GetProjectConfig:output_type -> moth.auth.v1.GetProjectConfigResponse
-	3, // [3:4] is the sub-list for method output_type
-	2, // [2:3] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	3, // 0: moth.auth.v1.Theme.colors:type_name -> moth.auth.v1.ThemeColors
+	3, // 1: moth.auth.v1.Theme.dark_colors:type_name -> moth.auth.v1.ThemeColors
+	0, // 2: moth.auth.v1.GetProjectConfigResponse.google:type_name -> moth.auth.v1.GoogleConfig
+	1, // 3: moth.auth.v1.GetProjectConfigResponse.apple:type_name -> moth.auth.v1.AppleConfig
+	2, // 4: moth.auth.v1.GetProjectConfigResponse.theme:type_name -> moth.auth.v1.Theme
+	4, // 5: moth.auth.v1.ConfigService.GetProjectConfig:input_type -> moth.auth.v1.GetProjectConfigRequest
+	5, // 6: moth.auth.v1.ConfigService.GetProjectConfig:output_type -> moth.auth.v1.GetProjectConfigResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_moth_auth_v1_config_proto_init() }
@@ -309,7 +626,7 @@ func file_moth_auth_v1_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_auth_v1_config_proto_rawDesc), len(file_moth_auth_v1_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

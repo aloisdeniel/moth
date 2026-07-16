@@ -19,7 +19,7 @@ func (h *Handler) sendVerification(ctx context.Context, project store.Project, u
 	if err != nil {
 		return errInternal(err)
 	}
-	return h.send(ctx, mailpkg.Verification(project.Name, user.Email,
+	return h.send(ctx, mailpkg.Verification(h.Brand(project), user.Email,
 		h.verifyLink(project.Slug, plain)), false)
 }
 
@@ -80,7 +80,7 @@ func (h *Handler) RequestPasswordReset(ctx context.Context, req *connect.Request
 	if err != nil {
 		return nil, errInternal(err)
 	}
-	if err := h.send(ctx, mailpkg.PasswordReset(project.Name, user.Email,
+	if err := h.send(ctx, mailpkg.PasswordReset(h.Brand(project), user.Email,
 		h.resetLink(project.Slug, plain)), false); err != nil {
 		return nil, err
 	}
@@ -149,7 +149,7 @@ func (h *Handler) RequestEmailChange(ctx context.Context, req *connect.Request[a
 	}
 	// The confirmation goes to the NEW address: it must be verified before
 	// the account switches.
-	if err := h.send(ctx, mailpkg.EmailChangeConfirm(project.Name, newEmail,
+	if err := h.send(ctx, mailpkg.EmailChangeConfirm(h.Brand(project), newEmail,
 		h.confirmEmailLink(project.Slug, plain)), true); err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (h *Handler) ConfirmEmailChange(ctx context.Context, req *connect.Request[a
 		if err != nil {
 			return nil, errInternal(err)
 		}
-		if err := h.send(ctx, mailpkg.EmailChangedNotice(project.Name, oldEmail,
+		if err := h.send(ctx, mailpkg.EmailChangedNotice(h.Brand(project), oldEmail,
 			user.Email, h.confirmEmailLink(project.Slug, revert)), false); err != nil {
 			return nil, err
 		}

@@ -93,7 +93,7 @@ func (h *Handler) signUpExisting(ctx context.Context, project store.Project, ema
 	}
 	// Same OK-and-empty response as a fresh signup; the owner gets a
 	// "you already have an account" note instead.
-	if err := h.send(ctx, mailpkg.AccountExists(project.Name, email), false); err != nil {
+	if err := h.send(ctx, mailpkg.AccountExists(h.Brand(project), email), false); err != nil {
 		return nil, err
 	}
 	return connect.NewResponse(&authv1.SignUpResponse{}), nil

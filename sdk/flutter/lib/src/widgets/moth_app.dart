@@ -5,9 +5,13 @@ import 'package:flutter/material.dart';
 import '../auth_state.dart';
 import '../client.dart';
 import '../config.dart';
+import '../theme.dart';
+import '../theme_cache.dart';
+import '../theme_controller.dart';
 import '../token_store.dart';
 import 'moth_login_screen.dart';
 import 'moth_scope.dart';
+import 'moth_theme_scope.dart';
 import 'oauth_adapter.dart';
 
 /// Top-level widget that owns a [MothClient] and gates [child] behind
@@ -32,12 +36,20 @@ import 'oauth_adapter.dart';
 /// renders and reads the state itself via [MothScope.of], which is
 /// available below this widget either way.
 ///
+/// The screens MothApp owns (loading and signed-out) render with the
+/// project's [MothTheme] as configured in the moth admin, refreshed
+/// stale-while-revalidate: the last cached theme shows immediately, a
+/// background fetch picks up admin edits. [child] — the app itself — keeps
+/// the app's own theme untouched; the moth theme only ever applies to moth
+/// screens. Pass [theme] to pin a hand-built theme instead (no fetch, no
+/// cache), or [themeCache] to change where the delivered theme persists.
+///
 /// Pass either [config] (the widget creates and disposes the client) or an
 /// existing [client] (the caller keeps ownership and disposes it); both
 /// are fixed for the lifetime of the widget. When `MothApp` sits above
 /// [MaterialApp] — the usual layout — the loading/signed-out screens are
-/// wrapped in a minimal `MaterialApp` shell of their own; the
-/// design-system milestone themes that shell from the project config.
+/// wrapped in a minimal `MaterialApp` shell of their own, themed from the
+/// project theme.
 class MothApp extends StatefulWidget {
   const MothApp({
     super.key,
@@ -45,6 +57,8 @@ class MothApp extends StatefulWidget {
     this.client,
     this.tokenStore,
     this.oauthAdapter,
+    this.theme,
+    this.themeCache,
     this.loading,
     this.signedOut,
     this.requireAuth = true,
@@ -56,6 +70,10 @@ class MothApp extends StatefulWidget {
        assert(
          client == null || tokenStore == null,
          'tokenStore only applies when MothApp creates the client.',
+       ),
+       assert(
+         theme == null || themeCache == null,
+         'themeCache only applies when the server theme is used.',
        );
 
   /// Connection settings; the widget creates (and disposes) the client.
@@ -72,6 +90,14 @@ class MothApp extends StatefulWidget {
   /// Bridges the login screen's Google/Apple buttons to the native
   /// sign-in SDKs; exposed to descendants via [MothScope.oauthAdapter].
   final MothOAuthAdapter? oauthAdapter;
+
+  /// Fixed theme for the moth screens; wins over the server-configured
+  /// project theme (which is then neither fetched nor cached).
+  final MothTheme? theme;
+
+  /// Persistence override for the server-delivered theme (defaults to a
+  /// file cache; useful for tests).
+  final MothThemeCache? themeCache;
 
   /// Shown while the session restore is in flight.
   final Widget? loading;
@@ -94,6 +120,7 @@ class _MothAppState extends State<MothApp> {
   late final bool _ownsClient;
   late MothAuthState _state;
   StreamSubscription<MothAuthState>? _subscription;
+  MothThemeController? _theme;
 
   @override
   void initState() {
@@ -112,11 +139,28 @@ class _MothAppState extends State<MothApp> {
       // the session itself); nothing to await here.
       unawaited(_client.restore());
     }
+    if (widget.theme == null && widget.requireAuth) {
+      // Stale-while-revalidate: cached theme first, background refresh
+      // after. Started even when the restore will land on signedIn, so the
+      // cache is warm for the next sign-out.
+      final controller = MothThemeController(
+        client: _client,
+        cache: widget.themeCache,
+      );
+      controller.addListener(_onThemeChanged);
+      _theme = controller;
+      unawaited(controller.start());
+    }
+  }
+
+  void _onThemeChanged() {
+    if (mounted) setState(() {});
   }
 
   @override
   void dispose() {
     _subscription?.cancel();
+    _theme?.dispose();
     if (_ownsClient) unawaited(_client.dispose());
     super.dispose();
   }
@@ -139,11 +183,22 @@ class _MothAppState extends State<MothApp> {
     } else {
       body = widget.child;
     }
-    // When MothApp is the root of the tree (above the app's MaterialApp),
-    // its own surfaces need an app shell for Directionality, Material
-    // theming, overlays etc.
-    if (ownSurface && Directionality.maybeOf(context) == null) {
-      body = MaterialApp(debugShowCheckedModeBanner: false, home: body);
+    if (ownSurface) {
+      // moth-owned screens render with the project theme; the app's own
+      // subtree (child) is deliberately left alone.
+      final mothTheme = widget.theme ?? _theme?.value ?? MothTheme.fallback();
+      body = _MothThemedSurface(theme: mothTheme, child: body);
+      // When MothApp is the root of the tree (above the app's
+      // MaterialApp), its own surfaces need an app shell for
+      // Directionality, Material theming, overlays etc.
+      if (Directionality.maybeOf(context) == null) {
+        body = MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: mothTheme.toThemeData(Brightness.light),
+          darkTheme: mothTheme.toThemeData(Brightness.dark),
+          home: body,
+        );
+      }
     }
     if (widget.requireAuth) {
       // Distinct keys per side of the gate: a flip must fully remount the
@@ -157,6 +212,26 @@ class _MothAppState extends State<MothApp> {
       state: _state,
       oauthAdapter: widget.oauthAdapter,
       child: body,
+    );
+  }
+}
+
+/// Applies the moth theme to a moth-owned screen: publishes it via
+/// [MothThemeScope] and installs the matching Material [Theme] for the
+/// ambient brightness.
+class _MothThemedSurface extends StatelessWidget {
+  const _MothThemedSurface({required this.theme, required this.child});
+
+  final MothTheme theme;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final brightness =
+        MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
+    return MothThemeScope(
+      theme: theme,
+      child: Theme(data: theme.toThemeData(brightness), child: child),
     );
   }
 }

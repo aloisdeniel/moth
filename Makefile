@@ -1,7 +1,7 @@
 VERSION ?= dev
 LDFLAGS := -s -w -X github.com/aloisdeniel/moth/internal/version.Version=$(VERSION)
 
-.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e
+.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/moth ./cmd/moth
@@ -36,6 +36,23 @@ sdk-test:
 # MothClient through signup → sign-in → transparent refresh → sign-out.
 sdk-e2e: build
 	cd sdk/flutter && flutter test --run-skipped --tags integration test/integration
+
+# Golden tests for the themed login screen (3 reference themes × light/
+# dark). Rasterization is platform-dependent, so they are excluded from the
+# default `flutter test` run and CI — run locally on the machine flavor
+# that generated the committed images; `make sdk-goldens UPDATE=1`
+# regenerates them.
+sdk-goldens:
+	cd sdk/flutter && flutter test --run-skipped --tags golden $(if $(UPDATE),--update-goldens) test/golden
+
+# Preview honesty (plan/06): captures the admin live preview for the same
+# three reference themes as the Flutter golden suite (light/dark) into
+# web/admin/e2e/preview/, for a side-by-side review against
+# sdk/flutter/test/golden/goldens whenever either rendering changes. Runs
+# the whole Playwright suite (the capture scenario needs the setup flow).
+preview-goldens: build
+	cd web/admin && npx playwright test
+	@echo "Compare web/admin/e2e/preview/ against sdk/flutter/test/golden/goldens/"
 
 # Rebuilds the embedded admin SPA into internal/server/web/dist; commit the
 # result — `make build` embeds whatever is there.

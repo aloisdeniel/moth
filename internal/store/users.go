@@ -64,7 +64,8 @@ const (
 )
 
 // ErrConflict is returned when an insert violates a uniqueness constraint
-// (email already registered, identity already linked).
+// (email already registered, identity already linked) or a
+// compare-and-swap loses to a concurrent write (SetProjectTheme).
 var ErrConflict = errors.New("conflict")
 
 func conflictErr(err error) error {

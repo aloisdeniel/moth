@@ -1,3 +1,5 @@
+import 'theme.dart';
+
 /// A project's public, non-secret configuration
 /// (`moth.auth.v1.ConfigService.GetProjectConfig`), so login UI can render
 /// exactly the sign-in methods the project enables without an app release.
@@ -7,6 +9,7 @@ class MothProjectConfig {
     required this.apple,
     required this.passwordMinLength,
     required this.signUpOpen,
+    this.theme,
   });
 
   final MothGoogleConfig google;
@@ -17,6 +20,11 @@ class MothProjectConfig {
 
   /// Whether the public sign-up RPC is open.
   final bool signUpOpen;
+
+  /// The project's design system, or null when the server confirmed the
+  /// `knownThemeRevision` passed to `getProjectConfig` is still current
+  /// (keep the cached theme) — or when the server predates themes.
+  final MothTheme? theme;
 }
 
 /// Public part of the project's Sign in with Google configuration. Client

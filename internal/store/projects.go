@@ -17,8 +17,15 @@ type Project struct {
 	PublishableKey string
 	SecretKeyHash  string
 	Settings       ProjectSettings
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	// Theme is the raw design-system JSON document (internal/theme
+	// schema); empty means the built-in default theme. Written through
+	// SetProjectTheme, never UpdateProject.
+	Theme string
+	// ThemeRevisionID identifies the revision Theme came from ("" when
+	// Theme is empty).
+	ThemeRevisionID string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 }
 
 // ProjectKey is one ES256 signing keypair belonging to a project. The
@@ -72,7 +79,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme, theme_revision, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
@@ -237,7 +244,7 @@ func scanProjectRow(row rowScanner) (Project, error) {
 	var p Project
 	var settings, createdAt, updatedAt string
 	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.PublishableKey, &p.SecretKeyHash,
-		&settings, &createdAt, &updatedAt)
+		&settings, &p.Theme, &p.ThemeRevisionID, &createdAt, &updatedAt)
 	if err != nil {
 		return Project{}, err
 	}

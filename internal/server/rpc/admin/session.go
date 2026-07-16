@@ -29,6 +29,7 @@ type Store interface {
 	store.UserStore
 	store.RefreshTokenStore
 	store.ProviderSecretStore
+	store.ThemeStore
 }
 
 // CookieName is the admin session cookie.

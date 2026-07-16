@@ -187,7 +187,7 @@ func (h *UserHandler) CreateUser(ctx context.Context, req *connect.Request[admin
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
-		if err := h.mailer.Send(ctx, mailpkg.UserInvite(project.Name, user.Email, link)); err != nil {
+		if err := h.mailer.Send(ctx, mailpkg.UserInvite(h.auth.Brand(project), user.Email, link)); err != nil {
 			return nil, connect.NewError(connect.CodeUnavailable,
 				fmt.Errorf("the account was created but the invite email failed: %w", err))
 		}
@@ -319,7 +319,7 @@ func (h *UserHandler) SendPasswordReset(ctx context.Context, req *connect.Reques
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	if err := h.mailer.Send(ctx, mailpkg.PasswordReset(project.Name, user.Email, link)); err != nil {
+	if err := h.mailer.Send(ctx, mailpkg.PasswordReset(h.auth.Brand(project), user.Email, link)); err != nil {
 		return nil, connect.NewError(connect.CodeUnavailable,
 			fmt.Errorf("send password reset email: %w", err))
 	}

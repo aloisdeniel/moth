@@ -14,7 +14,7 @@ import (
 // runs behind the same publishable-key interceptor as AuthService.
 var _ authv1connect.ConfigServiceHandler = (*Handler)(nil)
 
-func (h *Handler) GetProjectConfig(ctx context.Context, _ *connect.Request[authv1.GetProjectConfigRequest]) (*connect.Response[authv1.GetProjectConfigResponse], error) {
+func (h *Handler) GetProjectConfig(ctx context.Context, req *connect.Request[authv1.GetProjectConfigRequest]) (*connect.Response[authv1.GetProjectConfigResponse], error) {
 	project, err := h.project(ctx)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (h *Handler) GetProjectConfig(ctx context.Context, _ *connect.Request[authv
 	s := project.Settings
 	// Public values only — client IDs are embeddable by design; secrets
 	// (Google web client secret, Apple .p8) never appear here.
-	return connect.NewResponse(&authv1.GetProjectConfigResponse{
+	resp := &authv1.GetProjectConfigResponse{
 		Google: &authv1.GoogleConfig{
 			Enabled:         s.Google.Enabled,
 			WebClientId:     s.Google.WebClientID,
@@ -34,5 +34,12 @@ func (h *Handler) GetProjectConfig(ctx context.Context, _ *connect.Request[authv
 		},
 		PasswordMinLength: int32(s.PasswordMinLength),
 		SignUpOpen:        s.AllowPublicSignup,
-	}), nil
+	}
+	// Theme caching contract (see the proto): the body is omitted only when
+	// the client already holds the current revision.
+	t := publicTheme(project, h.baseURL)
+	if req.Msg.KnownThemeRevision != t.RevisionId {
+		resp.Theme = t
+	}
+	return connect.NewResponse(resp), nil
 }

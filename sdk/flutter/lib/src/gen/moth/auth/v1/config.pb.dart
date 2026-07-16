@@ -166,8 +166,365 @@ class AppleConfig extends $pb.GeneratedMessage {
   void clearEnabled() => $_clearField(1);
 }
 
+/// Theme is the public, fully resolved form of the project's design system,
+/// ready to render: dark colors are already derived server-side, asset
+/// references are absolute URLs. Binary assets (logo images, font files)
+/// stay plain-HTTP downloads with cache headers — they don't belong in RPC
+/// responses.
+class Theme extends $pb.GeneratedMessage {
+  factory Theme({
+    $core.String? revisionId,
+    ThemeColors? colors,
+    ThemeColors? darkColors,
+    $core.String? fontFamily,
+    $core.String? fontUrl,
+    $core.double? fontScale,
+    $core.int? spacingUnit,
+    $core.int? cornerRadius,
+    $core.String? logoLightUrl,
+    $core.String? logoDarkUrl,
+    $core.String? termsUrl,
+    $core.String? privacyUrl,
+  }) {
+    final result = create();
+    if (revisionId != null) result.revisionId = revisionId;
+    if (colors != null) result.colors = colors;
+    if (darkColors != null) result.darkColors = darkColors;
+    if (fontFamily != null) result.fontFamily = fontFamily;
+    if (fontUrl != null) result.fontUrl = fontUrl;
+    if (fontScale != null) result.fontScale = fontScale;
+    if (spacingUnit != null) result.spacingUnit = spacingUnit;
+    if (cornerRadius != null) result.cornerRadius = cornerRadius;
+    if (logoLightUrl != null) result.logoLightUrl = logoLightUrl;
+    if (logoDarkUrl != null) result.logoDarkUrl = logoDarkUrl;
+    if (termsUrl != null) result.termsUrl = termsUrl;
+    if (privacyUrl != null) result.privacyUrl = privacyUrl;
+    return result;
+  }
+
+  Theme._();
+
+  factory Theme.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Theme.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Theme',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'moth.auth.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'revisionId')
+    ..aOM<ThemeColors>(2, _omitFieldNames ? '' : 'colors',
+        subBuilder: ThemeColors.create)
+    ..aOM<ThemeColors>(3, _omitFieldNames ? '' : 'darkColors',
+        subBuilder: ThemeColors.create)
+    ..aOS(4, _omitFieldNames ? '' : 'fontFamily')
+    ..aOS(5, _omitFieldNames ? '' : 'fontUrl')
+    ..aD(6, _omitFieldNames ? '' : 'fontScale')
+    ..aI(7, _omitFieldNames ? '' : 'spacingUnit')
+    ..aI(8, _omitFieldNames ? '' : 'cornerRadius')
+    ..aOS(9, _omitFieldNames ? '' : 'logoLightUrl')
+    ..aOS(10, _omitFieldNames ? '' : 'logoDarkUrl')
+    ..aOS(11, _omitFieldNames ? '' : 'termsUrl')
+    ..aOS(12, _omitFieldNames ? '' : 'privacyUrl')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Theme clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Theme copyWith(void Function(Theme) updates) =>
+      super.copyWith((message) => updates(message as Theme)) as Theme;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Theme create() => Theme._();
+  @$core.override
+  Theme createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Theme getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Theme>(create);
+  static Theme? _defaultInstance;
+
+  /// Identifies this version of the theme; changes on every admin edit.
+  /// Cache the theme keyed by this value and echo it as
+  /// GetProjectConfigRequest.known_theme_revision.
+  @$pb.TagNumber(1)
+  $core.String get revisionId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set revisionId($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasRevisionId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearRevisionId() => $_clearField(1);
+
+  /// Light palette, "#RRGGBB" values.
+  @$pb.TagNumber(2)
+  ThemeColors get colors => $_getN(1);
+  @$pb.TagNumber(2)
+  set colors(ThemeColors value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasColors() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearColors() => $_clearField(2);
+  @$pb.TagNumber(2)
+  ThemeColors ensureColors() => $_ensure(1);
+
+  /// Dark palette, fully resolved (admin overrides merged with derived
+  /// values); render it when the device is in dark mode.
+  @$pb.TagNumber(3)
+  ThemeColors get darkColors => $_getN(2);
+  @$pb.TagNumber(3)
+  set darkColors(ThemeColors value) => $_setField(3, value);
+  @$pb.TagNumber(3)
+  $core.bool hasDarkColors() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearDarkColors() => $_clearField(3);
+  @$pb.TagNumber(3)
+  ThemeColors ensureDarkColors() => $_ensure(2);
+
+  /// Font family name (from the server's curated set).
+  @$pb.TagNumber(4)
+  $core.String get fontFamily => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set fontFamily($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasFontFamily() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearFontFamily() => $_clearField(4);
+
+  /// Absolute URL of the font file to download and register; cacheable.
+  @$pb.TagNumber(5)
+  $core.String get fontUrl => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set fontUrl($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasFontUrl() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearFontUrl() => $_clearField(5);
+
+  /// Global text-size multiplier.
+  @$pb.TagNumber(6)
+  $core.double get fontScale => $_getN(5);
+  @$pb.TagNumber(6)
+  set fontScale($core.double value) => $_setDouble(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasFontScale() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearFontScale() => $_clearField(6);
+
+  /// Base spacing step in logical pixels.
+  @$pb.TagNumber(7)
+  $core.int get spacingUnit => $_getIZ(6);
+  @$pb.TagNumber(7)
+  set spacingUnit($core.int value) => $_setSignedInt32(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasSpacingUnit() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearSpacingUnit() => $_clearField(7);
+
+  /// Component corner radius in logical pixels.
+  @$pb.TagNumber(8)
+  $core.int get cornerRadius => $_getIZ(7);
+  @$pb.TagNumber(8)
+  set cornerRadius($core.int value) => $_setSignedInt32(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasCornerRadius() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearCornerRadius() => $_clearField(8);
+
+  /// Absolute logo URLs per color scheme; empty when no logo is set.
+  @$pb.TagNumber(9)
+  $core.String get logoLightUrl => $_getSZ(8);
+  @$pb.TagNumber(9)
+  set logoLightUrl($core.String value) => $_setString(8, value);
+  @$pb.TagNumber(9)
+  $core.bool hasLogoLightUrl() => $_has(8);
+  @$pb.TagNumber(9)
+  void clearLogoLightUrl() => $_clearField(9);
+
+  @$pb.TagNumber(10)
+  $core.String get logoDarkUrl => $_getSZ(9);
+  @$pb.TagNumber(10)
+  set logoDarkUrl($core.String value) => $_setString(9, value);
+  @$pb.TagNumber(10)
+  $core.bool hasLogoDarkUrl() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearLogoDarkUrl() => $_clearField(10);
+
+  /// Optional legal links rendered in the login screen footer.
+  @$pb.TagNumber(11)
+  $core.String get termsUrl => $_getSZ(10);
+  @$pb.TagNumber(11)
+  set termsUrl($core.String value) => $_setString(10, value);
+  @$pb.TagNumber(11)
+  $core.bool hasTermsUrl() => $_has(10);
+  @$pb.TagNumber(11)
+  void clearTermsUrl() => $_clearField(11);
+
+  @$pb.TagNumber(12)
+  $core.String get privacyUrl => $_getSZ(11);
+  @$pb.TagNumber(12)
+  set privacyUrl($core.String value) => $_setString(11, value);
+  @$pb.TagNumber(12)
+  $core.bool hasPrivacyUrl() => $_has(11);
+  @$pb.TagNumber(12)
+  void clearPrivacyUrl() => $_clearField(12);
+}
+
+/// ThemeColors is a complete palette: each color role and its "on"
+/// (foreground) counterpart. Server-side validation guarantees WCAG AA
+/// contrast (>= 4.5:1) between every pair.
+class ThemeColors extends $pb.GeneratedMessage {
+  factory ThemeColors({
+    $core.String? primary,
+    $core.String? onPrimary,
+    $core.String? background,
+    $core.String? onBackground,
+    $core.String? surface,
+    $core.String? onSurface,
+    $core.String? error,
+    $core.String? onError,
+  }) {
+    final result = create();
+    if (primary != null) result.primary = primary;
+    if (onPrimary != null) result.onPrimary = onPrimary;
+    if (background != null) result.background = background;
+    if (onBackground != null) result.onBackground = onBackground;
+    if (surface != null) result.surface = surface;
+    if (onSurface != null) result.onSurface = onSurface;
+    if (error != null) result.error = error;
+    if (onError != null) result.onError = onError;
+    return result;
+  }
+
+  ThemeColors._();
+
+  factory ThemeColors.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory ThemeColors.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'ThemeColors',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'moth.auth.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'primary')
+    ..aOS(2, _omitFieldNames ? '' : 'onPrimary')
+    ..aOS(3, _omitFieldNames ? '' : 'background')
+    ..aOS(4, _omitFieldNames ? '' : 'onBackground')
+    ..aOS(5, _omitFieldNames ? '' : 'surface')
+    ..aOS(6, _omitFieldNames ? '' : 'onSurface')
+    ..aOS(7, _omitFieldNames ? '' : 'error')
+    ..aOS(8, _omitFieldNames ? '' : 'onError')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ThemeColors clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  ThemeColors copyWith(void Function(ThemeColors) updates) =>
+      super.copyWith((message) => updates(message as ThemeColors))
+          as ThemeColors;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static ThemeColors create() => ThemeColors._();
+  @$core.override
+  ThemeColors createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static ThemeColors getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<ThemeColors>(create);
+  static ThemeColors? _defaultInstance;
+
+  @$pb.TagNumber(1)
+  $core.String get primary => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set primary($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasPrimary() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearPrimary() => $_clearField(1);
+
+  @$pb.TagNumber(2)
+  $core.String get onPrimary => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set onPrimary($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasOnPrimary() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearOnPrimary() => $_clearField(2);
+
+  @$pb.TagNumber(3)
+  $core.String get background => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set background($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasBackground() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearBackground() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.String get onBackground => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set onBackground($core.String value) => $_setString(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasOnBackground() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearOnBackground() => $_clearField(4);
+
+  @$pb.TagNumber(5)
+  $core.String get surface => $_getSZ(4);
+  @$pb.TagNumber(5)
+  set surface($core.String value) => $_setString(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasSurface() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearSurface() => $_clearField(5);
+
+  @$pb.TagNumber(6)
+  $core.String get onSurface => $_getSZ(5);
+  @$pb.TagNumber(6)
+  set onSurface($core.String value) => $_setString(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasOnSurface() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearOnSurface() => $_clearField(6);
+
+  @$pb.TagNumber(7)
+  $core.String get error => $_getSZ(6);
+  @$pb.TagNumber(7)
+  set error($core.String value) => $_setString(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasError() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearError() => $_clearField(7);
+
+  @$pb.TagNumber(8)
+  $core.String get onError => $_getSZ(7);
+  @$pb.TagNumber(8)
+  set onError($core.String value) => $_setString(7, value);
+  @$pb.TagNumber(8)
+  $core.bool hasOnError() => $_has(7);
+  @$pb.TagNumber(8)
+  void clearOnError() => $_clearField(8);
+}
+
 class GetProjectConfigRequest extends $pb.GeneratedMessage {
-  factory GetProjectConfigRequest() => create();
+  factory GetProjectConfigRequest({
+    $core.String? knownThemeRevision,
+  }) {
+    final result = create();
+    if (knownThemeRevision != null)
+      result.knownThemeRevision = knownThemeRevision;
+    return result;
+  }
 
   GetProjectConfigRequest._();
 
@@ -182,6 +539,7 @@ class GetProjectConfigRequest extends $pb.GeneratedMessage {
       _omitMessageNames ? '' : 'GetProjectConfigRequest',
       package: const $pb.PackageName(_omitMessageNames ? '' : 'moth.auth.v1'),
       createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'knownThemeRevision')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -203,6 +561,20 @@ class GetProjectConfigRequest extends $pb.GeneratedMessage {
   static GetProjectConfigRequest getDefault() => _defaultInstance ??=
       $pb.GeneratedMessage.$_defaultFor<GetProjectConfigRequest>(create);
   static GetProjectConfigRequest? _defaultInstance;
+
+  /// Theme caching contract: pass the revision_id of the theme the client
+  /// has cached (empty on first call). When it still matches the current
+  /// revision, the response omits `theme` entirely — the client keeps
+  /// rendering its cached copy. When it differs (or was empty), `theme` is
+  /// present and the client replaces its cache.
+  @$pb.TagNumber(1)
+  $core.String get knownThemeRevision => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set knownThemeRevision($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasKnownThemeRevision() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearKnownThemeRevision() => $_clearField(1);
 }
 
 class GetProjectConfigResponse extends $pb.GeneratedMessage {
@@ -211,12 +583,14 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     AppleConfig? apple,
     $core.int? passwordMinLength,
     $core.bool? signUpOpen,
+    Theme? theme,
   }) {
     final result = create();
     if (google != null) result.google = google;
     if (apple != null) result.apple = apple;
     if (passwordMinLength != null) result.passwordMinLength = passwordMinLength;
     if (signUpOpen != null) result.signUpOpen = signUpOpen;
+    if (theme != null) result.theme = theme;
     return result;
   }
 
@@ -239,6 +613,7 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
         subBuilder: AppleConfig.create)
     ..aI(3, _omitFieldNames ? '' : 'passwordMinLength')
     ..aOB(4, _omitFieldNames ? '' : 'signUpOpen')
+    ..aOM<Theme>(5, _omitFieldNames ? '' : 'theme', subBuilder: Theme.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -302,6 +677,21 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
   $core.bool hasSignUpOpen() => $_has(3);
   @$pb.TagNumber(4)
   void clearSignUpOpen() => $_clearField(4);
+
+  /// The project's design system. Omitted when
+  /// GetProjectConfigRequest.known_theme_revision matches the current
+  /// revision (see the caching contract there); always present otherwise,
+  /// including for projects on the built-in default theme.
+  @$pb.TagNumber(5)
+  Theme get theme => $_getN(4);
+  @$pb.TagNumber(5)
+  set theme(Theme value) => $_setField(5, value);
+  @$pb.TagNumber(5)
+  $core.bool hasTheme() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearTheme() => $_clearField(5);
+  @$pb.TagNumber(5)
+  Theme ensureTheme() => $_ensure(4);
 }
 
 const $core.bool _omitFieldNames =

@@ -37,7 +37,7 @@ func (s *Server) handleOAuthStart(w http.ResponseWriter, r *http.Request) {
 	consentURL, err := s.auth.OAuthStart(r.Context(), project, provider,
 		r.URL.Query().Get("redirect"))
 	if err != nil {
-		s.oauthErrorPage(w, r, project.Name, err)
+		s.oauthErrorPage(w, r, project, err)
 		return
 	}
 	http.Redirect(w, r, consentURL, http.StatusFound)
@@ -68,10 +68,9 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if msg := r.FormValue("error"); msg != "" || r.FormValue("code") == "" {
-		s.renderPageStatus(w, r, http.StatusBadRequest, pageData{
-			Project: project.Name,
-			Title:   "Sign-in not completed",
-			Error:   "The provider did not complete the sign-in. Return to the app and try again.",
+		s.renderPageStatus(w, r, http.StatusBadRequest, project, pageData{
+			Title: "Sign-in not completed",
+			Error: "The provider did not complete the sign-in. Return to the app and try again.",
 		})
 		return
 	}
@@ -79,7 +78,7 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 	code, redirectURI, err := s.auth.OAuthCallback(r.Context(), project, provider,
 		state, r.FormValue("code"), r.FormValue("user"))
 	if err != nil {
-		s.oauthErrorPage(w, r, project.Name, err)
+		s.oauthErrorPage(w, r, project, err)
 		return
 	}
 	if redirectURI != "" {
@@ -89,8 +88,7 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// No registered scheme: hosted success page (manual testing and
 	// non-mobile clients); the code is shown so it can be exchanged by
 	// hand.
-	s.renderPage(w, r, pageData{
-		Project: project.Name,
+	s.renderPage(w, r, project, pageData{
 		Title:   "Signed in",
 		Message: "Sign-in complete. Return to the app and exchange this one-time code: " + code,
 	})
@@ -98,8 +96,8 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 // oauthErrorPage maps an OAuthStart/OAuthCallback error to a friendly 4xx
 // page.
-func (s *Server) oauthErrorPage(w http.ResponseWriter, r *http.Request, projectName string, err error) {
-	data := pageData{Project: projectName, Title: "Sign-in failed"}
+func (s *Server) oauthErrorPage(w http.ResponseWriter, r *http.Request, project store.Project, err error) {
+	data := pageData{Title: "Sign-in failed"}
 	status := http.StatusBadRequest
 	switch authrpc.ErrorReason(err) {
 	case authrpc.ReasonProviderDisabled:
@@ -127,7 +125,7 @@ func (s *Server) oauthErrorPage(w http.ResponseWriter, r *http.Request, projectN
 			return
 		}
 	}
-	s.renderPageStatus(w, r, status, data)
+	s.renderPageStatus(w, r, status, project, data)
 }
 
 // allowOAuthRequest applies the per-IP rate limit to the plain-HTTP OAuth
