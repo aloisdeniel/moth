@@ -6,5 +6,8 @@ data/
 moth.toml
 node_modules/
 *.tsbuildinfo
+.dart_tool/
+sdk/flutter/build/
+sdk/flutter/pubspec.lock
 web/admin/test-results/
 web/admin/playwright-report/

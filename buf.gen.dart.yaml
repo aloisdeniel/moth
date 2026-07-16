@@ -1,0 +1,18 @@
+version: v2
+# Dart stubs for the Flutter SDK (moth.auth.v1 only) — run via `make
+# proto-dart` and commit the output. Kept out of buf.gen.yaml on purpose:
+# CI's proto job has no Dart toolchain. Needs protoc-gen-dart on PATH
+# (`dart pub global activate protoc_plugin`).
+clean: true
+inputs:
+  - directory: proto
+    paths:
+      - proto/moth/auth/v1
+plugins:
+  - local: protoc-gen-dart
+    out: sdk/flutter/lib/src/gen
+    opt: grpc
+    # Also generate imported files (google/protobuf/timestamp.proto): the
+    # Dart protobuf runtime does not ship well-known types.
+    include_imports: true
+    include_wkt: true

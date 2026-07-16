@@ -1,4 +1,5 @@
 import { useQuery } from "@connectrpc/connect-query";
+import { useEffect, useState } from "react";
 
 import { errorMessage } from "../api";
 import { CodeBlock, ErrorNote, KeyWell, Loading } from "../components/ui";
@@ -6,15 +7,39 @@ import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService } from "../gen/moth/admin/v1/settings_pb";
 
+// useSdkVersion fetches the moth_auth version this instance actually serves
+// from its own pub listing, so the pubspec snippet always resolves.
+// undefined = loading, null = failed.
+function useSdkVersion(): string | null | undefined {
+  const [version, setVersion] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/pub/api/packages/moth_auth")
+      .then((resp) => (resp.ok ? resp.json() : Promise.reject(resp.status)))
+      .then((listing: { latest: { version: string } }) => {
+        if (!cancelled) setVersion(listing.latest.version);
+      })
+      .catch(() => {
+        if (!cancelled) setVersion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return version;
+}
+
 // ProjectSetup renders copy-paste instructions with this project's real
 // values — the setup page is the product.
 export function ProjectSetup({ project }: { project: Project }) {
   const instance = useQuery(InstanceSettingsService.method.getInstanceSettings);
   const signing = useQuery(ProjectService.method.getSigningKey, { projectId: project.id });
+  const sdkVersion = useSdkVersion();
 
-  if (instance.isPending || signing.isPending) return <Loading />;
+  if (instance.isPending || signing.isPending || sdkVersion === undefined) return <Loading />;
   if (instance.isError) return <ErrorNote message={errorMessage(instance.error)} />;
   if (signing.isError) return <ErrorNote message={errorMessage(signing.error)} />;
+  if (sdkVersion === null) return <ErrorNote message="could not load the served SDK version from /pub" />;
 
   const base = instance.data.baseUrl;
   const host = base.replace(/^https?:\/\//, "");
@@ -23,19 +48,27 @@ export function ProjectSetup({ project }: { project: Project }) {
   const issuer = signing.data.issuer;
   const audience = signing.data.audience;
 
+  // Pre-release versions (dev builds serve 0.0.0-dev.*) must be pinned
+  // exactly — Dart version ranges never match pre-releases; releases get a
+  // caret so patch updates of the same major resolve.
+  const versionConstraint = sdkVersion.includes("-") ? sdkVersion : `^${sdkVersion}`;
+
   const pubspec = `dependencies:
   moth_auth:
     hosted: ${base}/pub
-    version: ^0.1.0`;
+    version: ${versionConstraint}`;
 
   const mainDart = `import 'package:flutter/material.dart';
 import 'package:moth_auth/moth_auth.dart';
 
 void main() {
   runApp(
-    MothAuth(
-      serverUrl: '${base}',
-      publishableKey: '${project.publishableKey}',
+    MothApp(
+      config: MothConfig(
+        endpoint: Uri.parse('${base}'),
+        publishableKey: '${project.publishableKey}',
+      ),
+      // Signed out -> the SDK's built-in MothLoginScreen; signed in -> child.
       child: const MyApp(),
     ),
   );
@@ -46,9 +79,11 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = MothAuth.of(context);
+    final user = MothScope.of(context).user;
     return MaterialApp(
-      home: auth.isSignedIn ? const HomeScreen() : const MothLoginScreen(),
+      home: Scaffold(
+        body: Center(child: Text('Signed in as \${user?.email}')),
+      ),
     );
   }
 }`;
@@ -120,9 +155,11 @@ Future<Map<String, dynamic>> verifyMothToken(String token) async {
       <section className="stack-12">
         <h2>1 · Add the SDK</h2>
         <p className="caption">
-          The <span className="inline-code">moth_auth</span> Flutter SDK ships
-          with a later moth release and will be served by this instance; the
-          snippet below already points at the right place.
+          This instance serves the{" "}
+          <span className="inline-code">moth_auth</span> Flutter SDK from its
+          own pub repository at{" "}
+          <span className="inline-code">{base}/pub</span>; the SDK version
+          tracks the server version.
         </p>
         <p className="caption body-strong">pubspec.yaml</p>
         <CodeBlock code={pubspec} />

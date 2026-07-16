@@ -20,6 +20,7 @@ export default defineConfig({
       "/admin/setup": "http://localhost:8080",
       "/protos": "http://localhost:8080",
       "/oauth": "http://localhost:8080",
+      "/pub": "http://localhost:8080",
       "/p": "http://localhost:8080",
       "/healthz": "http://localhost:8080",
     },

@@ -1,0 +1,11 @@
+# Test configuration for the moth_auth package.
+#
+# Tests tagged `integration` spawn a real moth binary and are excluded from
+# the default `flutter test` run (they need `make build` first). Run them
+# with `make sdk-e2e` from the repository root, or directly:
+#
+#   flutter test --run-skipped --tags integration test/integration
+tags:
+  integration:
+    skip: "integration tests need bin/moth — run via `make sdk-e2e`"
+    timeout: 3m

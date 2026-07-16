@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"time"
@@ -9,6 +10,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/aloisdeniel/moth/internal/token"
+	"github.com/aloisdeniel/moth/internal/version"
 )
 
 type requestIDKey struct{}
@@ -30,6 +32,26 @@ func newRequestIDInterceptor() connect.UnaryInterceptorFunc {
 			resp, err := next(ctx, req)
 			if resp != nil {
 				resp.Header().Set(requestIDHeader, id)
+			}
+			return resp, err
+		}
+	}
+}
+
+// versionHeader carries the server build version back to clients; SDKs
+// compare it against their own version and warn on mismatch in debug builds.
+const versionHeader = "X-Moth-Version"
+
+func newVersionInterceptor() connect.UnaryInterceptorFunc {
+	return func(next connect.UnaryFunc) connect.UnaryFunc {
+		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			resp, err := next(ctx, req)
+			if resp != nil {
+				resp.Header().Set(versionHeader, version.Version)
+			}
+			var cerr *connect.Error
+			if errors.As(err, &cerr) {
+				cerr.Meta().Set(versionHeader, version.Version)
 			}
 			return resp, err
 		}

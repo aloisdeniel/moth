@@ -1,0 +1,47 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:moth_auth/moth_auth.dart';
+import 'package:moth_auth_example/home_screen.dart';
+import 'package:moth_auth_example/main.dart';
+
+void main() {
+  testWidgets('explains the missing publishable key on a bare run', (
+    tester,
+  ) async {
+    // Tests run without --dart-define, so the app renders the setup hint
+    // instead of MothApp.
+    await tester.pumpWidget(const ExampleApp());
+    expect(find.text('No publishable key'), findsOneWidget);
+    expect(find.textContaining('MOTH_PUBLISHABLE_KEY'), findsOneWidget);
+  });
+
+  testWidgets('home screen renders the MothScope user', (tester) async {
+    final client = MothClient(
+      MothConfig(
+        endpoint: Uri.parse('http://localhost:1'), // never dialed
+        publishableKey: 'pk_test',
+      ),
+      tokenStore: InMemoryTokenStore(),
+    );
+    addTearDown(client.dispose);
+    const user = MothUser(
+      id: 'user-1',
+      email: 'jane@example.com',
+      emailVerified: true,
+      displayName: 'Jane',
+      claims: {'role': 'admin'},
+    );
+    await tester.pumpWidget(
+      MothScope(
+        client: client,
+        state: const MothSignedIn(user),
+        child: const MaterialApp(home: HomeScreen()),
+      ),
+    );
+    expect(find.text('jane@example.com'), findsOneWidget);
+    expect(find.text('verified'), findsOneWidget);
+    expect(find.text('role: admin'), findsOneWidget);
+    expect(find.text('Call my backend'), findsOneWidget);
+    expect(find.text('Delete account'), findsOneWidget);
+  });
+}

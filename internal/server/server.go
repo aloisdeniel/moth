@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -68,6 +69,9 @@ type Server struct {
 	auth       *authrpc.Handler // shared with the hosted confirmation pages
 	setupToken atomic.Value     // string; "" once setup is complete
 	handler    http.Handler
+	// pub is the embedded moth_auth Flutter package, built once so the
+	// sha256 in the /pub version listing always matches the served bytes.
+	pub *pubArchive
 	// rateLimits also throttles the plain-HTTP OAuth endpoints, which sit
 	// outside the connect interceptor chain.
 	rateLimits authrpc.RateLimits
@@ -92,6 +96,14 @@ func New(o Options) (*Server, error) {
 		rateLimits: o.RateLimits,
 	}
 	s.setupToken.Store(o.SetupToken)
+
+	// The moth_auth Flutter SDK served at /pub; its version tracks the
+	// binary's own build version.
+	pub, err := buildPubArchive(version.Version)
+	if err != nil {
+		return nil, err
+	}
+	s.pub = pub
 
 	// Every email goes through one swappable transport so the admin
 	// console can reconfigure SMTP at runtime. Options.Mailer is the
@@ -123,6 +135,7 @@ func New(o Options) (*Server, error) {
 	chain := func(extra ...connect.Interceptor) connect.Option {
 		all := []connect.Interceptor{
 			newRequestIDInterceptor(),
+			newVersionInterceptor(),
 			newRecoveryInterceptor(o.Logger),
 			newLoggingInterceptor(o.Logger),
 		}
@@ -189,6 +202,11 @@ func New(o Options) (*Server, error) {
 	// The .proto sources, offered for download from the setup page.
 	mux.Handle("GET /protos/", http.StripPrefix("/protos/", http.HandlerFunc(s.handleProtoFile)))
 
+	// The pub hosted repository serving the moth_auth Flutter SDK
+	// (`dart pub` speaks plain HTTP; see plan/05).
+	mux.HandleFunc("GET /pub/api/packages/{package}", s.handlePubVersions)
+	mux.HandleFunc("GET /pub/packages/{package}/versions/{file}", s.handlePubArchive)
+
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.HandleFunc("GET /p/{slug}/.well-known/jwks.json", s.handleJWKS)
 	mux.HandleFunc("GET /p/{slug}/verify", s.handleVerifyPage)
@@ -207,17 +225,51 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("POST /admin/setup", s.handleAdminSetup)
 	mux.HandleFunc("/", s.handleRoot)
 
-	corsMiddleware := cors.New(cors.Options{
+	// Two CORS policies. The end-user surface (moth.auth.v1 via gRPC-Web,
+	// the pub repository, JWKS and hosted pages) must be callable from any
+	// origin: a Flutter Web app is essentially never served from the moth
+	// origin. It authenticates with publishable keys and Bearer tokens,
+	// never cookies, so a wildcard origin without credentials is safe. The
+	// admin surface rides the session cookie and stays locked to the
+	// instance's own origin.
+	publicCORS := cors.New(cors.Options{
+		AllowedOrigins: []string{"*"},
+		AllowedMethods: connectcors.AllowedMethods(),
+		// The SDK attaches x-moth-key, x-moth-platform, x-moth-sdk-version
+		// and authorization metadata to every call; with no credentials in
+		// play the wildcard allows them all (and whatever later SDKs add).
+		AllowedHeaders: []string{"*"},
+		ExposedHeaders: append(connectcors.ExposedHeaders(), requestIDHeader, versionHeader),
+		MaxAge:         7200,
+	})
+	adminCORS := cors.New(cors.Options{
 		AllowedOrigins:   []string{o.Config.BaseOrigin()},
 		AllowedMethods:   connectcors.AllowedMethods(),
 		AllowedHeaders:   append(connectcors.AllowedHeaders(), "X-Moth-Key"),
-		ExposedHeaders:   append(connectcors.ExposedHeaders(), requestIDHeader),
+		ExposedHeaders:   append(connectcors.ExposedHeaders(), requestIDHeader, versionHeader),
 		AllowCredentials: true,
 		MaxAge:           7200,
 	})
 
-	s.handler = corsMiddleware.Handler(mux)
+	publicHandler := publicCORS.Handler(mux)
+	adminHandler := adminCORS.Handler(mux)
+	s.handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isPublicSurface(r.URL.Path) {
+			publicHandler.ServeHTTP(w, r)
+			return
+		}
+		adminHandler.ServeHTTP(w, r)
+	})
 	return s, nil
+}
+
+// isPublicSurface reports whether the path belongs to the end-user API or
+// another public resource browsers may fetch cross-origin: the moth.auth.v1
+// services, the pub repository and the per-project hosted pages/JWKS.
+func isPublicSurface(path string) bool {
+	return strings.HasPrefix(path, "/moth.auth.v1.") ||
+		strings.HasPrefix(path, "/pub/") ||
+		strings.HasPrefix(path, "/p/")
 }
 
 // Handler returns the root HTTP handler. Serve it with Protocols() so

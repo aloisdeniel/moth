@@ -1,0 +1,6 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # buf-generated Dart stubs (make proto-dart) — committed, never hand-edited.
+    - lib/src/gen/**
