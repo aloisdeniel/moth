@@ -494,6 +494,9 @@ func (h *BillingHandler) UpdateBillingCredentials(ctx context.Context, req *conn
 		cred.AppleIAPIssuerID = a.IapIssuerId
 		cred.AppleBundleID = a.BundleId
 		cred.AppleAppAppleID = a.AppAppleId
+		// "" keeps the stored notification URL (write-only-ish: only the CLI
+		// records it, after a successful App Store Server Notification register).
+		cred.AppleNotificationURL = a.NotificationUrl
 		if a.IapKeyP8 != "" {
 			// Validate the .p8 parses before storing it encrypted.
 			if _, err := billing.ParseP8([]byte(a.IapKeyP8)); err != nil {
@@ -560,6 +563,7 @@ func appleConfigProto(c store.BillingCredentials) *adminv1.AppleBillingConfig {
 		BundleId:              c.AppleBundleID,
 		AppAppleId:            c.AppleAppAppleID,
 		HasNotificationSecret: len(c.AppleNotificationSecretEnc) > 0,
+		NotificationUrl:       c.AppleNotificationURL,
 	}
 }
 

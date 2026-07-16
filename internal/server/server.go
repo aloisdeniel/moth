@@ -295,6 +295,11 @@ func New(o Options) (*Server, error) {
 	mux.Handle(subPath, subHandler)
 	billingCredPath, billingCredHandler := adminv1connect.NewBillingCredentialsServiceHandler(billingAdmin, adminInterceptors)
 	mux.Handle(billingCredPath, billingCredHandler)
+	// moth.admin.v1 store-catalog provisioning (milestone 12).
+	monetizationHandler := adminrpc.NewMonetizationHandler(
+		o.Store, o.Master, o.Config.BaseURL, auditor, adminrpc.NewLiveStoreSyncer(o.Master), o.Now)
+	monetizationPath, monetizationSvc := adminv1connect.NewMonetizationServiceHandler(monetizationHandler, adminInterceptors)
+	mux.Handle(monetizationPath, monetizationSvc)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -326,6 +331,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.ThemeServiceName,
 		adminv1connect.AnalyticsServiceName,
 		adminv1connect.AuditServiceName,
+		adminv1connect.MonetizationServiceName,
 		authv1connect.AuthServiceName,
 		authv1connect.ConfigServiceName,
 		billingv1connect.BillingServiceName,

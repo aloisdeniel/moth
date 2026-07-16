@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 
+	"github.com/aloisdeniel/moth/internal/billing"
 	"github.com/aloisdeniel/moth/internal/oidc"
 	"github.com/aloisdeniel/moth/internal/setup"
 )
@@ -64,7 +65,123 @@ func newSetupCmd() *cobra.Command {
 		Short: "Configure sign-in providers for a project (automated where APIs exist, guided where they don't)",
 	}
 	addClientFlags(cmd, &opts)
-	cmd.AddCommand(newSetupGoogleCmd(&opts), newSetupAppleCmd(&opts))
+	cmd.AddCommand(newSetupGoogleCmd(&opts), newSetupAppleCmd(&opts), newSetupBillingCmd(&opts))
+	return cmd
+}
+
+func newSetupBillingCmd(opts *clientOpts) *cobra.Command {
+	s := &setup.BillingSetup{}
+	var (
+		ascIssuerID, ascKeyID, ascP8       string
+		iapKeyID, iapIssuerID, iapP8       string
+		saPath, pubsubSAPath, cloudProject string
+		noConfirm                          bool
+	)
+	cmd := &cobra.Command{
+		Use:   "billing",
+		Short: "Configure store subscriptions for a project (credentials, catalog push, notifications, verify)",
+		Long: `Configures a project's store monetization end to end: it stores the
+Apple App Store Server API and Google Play Developer API credentials into
+moth's encrypted billing config, pushes moth's product catalog into App
+Store Connect and Google Play (automated where the store APIs allow it,
+guided with exact values where they don't), wires the notification
+endpoints, and verifies each store is reachable and authenticated.
+
+The App Store Connect API key (--asc-*) drives the Apple catalog push and
+is used in-process only, never stored. The In-App-Purchase key (--apple-
+iap-*) and the Google service account are stored encrypted for the
+milestone-11 billing engine. Idempotent: re-running diffs the current
+store state and changes only what is needed.`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			client, baseURL, err := opts.dialURL()
+			if err != nil {
+				return err
+			}
+			s.Projects = client.Projects
+			s.Products = client.Products
+			s.BillingCreds = client.BillingCreds
+			s.BaseURL = baseURL
+			s.Prompt = prompter(cmd, opts.json)
+			s.Out = cmd.OutOrStdout()
+			s.Yes = noConfirm
+
+			if s.AppleBundleID != "" {
+				if iapP8 != "" {
+					raw, err := os.ReadFile(iapP8)
+					if err != nil {
+						return err
+					}
+					key, err := oidc.ParseP8(raw)
+					if err != nil {
+						return fmt.Errorf("%s: %w", iapP8, err)
+					}
+					s.AppleIAPKeyP8 = raw
+					s.AppleIAPKey = key
+				}
+				s.AppleIAPKeyID = iapKeyID
+				s.AppleIAPIssuerID = iapIssuerID
+				if ascP8 != "" {
+					asc, err := buildASC(s.Prompt, ascIssuerID, ascKeyID, ascP8)
+					if err != nil {
+						return err
+					}
+					s.ASC = asc
+				}
+			}
+			if s.GooglePackageName != "" && saPath != "" {
+				raw, err := os.ReadFile(saPath)
+				if err != nil {
+					return err
+				}
+				sa, err := billing.ParseServiceAccount(raw)
+				if err != nil {
+					return fmt.Errorf("%s: %w", saPath, err)
+				}
+				s.GoogleServiceAccountJSON = raw
+				s.GoogleSA = sa
+				if pubsubSAPath != "" {
+					psRaw, err := os.ReadFile(pubsubSAPath)
+					if err != nil {
+						return err
+					}
+					psSA, err := billing.ParseServiceAccount(psRaw)
+					if err != nil {
+						return fmt.Errorf("%s: %w", pubsubSAPath, err)
+					}
+					s.GooglePubSubTokens = billing.NewGoogleTokenSource(psSA, "", nil, nil)
+					s.GoogleCloudProject = cloudProject
+				}
+			}
+
+			rep, err := s.Run(cmd.Context())
+			if err != nil {
+				return err
+			}
+			return printReport(cmd, rep, opts.json)
+		},
+	}
+	cmd.Flags().StringVar(&s.Slug, "project", "", "project slug (required)")
+	// Apple.
+	cmd.Flags().StringVar(&s.AppleBundleID, "apple-bundle-id", "", "app bundle id (enables Apple; blank skips Apple)")
+	cmd.Flags().StringVar(&s.AppleAppAppleID, "apple-app-apple-id", "", "the app's numeric App Store id")
+	cmd.Flags().StringVar(&s.AppleAppID, "apple-app-id", "", "App Store Connect app resource id (for the catalog push)")
+	cmd.Flags().StringVar(&iapKeyID, "apple-iap-key-id", "", "App Store Server API In-App-Purchase key id")
+	cmd.Flags().StringVar(&iapIssuerID, "apple-iap-issuer-id", "", "App Store Server API issuer id")
+	cmd.Flags().StringVar(&iapP8, "apple-iap-p8", "", "path to the App Store Server API In-App-Purchase .p8 (stored encrypted)")
+	cmd.Flags().StringVar(&s.AppleNotificationSecret, "apple-notification-secret", "", "App Store Server Notifications shared secret (stored encrypted)")
+	cmd.Flags().StringVar(&ascIssuerID, "asc-issuer-id", "", "App Store Connect API issuer id (catalog push; not stored)")
+	cmd.Flags().StringVar(&ascKeyID, "asc-key-id", "", "App Store Connect API key id (catalog push; not stored)")
+	cmd.Flags().StringVar(&ascP8, "asc-p8", "", "path to the App Store Connect API .p8 (catalog push; not stored)")
+	// Google.
+	cmd.Flags().StringVar(&s.GooglePackageName, "google-package-name", "", "Android application id (enables Google; blank skips Google)")
+	cmd.Flags().StringVar(&saPath, "google-service-account", "", "path to the Play Developer API service-account JSON (stored encrypted)")
+	cmd.Flags().StringVar(&s.GooglePubsubTopic, "google-pubsub-topic", "", "Cloud Pub/Sub topic for RTDN (projects/<p>/topics/<t> or a bare topic id)")
+	cmd.Flags().StringVar(&s.GoogleRTDNSecret, "google-rtdn-secret", "", "RTDN push webhook shared secret (stored encrypted)")
+	cmd.Flags().StringVar(&pubsubSAPath, "google-pubsub-service-account", "", "path to a pubsub-scoped SA JSON to create the RTDN topic/subscription (else guided)")
+	cmd.Flags().StringVar(&cloudProject, "google-cloud-project", "", "GCP project the RTDN topic lives in (with --google-pubsub-service-account)")
+	cmd.Flags().BoolVar(&noConfirm, "yes", false, "push to the live stores without the confirmation prompt")
+	_ = cmd.MarkFlagRequired("project") // flag is registered just above
 	return cmd
 }
 

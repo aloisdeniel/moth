@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@connectrpc/connect-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
 import {
@@ -10,6 +10,7 @@ import {
   Field,
   KeyWell,
   Loading,
+  Status,
 } from "../components/ui";
 import {
   BillingCredentialsService,
@@ -20,10 +21,20 @@ import {
   EntitlementService,
   type Entitlement,
 } from "../gen/moth/admin/v1/entitlement_pb";
+import {
+  MonetizationService,
+  ProductSyncStatus,
+  SyncAction,
+  type GuidedStep,
+  type ProductSyncItem,
+  type StoreCatalogStatus,
+} from "../gen/moth/admin/v1/monetization_pb";
 import { ProductService, type Product } from "../gen/moth/admin/v1/product_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService } from "../gen/moth/admin/v1/settings_pb";
-import { formatPrice } from "../lib/billing";
+import { Store } from "../gen/moth/admin/v1/subscription_pb";
+import { formatPrice, storeLabel } from "../lib/billing";
+import { formatRelative } from "../lib/format";
 
 // ProjectMonetization is the subscriptions & entitlements admin: the
 // entitlement catalog apps gate on, the product tiers that grant them, and
@@ -45,6 +56,8 @@ export function ProjectMonetization({ project }: { project: Project }) {
 
       <EntitlementsCard project={project} />
       <ProductsCard project={project} />
+      <OfferingCard project={project} />
+      <StoreConnectionCard project={project} />
       <BillingCredentialsCard project={project} />
     </div>
   );
@@ -609,6 +622,460 @@ function ProductDialog({
         </div>
       </form>
     </Dialog>
+  );
+}
+
+// ---------- Offering ----------
+
+// OfferingCard orders the products a paywall presents. moth keeps one
+// offering per project (the "default"); the first tier is the featured one
+// most paywalls highlight. Reordering drives ReorderOffering, which persists
+// the products' sort_order.
+function OfferingCard({ project }: { project: Project }) {
+  const offering = useQuery(MonetizationService.method.getOffering, {
+    projectId: project.id,
+    offering: "",
+  });
+  const reorder = useMutation(MonetizationService.method.reorderOffering, {
+    onSuccess: () => {
+      invalidate(
+        MonetizationService.method.getOffering,
+        ProductService.method.listProducts,
+      );
+    },
+  });
+
+  const products = offering.data?.offering?.products ?? [];
+
+  function reorderTo(next: Product[]) {
+    reorder.mutate({
+      projectId: project.id,
+      offering: "",
+      productIds: next.map((p) => p.id),
+    });
+  }
+  function move(index: number, dir: -1 | 1) {
+    const j = index + dir;
+    if (j < 0 || j >= products.length) return;
+    const next = [...products];
+    [next[index], next[j]] = [next[j], next[index]];
+    reorderTo(next);
+  }
+  function feature(index: number) {
+    if (index === 0) return;
+    const next = [...products];
+    const [p] = next.splice(index, 1);
+    next.unshift(p);
+    reorderTo(next);
+  }
+
+  return (
+    <section className="card card--pad stack-16">
+      <div className="page__header">
+        <h3 className="card__title">Offering</h3>
+        {reorder.isPending && <Badge>Saving…</Badge>}
+      </div>
+      <p className="caption">
+        The ordered set of tiers your paywall presents. Drag order top-to-bottom;
+        the <strong>featured</strong> tier sits first — the one a paywall
+        highlights as recommended. Add a product to the offering by giving it an{" "}
+        <span className="inline-code">offering</span> tag above.
+      </p>
+
+      {offering.isPending && <Loading />}
+      {offering.isError && <ErrorNote message={errorMessage(offering.error)} />}
+      {offering.data &&
+        (products.length === 0 ? (
+          <div className="empty">
+            <p className="body-strong">No tiers in the offering</p>
+            <p className="caption">
+              Tag a product with an <span className="inline-code">offering</span>{" "}
+              (e.g. <span className="inline-code">default</span>) to add it here.
+            </p>
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: 40 }}>#</th>
+                  <th>Tier</th>
+                  <th>Price</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p, i) => (
+                  <tr key={p.id}>
+                    <td className="mono text-tertiary">{i + 1}</td>
+                    <td>
+                      <span className="row-8" style={{ flexWrap: "wrap" }}>
+                        <span>{p.displayName || p.identifier}</span>
+                        {i === 0 && <Badge tone="accent">Featured</Badge>}
+                      </span>
+                      <span className="mono caption">{p.identifier}</span>
+                    </td>
+                    <td className="mono">
+                      {formatPrice(p.priceAmountMicros, p.currency)}
+                      {p.billingPeriod && (
+                        <span className="text-tertiary"> / {p.billingPeriod}</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="row-8" style={{ justifyContent: "flex-end" }}>
+                        {i !== 0 && (
+                          <button
+                            type="button"
+                            className="btn btn--ghost btn--compact"
+                            disabled={reorder.isPending}
+                            onClick={() => feature(i)}
+                          >
+                            Feature
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--compact"
+                          aria-label={`Move ${p.identifier} up`}
+                          disabled={reorder.isPending || i === 0}
+                          onClick={() => move(i, -1)}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--ghost btn--compact"
+                          aria-label={`Move ${p.identifier} down`}
+                          disabled={reorder.isPending || i === products.length - 1}
+                          onClick={() => move(i, 1)}
+                        >
+                          ↓
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ))}
+      {reorder.isError && <ErrorNote message={errorMessage(reorder.error)} />}
+    </section>
+  );
+}
+
+// ---------- Store connection & catalog sync ----------
+
+type Tone = "neutral" | "success" | "warning" | "danger" | "accent";
+
+function actionMeta(a: SyncAction): { label: string; tone: Tone } {
+  switch (a) {
+    case SyncAction.CREATE:
+      return { label: "Create", tone: "success" };
+    case SyncAction.UPDATE:
+      return { label: "Update", tone: "warning" };
+    case SyncAction.NOOP:
+      return { label: "In sync", tone: "neutral" };
+    case SyncAction.GUIDED:
+      return { label: "Manual", tone: "accent" };
+    default:
+      return { label: "—", tone: "neutral" };
+  }
+}
+
+function syncStatusMeta(s: ProductSyncStatus): { label: string; tone: Tone } {
+  switch (s) {
+    case ProductSyncStatus.IN_SYNC:
+      return { label: "In sync", tone: "success" };
+    case ProductSyncStatus.DRIFT:
+      return { label: "Drift", tone: "warning" };
+    case ProductSyncStatus.ERROR:
+      return { label: "Error", tone: "danger" };
+    case ProductSyncStatus.PENDING:
+      return { label: "Pending", tone: "neutral" };
+    default:
+      return { label: "—", tone: "neutral" };
+  }
+}
+
+function StoreConnectionCard({ project }: { project: Project }) {
+  const status = useQuery(MonetizationService.method.getStoreCatalogStatus, {
+    projectId: project.id,
+  });
+  const byStore = (s: Store) => status.data?.stores.find((x) => x.store === s);
+
+  return (
+    <div className="stack-16">
+      <div className="stack-8">
+        <h3 className="card__title">Store connection</h3>
+        <p className="caption">
+          Whether each store's API credentials and renewal-notification plumbing
+          are wired, and how moth's catalog compares to what's live in the store.
+          Push moth's catalog to reconcile — moth automates what the store APIs
+          allow and hands you the exact manual steps for the rest.
+        </p>
+      </div>
+      {status.isError && <ErrorNote message={errorMessage(status.error)} />}
+      {status.isPending ? (
+        <Loading />
+      ) : (
+        <>
+          <StoreStatusCard project={project} store={Store.APPLE} status={byStore(Store.APPLE)} />
+          <StoreStatusCard project={project} store={Store.GOOGLE} status={byStore(Store.GOOGLE)} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function StoreStatusCard({
+  project,
+  store,
+  status,
+}: {
+  project: Project;
+  store: Store;
+  status?: StoreCatalogStatus;
+}) {
+  const [pushing, setPushing] = useState(false);
+  const label = storeLabel(store);
+  const apiName = store === Store.APPLE ? "App Store Connect" : "Google Play";
+  const creds = status?.credentialsPresent ?? false;
+  const notif = status?.notificationsWired ?? false;
+
+  return (
+    <section className="card card--pad stack-16">
+      <div className="page__header">
+        <h4 className="card__title">
+          {label} — {apiName}
+        </h4>
+        {creds ? (
+          <Badge tone="success">Connected</Badge>
+        ) : (
+          <Badge tone="warning">No credentials</Badge>
+        )}
+      </div>
+
+      <div className="stack-8">
+        <Status tone={creds ? "success" : "warning"}>
+          {creds ? "API credentials configured" : "API credentials not configured"}
+        </Status>
+        <Status tone={notif ? "success" : "warning"}>
+          {notif
+            ? store === Store.APPLE
+              ? "Server-notification URL registered"
+              : "RTDN Pub/Sub topic wired"
+            : "Renewal notifications not wired"}
+        </Status>
+      </div>
+
+      <DiffSummary status={status} />
+
+      <div className="row-12" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+        <span className="caption">
+          {status?.lastSyncTime
+            ? `Last synced ${formatRelative(status.lastSyncTime)}`
+            : "Never synced"}
+        </span>
+        <button
+          type="button"
+          className="btn btn--secondary btn--compact"
+          onClick={() => setPushing(true)}
+        >
+          Push to {label}
+        </button>
+      </div>
+
+      {pushing && (
+        <PushDialog project={project} store={store} onClose={() => setPushing(false)} />
+      )}
+    </section>
+  );
+}
+
+function DiffSummary({ status }: { status?: StoreCatalogStatus }) {
+  const total = status?.productsTotal ?? 0;
+  if (total === 0) {
+    return <p className="caption">No products mapped to this store yet.</p>;
+  }
+  return (
+    <div className="row-8" style={{ flexWrap: "wrap" }}>
+      <Badge>
+        {total} product{total === 1 ? "" : "s"}
+      </Badge>
+      {status!.productsInSync > 0 && (
+        <Badge tone="success">{status!.productsInSync} in sync</Badge>
+      )}
+      {status!.productsDrift > 0 && (
+        <Badge tone="warning">{status!.productsDrift} drift</Badge>
+      )}
+      {status!.productsError > 0 && (
+        <Badge tone="danger">{status!.productsError} error</Badge>
+      )}
+      {status!.productsUnmapped > 0 && (
+        <Badge>{status!.productsUnmapped} unmapped</Badge>
+      )}
+    </div>
+  );
+}
+
+// PushDialog runs a dry-run reconcile on open (the plan), then applies it on
+// confirm. Both are idempotent by contract; a second push of an unchanged
+// catalog reports in-sync with an all-noop plan.
+function PushDialog({
+  project,
+  store,
+  onClose,
+}: {
+  project: Project;
+  store: Store;
+  onClose: () => void;
+}) {
+  const label = storeLabel(store);
+  const plan = useMutation(MonetizationService.method.syncStoreCatalog);
+  const apply = useMutation(MonetizationService.method.syncStoreCatalog, {
+    onSuccess: () => invalidate(MonetizationService.method.getStoreCatalogStatus),
+  });
+
+  useEffect(() => {
+    plan.mutate({ projectId: project.id, store, dryRun: true });
+    // Run the dry-run once when the dialog opens.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applied = apply.data !== undefined;
+  const result = apply.data ?? plan.data;
+
+  return (
+    <Dialog title={`Push catalog to ${label}`} open onClose={onClose} wide>
+      <div className="stack-16">
+        {plan.isPending && <Loading />}
+        {plan.isError && <ErrorNote message={errorMessage(plan.error)} />}
+
+        {result && !plan.isError && (
+          <>
+            {applied ? (
+              <Status tone={result.items.some((i) => i.status === ProductSyncStatus.ERROR) ? "danger" : "success"}>
+                {result.items.some((i) => i.status === ProductSyncStatus.ERROR)
+                  ? "Pushed with errors — see below"
+                  : "Catalog pushed"}
+              </Status>
+            ) : (
+              <p className="caption">
+                {result.inSync
+                  ? `${label}'s catalog already matches moth — nothing to push.`
+                  : "Review the plan, then push. moth changes only what drifted."}
+              </p>
+            )}
+
+            {result.items.length === 0 && result.guidedSteps.length === 0 && (
+              <div className="empty">
+                <p className="body-strong">Nothing to reconcile</p>
+                <p className="caption">
+                  No products are mapped to {label}. Set a {label} product id on a
+                  tier above first.
+                </p>
+              </div>
+            )}
+
+            {result.items.map((item) => (
+              <SyncItemRow
+                key={item.productId || item.identifier}
+                item={item}
+                applied={applied}
+              />
+            ))}
+
+            {result.guidedSteps.length > 0 && (
+              <div className="stack-8">
+                <p className="body-strong">Manual steps</p>
+                <p className="caption">
+                  Steps the {label} API cannot perform — do these by hand with the
+                  exact values shown.
+                </p>
+                {result.guidedSteps.map((step, i) => (
+                  <GuidedStepView step={step} key={i} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {apply.isError && <ErrorNote message={errorMessage(apply.error)} />}
+
+        <div className="dialog__actions">
+          <button type="button" className="btn btn--secondary" onClick={onClose}>
+            {applied ? "Close" : "Cancel"}
+          </button>
+          {!applied && (
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={plan.isPending || plan.isError || apply.isPending || result?.inSync}
+              onClick={() => apply.mutate({ projectId: project.id, store, dryRun: false })}
+            >
+              {apply.isPending ? "Pushing…" : `Push to ${label}`}
+            </button>
+          )}
+        </div>
+      </div>
+    </Dialog>
+  );
+}
+
+function SyncItemRow({ item, applied }: { item: ProductSyncItem; applied: boolean }) {
+  const badge = applied ? syncStatusMeta(item.status) : actionMeta(item.action);
+  return (
+    <div className="sync-item stack-8">
+      <div className="row-8" style={{ justifyContent: "space-between", flexWrap: "wrap" }}>
+        <span className="mono">
+          {item.identifier}
+          {item.storeProductId && (
+            <span className="text-tertiary"> · {item.storeProductId}</span>
+          )}
+        </span>
+        <Badge tone={badge.tone}>{badge.label}</Badge>
+      </div>
+      {item.summary && <p className="caption">{item.summary}</p>}
+      {item.changes.length > 0 && (
+        <div className="stack-8">
+          {item.changes.map((c) => (
+            <div className="sync-change" key={c.field}>
+              <span className="mono caption">{c.field}</span>
+              <span className="mono caption">
+                {c.current || "—"} → {c.desired || "—"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {item.error && <p className="field__error">{item.error}</p>}
+      {item.guidedSteps.map((step, i) => (
+        <GuidedStepView step={step} key={i} />
+      ))}
+    </div>
+  );
+}
+
+function GuidedStepView({ step }: { step: GuidedStep }) {
+  return (
+    <div className="guided-step stack-8">
+      <p className="body-strong">{step.title}</p>
+      {step.detail && <p className="caption">{step.detail}</p>}
+      {step.url && (
+        <p className="caption">
+          <a href={step.url} target="_blank" rel="noreferrer">
+            {step.url}
+          </a>
+        </p>
+      )}
+      {step.values.map((v) => (
+        <div className="stack-8" key={v.label}>
+          <span className="field__label">{v.label}</span>
+          <KeyWell value={v.value} />
+        </div>
+      ))}
+    </div>
   );
 }
 

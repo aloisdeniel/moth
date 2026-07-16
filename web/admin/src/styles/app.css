@@ -1078,6 +1078,32 @@ textarea.input {
   white-space: nowrap;
 }
 
+/* ---------- Store catalog sync (monetization) ---------- */
+
+/* One product's line in a push plan or applied result. */
+.sync-item {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+/* Field-level drift: "price  9.99 → 12.99". */
+.sync-change {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* A manual step the store API cannot perform, with exact paste values. */
+.guided-step {
+  padding: 12px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border-radius: var(--radius-sm);
+}
+
 /* Utility */
 .text-secondary { color: var(--text-secondary); }
 .text-tertiary { color: var(--text-tertiary); }

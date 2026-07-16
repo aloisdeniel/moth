@@ -27,6 +27,8 @@ verified against the providers' live endpoints.`,
 			d.Session = client.Sessions
 			d.Settings = client.Settings
 			d.Projects = client.Projects
+			d.BillingCreds = client.BillingCreds
+			d.Products = client.Products
 			rep, err := d.Run(cmd.Context())
 			if err != nil {
 				return err
@@ -39,5 +41,9 @@ verified against the providers' live endpoints.`,
 	cmd.Flags().StringVar(&d.SMTPTestTo, "smtp-to", "", "send a real test email to this address")
 	cmd.Flags().StringVar(&d.AppleKeyPath, "apple-key", "",
 		"path to the project's Sign in with Apple .p8, enabling the Apple token-endpoint dry-run")
+	cmd.Flags().StringVar(&d.AppleIAPKeyPath, "apple-iap-p8", "",
+		"path to the project's App Store Server API In-App-Purchase .p8, enabling the billing store probe")
+	cmd.Flags().StringVar(&d.GoogleServiceAccountPath, "google-service-account", "",
+		"path to the project's Play Developer API service-account JSON, enabling the billing store probe")
 	return cmd
 }

@@ -42,8 +42,13 @@ type AppleBillingConfig struct {
 	NotificationSecret string `protobuf:"bytes,7,opt,name=notification_secret,json=notificationSecret,proto3" json:"notification_secret,omitempty"`
 	// Output only: whether a notification secret is stored.
 	HasNotificationSecret bool `protobuf:"varint,8,opt,name=has_notification_secret,json=hasNotificationSecret,proto3" json:"has_notification_secret,omitempty"`
-	unknownFields         protoimpl.UnknownFields
-	sizeCache             protoimpl.SizeCache
+	// The App Store Server Notification URL moth has registered for the app.
+	// Apple exposes no read for it, so moth persists what it registered to keep
+	// `moth setup billing` idempotent (re-register only on a change). Set by the
+	// CLI after a successful registration; empty on update keeps the stored one.
+	NotificationUrl string `protobuf:"bytes,9,opt,name=notification_url,json=notificationUrl,proto3" json:"notification_url,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *AppleBillingConfig) Reset() {
@@ -130,6 +135,13 @@ func (x *AppleBillingConfig) GetHasNotificationSecret() bool {
 		return x.HasNotificationSecret
 	}
 	return false
+}
+
+func (x *AppleBillingConfig) GetNotificationUrl() string {
+	if x != nil {
+		return x.NotificationUrl
+	}
+	return ""
 }
 
 // GoogleBillingConfig is a project's Google Play Developer API configuration.
@@ -437,7 +449,7 @@ var File_moth_admin_v1_billing_credentials_proto protoreflect.FileDescriptor
 
 const file_moth_admin_v1_billing_credentials_proto_rawDesc = "" +
 	"\n" +
-	"'moth/admin/v1/billing_credentials.proto\x12\rmoth.admin.v1\"\xbc\x02\n" +
+	"'moth/admin/v1/billing_credentials.proto\x12\rmoth.admin.v1\"\xe7\x02\n" +
 	"\x12AppleBillingConfig\x12\x1c\n" +
 	"\n" +
 	"iap_key_id\x18\x01 \x01(\tR\biapKeyId\x12\"\n" +
@@ -449,7 +461,8 @@ const file_moth_admin_v1_billing_credentials_proto_rawDesc = "" +
 	"\fapp_apple_id\x18\x06 \x01(\tR\n" +
 	"appAppleId\x12/\n" +
 	"\x13notification_secret\x18\a \x01(\tR\x12notificationSecret\x126\n" +
-	"\x17has_notification_secret\x18\b \x01(\bR\x15hasNotificationSecret\"\x86\x02\n" +
+	"\x17has_notification_secret\x18\b \x01(\bR\x15hasNotificationSecret\x12)\n" +
+	"\x10notification_url\x18\t \x01(\tR\x0fnotificationUrl\"\x86\x02\n" +
 	"\x13GoogleBillingConfig\x120\n" +
 	"\x14service_account_json\x18\x01 \x01(\tR\x12serviceAccountJson\x12.\n" +
 	"\x13has_service_account\x18\x02 \x01(\bR\x11hasServiceAccount\x12!\n" +

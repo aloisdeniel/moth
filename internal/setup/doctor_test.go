@@ -32,9 +32,32 @@ func instanceDouble(t *testing.T, broken map[string]bool) *httptest.Server {
 			w.Write([]byte(`{"name":"moth_auth","versions":[{"version":"0.1.0"}]}`))
 		case "/p/demo/.well-known/jwks.json":
 			w.Write([]byte(`{"keys":[{"kty":"EC","crv":"P-256"}]}`))
+		case "/billing/apple/notifications/demo", "/billing/google/rtdn/demo":
+			// Wired webhook routes reject the probe's empty POST before doing any
+			// work; any non-404 status means "route exists". (400 mirrors the real
+			// Apple handler's "invalid notification body".)
+			w.WriteHeader(http.StatusBadRequest)
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
+	}))
+	t.Cleanup(srv.Close)
+	return srv
+}
+
+// googleAPIRejectsDouble mints a valid access token but rejects every Play
+// Developer API call with 403 — an SA whose Play access was revoked. It drives
+// googlePlayAPIProbe's "API rejected the request" FAIL branch.
+func googleAPIRejectsDouble(t *testing.T) *httptest.Server {
+	t.Helper()
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/token") {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"access_token":"ya29.test","expires_in":3600}`))
+			return
+		}
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"error":{"code":403,"message":"caller does not have permission"}}`))
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -390,4 +413,231 @@ func TestDoctorJSONReport(t *testing.T) {
 			t.Fatalf("incomplete check in JSON: %+v", c)
 		}
 	}
+}
+
+// billingProject returns a healthy project plus store billing credentials and a
+// mapped product on the doctor.
+func doctorWithBilling(t *testing.T, srv *httptest.Server, apple *adminv1.AppleBillingConfig, google *adminv1.GoogleBillingConfig, products []*adminv1.Product) *Doctor {
+	t.Helper()
+	d, _ := newDoctor(t, srv, healthyProject())
+	d.Slug = "demo"
+	d.BillingCreds = &fakeBillingCreds{apple: apple, google: google}
+	d.Products = &fakeProducts{products: products}
+	return d
+}
+
+func TestDoctorBilling(t *testing.T) {
+	mappedProduct := []*adminv1.Product{{
+		Identifier: "monthly", AppleProductId: "pro_monthly", GoogleProductId: "pro_monthly",
+	}}
+
+	t.Run("healthy configured stores pass", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		apple := &adminv1.AppleBillingConfig{
+			IapKeyId: "IAPKEY0001", IapIssuerId: "iss", BundleId: "com.example.demo",
+			HasIapKey: true, HasNotificationSecret: true,
+		}
+		google := &adminv1.GoogleBillingConfig{
+			PackageName: "com.example.app", HasServiceAccount: true,
+			PubsubTopic: "projects/p/topics/moth-rtdn", HasRtdnSecret: true,
+		}
+		d := doctorWithBilling(t, srv, apple, google, mappedProduct)
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range []string{
+			"project: Apple billing credentials",
+			"project: Apple notification endpoint",
+			"project: Google billing credentials",
+			"project: Google RTDN endpoint",
+			"project: catalog store mapping",
+		} {
+			if c := findCheck(t, rep, name); c.Status != StatusPass {
+				t.Fatalf("%s = %s (%s)", name, c.Status, c.Detail)
+			}
+		}
+	})
+
+	t.Run("no credentials skips", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		d := doctorWithBilling(t, srv, &adminv1.AppleBillingConfig{}, &adminv1.GoogleBillingConfig{}, nil)
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c := findCheck(t, rep, "project: store billing credentials"); c.Status != StatusSkip {
+			t.Fatalf("expected skip, got %+v", c)
+		}
+	})
+
+	t.Run("missing apple notification secret warns", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		apple := &adminv1.AppleBillingConfig{
+			IapKeyId: "IAPKEY0001", IapIssuerId: "iss", BundleId: "com.example.demo", HasIapKey: true,
+		}
+		d := doctorWithBilling(t, srv, apple, &adminv1.GoogleBillingConfig{}, mappedProduct)
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c := findCheck(t, rep, "project: Apple notification secret"); c.Status != StatusWarn {
+			t.Fatalf("expected warn, got %+v", c)
+		}
+	})
+
+	t.Run("incomplete google credentials fail", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		// Package set but no service account: incomplete.
+		google := &adminv1.GoogleBillingConfig{PackageName: "com.example.app"}
+		d := doctorWithBilling(t, srv, &adminv1.AppleBillingConfig{}, google, mappedProduct)
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if c := findCheck(t, rep, "project: Google billing credentials"); c.Status != StatusFail {
+			t.Fatalf("expected fail, got %+v", c)
+		}
+		if !rep.Failed() {
+			t.Fatal("report should fail")
+		}
+	})
+
+	t.Run("expired apple store key fails with remediation", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		apple := &adminv1.AppleBillingConfig{
+			IapKeyId: "IAPKEY0001", IapIssuerId: "iss", BundleId: "com.example.demo",
+			HasIapKey: true, HasNotificationSecret: true,
+		}
+		d := doctorWithBilling(t, srv, apple, &adminv1.GoogleBillingConfig{}, mappedProduct)
+		// Supply the .p8 so the live probe runs, and point it at a store API that
+		// rejects the JWT (a rotated/expired key).
+		p8, _ := testP8(t)
+		keyPath := filepath.Join(t.TempDir(), "iap.p8")
+		if err := os.WriteFile(keyPath, p8, 0o600); err != nil {
+			t.Fatal(err)
+		}
+		d.AppleIAPKeyPath = keyPath
+		d.AppleServerAPIBase = appleServerAPIDouble(t, true).URL
+
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := findCheck(t, rep, "project: Apple App Store Server API reachable")
+		if c.Status != StatusFail || c.Remediation == "" {
+			t.Fatalf("expected FAIL+remediation for a rejected Apple key, got %+v", c)
+		}
+	})
+
+	t.Run("expired google store key fails with remediation", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		google := &adminv1.GoogleBillingConfig{
+			PackageName: "com.example.app", HasServiceAccount: true,
+			PubsubTopic: "projects/p/topics/moth-rtdn", HasRtdnSecret: true,
+		}
+		d := doctorWithBilling(t, srv, &adminv1.AppleBillingConfig{}, google, mappedProduct)
+		saPath := filepath.Join(t.TempDir(), "sa.json")
+		if err := os.WriteFile(saPath, serviceAccountBytes(t, ""), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		d.GoogleServiceAccountPath = saPath
+		// Token mints fine, but the Play Developer API rejects the request (the
+		// SA lost access / the key was revoked).
+		reject := googleAPIRejectsDouble(t)
+		d.GoogleAPIBase = reject.URL
+		d.GoogleTokenURL = reject.URL + "/token"
+
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := findCheck(t, rep, "project: Google Play Developer API reachable")
+		if c.Status != StatusFail || c.Remediation == "" {
+			t.Fatalf("expected FAIL+remediation for a rejected Google key, got %+v", c)
+		}
+	})
+
+	t.Run("deleted google store product fails", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		google := &adminv1.GoogleBillingConfig{
+			PackageName: "com.example.app", HasServiceAccount: true,
+			PubsubTopic: "projects/p/topics/moth-rtdn", HasRtdnSecret: true,
+		}
+		d := doctorWithBilling(t, srv, &adminv1.AppleBillingConfig{}, google, mappedProduct)
+		// The Play double authenticates and answers the reachability probe, but
+		// the mapped SKU "pro_monthly" was never created (deleted store-side).
+		gp := newGoogleCatalogDouble(t)
+		saPath := filepath.Join(t.TempDir(), "sa.json")
+		if err := os.WriteFile(saPath, serviceAccountBytes(t, gp.srv.URL+"/token"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		d.GoogleServiceAccountPath = saPath
+		d.GoogleAPIBase = gp.srv.URL
+		d.GoogleTokenURL = gp.srv.URL + "/token"
+
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := findCheck(t, rep, "project: Google catalog products exist")
+		if c.Status != StatusFail || !strings.Contains(c.Detail, "monthly") || c.Remediation == "" {
+			t.Fatalf("expected FAIL flagging the deleted product, got %+v", c)
+		}
+	})
+
+	t.Run("broken notification endpoints fail with remediation", func(t *testing.T) {
+		srv := instanceDouble(t, map[string]bool{
+			"/billing/apple/notifications/demo": true,
+			"/billing/google/rtdn/demo":         true,
+		})
+		apple := &adminv1.AppleBillingConfig{
+			IapKeyId: "IAPKEY0001", IapIssuerId: "iss", BundleId: "com.example.demo",
+			HasIapKey: true, HasNotificationSecret: true,
+		}
+		google := &adminv1.GoogleBillingConfig{
+			PackageName: "com.example.app", HasServiceAccount: true,
+			PubsubTopic: "projects/p/topics/moth-rtdn", HasRtdnSecret: true,
+		}
+		d := doctorWithBilling(t, srv, apple, google, mappedProduct)
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range []string{"project: Apple notification endpoint", "project: Google RTDN endpoint"} {
+			c := findCheck(t, rep, name)
+			if c.Status != StatusFail || c.Remediation == "" {
+				t.Fatalf("%s: expected FAIL+remediation, got %+v", name, c)
+			}
+		}
+		if !rep.Failed() {
+			t.Fatal("report should fail when the notification webhooks are missing")
+		}
+	})
+
+	t.Run("unmapped product warns and json carries billing checks", func(t *testing.T) {
+		srv := instanceDouble(t, nil)
+		apple := &adminv1.AppleBillingConfig{
+			IapKeyId: "IAPKEY0001", IapIssuerId: "iss", BundleId: "com.example.demo",
+			HasIapKey: true, HasNotificationSecret: true,
+		}
+		unmapped := []*adminv1.Product{{Identifier: "monthly"}} // no Apple SKU
+		d := doctorWithBilling(t, srv, apple, &adminv1.GoogleBillingConfig{}, unmapped)
+		rep, err := d.Run(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		c := findCheck(t, rep, "project: catalog store mapping")
+		if c.Status != StatusWarn || !strings.Contains(c.Detail, "monthly (Apple)") {
+			t.Fatalf("mapping check = %+v", c)
+		}
+		// --json carries the billing checks byte-for-byte in the checks array.
+		data, err := rep.JSON()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(data), "project: Apple billing credentials") {
+			t.Fatalf("json missing billing checks:\n%s", data)
+		}
+	})
 }

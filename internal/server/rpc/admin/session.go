@@ -43,6 +43,7 @@ type Store interface {
 	store.SubscriptionGrantStore
 	store.BillingCredentialStore
 	store.SubscriptionEventStore
+	store.ProductStoreSyncStore
 }
 
 // CookieName is the admin session cookie.

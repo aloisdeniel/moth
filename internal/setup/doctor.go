@@ -16,6 +16,7 @@ import (
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
+	"github.com/aloisdeniel/moth/internal/billing"
 	"github.com/aloisdeniel/moth/internal/oidc"
 	"github.com/aloisdeniel/moth/internal/store"
 )
@@ -25,11 +26,13 @@ import (
 // SMTP test send excepted, which the operator requests explicitly).
 type Doctor struct {
 	// BaseURL is the instance URL the checks reach it at (the context URL).
-	BaseURL  string
-	HTTPC    oidc.Doer
-	Session  adminv1connect.SessionServiceClient
-	Settings adminv1connect.InstanceSettingsServiceClient
-	Projects adminv1connect.ProjectServiceClient
+	BaseURL      string
+	HTTPC        oidc.Doer
+	Session      adminv1connect.SessionServiceClient
+	Settings     adminv1connect.InstanceSettingsServiceClient
+	Projects     adminv1connect.ProjectServiceClient
+	BillingCreds adminv1connect.BillingCredentialsServiceClient
+	Products     adminv1connect.ProductServiceClient
 
 	// Slug selects a project for the provider checks; empty runs the
 	// instance-level checks only.
@@ -44,6 +47,19 @@ type Doctor struct {
 	// GoogleAuthURL and AppleTokenBase are test overrides.
 	GoogleAuthURL  string
 	AppleTokenBase string
+
+	// AppleIAPKeyPath optionally points at the project's App Store Server API
+	// In-App-Purchase .p8 so the billing check can probe the App Store Server
+	// API (moth stores the key encrypted and never returns it).
+	AppleIAPKeyPath string
+	// GoogleServiceAccountPath optionally points at the Play Developer API
+	// service-account JSON so the billing check can probe the Play API.
+	GoogleServiceAccountPath string
+	// AppleServerAPIBase, GoogleAPIBase and GoogleTokenURL are test overrides for
+	// the billing store probes.
+	AppleServerAPIBase string
+	GoogleAPIBase      string
+	GoogleTokenURL     string
 }
 
 func (d *Doctor) defaults() {
@@ -98,6 +114,7 @@ func (d *Doctor) Run(ctx context.Context) (*Report, error) {
 	d.checkJWKS(ctx, rep)
 	d.checkGoogle(ctx, rep, project.Settings.GetGoogle())
 	d.checkApple(ctx, rep, project.Settings.GetApple())
+	d.checkBilling(ctx, rep, project.Id)
 	return rep, nil
 }
 
@@ -346,4 +363,269 @@ func (d *Doctor) checkApple(ctx context.Context, rep *Report, a *adminv1.ApplePr
 		clientID = a.BundleIds[0]
 	}
 	rep.add(appleTokenDryRun(ctx, dryRunName, d.HTTPC, d.AppleTokenBase, clientID, a.TeamId, a.KeyId, key))
+}
+
+// checkBilling reports on the project's store billing configuration: whether the
+// store API credentials and notification plumbing are present, whether moth's
+// webhook endpoints are reachable, a catalog mapping (drift) summary, and — when
+// the operator passes the store keys (moth stores them encrypted and never
+// returns them) — a live reachability probe against each store API.
+func (d *Doctor) checkBilling(ctx context.Context, rep *Report, projectID string) {
+	const name = "project: store billing credentials"
+	if d.BillingCreds == nil {
+		return
+	}
+	resp, err := d.BillingCreds.GetBillingCredentials(ctx, connect.NewRequest(&adminv1.GetBillingCredentialsRequest{ProjectId: projectID}))
+	if err != nil {
+		rep.Fail(name, "GetBillingCredentials: "+err.Error(), "")
+		return
+	}
+	a, g := resp.Msg.Apple, resp.Msg.Google
+	appleConfigured := a.GetBundleId() != "" || a.GetHasIapKey()
+	googleConfigured := g.GetPackageName() != "" || g.GetHasServiceAccount()
+	if !appleConfigured && !googleConfigured {
+		rep.Skip(name, "no store billing credentials configured (subscriptions not set up)")
+		return
+	}
+	if appleConfigured {
+		d.checkAppleBilling(ctx, rep, a)
+	}
+	if googleConfigured {
+		d.checkGoogleBilling(ctx, rep, projectID, g)
+	}
+	d.checkCatalogMapping(ctx, rep, projectID, appleConfigured, googleConfigured)
+}
+
+func (d *Doctor) checkAppleBilling(ctx context.Context, rep *Report, a *adminv1.AppleBillingConfig) {
+	const name = "project: Apple billing credentials"
+	var missing []string
+	if !a.GetHasIapKey() {
+		missing = append(missing, "In-App-Purchase .p8")
+	}
+	if a.GetIapKeyId() == "" {
+		missing = append(missing, "key id")
+	}
+	if a.GetIapIssuerId() == "" {
+		missing = append(missing, "issuer id")
+	}
+	if a.GetBundleId() == "" {
+		missing = append(missing, "bundle id")
+	}
+	if len(missing) > 0 {
+		rep.Fail(name, "incomplete: missing "+strings.Join(missing, ", "),
+			"run `moth setup billing --project "+d.Slug+"`")
+	} else {
+		rep.Pass(name, "configured (bundle "+a.GetBundleId()+", key "+a.GetIapKeyId()+")")
+	}
+	if !a.GetHasNotificationSecret() {
+		rep.Warn("project: Apple notification secret", "no App Store Server Notifications secret stored",
+			"re-run `moth setup billing` with --apple-notification-secret to authenticate the webhook")
+	} else {
+		rep.Pass("project: Apple notification secret", "stored")
+	}
+	d.checkWebhookReachable(ctx, rep, "project: Apple notification endpoint", "/billing/apple/notifications/"+d.Slug)
+
+	// Live probe only when the operator supplies the key material.
+	const probeName = "project: Apple App Store Server API reachable"
+	if d.AppleIAPKeyPath == "" {
+		rep.Warn(probeName, "moth stores the In-App-Purchase key encrypted and never returns it, so a remote doctor cannot probe the store API",
+			"re-run with --apple-iap-p8 <path to the App Store Server API .p8> to verify the key")
+		return
+	}
+	if len(missing) > 0 {
+		return
+	}
+	raw, err := os.ReadFile(d.AppleIAPKeyPath)
+	if err != nil {
+		rep.Fail(probeName, err.Error(), "")
+		return
+	}
+	key, err := billing.ParseP8(raw)
+	if err != nil {
+		rep.Fail(probeName, fmt.Sprintf("%s: %v", d.AppleIAPKeyPath, err), "")
+		return
+	}
+	rep.add(appleServerAPIProbe(ctx, probeName, d.HTTPC, d.AppleServerAPIBase,
+		a.GetIapIssuerId(), a.GetIapKeyId(), a.GetBundleId(), key))
+}
+
+func (d *Doctor) checkGoogleBilling(ctx context.Context, rep *Report, projectID string, g *adminv1.GoogleBillingConfig) {
+	const name = "project: Google billing credentials"
+	var missing []string
+	if !g.GetHasServiceAccount() {
+		missing = append(missing, "service-account JSON")
+	}
+	if g.GetPackageName() == "" {
+		missing = append(missing, "package name")
+	}
+	if len(missing) > 0 {
+		rep.Fail(name, "incomplete: missing "+strings.Join(missing, ", "),
+			"run `moth setup billing --project "+d.Slug+"`")
+	} else {
+		rep.Pass(name, "configured (package "+g.GetPackageName()+")")
+	}
+	if g.GetPubsubTopic() == "" {
+		rep.Warn("project: Google RTDN topic", "no Pub/Sub topic configured — renewal notifications will not arrive",
+			"re-run `moth setup billing` with --google-pubsub-topic")
+	} else if !g.GetHasRtdnSecret() {
+		rep.Warn("project: Google RTDN topic", "topic "+g.GetPubsubTopic()+" set but no RTDN push secret stored",
+			"re-run `moth setup billing` with --google-rtdn-secret to authenticate the webhook")
+	} else {
+		rep.Pass("project: Google RTDN topic", g.GetPubsubTopic())
+	}
+	d.checkWebhookReachable(ctx, rep, "project: Google RTDN endpoint", "/billing/google/rtdn/"+d.Slug)
+
+	const probeName = "project: Google Play Developer API reachable"
+	if d.GoogleServiceAccountPath == "" {
+		rep.Warn(probeName, "moth stores the service account encrypted and never returns it, so a remote doctor cannot probe the store API",
+			"re-run with --google-service-account <path to the SA JSON> to verify access")
+		return
+	}
+	if len(missing) > 0 {
+		return
+	}
+	raw, err := os.ReadFile(d.GoogleServiceAccountPath)
+	if err != nil {
+		rep.Fail(probeName, err.Error(), "")
+		return
+	}
+	sa, err := billing.ParseServiceAccount(raw)
+	if err != nil {
+		rep.Fail(probeName, fmt.Sprintf("%s: %v", d.GoogleServiceAccountPath, err), "")
+		return
+	}
+	probe := googlePlayAPIProbe(ctx, probeName, d.HTTPC, d.GoogleAPIBase, d.GoogleTokenURL, g.GetPackageName(), sa)
+	rep.add(probe)
+	// Only when the SA can actually reach the Play API is it meaningful to read
+	// back each mapped SKU to confirm it still exists store-side.
+	if probe.Status == StatusPass {
+		d.checkGoogleCatalogLive(ctx, rep, projectID, g, sa)
+	}
+}
+
+// checkGoogleCatalogLive reads each mapped Google SKU back from the Play
+// Developer API to flag a product that was deleted store-side — the acceptance
+// criterion "moth doctor flags a deleted store product". A 404 for a SKU moth
+// still maps means the subscription was removed in Play Console (or never
+// created). This is the Google half; Apple's subscription catalog is not
+// readable with the App Store Server API key moth holds (only the ASC catalog
+// key, which lives in `moth setup billing` in-process), so an Apple deleted
+// product surfaces on the next `moth setup billing` push, not here.
+func (d *Doctor) checkGoogleCatalogLive(ctx context.Context, rep *Report, projectID string, g *adminv1.GoogleBillingConfig, sa *billing.GoogleServiceAccount) {
+	const name = "project: Google catalog products exist"
+	if d.Products == nil {
+		return
+	}
+	resp, err := d.Products.ListProducts(ctx, connect.NewRequest(&adminv1.ListProductsRequest{ProjectId: projectID}))
+	if err != nil {
+		rep.Fail(name, "ListProducts: "+err.Error(), "")
+		return
+	}
+	tokens := billing.NewGoogleTokenSource(sa, d.GoogleTokenURL, d.HTTPC, nil)
+	client := &billing.GoogleClient{BaseURL: d.GoogleAPIBase, PackageName: g.GetPackageName(), Tokens: tokens, HTTPC: d.HTTPC}
+	var missing []string
+	checked := 0
+	for _, p := range resp.Msg.Products {
+		sku := p.GetGoogleProductId()
+		if sku == "" {
+			continue
+		}
+		checked++
+		if _, _, err := client.GetSubscriptionV2(ctx, sku); errors.Is(err, billing.ErrNotFound) {
+			missing = append(missing, p.GetIdentifier()+" ("+sku+")")
+		}
+	}
+	switch {
+	case len(missing) > 0:
+		rep.Fail(name, fmt.Sprintf("%d mapped product(s) no longer exist in Google Play: %s", len(missing), strings.Join(missing, ", ")),
+			"recreate them in Play Console or run `moth setup billing --project "+d.Slug+"` to re-push")
+	case checked == 0:
+		rep.Skip(name, "no products carry a Google SKU")
+	default:
+		rep.Pass(name, fmt.Sprintf("%d product(s) present in Google Play", checked))
+	}
+}
+
+// checkCatalogMapping summarizes catalog drift the CLI can see without the
+// per-store sync records: products missing a store SKU for a configured store.
+func (d *Doctor) checkCatalogMapping(ctx context.Context, rep *Report, projectID string, apple, google bool) {
+	const name = "project: catalog store mapping"
+	if d.Products == nil {
+		return
+	}
+	resp, err := d.Products.ListProducts(ctx, connect.NewRequest(&adminv1.ListProductsRequest{ProjectId: projectID}))
+	if err != nil {
+		rep.Fail(name, "ListProducts: "+err.Error(), "")
+		return
+	}
+	products := resp.Msg.Products
+	if len(products) == 0 {
+		rep.Warn(name, "no products defined — nothing to sell",
+			"define products in the admin Monetization screen or `moth project apply`")
+		return
+	}
+	var unmapped []string
+	for _, p := range products {
+		if apple && p.GetAppleProductId() == "" {
+			unmapped = append(unmapped, p.GetIdentifier()+" (Apple)")
+		}
+		if google && p.GetGoogleProductId() == "" {
+			unmapped = append(unmapped, p.GetIdentifier()+" (Google)")
+		}
+	}
+	if len(unmapped) > 0 {
+		rep.Warn(name, fmt.Sprintf("%d product(s) have no store SKU: %s", len(unmapped), strings.Join(unmapped, ", ")),
+			"set the store product ids and run `moth setup billing --project "+d.Slug+"` to push them")
+		return
+	}
+	rep.Pass(name, fmt.Sprintf("%d product(s) mapped to every configured store", len(products)))
+}
+
+// checkWebhookReachable confirms moth's own notification route exists. It POSTs
+// an empty body: a wired endpoint rejects it before doing any work (Apple 400
+// "invalid notification body", Google 401/unauthorized), while an unregistered
+// route falls through to moth's catch-all handler and 404s. A GET cannot be used
+// — moth serves every unmatched GET from the SPA/root handler, so a GET to a
+// live POST-only webhook also 404s (the catch-all shadows the method-mismatch),
+// which would misreport a wired route as missing.
+func (d *Doctor) checkWebhookReachable(ctx context.Context, rep *Report, name, path string) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, d.BaseURL+path, http.NoBody)
+	if err != nil {
+		rep.Fail(name, err.Error(), "")
+		return
+	}
+	resp, err := d.HTTPC.Do(req)
+	if err != nil {
+		rep.Fail(name, fmt.Sprintf("POST %s: %v", path, err), "is the server reachable from here?")
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode == http.StatusNotFound {
+		rep.Fail(name, "POST "+path+" → 404 (route not registered)", "the server build is missing the billing webhooks")
+		return
+	}
+	rep.Pass(name, "reachable ("+d.BaseURL+path+")")
+}
+
+// googlePlayAPIProbe mints an access token from the service account and reads a
+// bogus purchase token against the Play Developer API: a 404 (billing.ErrNotFound)
+// proves the SA authenticated and has access; an auth error proves it does not.
+// Shared between `moth setup billing` and `moth doctor`.
+func googlePlayAPIProbe(ctx context.Context, name string, httpc billing.Doer, base, tokenURL, packageName string, sa *billing.GoogleServiceAccount) Check {
+	tokens := billing.NewGoogleTokenSource(sa, tokenURL, httpc, nil)
+	if _, err := tokens.Token(ctx); err != nil {
+		return Check{Name: name, Status: StatusFail,
+			Detail:      "service account could not obtain an access token: " + err.Error(),
+			Remediation: "check the service-account JSON is valid and unexpired"}
+	}
+	client := &billing.GoogleClient{BaseURL: base, PackageName: packageName, Tokens: tokens, HTTPC: httpc}
+	_, _, err := client.GetSubscriptionV2(ctx, "moth-doctor-probe")
+	switch {
+	case err == nil, errors.Is(err, billing.ErrNotFound):
+		return Check{Name: name, Status: StatusPass, Detail: "authenticated for " + packageName}
+	default:
+		return Check{Name: name, Status: StatusFail,
+			Detail:      "Play Developer API rejected the request: " + err.Error(),
+			Remediation: "grant the service account Play Developer API access to " + packageName}
+	}
 }

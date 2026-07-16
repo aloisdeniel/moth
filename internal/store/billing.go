@@ -135,12 +135,16 @@ type BillingCredentials struct {
 	AppleBundleID              string
 	AppleAppAppleID            string
 	AppleNotificationSecretEnc []byte
-	GoogleServiceAccountEnc    []byte
-	GooglePackageName          string
-	GooglePubsubTopic          string
-	GoogleRTDNSecretEnc        []byte
-	CreatedAt                  time.Time
-	UpdatedAt                  time.Time
+	// AppleNotificationURL is the App Store Server Notification URL moth has
+	// registered (Apple has no read for it); "" means none. On upsert, "" keeps
+	// the stored value (the CLI writes it only after a successful registration).
+	AppleNotificationURL    string
+	GoogleServiceAccountEnc []byte
+	GooglePackageName       string
+	GooglePubsubTopic       string
+	GoogleRTDNSecretEnc     []byte
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
 }
 
 // SubscriptionEvent is one row of the revenue event stream (milestone 14).
@@ -721,9 +725,9 @@ func (s *Store) UpsertBillingCredentials(ctx context.Context, c BillingCredentia
 	_, err := s.db.ExecContext(ctx,
 		`INSERT INTO billing_credentials (project_id, apple_iap_key_id, apple_iap_issuer_id,
 		        apple_iap_key_enc, apple_bundle_id, apple_app_apple_id, apple_notification_secret_enc,
-		        google_service_account_enc, google_package_name, google_pubsub_topic,
+		        apple_notification_url, google_service_account_enc, google_package_name, google_pubsub_topic,
 		        google_rtdn_secret_enc, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT (project_id) DO UPDATE SET
 		        apple_iap_key_id = excluded.apple_iap_key_id,
 		        apple_iap_issuer_id = excluded.apple_iap_issuer_id,
@@ -731,13 +735,14 @@ func (s *Store) UpsertBillingCredentials(ctx context.Context, c BillingCredentia
 		        apple_bundle_id = excluded.apple_bundle_id,
 		        apple_app_apple_id = excluded.apple_app_apple_id,
 		        apple_notification_secret_enc = COALESCE(excluded.apple_notification_secret_enc, billing_credentials.apple_notification_secret_enc),
+		        apple_notification_url = CASE WHEN excluded.apple_notification_url = '' THEN billing_credentials.apple_notification_url ELSE excluded.apple_notification_url END,
 		        google_service_account_enc = COALESCE(excluded.google_service_account_enc, billing_credentials.google_service_account_enc),
 		        google_package_name = excluded.google_package_name,
 		        google_pubsub_topic = excluded.google_pubsub_topic,
 		        google_rtdn_secret_enc = COALESCE(excluded.google_rtdn_secret_enc, billing_credentials.google_rtdn_secret_enc),
 		        updated_at = excluded.updated_at`,
 		c.ProjectID, c.AppleIAPKeyID, c.AppleIAPIssuerID, nullBytes(c.AppleIAPKeyEnc), c.AppleBundleID,
-		c.AppleAppAppleID, nullBytes(c.AppleNotificationSecretEnc), nullBytes(c.GoogleServiceAccountEnc),
+		c.AppleAppAppleID, nullBytes(c.AppleNotificationSecretEnc), c.AppleNotificationURL, nullBytes(c.GoogleServiceAccountEnc),
 		c.GooglePackageName, c.GooglePubsubTopic, nullBytes(c.GoogleRTDNSecretEnc),
 		formatTime(c.CreatedAt), formatTime(c.UpdatedAt))
 	if err != nil {
@@ -753,11 +758,11 @@ func (s *Store) GetBillingCredentials(ctx context.Context, projectID string) (Bi
 	var createdAt, updatedAt string
 	err := s.db.QueryRowContext(ctx,
 		`SELECT project_id, apple_iap_key_id, apple_iap_issuer_id, apple_iap_key_enc, apple_bundle_id,
-		        apple_app_apple_id, apple_notification_secret_enc, google_service_account_enc,
+		        apple_app_apple_id, apple_notification_secret_enc, apple_notification_url, google_service_account_enc,
 		        google_package_name, google_pubsub_topic, google_rtdn_secret_enc, created_at, updated_at
 		   FROM billing_credentials WHERE project_id = ?`, projectID).Scan(
 		&c.ProjectID, &c.AppleIAPKeyID, &c.AppleIAPIssuerID, &c.AppleIAPKeyEnc, &c.AppleBundleID,
-		&c.AppleAppAppleID, &c.AppleNotificationSecretEnc, &c.GoogleServiceAccountEnc,
+		&c.AppleAppAppleID, &c.AppleNotificationSecretEnc, &c.AppleNotificationURL, &c.GoogleServiceAccountEnc,
 		&c.GooglePackageName, &c.GooglePubsubTopic, &c.GoogleRTDNSecretEnc, &createdAt, &updatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return BillingCredentials{}, ErrNotFound

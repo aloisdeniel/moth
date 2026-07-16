@@ -51,6 +51,9 @@ const (
 	ActionGrantCreate        = "subscription.grant"
 	ActionGrantRevoke        = "subscription.grant.revoke"
 	ActionBillingCredsUpdate = "billing.credentials.update"
+	// Milestone 12 — store catalog provisioning.
+	ActionStoreCatalogSync = "billing.store_catalog.sync"
+	ActionOfferingReorder  = "billing.offering.reorder"
 )
 
 type clientIPCtxKey struct{}

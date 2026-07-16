@@ -161,12 +161,38 @@ test("monetization: create an entitlement and a product, and show the store URLs
   await prodDialog.getByLabel("Price").fill("9.99");
   await prodDialog.getByRole("checkbox").first().check();
   await prodDialog.getByRole("button", { name: "Add product" }).click();
-  await expect(page.getByText("Monthly Pro")).toBeVisible();
+  // The product now appears in both the Products card and the default-offering
+  // (paywall) card, so match the first occurrence.
+  await expect(page.getByText("Monthly Pro").first()).toBeVisible();
 
   // Both survive a full reload — they really landed in the project catalog.
   await page.reload();
   await expect(page.getByText("Pro", { exact: true })).toBeVisible();
-  await expect(page.getByText("Monthly Pro")).toBeVisible();
+  await expect(page.getByText("Monthly Pro").first()).toBeVisible();
+});
+
+test("monetization: store-connection panel renders and a push dry-run opens", async ({
+  page,
+}) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Monetization" }).click();
+
+  // The store-connection panel renders one card per store with its
+  // credential/notification state.
+  await expect(page.getByRole("heading", { name: "Store connection" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Apple — App Store Connect" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Google — Google Play" })).toBeVisible();
+
+  // "Push to Apple" runs a dry-run and opens the plan dialog. No store call
+  // happens without credentials — the server returns an empty/guided plan.
+  await page.getByRole("button", { name: "Push to Apple" }).click();
+  await expect(page.getByText("Push catalog to Apple")).toBeVisible();
+  await page.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
 });
 
 test("theme editor saves a primary color and persists it", async ({ page }) => {

@@ -173,7 +173,20 @@ func TestCLIAgainstRealServer(t *testing.T) {
 			UpdateTheme    bool `json:"update_theme"`
 			ResetTheme     bool `json:"reset_theme"`
 		} `json:"plan"`
+		Monetization struct {
+			CreateEntitlements []string `json:"create_entitlements"`
+			UpdateEntitlements []string `json:"update_entitlements"`
+			DeleteEntitlements []string `json:"delete_entitlements"`
+			CreateProducts     []string `json:"create_products"`
+			UpdateProducts     []string `json:"update_products"`
+			DeleteProducts     []string `json:"delete_products"`
+		} `json:"monetization"`
 		Applied bool `json:"applied"`
+	}
+	monEmpty := func(m applyOut) bool {
+		return len(m.Monetization.CreateEntitlements) == 0 && len(m.Monetization.UpdateEntitlements) == 0 &&
+			len(m.Monetization.DeleteEntitlements) == 0 && len(m.Monetization.CreateProducts) == 0 &&
+			len(m.Monetization.UpdateProducts) == 0 && len(m.Monetization.DeleteProducts) == 0
 	}
 	var first, second applyOut
 	out = mustRun("", "--context", "it", "project", "apply", "-f", specPath, "--yes", "--json")
@@ -206,6 +219,51 @@ func TestCLIAgainstRealServer(t *testing.T) {
 	}
 	if reapplied.Applied {
 		t.Fatalf("applying a fresh dump must be a no-op: %+v\n%s", reapplied, out)
+	}
+
+	// Monetization block: apply a catalog to demo-two, then re-apply — the
+	// second run reports zero catalog changes (the milestone-12 idempotency
+	// acceptance criterion), including through a fresh dump.
+	monSpec := "name: Demo Two\nslug: demo-two\n" +
+		"settings:\n  allow_public_signup: true\n  require_email_verification: true\n" +
+		"monetization:\n" +
+		"  entitlements:\n    - identifier: pro\n      display_name: Pro\n" +
+		"  products:\n    - identifier: monthly\n      display_name: Monthly\n" +
+		"      apple_product_id: pro_monthly\n      google_product_id: pro_monthly\n" +
+		"      billing_period: monthly\n      price_amount_micros: 9990000\n      currency: USD\n" +
+		"      entitlements: [pro]\n"
+	monPath := filepath.Join(workDir, "mon.yaml")
+	if err := os.WriteFile(monPath, []byte(monSpec), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var monFirst, monSecond applyOut
+	out = mustRun("", "--context", "it", "project", "apply", "-f", monPath, "--yes", "--json")
+	if err := json.Unmarshal([]byte(out), &monFirst); err != nil {
+		t.Fatalf("apply monetization --json: %v\n%s", err, out)
+	}
+	if !monFirst.Applied || len(monFirst.Monetization.CreateEntitlements) != 1 || len(monFirst.Monetization.CreateProducts) != 1 {
+		t.Fatalf("first monetization apply should create 1 entitlement + 1 product: %+v\n%s", monFirst.Monetization, out)
+	}
+	out = mustRun("", "--context", "it", "project", "apply", "-f", monPath, "--yes", "--json")
+	if err := json.Unmarshal([]byte(out), &monSecond); err != nil {
+		t.Fatalf("re-apply monetization --json: %v\n%s", err, out)
+	}
+	if monSecond.Applied || !monEmpty(monSecond) {
+		t.Fatalf("second monetization apply must be a no-op: %+v\n%s", monSecond, out)
+	}
+	// A fresh dump of demo-two round-trips the catalog to zero changes too.
+	monDump := mustRun("", "--context", "it", "project", "dump", "demo-two")
+	monDumpPath := filepath.Join(workDir, "mon-dump.yaml")
+	if err := os.WriteFile(monDumpPath, []byte(monDump), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var monReapplied applyOut
+	out = mustRun("", "--context", "it", "project", "apply", "-f", monDumpPath, "--yes", "--json")
+	if err := json.Unmarshal([]byte(out), &monReapplied); err != nil {
+		t.Fatalf("apply monetization dump --json: %v\n%s", err, out)
+	}
+	if monReapplied.Applied || !monEmpty(monReapplied) {
+		t.Fatalf("applying a fresh catalog dump must be a no-op: %+v\n%s", monReapplied, out)
 	}
 
 	// project update --name.

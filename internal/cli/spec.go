@@ -268,6 +268,202 @@ func normalizeTheme(t *adminv1.Theme) *adminv1.Theme {
 	return out
 }
 
+// --- Monetization catalog -------------------------------------------------
+
+// MonetizationPlan lists the catalog changes one apply will make, by stable
+// identifier (entitlement/product identifiers, not server ids). An empty plan
+// is the idempotency signal: the live catalog already matches the spec. Unlike
+// settings (which merge partial specs), the catalog is full desired state —
+// entitlements/products absent from the spec are deleted — so a dump re-applied
+// converges to an empty plan.
+type MonetizationPlan struct {
+	CreateEntitlements []string `json:"create_entitlements,omitempty"`
+	UpdateEntitlements []string `json:"update_entitlements,omitempty"`
+	DeleteEntitlements []string `json:"delete_entitlements,omitempty"`
+	CreateProducts     []string `json:"create_products,omitempty"`
+	UpdateProducts     []string `json:"update_products,omitempty"`
+	DeleteProducts     []string `json:"delete_products,omitempty"`
+}
+
+// Empty reports whether the monetization apply is a no-op.
+func (p MonetizationPlan) Empty() bool {
+	return len(p.CreateEntitlements) == 0 && len(p.UpdateEntitlements) == 0 &&
+		len(p.DeleteEntitlements) == 0 && len(p.CreateProducts) == 0 &&
+		len(p.UpdateProducts) == 0 && len(p.DeleteProducts) == 0
+}
+
+// Summary renders the plan as human lines.
+func (p MonetizationPlan) Summary() []string {
+	var lines []string
+	add := func(verb, kind string, ids []string) {
+		if len(ids) > 0 {
+			lines = append(lines, fmt.Sprintf("%s %s: %s", verb, kind, strings.Join(ids, ", ")))
+		}
+	}
+	add("create", "entitlements", p.CreateEntitlements)
+	add("update", "entitlements", p.UpdateEntitlements)
+	add("delete", "entitlements", p.DeleteEntitlements)
+	add("create", "products", p.CreateProducts)
+	add("update", "products", p.UpdateProducts)
+	add("delete", "products", p.DeleteProducts)
+	return lines
+}
+
+// PlanMonetization diffs a monetization spec against the live catalog (the
+// project's current entitlements and products, as the admin services return
+// them) and returns the create/update/delete plan, keyed on identifiers. A nil
+// spec means the spec omitted the monetization block entirely and the catalog
+// is left untouched (empty plan) — distinct from an explicit empty catalog,
+// which deletes everything. Product entitlement grants are compared by
+// entitlement identifier (resolved through currentEntitlements) so the diff is
+// stable across the id/identifier boundary.
+func PlanMonetization(spec *adminv1.MonetizationSpec, currentEntitlements []*adminv1.Entitlement, currentProducts []*adminv1.Product) MonetizationPlan {
+	var plan MonetizationPlan
+	if spec == nil {
+		return plan
+	}
+
+	// Entitlements, matched by identifier.
+	curEnt := map[string]*adminv1.Entitlement{}
+	for _, e := range currentEntitlements {
+		curEnt[e.GetIdentifier()] = e
+	}
+	specEnt := map[string]bool{}
+	for _, e := range spec.GetEntitlements() {
+		id := e.GetIdentifier()
+		specEnt[id] = true
+		cur, ok := curEnt[id]
+		switch {
+		case !ok:
+			plan.CreateEntitlements = append(plan.CreateEntitlements, id)
+		case cur.GetDisplayName() != e.GetDisplayName():
+			plan.UpdateEntitlements = append(plan.UpdateEntitlements, id)
+		}
+	}
+	for _, e := range currentEntitlements {
+		if !specEnt[e.GetIdentifier()] {
+			plan.DeleteEntitlements = append(plan.DeleteEntitlements, e.GetIdentifier())
+		}
+	}
+
+	// entitlement id -> identifier, to compare product grants stably.
+	entIDToIdent := map[string]string{}
+	for _, e := range currentEntitlements {
+		entIDToIdent[e.GetId()] = e.GetIdentifier()
+	}
+
+	// Products, matched by identifier.
+	curProd := map[string]*adminv1.Product{}
+	for _, p := range currentProducts {
+		curProd[p.GetIdentifier()] = p
+	}
+	specProd := map[string]bool{}
+	for _, p := range spec.GetProducts() {
+		id := p.GetIdentifier()
+		specProd[id] = true
+		cur, ok := curProd[id]
+		switch {
+		case !ok:
+			plan.CreateProducts = append(plan.CreateProducts, id)
+		case productSpecDiffers(p, cur, entIDToIdent):
+			plan.UpdateProducts = append(plan.UpdateProducts, id)
+		}
+	}
+	for _, p := range currentProducts {
+		if !specProd[p.GetIdentifier()] {
+			plan.DeleteProducts = append(plan.DeleteProducts, p.GetIdentifier())
+		}
+	}
+	return plan
+}
+
+// productSpecDiffers reports whether the desired product spec differs from the
+// live product. Grants are compared as sorted sets of entitlement identifiers;
+// an empty spec offering equals the "default" tag the store applies.
+func productSpecDiffers(spec *adminv1.ProductSpec, cur *adminv1.Product, entIDToIdent map[string]string) bool {
+	if spec.GetDisplayName() != cur.GetDisplayName() ||
+		spec.GetAppleProductId() != cur.GetAppleProductId() ||
+		spec.GetGoogleProductId() != cur.GetGoogleProductId() ||
+		spec.GetBillingPeriod() != cur.GetBillingPeriod() ||
+		spec.GetPriceAmountMicros() != cur.GetPriceAmountMicros() ||
+		spec.GetCurrency() != cur.GetCurrency() ||
+		spec.GetTrialPeriod() != cur.GetTrialPeriod() ||
+		spec.GetIntroPriceAmountMicros() != cur.GetIntroPriceAmountMicros() ||
+		spec.GetIntroPeriod() != cur.GetIntroPeriod() ||
+		specOffering(spec.GetOffering()) != specOffering(cur.GetOffering()) ||
+		spec.GetSortOrder() != cur.GetSortOrder() {
+		return true
+	}
+	want := slices.Clone(spec.GetEntitlements())
+	var have []string
+	for _, eid := range cur.GetEntitlementIds() {
+		if ident, ok := entIDToIdent[eid]; ok {
+			have = append(have, ident)
+		} else {
+			have = append(have, eid)
+		}
+	}
+	slices.Sort(want)
+	slices.Sort(have)
+	return !slices.Equal(want, have)
+}
+
+// specOffering normalizes an empty offering tag to the default, matching the
+// store's behavior so a hand-written spec that omits `offering` stays in sync
+// with a product the server tagged "default".
+func specOffering(tag string) string {
+	if tag == "" {
+		return "default"
+	}
+	return tag
+}
+
+// MonetizationSpecFromCatalog renders the live entitlements and products as a
+// MonetizationSpec — the block `moth project dump` emits so a re-applied dump
+// converges to an empty plan. Product entitlement grants are emitted as stable
+// entitlement identifiers (not server ids). A project with no catalog yields a
+// non-nil empty spec so the round-trip stays lossless (absent == untouched;
+// empty == an explicitly empty catalog, which for an already-empty project is a
+// no-op).
+func MonetizationSpecFromCatalog(ents []*adminv1.Entitlement, prods []*adminv1.Product) *adminv1.MonetizationSpec {
+	spec := &adminv1.MonetizationSpec{}
+	idToIdent := map[string]string{}
+	for _, e := range ents {
+		idToIdent[e.GetId()] = e.GetIdentifier()
+		spec.Entitlements = append(spec.Entitlements, &adminv1.EntitlementSpec{
+			Identifier:  e.GetIdentifier(),
+			DisplayName: e.GetDisplayName(),
+		})
+	}
+	for _, p := range prods {
+		grants := make([]string, 0, len(p.GetEntitlementIds()))
+		for _, eid := range p.GetEntitlementIds() {
+			if ident, ok := idToIdent[eid]; ok {
+				grants = append(grants, ident)
+			} else {
+				grants = append(grants, eid)
+			}
+		}
+		slices.Sort(grants)
+		spec.Products = append(spec.Products, &adminv1.ProductSpec{
+			Identifier:             p.GetIdentifier(),
+			DisplayName:            p.GetDisplayName(),
+			AppleProductId:         p.GetAppleProductId(),
+			GoogleProductId:        p.GetGoogleProductId(),
+			BillingPeriod:          p.GetBillingPeriod(),
+			PriceAmountMicros:      p.GetPriceAmountMicros(),
+			Currency:               p.GetCurrency(),
+			TrialPeriod:            p.GetTrialPeriod(),
+			IntroPriceAmountMicros: p.GetIntroPriceAmountMicros(),
+			IntroPeriod:            p.GetIntroPeriod(),
+			Offering:               p.GetOffering(),
+			SortOrder:              p.GetSortOrder(),
+			Entitlements:           grants,
+		})
+	}
+	return spec
+}
+
 // secretNotes describes the write-only secrets a settings message carries.
 func secretNotes(s *adminv1.ProjectSettings) []string {
 	if s == nil {

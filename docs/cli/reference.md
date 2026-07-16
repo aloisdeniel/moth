@@ -137,11 +137,13 @@ moth doctor [flags]
 Flags:
 
 ```
-      --apple-key string   path to the project's Sign in with Apple .p8, enabling the Apple token-endpoint dry-run
-      --context string     named context from the CLI config (default: MOTH_CONTEXT, then current-context)
-      --json               print machine-readable JSON
-      --project string     project slug to check provider config for
-      --smtp-to string     send a real test email to this address
+      --apple-iap-p8 string             path to the project's App Store Server API In-App-Purchase .p8, enabling the billing store probe
+      --apple-key string                path to the project's Sign in with Apple .p8, enabling the Apple token-endpoint dry-run
+      --context string                  named context from the CLI config (default: MOTH_CONTEXT, then current-context)
+      --google-service-account string   path to the project's Play Developer API service-account JSON, enabling the billing store probe
+      --json                            print machine-readable JSON
+      --project string                  project slug to check provider config for
+      --smtp-to string                  send a real test email to this address
 ```
 
 ## moth instance
@@ -542,6 +544,48 @@ Flags:
       --services-id string   Services ID for the web-redirect flow
       --team-id string       Apple Developer Team ID
       --unofficial-api       reserved: drive the unofficial developer-portal API for Services IDs (evaluated and deliberately not implemented)
+```
+
+## moth setup billing
+
+Configures a project's store monetization end to end: it stores the
+Apple App Store Server API and Google Play Developer API credentials into
+moth's encrypted billing config, pushes moth's product catalog into App
+Store Connect and Google Play (automated where the store APIs allow it,
+guided with exact values where they don't), wires the notification
+endpoints, and verifies each store is reachable and authenticated.
+
+The App Store Connect API key (--asc-*) drives the Apple catalog push and
+is used in-process only, never stored. The In-App-Purchase key (--apple-
+iap-*) and the Google service account are stored encrypted for the
+milestone-11 billing engine. Idempotent: re-running diffs the current
+store state and changes only what is needed.
+
+```
+moth setup billing [flags]
+```
+
+Flags:
+
+```
+      --apple-app-apple-id string              the app's numeric App Store id
+      --apple-app-id string                    App Store Connect app resource id (for the catalog push)
+      --apple-bundle-id string                 app bundle id (enables Apple; blank skips Apple)
+      --apple-iap-issuer-id string             App Store Server API issuer id
+      --apple-iap-key-id string                App Store Server API In-App-Purchase key id
+      --apple-iap-p8 string                    path to the App Store Server API In-App-Purchase .p8 (stored encrypted)
+      --apple-notification-secret string       App Store Server Notifications shared secret (stored encrypted)
+      --asc-issuer-id string                   App Store Connect API issuer id (catalog push; not stored)
+      --asc-key-id string                      App Store Connect API key id (catalog push; not stored)
+      --asc-p8 string                          path to the App Store Connect API .p8 (catalog push; not stored)
+      --google-cloud-project string            GCP project the RTDN topic lives in (with --google-pubsub-service-account)
+      --google-package-name string             Android application id (enables Google; blank skips Google)
+      --google-pubsub-service-account string   path to a pubsub-scoped SA JSON to create the RTDN topic/subscription (else guided)
+      --google-pubsub-topic string             Cloud Pub/Sub topic for RTDN (projects/<p>/topics/<t> or a bare topic id)
+      --google-rtdn-secret string              RTDN push webhook shared secret (stored encrypted)
+      --google-service-account string          path to the Play Developer API service-account JSON (stored encrypted)
+      --project string                         project slug (required)
+      --yes                                    push to the live stores without the confirmation prompt
 ```
 
 ## moth setup google

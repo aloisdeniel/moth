@@ -176,6 +176,55 @@ message ProjectSpec {
   // Design-system theme (legal links included); unset means the built-in
   // default theme.
   Theme theme = 4;
+  // Subscription catalog (entitlements, products, offering) — the monetization
+  // desired state milestone 12 defines once and reconciles into the stores.
+  // Unlike settings (which merge), the catalog is full desired state: apply
+  // creates/updates/deletes to match, keyed on stable identifiers, so a dump
+  // re-applied diffs to zero. Unset leaves the catalog untouched. Store API
+  // credentials are NOT part of the spec — they are write-only secrets managed
+  // through BillingCredentialsService / `moth setup billing`.
+  MonetizationSpec monetization = 5;
+}
+
+// MonetizationSpec is a project's declarative subscription catalog: the
+// entitlements apps gate on and the products (tiers) that grant them. Keyed on
+// identifiers (not server-assigned ids) so it round-trips through dump/apply.
+message MonetizationSpec {
+  repeated EntitlementSpec entitlements = 1;
+  repeated ProductSpec products = 2;
+}
+
+// EntitlementSpec is one named capability. `identifier` is the identity apply
+// keys on (immutable); only display_name is editable.
+message EntitlementSpec {
+  string identifier = 1;
+  string display_name = 2;
+}
+
+// ProductSpec is one subscription tier in declarative form. `identifier` is the
+// identity apply keys on. `entitlements` and `offering`/`sort_order` capture the
+// grant set and paywall placement; an offering is just the set of products
+// sharing an `offering` tag, ordered by sort_order.
+message ProductSpec {
+  string identifier = 1;
+  string display_name = 2;
+  // Store SKUs; either may be empty when the tier ships on one store only.
+  string apple_product_id = 3;
+  string google_product_id = 4;
+  // Billing period ("weekly", "monthly", "yearly", …); the store read is
+  // authoritative.
+  string billing_period = 5;
+  // List price metadata (display + analytics only). Micros = price * 1_000_000.
+  int64 price_amount_micros = 6;
+  string currency = 7;
+  string trial_period = 8;
+  int64 intro_price_amount_micros = 9;
+  string intro_period = 10;
+  // Paywall grouping tag ("default" when empty) and order within it.
+  string offering = 11;
+  int32 sort_order = 12;
+  // Entitlement IDENTIFIERS (not ids) this product grants while active.
+  repeated string entitlements = 13;
 }
 
 message CreateProjectRequest {

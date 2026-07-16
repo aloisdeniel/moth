@@ -433,6 +433,17 @@ The slug is optional when the server hosts exactly one project.`,
 			if !theme.Msg.IsDefault {
 				spec.Theme = theme.Msg.Theme
 			}
+			ents, err := client.Entitlements.ListEntitlements(cmd.Context(),
+				connect.NewRequest(&adminv1.ListEntitlementsRequest{ProjectId: p.Id}))
+			if err != nil {
+				return err
+			}
+			prods, err := client.Products.ListProducts(cmd.Context(),
+				connect.NewRequest(&adminv1.ListProductsRequest{ProjectId: p.Id}))
+			if err != nil {
+				return err
+			}
+			spec.Monetization = cli.MonetizationSpecFromCatalog(ents.Msg.Entitlements, prods.Msg.Products)
 			data, err := cli.SpecToYAML(spec)
 			if err != nil {
 				return err
@@ -488,8 +499,9 @@ in the spec are (re)written on every apply.`,
 
 // applyResult is the --json output of `moth project apply`.
 type applyResult struct {
-	Plan    cli.ApplyPlan `json:"plan"`
-	Applied bool          `json:"applied"`
+	Plan         cli.ApplyPlan        `json:"plan"`
+	Monetization cli.MonetizationPlan `json:"monetization"`
+	Applied      bool                 `json:"applied"`
 }
 
 func runApply(cmd *cobra.Command, opts *clientOpts, client *cli.Client, spec *adminv1.ProjectSpec, yes bool) error {
@@ -522,9 +534,27 @@ func runApply(cmd *cobra.Command, opts *clientOpts, client *cli.Client, spec *ad
 		return err
 	}
 
-	if plan.Empty() {
+	// Monetization catalog diff (full desired state, keyed on identifiers).
+	var curEnts []*adminv1.Entitlement
+	var curProds []*adminv1.Product
+	if current != nil {
+		el, err := client.Entitlements.ListEntitlements(ctx,
+			connect.NewRequest(&adminv1.ListEntitlementsRequest{ProjectId: current.Id}))
+		if err != nil {
+			return err
+		}
+		pl, err := client.Products.ListProducts(ctx,
+			connect.NewRequest(&adminv1.ListProductsRequest{ProjectId: current.Id}))
+		if err != nil {
+			return err
+		}
+		curEnts, curProds = el.Msg.Entitlements, pl.Msg.Products
+	}
+	monPlan := cli.PlanMonetization(spec.Monetization, curEnts, curProds)
+
+	if plan.Empty() && monPlan.Empty() {
 		if opts.json {
-			return printJSONValue(cmd, applyResult{Plan: plan})
+			return printJSONValue(cmd, applyResult{Plan: plan, Monetization: monPlan})
 		}
 		fmt.Printf("project %s: no changes\n", spec.Slug)
 		return nil
@@ -533,6 +563,9 @@ func runApply(cmd *cobra.Command, opts *clientOpts, client *cli.Client, spec *ad
 	if !opts.json {
 		fmt.Printf("project %s:\n", spec.Slug)
 		for _, line := range plan.Summary() {
+			fmt.Printf("  - %s\n", line)
+		}
+		for _, line := range monPlan.Summary() {
 			fmt.Printf("  - %s\n", line)
 		}
 	}
@@ -594,11 +627,154 @@ func runApply(cmd *cobra.Command, opts *clientOpts, client *cli.Client, spec *ad
 		}
 	}
 
+	if !monPlan.Empty() {
+		if err := applyMonetization(ctx, client, current.Id, spec.Monetization, monPlan); err != nil {
+			return err
+		}
+	}
+
 	if opts.json {
-		return printJSONValue(cmd, applyResult{Plan: plan, Applied: true})
+		return printJSONValue(cmd, applyResult{Plan: plan, Monetization: monPlan, Applied: true})
 	}
 	fmt.Printf("project %s: applied\n", spec.Slug)
 	return nil
+}
+
+// applyMonetization reconciles the project's catalog to the spec: it creates and
+// updates entitlements, then products (resolving grant identifiers to entitlement
+// ids), then deletes what the spec dropped — entitlements last so a product that
+// still references one is updated off it before the delete cascades. Keyed on
+// identifiers, so a re-applied dump makes no calls.
+//
+// Scope boundary (plan/12 "one catalog, three faces"): `moth project apply`
+// drives the same tier/offering *definitions* as the admin screen and
+// `moth setup billing`, but it only reconciles moth's own catalog — it does NOT
+// push to App Store Connect / Google Play. A price changed via `apply` updates
+// the desired state (and shows as drift in the admin status panel) but reaches
+// the stores only when that catalog is pushed with `moth setup billing` or the
+// admin "Sync store catalog" action. apply defines; setup/admin push.
+func applyMonetization(ctx context.Context, client *cli.Client, projectID string, spec *adminv1.MonetizationSpec, plan cli.MonetizationPlan) error {
+	// Current catalog, indexed by identifier.
+	el, err := client.Entitlements.ListEntitlements(ctx,
+		connect.NewRequest(&adminv1.ListEntitlementsRequest{ProjectId: projectID}))
+	if err != nil {
+		return err
+	}
+	entID := map[string]string{} // identifier -> server id
+	for _, e := range el.Msg.Entitlements {
+		entID[e.Identifier] = e.Id
+	}
+	pl, err := client.Products.ListProducts(ctx,
+		connect.NewRequest(&adminv1.ListProductsRequest{ProjectId: projectID}))
+	if err != nil {
+		return err
+	}
+	prodID := map[string]string{} // identifier -> server id
+	for _, p := range pl.Msg.Products {
+		prodID[p.Identifier] = p.Id
+	}
+	specEnt := map[string]*adminv1.EntitlementSpec{}
+	for _, e := range spec.GetEntitlements() {
+		specEnt[e.Identifier] = e
+	}
+	specProd := map[string]*adminv1.ProductSpec{}
+	for _, p := range spec.GetProducts() {
+		specProd[p.Identifier] = p
+	}
+
+	// Entitlements: create then update (products may reference the new ones).
+	for _, ident := range plan.CreateEntitlements {
+		e := specEnt[ident]
+		resp, err := client.Entitlements.CreateEntitlement(ctx, connect.NewRequest(&adminv1.CreateEntitlementRequest{
+			ProjectId: projectID, Identifier: ident, DisplayName: e.GetDisplayName(),
+		}))
+		if err != nil {
+			return err
+		}
+		entID[ident] = resp.Msg.Entitlement.Id
+	}
+	for _, ident := range plan.UpdateEntitlements {
+		e := specEnt[ident]
+		if _, err := client.Entitlements.UpdateEntitlement(ctx, connect.NewRequest(&adminv1.UpdateEntitlementRequest{
+			ProjectId: projectID, Id: entID[ident], DisplayName: e.GetDisplayName(),
+		})); err != nil {
+			return err
+		}
+	}
+
+	// Products: create/update, resolving grant identifiers to entitlement ids.
+	resolveGrants := func(idents []string) ([]string, error) {
+		ids := make([]string, 0, len(idents))
+		for _, ident := range idents {
+			id, ok := entID[ident]
+			if !ok {
+				return nil, fmt.Errorf("product grants unknown entitlement %q", ident)
+			}
+			ids = append(ids, id)
+		}
+		return ids, nil
+	}
+	for _, ident := range plan.CreateProducts {
+		p := specProd[ident]
+		grants, err := resolveGrants(p.GetEntitlements())
+		if err != nil {
+			return err
+		}
+		if _, err := client.Products.CreateProduct(ctx, connect.NewRequest(&adminv1.CreateProductRequest{
+			ProjectId: projectID, Product: productFromSpec(p, grants),
+		})); err != nil {
+			return err
+		}
+	}
+	for _, ident := range plan.UpdateProducts {
+		p := specProd[ident]
+		grants, err := resolveGrants(p.GetEntitlements())
+		if err != nil {
+			return err
+		}
+		if _, err := client.Products.UpdateProduct(ctx, connect.NewRequest(&adminv1.UpdateProductRequest{
+			ProjectId: projectID, Id: prodID[ident], Product: productFromSpec(p, grants),
+		})); err != nil {
+			return err
+		}
+	}
+	for _, ident := range plan.DeleteProducts {
+		if _, err := client.Products.DeleteProduct(ctx, connect.NewRequest(&adminv1.DeleteProductRequest{
+			ProjectId: projectID, Id: prodID[ident],
+		})); err != nil {
+			return err
+		}
+	}
+
+	// Entitlements dropped from the spec: delete last.
+	for _, ident := range plan.DeleteEntitlements {
+		if _, err := client.Entitlements.DeleteEntitlement(ctx, connect.NewRequest(&adminv1.DeleteEntitlementRequest{
+			ProjectId: projectID, Id: entID[ident],
+		})); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// productFromSpec builds a Product message from a ProductSpec and resolved
+// entitlement ids.
+func productFromSpec(p *adminv1.ProductSpec, entitlementIDs []string) *adminv1.Product {
+	return &adminv1.Product{
+		Identifier:             p.GetIdentifier(),
+		DisplayName:            p.GetDisplayName(),
+		AppleProductId:         p.GetAppleProductId(),
+		GoogleProductId:        p.GetGoogleProductId(),
+		BillingPeriod:          p.GetBillingPeriod(),
+		PriceAmountMicros:      p.GetPriceAmountMicros(),
+		Currency:               p.GetCurrency(),
+		TrialPeriod:            p.GetTrialPeriod(),
+		IntroPriceAmountMicros: p.GetIntroPriceAmountMicros(),
+		IntroPeriod:            p.GetIntroPeriod(),
+		Offering:               p.GetOffering(),
+		SortOrder:              p.GetSortOrder(),
+		EntitlementIds:         entitlementIDs,
+	}
 }
 
 // printJSONValue writes a plain Go value (not a proto message) as JSON.

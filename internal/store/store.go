@@ -297,6 +297,20 @@ type SubscriptionEventStore interface {
 	InsertSubscriptionEvents(ctx context.Context, events []SubscriptionEvent) error
 }
 
+// ProductStoreSyncStore persists the per-product, per-store catalog
+// reconciliation bookkeeping the milestone-12 sync/diff layer reads and writes,
+// plus the offering-reorder primitive (products share an `offering` tag ordered
+// by sort_order; there is no separate offering table).
+type ProductStoreSyncStore interface {
+	UpsertProductStoreSync(ctx context.Context, r ProductStoreSync) error
+	GetProductStoreSync(ctx context.Context, productID, store string) (ProductStoreSync, error)
+	// ListProductStoreSyncs returns a project's sync records for the given
+	// store (store == "" returns all stores).
+	ListProductStoreSyncs(ctx context.Context, projectID, store string) ([]ProductStoreSync, error)
+	// SetProductSortOrders rewrites several products' sort_order atomically.
+	SetProductSortOrders(ctx context.Context, projectID string, orders map[string]int) error
+}
+
 // Store implements every per-domain store interface on SQLite.
 type Store struct {
 	db *sql.DB
@@ -328,6 +342,7 @@ var (
 	_ StoreNotificationStore   = (*Store)(nil)
 	_ BillingCredentialStore   = (*Store)(nil)
 	_ SubscriptionEventStore   = (*Store)(nil)
+	_ ProductStoreSyncStore    = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL
