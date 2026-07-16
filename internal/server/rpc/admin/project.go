@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 	"unicode"
@@ -13,6 +14,7 @@ import (
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/internal/keys"
+	"github.com/aloisdeniel/moth/internal/oidc"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
@@ -74,8 +76,12 @@ func (h *ProjectHandler) CreateProject(ctx context.Context, req *connect.Request
 	if err := h.store.CreateProject(ctx, project, projectKey); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	msg, err := h.projectProto(ctx, project, 0)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	return connect.NewResponse(&adminv1.CreateProjectResponse{
-		Project:   projectProto(project, 0),
+		Project:   msg,
 		SecretKey: secretKey,
 	}), nil
 }
@@ -89,7 +95,11 @@ func (h *ProjectHandler) GetProject(ctx context.Context, req *connect.Request[ad
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&adminv1.GetProjectResponse{Project: projectProto(p, count)}), nil
+	msg, err := h.projectProto(ctx, p, count)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&adminv1.GetProjectResponse{Project: msg}), nil
 }
 
 func (h *ProjectHandler) ListProjects(ctx context.Context, _ *connect.Request[adminv1.ListProjectsRequest]) (*connect.Response[adminv1.ListProjectsResponse], error) {
@@ -103,7 +113,11 @@ func (h *ProjectHandler) ListProjects(ctx context.Context, _ *connect.Request[ad
 	}
 	resp := &adminv1.ListProjectsResponse{}
 	for _, p := range projects {
-		resp.Projects = append(resp.Projects, projectProto(p, counts[p.ID]))
+		msg, err := h.projectProto(ctx, p, counts[p.ID])
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		resp.Projects = append(resp.Projects, msg)
 	}
 	return connect.NewResponse(resp), nil
 }
@@ -120,6 +134,10 @@ func (h *ProjectHandler) UpdateProject(ctx context.Context, req *connect.Request
 	if mask := req.Msg.UpdateMask; mask != nil {
 		paths = mask.Paths
 	}
+	// Write-only provider secrets ride on the settings message; they are
+	// validated with it but persisted (encrypted) only after the project
+	// row update succeeds.
+	var pendingSecrets map[string]string
 	for _, path := range paths {
 		switch path {
 		case "name":
@@ -133,21 +151,42 @@ func (h *ProjectHandler) UpdateProject(ctx context.Context, req *connect.Request
 				return nil, connect.NewError(connect.CodeInvalidArgument,
 					errors.New("update_mask names settings but none were provided"))
 			}
-			p.Settings = settingsFromProto(req.Msg.Settings)
+			settings, err := settingsFromProto(req.Msg.Settings)
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInvalidArgument, err)
+			}
+			if pendingSecrets, err = providerSecretsFromProto(req.Msg.Settings); err != nil {
+				return nil, connect.NewError(connect.CodeInvalidArgument, err)
+			}
+			p.Settings = settings
 		default:
 			return nil, connect.NewError(connect.CodeInvalidArgument,
 				fmt.Errorf("unsupported update_mask path %q", path))
 		}
 	}
-	p.UpdatedAt = time.Now()
+	now := time.Now()
+	p.UpdatedAt = now
 	if err := h.store.UpdateProject(ctx, p); err != nil {
 		return nil, projectErr(err)
+	}
+	for name, plaintext := range pendingSecrets {
+		enc, err := h.master.Encrypt([]byte(plaintext))
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		if err := h.store.SetProviderSecret(ctx, p.ID, name, enc, now); err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
 	}
 	count, err := h.store.CountUsers(ctx, p.ID, "")
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&adminv1.UpdateProjectResponse{Project: projectProto(p, count)}), nil
+	msg, err := h.projectProto(ctx, p, count)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(&adminv1.UpdateProjectResponse{Project: msg}), nil
 }
 
 func (h *ProjectHandler) RegenerateSecretKey(ctx context.Context, req *connect.Request[adminv1.RegenerateSecretKeyRequest]) (*connect.Response[adminv1.RegenerateSecretKeyResponse], error) {
@@ -165,8 +204,12 @@ func (h *ProjectHandler) RegenerateSecretKey(ctx context.Context, req *connect.R
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
+	msg, err := h.projectProto(ctx, p, count)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	return connect.NewResponse(&adminv1.RegenerateSecretKeyResponse{
-		Project:   projectProto(p, count),
+		Project:   msg,
 		SecretKey: secretKey,
 	}), nil
 }
@@ -289,7 +332,11 @@ func projectErr(err error) *connect.Error {
 	return connect.NewError(connect.CodeInternal, err)
 }
 
-func projectProto(p store.Project, userCount int) *adminv1.Project {
+func (h *ProjectHandler) projectProto(ctx context.Context, p store.Project, userCount int) (*adminv1.Project, error) {
+	settings, err := h.settingsProto(ctx, p.ID, p.Settings)
+	if err != nil {
+		return nil, err
+	}
 	return &adminv1.Project{
 		Id:             p.ID,
 		Name:           p.Name,
@@ -297,9 +344,9 @@ func projectProto(p store.Project, userCount int) *adminv1.Project {
 		PublishableKey: p.PublishableKey,
 		CreateTime:     timestamppb.New(p.CreatedAt),
 		UpdateTime:     timestamppb.New(p.UpdatedAt),
-		Settings:       settingsProto(p.Settings),
+		Settings:       settings,
 		UserCount:      int64(userCount),
-	}
+	}, nil
 }
 
 func signingKeyProto(k store.ProjectKey) *adminv1.SigningKey {
@@ -311,7 +358,18 @@ func signingKeyProto(k store.ProjectKey) *adminv1.SigningKey {
 	}
 }
 
-func settingsProto(s store.ProjectSettings) *adminv1.ProjectSettings {
+// settingsProto builds the admin view of the settings. Stored provider
+// secrets are never returned; only their presence is reported (has_*).
+func (h *ProjectHandler) settingsProto(ctx context.Context, projectID string, s store.ProjectSettings) (*adminv1.ProjectSettings, error) {
+	hasGoogleSecret, err := h.hasProviderSecret(ctx, projectID, store.ProviderSecretGoogleWebClientSecret)
+	if err != nil {
+		return nil, err
+	}
+	hasAppleKey, err := h.hasProviderSecret(ctx, projectID, store.ProviderSecretApplePrivateKey)
+	if err != nil {
+		return nil, err
+	}
+	autoLink := s.AutoLinkEnabled()
 	return &adminv1.ProjectSettings{
 		PasswordMinLength:        int32(s.PasswordMinLength),
 		RequireEmailVerification: s.RequireEmailVerification,
@@ -319,18 +377,116 @@ func settingsProto(s store.ProjectSettings) *adminv1.ProjectSettings {
 		EnumerationSafeSignup:    s.EnumerationSafeSignup,
 		AccessTokenTtlSeconds:    int32(s.AccessTokenTTLSeconds),
 		RefreshTokenTtlDays:      int32(s.RefreshTokenTTLDays),
-	}
+		Google: &adminv1.GoogleProviderConfig{
+			Enabled:            s.Google.Enabled,
+			WebClientId:        s.Google.WebClientID,
+			IosClientId:        s.Google.IOSClientID,
+			AndroidClientId:    s.Google.AndroidClientID,
+			HasWebClientSecret: hasGoogleSecret,
+		},
+		Apple: &adminv1.AppleProviderConfig{
+			Enabled:       s.Apple.Enabled,
+			ServicesId:    s.Apple.ServicesID,
+			TeamId:        s.Apple.TeamID,
+			KeyId:         s.Apple.KeyID,
+			HasPrivateKey: hasAppleKey,
+			BundleIds:     s.Apple.BundleIDs,
+		},
+		AutoLinkVerifiedEmail: &autoLink,
+		RedirectSchemes:       s.RedirectSchemes,
+	}, nil
 }
 
-// settingsFromProto converts the admin message; zero numeric fields fall
-// back to defaults when the row is next loaded.
-func settingsFromProto(s *adminv1.ProjectSettings) store.ProjectSettings {
-	return store.ProjectSettings{
+func (h *ProjectHandler) hasProviderSecret(ctx context.Context, projectID, name string) (bool, error) {
+	_, err := h.store.GetProviderSecret(ctx, projectID, name)
+	if errors.Is(err, store.ErrNotFound) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// redirectSchemeRE matches a valid URL scheme (RFC 3986), lowercased.
+var redirectSchemeRE = regexp.MustCompile(`^[a-z][a-z0-9+.-]*$`)
+
+// settingsFromProto converts and validates the admin message; zero numeric
+// fields fall back to defaults when the row is next loaded. Write-only
+// secret fields are handled separately (providerSecretsFromProto).
+func settingsFromProto(s *adminv1.ProjectSettings) (store.ProjectSettings, error) {
+	out := store.ProjectSettings{
 		PasswordMinLength:        int(s.PasswordMinLength),
 		RequireEmailVerification: s.RequireEmailVerification,
 		AllowPublicSignup:        s.AllowPublicSignup,
 		EnumerationSafeSignup:    s.EnumerationSafeSignup,
 		AccessTokenTTLSeconds:    int(s.AccessTokenTtlSeconds),
 		RefreshTokenTTLDays:      int(s.RefreshTokenTtlDays),
+		AutoLinkVerifiedEmail:    s.AutoLinkVerifiedEmail,
 	}
+	if g := s.Google; g != nil {
+		out.Google = store.GoogleProviderSettings{
+			Enabled:         g.Enabled,
+			WebClientID:     strings.TrimSpace(g.WebClientId),
+			IOSClientID:     strings.TrimSpace(g.IosClientId),
+			AndroidClientID: strings.TrimSpace(g.AndroidClientId),
+		}
+		if g.Enabled && out.Google.WebClientID == "" && out.Google.IOSClientID == "" &&
+			out.Google.AndroidClientID == "" {
+			return store.ProjectSettings{}, errors.New("enabling Google sign-in requires at least one client ID")
+		}
+	}
+	if a := s.Apple; a != nil {
+		out.Apple = store.AppleProviderSettings{
+			Enabled:    a.Enabled,
+			ServicesID: strings.TrimSpace(a.ServicesId),
+			TeamID:     strings.TrimSpace(a.TeamId),
+			KeyID:      strings.TrimSpace(a.KeyId),
+		}
+		for _, id := range a.BundleIds {
+			if id = strings.TrimSpace(id); id != "" {
+				out.Apple.BundleIDs = append(out.Apple.BundleIDs, id)
+			}
+		}
+		if a.Enabled && out.Apple.ServicesID == "" && len(out.Apple.BundleIDs) == 0 {
+			return store.ProjectSettings{}, errors.New("enabling Apple sign-in requires a Services ID or a bundle ID")
+		}
+	}
+	for _, scheme := range s.RedirectSchemes {
+		scheme = strings.ToLower(strings.TrimSpace(scheme))
+		if scheme == "" {
+			continue
+		}
+		if !redirectSchemeRE.MatchString(scheme) {
+			return store.ProjectSettings{}, fmt.Errorf("invalid redirect scheme %q", scheme)
+		}
+		// The redirect check matches the scheme only, so registering
+		// http(s) would let the OAuth callback redirect to any host (open
+		// redirect); only custom app schemes are accepted.
+		if scheme == "http" || scheme == "https" {
+			return store.ProjectSettings{}, fmt.Errorf(
+				"redirect scheme %q is not allowed; register the app's custom scheme instead", scheme)
+		}
+		out.RedirectSchemes = append(out.RedirectSchemes, scheme)
+	}
+	return out, nil
+}
+
+// providerSecretsFromProto extracts and validates the write-only secret
+// fields of a settings update: name → plaintext. Empty fields keep the
+// stored secret (same convention as the SMTP password).
+func providerSecretsFromProto(s *adminv1.ProjectSettings) (map[string]string, error) {
+	secrets := map[string]string{}
+	if g := s.Google; g != nil && g.WebClientSecret != "" {
+		secrets[store.ProviderSecretGoogleWebClientSecret] = g.WebClientSecret
+	}
+	if a := s.Apple; a != nil && a.PrivateKeyP8 != "" {
+		// Reject malformed keys at write time, not at the first Apple code
+		// exchange.
+		if _, err := oidc.ParseP8([]byte(a.PrivateKeyP8)); err != nil {
+			return nil, fmt.Errorf("invalid Apple private key: %w", err)
+		}
+		secrets[store.ProviderSecretApplePrivateKey] = a.PrivateKeyP8
+	}
+	return secrets, nil
 }

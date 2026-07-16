@@ -20,6 +20,44 @@ type ProjectSettings struct {
 	AccessTokenTTLSeconds int `json:"access_token_ttl_seconds"`
 	// RefreshTokenTTLDays is the sliding window extended on each rotation.
 	RefreshTokenTTLDays int `json:"refresh_token_ttl_days"`
+	// Google is the Sign in with Google configuration (public part; the
+	// web client secret lives encrypted in project_provider_secrets).
+	Google GoogleProviderSettings `json:"google"`
+	// Apple is the Sign in with Apple configuration (public part; the .p8
+	// private key lives encrypted in project_provider_secrets).
+	Apple AppleProviderSettings `json:"apple"`
+	// AutoLinkVerifiedEmail links a social identity to an existing account
+	// when the provider asserts the same, verified email (default true).
+	// Pointer so that a stored JSON without the key keeps the default while
+	// an explicit false survives the parse-over-defaults round trip.
+	AutoLinkVerifiedEmail *bool `json:"auto_link_verified_email,omitempty"`
+	// RedirectSchemes are the custom URL schemes the web-redirect OAuth
+	// fallback may redirect back to (open-redirect protection).
+	RedirectSchemes []string `json:"redirect_schemes,omitempty"`
+}
+
+// AutoLinkEnabled reports the effective auto_link_verified_email policy.
+func (ps ProjectSettings) AutoLinkEnabled() bool {
+	return ps.AutoLinkVerifiedEmail == nil || *ps.AutoLinkVerifiedEmail
+}
+
+// GoogleProviderSettings configures Sign in with Google for one project.
+// The client IDs are the allowed `aud` values of Google ID tokens.
+type GoogleProviderSettings struct {
+	Enabled         bool   `json:"enabled"`
+	WebClientID     string `json:"web_client_id"`
+	IOSClientID     string `json:"ios_client_id"`
+	AndroidClientID string `json:"android_client_id"`
+}
+
+// AppleProviderSettings configures Sign in with Apple for one project.
+type AppleProviderSettings struct {
+	Enabled    bool   `json:"enabled"`
+	ServicesID string `json:"services_id"`
+	TeamID     string `json:"team_id"`
+	KeyID      string `json:"key_id"`
+	// BundleIDs are accepted as `aud` on native Apple ID tokens.
+	BundleIDs []string `json:"bundle_ids,omitempty"`
 }
 
 // DefaultProjectSettings returns the policy applied to new projects and to

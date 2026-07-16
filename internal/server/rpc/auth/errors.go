@@ -25,6 +25,12 @@ const (
 	ReasonInvalidAccessToken  = "INVALID_ACCESS_TOKEN"
 	ReasonUserDisabled        = "USER_DISABLED"
 	ReasonRateLimited         = "RATE_LIMITED"
+	// Milestone 04 — social sign-in.
+	ReasonProviderDisabled     = "PROVIDER_DISABLED"
+	ReasonInvalidProviderToken = "INVALID_PROVIDER_TOKEN"
+	ReasonInvalidOAuthCode     = "INVALID_OAUTH_CODE"
+	ReasonInvalidRedirect      = "INVALID_REDIRECT"
+	ReasonLastLoginMethod      = "LAST_LOGIN_METHOD"
 )
 
 // newError builds a connect error carrying a stable reason detail.
@@ -71,6 +77,16 @@ func errUserDisabled() *connect.Error {
 
 func errInvalidEmailToken() *connect.Error {
 	return newError(connect.CodeInvalidArgument, ReasonInvalidToken, "invalid or expired token")
+}
+
+func errProviderDisabled(provider string) *connect.Error {
+	return newError(connect.CodeFailedPrecondition, ReasonProviderDisabled,
+		"sign in with "+provider+" is not enabled for this project")
+}
+
+func errInvalidProviderToken() *connect.Error {
+	return newError(connect.CodeUnauthenticated, ReasonInvalidProviderToken,
+		"invalid provider token")
 }
 
 func errInternal(err error) *connect.Error {

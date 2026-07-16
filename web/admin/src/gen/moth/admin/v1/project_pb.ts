@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/project.proto.
  */
 export const file_moth_admin_v1_project: GenFile = /*@__PURE__*/
-  fileDesc("Chttb3RoL2FkbWluL3YxL3Byb2plY3QucHJvdG8SDW1vdGguYWRtaW4udjEi8gEKB1Byb2plY3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJEhcKD3B1Ymxpc2hhYmxlX2tleRgEIAEoCRIvCgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKCHNldHRpbmdzGAcgASgLMh4ubW90aC5hZG1pbi52MS5Qcm9qZWN0U2V0dGluZ3MSEgoKdXNlcl9jb3VudBgIIAEoAyLSAQoPUHJvamVjdFNldHRpbmdzEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYASABKAUSIgoacmVxdWlyZV9lbWFpbF92ZXJpZmljYXRpb24YAiABKAgSGwoTYWxsb3dfcHVibGljX3NpZ251cBgDIAEoCBIfChdlbnVtZXJhdGlvbl9zYWZlX3NpZ251cBgEIAEoCBIgChhhY2Nlc3NfdG9rZW5fdHRsX3NlY29uZHMYBSABKAUSHgoWcmVmcmVzaF90b2tlbl90dGxfZGF5cxgGIAEoBSJ1CgpTaWduaW5nS2V5EgsKA2tpZBgBIAEoCRIRCglhbGdvcml0aG0YAiABKAkSFgoOcHVibGljX2tleV9wZW0YAyABKAkSLwoLY3JlYXRlX3RpbWUYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIiQKFENyZWF0ZVByb2plY3RSZXF1ZXN0EgwKBG5hbWUYASABKAkiVAoVQ3JlYXRlUHJvamVjdFJlc3BvbnNlEicKB3Byb2plY3QYASABKAsyFi5tb3RoLmFkbWluLnYxLlByb2plY3QSEgoKc2VjcmV0X2tleRgCIAEoCSIfChFHZXRQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoCSI9ChJHZXRQcm9qZWN0UmVzcG9uc2USJwoHcHJvamVjdBgBIAEoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdCIVChNMaXN0UHJvamVjdHNSZXF1ZXN0IkAKFExpc3RQcm9qZWN0c1Jlc3BvbnNlEigKCHByb2plY3RzGAEgAygLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0IpMBChRVcGRhdGVQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEjAKCHNldHRpbmdzGAMgASgLMh4ubW90aC5hZG1pbi52MS5Qcm9qZWN0U2V0dGluZ3MSLwoLdXBkYXRlX21hc2sYBCABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIkAKFVVwZGF0ZVByb2plY3RSZXNwb25zZRInCgdwcm9qZWN0GAEgASgLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0IiIKFERlbGV0ZVByb2plY3RSZXF1ZXN0EgoKAmlkGAEgASgJIhcKFURlbGV0ZVByb2plY3RSZXNwb25zZSIwChpSZWdlbmVyYXRlU2VjcmV0S2V5UmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIloKG1JlZ2VuZXJhdGVTZWNyZXRLZXlSZXNwb25zZRInCgdwcm9qZWN0GAEgASgLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0EhIKCnNlY3JldF9rZXkYAiABKAkiKgoUR2V0U2lnbmluZ0tleVJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSJzChVHZXRTaWduaW5nS2V5UmVzcG9uc2USJgoDa2V5GAEgASgLMhkubW90aC5hZG1pbi52MS5TaWduaW5nS2V5EhAKCGp3a3NfdXJsGAIgASgJEg4KBmlzc3VlchgDIAEoCRIQCghhdWRpZW5jZRgEIAEoCSIsChZSZXNldFNpZ25pbmdLZXlSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkiQQoXUmVzZXRTaWduaW5nS2V5UmVzcG9uc2USJgoDa2V5GAEgASgLMhkubW90aC5hZG1pbi52MS5TaWduaW5nS2V5MvwFCg5Qcm9qZWN0U2VydmljZRJaCg1DcmVhdGVQcm9qZWN0EiMubW90aC5hZG1pbi52MS5DcmVhdGVQcm9qZWN0UmVxdWVzdBokLm1vdGguYWRtaW4udjEuQ3JlYXRlUHJvamVjdFJlc3BvbnNlElEKCkdldFByb2plY3QSIC5tb3RoLmFkbWluLnYxLkdldFByb2plY3RSZXF1ZXN0GiEubW90aC5hZG1pbi52MS5HZXRQcm9qZWN0UmVzcG9uc2USVwoMTGlzdFByb2plY3RzEiIubW90aC5hZG1pbi52MS5MaXN0UHJvamVjdHNSZXF1ZXN0GiMubW90aC5hZG1pbi52MS5MaXN0UHJvamVjdHNSZXNwb25zZRJaCg1VcGRhdGVQcm9qZWN0EiMubW90aC5hZG1pbi52MS5VcGRhdGVQcm9qZWN0UmVxdWVzdBokLm1vdGguYWRtaW4udjEuVXBkYXRlUHJvamVjdFJlc3BvbnNlEloKDURlbGV0ZVByb2plY3QSIy5tb3RoLmFkbWluLnYxLkRlbGV0ZVByb2plY3RSZXF1ZXN0GiQubW90aC5hZG1pbi52MS5EZWxldGVQcm9qZWN0UmVzcG9uc2USbAoTUmVnZW5lcmF0ZVNlY3JldEtleRIpLm1vdGguYWRtaW4udjEuUmVnZW5lcmF0ZVNlY3JldEtleVJlcXVlc3QaKi5tb3RoLmFkbWluLnYxLlJlZ2VuZXJhdGVTZWNyZXRLZXlSZXNwb25zZRJaCg1HZXRTaWduaW5nS2V5EiMubW90aC5hZG1pbi52MS5HZXRTaWduaW5nS2V5UmVxdWVzdBokLm1vdGguYWRtaW4udjEuR2V0U2lnbmluZ0tleVJlc3BvbnNlEmAKD1Jlc2V0U2lnbmluZ0tleRIlLm1vdGguYWRtaW4udjEuUmVzZXRTaWduaW5nS2V5UmVxdWVzdBomLm1vdGguYWRtaW4udjEuUmVzZXRTaWduaW5nS2V5UmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_field_mask, file_google_protobuf_timestamp]);
+  fileDesc("Chttb3RoL2FkbWluL3YxL3Byb2plY3QucHJvdG8SDW1vdGguYWRtaW4udjEi8gEKB1Byb2plY3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIMCgRzbHVnGAMgASgJEhcKD3B1Ymxpc2hhYmxlX2tleRgEIAEoCRIvCgtjcmVhdGVfdGltZRgFIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYBiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjAKCHNldHRpbmdzGAcgASgLMh4ubW90aC5hZG1pbi52MS5Qcm9qZWN0U2V0dGluZ3MSEgoKdXNlcl9jb3VudBgIIAEoAyKYAwoPUHJvamVjdFNldHRpbmdzEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYASABKAUSIgoacmVxdWlyZV9lbWFpbF92ZXJpZmljYXRpb24YAiABKAgSGwoTYWxsb3dfcHVibGljX3NpZ251cBgDIAEoCBIfChdlbnVtZXJhdGlvbl9zYWZlX3NpZ251cBgEIAEoCBIgChhhY2Nlc3NfdG9rZW5fdHRsX3NlY29uZHMYBSABKAUSHgoWcmVmcmVzaF90b2tlbl90dGxfZGF5cxgGIAEoBRIzCgZnb29nbGUYByABKAsyIy5tb3RoLmFkbWluLnYxLkdvb2dsZVByb3ZpZGVyQ29uZmlnEjEKBWFwcGxlGAggASgLMiIubW90aC5hZG1pbi52MS5BcHBsZVByb3ZpZGVyQ29uZmlnEiUKGGF1dG9fbGlua192ZXJpZmllZF9lbWFpbBgJIAEoCEgAiAEBEhgKEHJlZGlyZWN0X3NjaGVtZXMYCiADKAlCGwoZX2F1dG9fbGlua192ZXJpZmllZF9lbWFpbCKqAQoUR29vZ2xlUHJvdmlkZXJDb25maWcSDwoHZW5hYmxlZBgBIAEoCBIVCg13ZWJfY2xpZW50X2lkGAIgASgJEhUKDWlvc19jbGllbnRfaWQYAyABKAkSGQoRYW5kcm9pZF9jbGllbnRfaWQYBCABKAkSGQoRd2ViX2NsaWVudF9zZWNyZXQYBSABKAkSHQoVaGFzX3dlYl9jbGllbnRfc2VjcmV0GAYgASgIIqEBChNBcHBsZVByb3ZpZGVyQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSEwoLc2VydmljZXNfaWQYAiABKAkSDwoHdGVhbV9pZBgDIAEoCRIOCgZrZXlfaWQYBCABKAkSFgoOcHJpdmF0ZV9rZXlfcDgYBSABKAkSFwoPaGFzX3ByaXZhdGVfa2V5GAYgASgIEhIKCmJ1bmRsZV9pZHMYByADKAkidQoKU2lnbmluZ0tleRILCgNraWQYASABKAkSEQoJYWxnb3JpdGhtGAIgASgJEhYKDnB1YmxpY19rZXlfcGVtGAMgASgJEi8KC2NyZWF0ZV90aW1lGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCIkChRDcmVhdGVQcm9qZWN0UmVxdWVzdBIMCgRuYW1lGAEgASgJIlQKFUNyZWF0ZVByb2plY3RSZXNwb25zZRInCgdwcm9qZWN0GAEgASgLMhYubW90aC5hZG1pbi52MS5Qcm9qZWN0EhIKCnNlY3JldF9rZXkYAiABKAkiHwoRR2V0UHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkiPQoSR2V0UHJvamVjdFJlc3BvbnNlEicKB3Byb2plY3QYASABKAsyFi5tb3RoLmFkbWluLnYxLlByb2plY3QiFQoTTGlzdFByb2plY3RzUmVxdWVzdCJAChRMaXN0UHJvamVjdHNSZXNwb25zZRIoCghwcm9qZWN0cxgBIAMoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdCKTAQoUVXBkYXRlUHJvamVjdFJlcXVlc3QSCgoCaWQYASABKAkSDAoEbmFtZRgCIAEoCRIwCghzZXR0aW5ncxgDIAEoCzIeLm1vdGguYWRtaW4udjEuUHJvamVjdFNldHRpbmdzEi8KC3VwZGF0ZV9tYXNrGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayJAChVVcGRhdGVQcm9qZWN0UmVzcG9uc2USJwoHcHJvamVjdBgBIAEoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdCIiChREZWxldGVQcm9qZWN0UmVxdWVzdBIKCgJpZBgBIAEoCSIXChVEZWxldGVQcm9qZWN0UmVzcG9uc2UiMAoaUmVnZW5lcmF0ZVNlY3JldEtleVJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSJaChtSZWdlbmVyYXRlU2VjcmV0S2V5UmVzcG9uc2USJwoHcHJvamVjdBgBIAEoCzIWLm1vdGguYWRtaW4udjEuUHJvamVjdBISCgpzZWNyZXRfa2V5GAIgASgJIioKFEdldFNpZ25pbmdLZXlSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkicwoVR2V0U2lnbmluZ0tleVJlc3BvbnNlEiYKA2tleRgBIAEoCzIZLm1vdGguYWRtaW4udjEuU2lnbmluZ0tleRIQCghqd2tzX3VybBgCIAEoCRIOCgZpc3N1ZXIYAyABKAkSEAoIYXVkaWVuY2UYBCABKAkiLAoWUmVzZXRTaWduaW5nS2V5UmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIkEKF1Jlc2V0U2lnbmluZ0tleVJlc3BvbnNlEiYKA2tleRgBIAEoCzIZLm1vdGguYWRtaW4udjEuU2lnbmluZ0tleTL8BQoOUHJvamVjdFNlcnZpY2USWgoNQ3JlYXRlUHJvamVjdBIjLm1vdGguYWRtaW4udjEuQ3JlYXRlUHJvamVjdFJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLkNyZWF0ZVByb2plY3RSZXNwb25zZRJRCgpHZXRQcm9qZWN0EiAubW90aC5hZG1pbi52MS5HZXRQcm9qZWN0UmVxdWVzdBohLm1vdGguYWRtaW4udjEuR2V0UHJvamVjdFJlc3BvbnNlElcKDExpc3RQcm9qZWN0cxIiLm1vdGguYWRtaW4udjEuTGlzdFByb2plY3RzUmVxdWVzdBojLm1vdGguYWRtaW4udjEuTGlzdFByb2plY3RzUmVzcG9uc2USWgoNVXBkYXRlUHJvamVjdBIjLm1vdGguYWRtaW4udjEuVXBkYXRlUHJvamVjdFJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLlVwZGF0ZVByb2plY3RSZXNwb25zZRJaCg1EZWxldGVQcm9qZWN0EiMubW90aC5hZG1pbi52MS5EZWxldGVQcm9qZWN0UmVxdWVzdBokLm1vdGguYWRtaW4udjEuRGVsZXRlUHJvamVjdFJlc3BvbnNlEmwKE1JlZ2VuZXJhdGVTZWNyZXRLZXkSKS5tb3RoLmFkbWluLnYxLlJlZ2VuZXJhdGVTZWNyZXRLZXlSZXF1ZXN0GioubW90aC5hZG1pbi52MS5SZWdlbmVyYXRlU2VjcmV0S2V5UmVzcG9uc2USWgoNR2V0U2lnbmluZ0tleRIjLm1vdGguYWRtaW4udjEuR2V0U2lnbmluZ0tleVJlcXVlc3QaJC5tb3RoLmFkbWluLnYxLkdldFNpZ25pbmdLZXlSZXNwb25zZRJgCg9SZXNldFNpZ25pbmdLZXkSJS5tb3RoLmFkbWluLnYxLlJlc2V0U2lnbmluZ0tleVJlcXVlc3QaJi5tb3RoLmFkbWluLnYxLlJlc2V0U2lnbmluZ0tleVJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hZG1pbi92MTthZG1pbnYxYgZwcm90bzM", [file_google_protobuf_field_mask, file_google_protobuf_timestamp]);
 
 /**
  * @generated from message moth.admin.v1.Project
@@ -121,6 +121,39 @@ export type ProjectSettings = Message<"moth.admin.v1.ProjectSettings"> & {
    * @generated from field: int32 refresh_token_ttl_days = 6;
    */
   refreshTokenTtlDays: number;
+
+  /**
+   * Sign in with Google configuration.
+   *
+   * @generated from field: moth.admin.v1.GoogleProviderConfig google = 7;
+   */
+  google?: GoogleProviderConfig | undefined;
+
+  /**
+   * Sign in with Apple configuration.
+   *
+   * @generated from field: moth.admin.v1.AppleProviderConfig apple = 8;
+   */
+  apple?: AppleProviderConfig | undefined;
+
+  /**
+   * Link a social identity to an existing account when the provider asserts
+   * the same, verified email. The server default is TRUE: `optional` so that
+   * "unset" (from clients predating this field) is distinguishable from an
+   * explicit false and reads as the default. Reads always populate it.
+   *
+   * @generated from field: optional bool auto_link_verified_email = 9;
+   */
+  autoLinkVerifiedEmail?: boolean | undefined;
+
+  /**
+   * Custom URL schemes the web-redirect OAuth fallback may redirect back to
+   * (e.g. "myapp"). Open-redirect protection: callbacks only ever redirect
+   * to a scheme on this list.
+   *
+   * @generated from field: repeated string redirect_schemes = 10;
+   */
+  redirectSchemes: string[];
 };
 
 /**
@@ -129,6 +162,129 @@ export type ProjectSettings = Message<"moth.admin.v1.ProjectSettings"> & {
  */
 export const ProjectSettingsSchema: GenMessage<ProjectSettings> = /*@__PURE__*/
   messageDesc(file_moth_admin_v1_project, 1);
+
+/**
+ * GoogleProviderConfig configures Sign in with Google for one project. The
+ * client IDs are the allowed `aud` values when verifying Google ID tokens.
+ *
+ * @generated from message moth.admin.v1.GoogleProviderConfig
+ */
+export type GoogleProviderConfig = Message<"moth.admin.v1.GoogleProviderConfig"> & {
+  /**
+   * @generated from field: bool enabled = 1;
+   */
+  enabled: boolean;
+
+  /**
+   * OAuth client ID of type "Web application"; also used by the
+   * web-redirect fallback flow.
+   *
+   * @generated from field: string web_client_id = 2;
+   */
+  webClientId: string;
+
+  /**
+   * OAuth client ID of type "iOS".
+   *
+   * @generated from field: string ios_client_id = 3;
+   */
+  iosClientId: string;
+
+  /**
+   * OAuth client ID of type "Android".
+   *
+   * @generated from field: string android_client_id = 4;
+   */
+  androidClientId: string;
+
+  /**
+   * Client secret of the web client, needed for the web-redirect code
+   * exchange. Write-only: accepted on update, never returned by reads. On
+   * update, an empty value keeps the stored one; reads report presence via
+   * has_web_client_secret. Stored encrypted at rest.
+   *
+   * @generated from field: string web_client_secret = 5;
+   */
+  webClientSecret: string;
+
+  /**
+   * Output only: whether a web client secret is stored.
+   *
+   * @generated from field: bool has_web_client_secret = 6;
+   */
+  hasWebClientSecret: boolean;
+};
+
+/**
+ * Describes the message moth.admin.v1.GoogleProviderConfig.
+ * Use `create(GoogleProviderConfigSchema)` to create a new message.
+ */
+export const GoogleProviderConfigSchema: GenMessage<GoogleProviderConfig> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 2);
+
+/**
+ * AppleProviderConfig configures Sign in with Apple for one project.
+ *
+ * @generated from message moth.admin.v1.AppleProviderConfig
+ */
+export type AppleProviderConfig = Message<"moth.admin.v1.AppleProviderConfig"> & {
+  /**
+   * @generated from field: bool enabled = 1;
+   */
+  enabled: boolean;
+
+  /**
+   * Services ID (web-redirect flow `aud`, e.g. "com.example.app.signin").
+   *
+   * @generated from field: string services_id = 2;
+   */
+  servicesId: string;
+
+  /**
+   * Apple Developer Team ID.
+   *
+   * @generated from field: string team_id = 3;
+   */
+  teamId: string;
+
+  /**
+   * Key ID of the "Sign in with Apple" private key.
+   *
+   * @generated from field: string key_id = 4;
+   */
+  keyId: string;
+
+  /**
+   * Contents of the `.p8` private key file, used to mint Apple client
+   * secrets. Write-only: accepted on update, never returned by reads. On
+   * update, an empty value keeps the stored one; reads report presence via
+   * has_private_key. Stored encrypted at rest.
+   *
+   * @generated from field: string private_key_p8 = 5;
+   */
+  privateKeyP8: string;
+
+  /**
+   * Output only: whether a private key is stored.
+   *
+   * @generated from field: bool has_private_key = 6;
+   */
+  hasPrivateKey: boolean;
+
+  /**
+   * App bundle IDs accepted as `aud` on native Apple ID tokens.
+   *
+   * @generated from field: repeated string bundle_ids = 7;
+   */
+  bundleIds: string[];
+};
+
+/**
+ * Describes the message moth.admin.v1.AppleProviderConfig.
+ * Use `create(AppleProviderConfigSchema)` to create a new message.
+ */
+export const AppleProviderConfigSchema: GenMessage<AppleProviderConfig> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_project, 3);
 
 /**
  * SigningKey is the public half of one project token-signing keypair.
@@ -168,7 +324,7 @@ export type SigningKey = Message<"moth.admin.v1.SigningKey"> & {
  * Use `create(SigningKeySchema)` to create a new message.
  */
 export const SigningKeySchema: GenMessage<SigningKey> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 2);
+  messageDesc(file_moth_admin_v1_project, 4);
 
 /**
  * @generated from message moth.admin.v1.CreateProjectRequest
@@ -185,7 +341,7 @@ export type CreateProjectRequest = Message<"moth.admin.v1.CreateProjectRequest">
  * Use `create(CreateProjectRequestSchema)` to create a new message.
  */
 export const CreateProjectRequestSchema: GenMessage<CreateProjectRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 3);
+  messageDesc(file_moth_admin_v1_project, 5);
 
 /**
  * @generated from message moth.admin.v1.CreateProjectResponse
@@ -210,7 +366,7 @@ export type CreateProjectResponse = Message<"moth.admin.v1.CreateProjectResponse
  * Use `create(CreateProjectResponseSchema)` to create a new message.
  */
 export const CreateProjectResponseSchema: GenMessage<CreateProjectResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 4);
+  messageDesc(file_moth_admin_v1_project, 6);
 
 /**
  * @generated from message moth.admin.v1.GetProjectRequest
@@ -227,7 +383,7 @@ export type GetProjectRequest = Message<"moth.admin.v1.GetProjectRequest"> & {
  * Use `create(GetProjectRequestSchema)` to create a new message.
  */
 export const GetProjectRequestSchema: GenMessage<GetProjectRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 5);
+  messageDesc(file_moth_admin_v1_project, 7);
 
 /**
  * @generated from message moth.admin.v1.GetProjectResponse
@@ -244,7 +400,7 @@ export type GetProjectResponse = Message<"moth.admin.v1.GetProjectResponse"> & {
  * Use `create(GetProjectResponseSchema)` to create a new message.
  */
 export const GetProjectResponseSchema: GenMessage<GetProjectResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 6);
+  messageDesc(file_moth_admin_v1_project, 8);
 
 /**
  * @generated from message moth.admin.v1.ListProjectsRequest
@@ -257,7 +413,7 @@ export type ListProjectsRequest = Message<"moth.admin.v1.ListProjectsRequest"> &
  * Use `create(ListProjectsRequestSchema)` to create a new message.
  */
 export const ListProjectsRequestSchema: GenMessage<ListProjectsRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 7);
+  messageDesc(file_moth_admin_v1_project, 9);
 
 /**
  * @generated from message moth.admin.v1.ListProjectsResponse
@@ -274,7 +430,7 @@ export type ListProjectsResponse = Message<"moth.admin.v1.ListProjectsResponse">
  * Use `create(ListProjectsResponseSchema)` to create a new message.
  */
 export const ListProjectsResponseSchema: GenMessage<ListProjectsResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 8);
+  messageDesc(file_moth_admin_v1_project, 10);
 
 /**
  * @generated from message moth.admin.v1.UpdateProjectRequest
@@ -312,7 +468,7 @@ export type UpdateProjectRequest = Message<"moth.admin.v1.UpdateProjectRequest">
  * Use `create(UpdateProjectRequestSchema)` to create a new message.
  */
 export const UpdateProjectRequestSchema: GenMessage<UpdateProjectRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 9);
+  messageDesc(file_moth_admin_v1_project, 11);
 
 /**
  * @generated from message moth.admin.v1.UpdateProjectResponse
@@ -329,7 +485,7 @@ export type UpdateProjectResponse = Message<"moth.admin.v1.UpdateProjectResponse
  * Use `create(UpdateProjectResponseSchema)` to create a new message.
  */
 export const UpdateProjectResponseSchema: GenMessage<UpdateProjectResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 10);
+  messageDesc(file_moth_admin_v1_project, 12);
 
 /**
  * @generated from message moth.admin.v1.DeleteProjectRequest
@@ -346,7 +502,7 @@ export type DeleteProjectRequest = Message<"moth.admin.v1.DeleteProjectRequest">
  * Use `create(DeleteProjectRequestSchema)` to create a new message.
  */
 export const DeleteProjectRequestSchema: GenMessage<DeleteProjectRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 11);
+  messageDesc(file_moth_admin_v1_project, 13);
 
 /**
  * @generated from message moth.admin.v1.DeleteProjectResponse
@@ -359,7 +515,7 @@ export type DeleteProjectResponse = Message<"moth.admin.v1.DeleteProjectResponse
  * Use `create(DeleteProjectResponseSchema)` to create a new message.
  */
 export const DeleteProjectResponseSchema: GenMessage<DeleteProjectResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 12);
+  messageDesc(file_moth_admin_v1_project, 14);
 
 /**
  * @generated from message moth.admin.v1.RegenerateSecretKeyRequest
@@ -376,7 +532,7 @@ export type RegenerateSecretKeyRequest = Message<"moth.admin.v1.RegenerateSecret
  * Use `create(RegenerateSecretKeyRequestSchema)` to create a new message.
  */
 export const RegenerateSecretKeyRequestSchema: GenMessage<RegenerateSecretKeyRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 13);
+  messageDesc(file_moth_admin_v1_project, 15);
 
 /**
  * @generated from message moth.admin.v1.RegenerateSecretKeyResponse
@@ -400,7 +556,7 @@ export type RegenerateSecretKeyResponse = Message<"moth.admin.v1.RegenerateSecre
  * Use `create(RegenerateSecretKeyResponseSchema)` to create a new message.
  */
 export const RegenerateSecretKeyResponseSchema: GenMessage<RegenerateSecretKeyResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 14);
+  messageDesc(file_moth_admin_v1_project, 16);
 
 /**
  * @generated from message moth.admin.v1.GetSigningKeyRequest
@@ -417,7 +573,7 @@ export type GetSigningKeyRequest = Message<"moth.admin.v1.GetSigningKeyRequest">
  * Use `create(GetSigningKeyRequestSchema)` to create a new message.
  */
 export const GetSigningKeyRequestSchema: GenMessage<GetSigningKeyRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 15);
+  messageDesc(file_moth_admin_v1_project, 17);
 
 /**
  * @generated from message moth.admin.v1.GetSigningKeyResponse
@@ -455,7 +611,7 @@ export type GetSigningKeyResponse = Message<"moth.admin.v1.GetSigningKeyResponse
  * Use `create(GetSigningKeyResponseSchema)` to create a new message.
  */
 export const GetSigningKeyResponseSchema: GenMessage<GetSigningKeyResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 16);
+  messageDesc(file_moth_admin_v1_project, 18);
 
 /**
  * @generated from message moth.admin.v1.ResetSigningKeyRequest
@@ -472,7 +628,7 @@ export type ResetSigningKeyRequest = Message<"moth.admin.v1.ResetSigningKeyReque
  * Use `create(ResetSigningKeyRequestSchema)` to create a new message.
  */
 export const ResetSigningKeyRequestSchema: GenMessage<ResetSigningKeyRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 17);
+  messageDesc(file_moth_admin_v1_project, 19);
 
 /**
  * @generated from message moth.admin.v1.ResetSigningKeyResponse
@@ -491,7 +647,7 @@ export type ResetSigningKeyResponse = Message<"moth.admin.v1.ResetSigningKeyResp
  * Use `create(ResetSigningKeyResponseSchema)` to create a new message.
  */
 export const ResetSigningKeyResponseSchema: GenMessage<ResetSigningKeyResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_project, 18);
+  messageDesc(file_moth_admin_v1_project, 20);
 
 /**
  * ProjectService manages the projects (one per mobile app) hosted by this

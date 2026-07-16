@@ -59,6 +59,59 @@ message ProjectSettings {
   int32 access_token_ttl_seconds = 5;
   // Refresh token sliding window in days (default 30).
   int32 refresh_token_ttl_days = 6;
+  // Sign in with Google configuration.
+  GoogleProviderConfig google = 7;
+  // Sign in with Apple configuration.
+  AppleProviderConfig apple = 8;
+  // Link a social identity to an existing account when the provider asserts
+  // the same, verified email. The server default is TRUE: `optional` so that
+  // "unset" (from clients predating this field) is distinguishable from an
+  // explicit false and reads as the default. Reads always populate it.
+  optional bool auto_link_verified_email = 9;
+  // Custom URL schemes the web-redirect OAuth fallback may redirect back to
+  // (e.g. "myapp"). Open-redirect protection: callbacks only ever redirect
+  // to a scheme on this list.
+  repeated string redirect_schemes = 10;
+}
+
+// GoogleProviderConfig configures Sign in with Google for one project. The
+// client IDs are the allowed `aud` values when verifying Google ID tokens.
+message GoogleProviderConfig {
+  bool enabled = 1;
+  // OAuth client ID of type "Web application"; also used by the
+  // web-redirect fallback flow.
+  string web_client_id = 2;
+  // OAuth client ID of type "iOS".
+  string ios_client_id = 3;
+  // OAuth client ID of type "Android".
+  string android_client_id = 4;
+  // Client secret of the web client, needed for the web-redirect code
+  // exchange. Write-only: accepted on update, never returned by reads. On
+  // update, an empty value keeps the stored one; reads report presence via
+  // has_web_client_secret. Stored encrypted at rest.
+  string web_client_secret = 5;
+  // Output only: whether a web client secret is stored.
+  bool has_web_client_secret = 6;
+}
+
+// AppleProviderConfig configures Sign in with Apple for one project.
+message AppleProviderConfig {
+  bool enabled = 1;
+  // Services ID (web-redirect flow `aud`, e.g. "com.example.app.signin").
+  string services_id = 2;
+  // Apple Developer Team ID.
+  string team_id = 3;
+  // Key ID of the "Sign in with Apple" private key.
+  string key_id = 4;
+  // Contents of the `.p8` private key file, used to mint Apple client
+  // secrets. Write-only: accepted on update, never returned by reads. On
+  // update, an empty value keeps the stored one; reads report presence via
+  // has_private_key. Stored encrypted at rest.
+  string private_key_p8 = 5;
+  // Output only: whether a private key is stored.
+  bool has_private_key = 6;
+  // App bundle IDs accepted as `aud` on native Apple ID tokens.
+  repeated string bundle_ids = 7;
 }
 
 // SigningKey is the public half of one project token-signing keypair.

@@ -82,6 +82,11 @@ type ProjectStore interface {
 type UserStore interface {
 	CreateUser(ctx context.Context, u User, identities ...Identity) error
 	CreateIdentity(ctx context.Context, id Identity) error
+	GetIdentity(ctx context.Context, projectID, provider, subject string) (Identity, error)
+	ListUserIdentities(ctx context.Context, projectID, userID string) ([]Identity, error)
+	DeleteUserIdentities(ctx context.Context, projectID, userID, provider string) error
+	SetIdentityAppleRefreshToken(ctx context.Context, projectID, id string, tokenEnc []byte) error
+	SetIdentityProviderEmail(ctx context.Context, projectID, id, email string) error
 	GetUser(ctx context.Context, projectID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, projectID, email string) (User, error)
 	ListUsers(ctx context.Context, projectID string) ([]User, error)
@@ -113,6 +118,23 @@ type EmailTokenStore interface {
 	DeleteUserEmailTokens(ctx context.Context, projectID, userID, purpose string) error
 }
 
+// OAuthTokenStore persists the single-use artifacts of the web-redirect
+// OAuth fallback (hashed state values and one-time exchange codes).
+type OAuthTokenStore interface {
+	CreateOAuthToken(ctx context.Context, ot OAuthToken) error
+	ConsumeOAuthToken(ctx context.Context, projectID, purpose, tokenHash string, now time.Time) (OAuthToken, error)
+	DeleteExpiredOAuthTokens(ctx context.Context, now time.Time) error
+}
+
+// ProviderSecretStore persists per-project provider secrets (Apple .p8
+// private key, Google web client secret) as ciphertext encrypted by the
+// caller under the master key.
+type ProviderSecretStore interface {
+	SetProviderSecret(ctx context.Context, projectID, name string, secretEnc []byte, now time.Time) error
+	GetProviderSecret(ctx context.Context, projectID, name string) ([]byte, error)
+	DeleteProviderSecret(ctx context.Context, projectID, name string) error
+}
+
 // EventStore records analytics events (stub until milestone 07).
 type EventStore interface {
 	InsertEvent(ctx context.Context, e Event) error
@@ -132,6 +154,8 @@ var (
 	_ UserStore            = (*Store)(nil)
 	_ RefreshTokenStore    = (*Store)(nil)
 	_ EmailTokenStore      = (*Store)(nil)
+	_ OAuthTokenStore      = (*Store)(nil)
+	_ ProviderSecretStore  = (*Store)(nil)
 	_ EventStore           = (*Store)(nil)
 )
 

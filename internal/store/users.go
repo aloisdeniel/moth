@@ -39,13 +39,29 @@ type Identity struct {
 	UserID          string
 	Provider        string
 	ProviderSubject string
-	CreatedAt       time.Time
+	// ProviderEmail is the email the provider asserted when the identity
+	// was linked; empty for password identities.
+	ProviderEmail string
+	// AppleRefreshTokenEnc is the Apple refresh token from the
+	// authorization-code exchange, AES-GCM-encrypted under the master key
+	// by the caller; nil for every other provider. Needed to revoke Apple
+	// tokens when the account is deleted.
+	AppleRefreshTokenEnc []byte
+	CreatedAt            time.Time
 }
 
-// IdentityProviderPassword is the provider of email/password identities;
-// its provider_subject is the user ID. Social providers land in
-// milestone 04.
-const IdentityProviderPassword = "password"
+// Identity providers.
+const (
+	// IdentityProviderPassword is the provider of email/password
+	// identities; its provider_subject is the user ID.
+	IdentityProviderPassword = "password"
+	// IdentityProviderGoogle is Sign in with Google; provider_subject is
+	// the Google `sub` claim.
+	IdentityProviderGoogle = "google"
+	// IdentityProviderApple is Sign in with Apple; provider_subject is the
+	// Apple `sub` claim.
+	IdentityProviderApple = "apple"
+)
 
 // ErrConflict is returned when an insert violates a uniqueness constraint
 // (email already registered, identity already linked).
@@ -99,10 +115,11 @@ type execer interface {
 
 func insertIdentity(ctx context.Context, db execer, id Identity) error {
 	if _, err := db.ExecContext(ctx,
-		`INSERT INTO identities (id, project_id, user_id, provider, provider_subject, created_at)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO identities (id, project_id, user_id, provider, provider_subject,
+		                         provider_email, apple_refresh_token_enc, created_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
 		id.ID, id.ProjectID, id.UserID, id.Provider, id.ProviderSubject,
-		formatTime(id.CreatedAt)); err != nil {
+		id.ProviderEmail, id.AppleRefreshTokenEnc, formatTime(id.CreatedAt)); err != nil {
 		if err := conflictErr(err); errors.Is(err, ErrConflict) {
 			return err
 		}
@@ -268,6 +285,100 @@ func (s *Store) CountUsersByProject(ctx context.Context) (map[string]int, error)
 	return counts, nil
 }
 
+const identityColumns = `id, project_id, user_id, provider, provider_subject,
+	provider_email, apple_refresh_token_enc, created_at`
+
+func scanIdentityRow(row rowScanner) (Identity, error) {
+	var id Identity
+	var createdAt string
+	if err := row.Scan(&id.ID, &id.ProjectID, &id.UserID, &id.Provider,
+		&id.ProviderSubject, &id.ProviderEmail, &id.AppleRefreshTokenEnc, &createdAt); err != nil {
+		return Identity{}, err
+	}
+	var err error
+	if id.CreatedAt, err = parseTime(createdAt); err != nil {
+		return Identity{}, fmt.Errorf("parse identity created_at: %w", err)
+	}
+	return id, nil
+}
+
+// GetIdentity resolves one provider identity by its provider-issued
+// subject; the first step of social sign-in.
+func (s *Store) GetIdentity(ctx context.Context, projectID, provider, subject string) (Identity, error) {
+	id, err := scanIdentityRow(s.db.QueryRowContext(ctx,
+		`SELECT `+identityColumns+` FROM identities
+		 WHERE project_id = ? AND provider = ? AND provider_subject = ?`,
+		projectID, provider, subject))
+	if errors.Is(err, sql.ErrNoRows) {
+		return Identity{}, ErrNotFound
+	}
+	if err != nil {
+		return Identity{}, fmt.Errorf("scan identity: %w", err)
+	}
+	return id, nil
+}
+
+// ListUserIdentities returns one user's identities in link order.
+func (s *Store) ListUserIdentities(ctx context.Context, projectID, userID string) ([]Identity, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT `+identityColumns+` FROM identities
+		 WHERE project_id = ? AND user_id = ? ORDER BY created_at, id`, projectID, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list user identities: %w", err)
+	}
+	defer rows.Close()
+
+	var ids []Identity
+	for rows.Next() {
+		id, err := scanIdentityRow(rows)
+		if err != nil {
+			return nil, fmt.Errorf("scan identity: %w", err)
+		}
+		ids = append(ids, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("list user identities: %w", err)
+	}
+	return ids, nil
+}
+
+// DeleteUserIdentities removes the user's identities of one provider
+// (UnlinkIdentity); ErrNotFound when none existed. Callers enforce the
+// "never leave zero login methods" rule before calling.
+func (s *Store) DeleteUserIdentities(ctx context.Context, projectID, userID, provider string) error {
+	res, err := s.db.ExecContext(ctx,
+		`DELETE FROM identities WHERE project_id = ? AND user_id = ? AND provider = ?`,
+		projectID, userID, provider)
+	if err != nil {
+		return fmt.Errorf("delete user identities: %w", err)
+	}
+	return requireRow(res)
+}
+
+// SetIdentityAppleRefreshToken stores (or, with nil, clears) the encrypted
+// Apple refresh token of one identity.
+func (s *Store) SetIdentityAppleRefreshToken(ctx context.Context, projectID, id string, tokenEnc []byte) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE identities SET apple_refresh_token_enc = ? WHERE project_id = ? AND id = ?`,
+		tokenEnc, projectID, id)
+	if err != nil {
+		return fmt.Errorf("set identity apple refresh token: %w", err)
+	}
+	return requireRow(res)
+}
+
+// SetIdentityProviderEmail keeps the provider-asserted email current on
+// repeat sign-ins.
+func (s *Store) SetIdentityProviderEmail(ctx context.Context, projectID, id, email string) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE identities SET provider_email = ? WHERE project_id = ? AND id = ?`,
+		email, projectID, id)
+	if err != nil {
+		return fmt.Errorf("set identity provider email: %w", err)
+	}
+	return requireRow(res)
+}
+
 // ListIdentitiesForUsers returns the identities of the given users, keyed
 // by user ID. Used to render provider badges on a page of users.
 func (s *Store) ListIdentitiesForUsers(ctx context.Context, projectID string, userIDs []string) (map[string][]Identity, error) {
@@ -281,8 +392,8 @@ func (s *Store) ListIdentitiesForUsers(ctx context.Context, projectID string, us
 		args = append(args, id)
 	}
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, user_id, provider, provider_subject, created_at
-		 FROM identities WHERE project_id = ? AND user_id IN (`+placeholders+`)
+		`SELECT `+identityColumns+` FROM identities
+		 WHERE project_id = ? AND user_id IN (`+placeholders+`)
 		 ORDER BY created_at, id`, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list identities: %w", err)
@@ -291,14 +402,9 @@ func (s *Store) ListIdentitiesForUsers(ctx context.Context, projectID string, us
 
 	byUser := make(map[string][]Identity)
 	for rows.Next() {
-		var id Identity
-		var createdAt string
-		if err := rows.Scan(&id.ID, &id.ProjectID, &id.UserID, &id.Provider,
-			&id.ProviderSubject, &createdAt); err != nil {
+		id, err := scanIdentityRow(rows)
+		if err != nil {
 			return nil, fmt.Errorf("scan identity: %w", err)
-		}
-		if id.CreatedAt, err = parseTime(createdAt); err != nil {
-			return nil, fmt.Errorf("parse identity created_at: %w", err)
 		}
 		byUser[id.UserID] = append(byUser[id.UserID], id)
 	}

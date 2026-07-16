@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package moth.auth.v1;
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1";
+
+// ConfigService exposes a project's public, non-secret configuration to the
+// mobile SDK, so the login screen can render exactly the sign-in methods
+// the project enables. Authenticated like AuthService: every call carries
+// the project's publishable key in `x-moth-key: pk_...` request metadata.
+//
+// Later milestones extend GetProjectConfigResponse: SDK bootstrap values in
+// 05, login-screen branding/theme in 06. Fields are only ever added.
+service ConfigService {
+  // GetProjectConfig returns the project configuration a client may see.
+  // Never includes secrets; only values that are safe to embed in an app.
+  rpc GetProjectConfig(GetProjectConfigRequest) returns (GetProjectConfigResponse);
+}
+
+// GoogleConfig is the public part of a project's Sign in with Google
+// configuration.
+message GoogleConfig {
+  bool enabled = 1;
+  // OAuth client IDs the native flows initialize with. Client IDs are
+  // public values (the secret never leaves the server).
+  string web_client_id = 2;
+  string ios_client_id = 3;
+  string android_client_id = 4;
+}
+
+// AppleConfig is the public part of a project's Sign in with Apple
+// configuration.
+message AppleConfig {
+  bool enabled = 1;
+}
+
+message GetProjectConfigRequest {}
+
+message GetProjectConfigResponse {
+  GoogleConfig google = 1;
+  AppleConfig apple = 2;
+  // Minimum accepted password length.
+  int32 password_min_length = 3;
+  // Whether the public SignUp RPC is open.
+  bool sign_up_open = 4;
+}

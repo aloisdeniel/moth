@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ import (
 	"github.com/aloisdeniel/moth/internal/jwt"
 	"github.com/aloisdeniel/moth/internal/keys"
 	"github.com/aloisdeniel/moth/internal/mail"
+	"github.com/aloisdeniel/moth/internal/oidc"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
 )
@@ -31,6 +33,8 @@ type Store interface {
 	store.UserStore
 	store.RefreshTokenStore
 	store.EmailTokenStore
+	store.OAuthTokenStore
+	store.ProviderSecretStore
 	store.EventStore
 }
 
@@ -44,6 +48,43 @@ type Handler struct {
 	baseURL string // no trailing slash; hosted-page links hang off it
 	log     *slog.Logger
 	now     func() time.Time
+
+	// Social sign-in: shared outbound HTTP client, one verifier per
+	// provider (each caches that provider's JWKS) and the OAuth endpoint
+	// locations (overridable for tests via Options.Endpoints).
+	httpc          oidc.Doer
+	googleVerifier *oidc.Verifier
+	appleVerifier  *oidc.Verifier
+	googleTokenURL string
+	googleAuthURL  string
+	appleBaseURL   string // "" means the real appleid.apple.com
+	appleAuthURL   string
+
+	// appleSecrets caches the Apple client-secret generator per
+	// (project, clientID); see appleClient.
+	appleSecretsMu sync.Mutex
+	appleSecrets   map[string]appleSecretsEntry
+}
+
+// appleSecretsEntry pairs a cached client-secret generator with the
+// fingerprint of the key configuration it was built from.
+type appleSecretsEntry struct {
+	fingerprint string
+	secrets     *oidc.AppleSecrets
+}
+
+// ProviderEndpoints overrides where the Google/Apple OAuth endpoints live.
+// Zero values mean the real providers; tests point them at httptest
+// doubles.
+type ProviderEndpoints struct {
+	GoogleJWKSURL  string
+	GoogleTokenURL string
+	// GoogleAuthURL is the consent page the web-redirect flow sends the
+	// browser to.
+	GoogleAuthURL string
+	// AppleBaseURL hosts /auth/keys, /auth/authorize, /auth/token and
+	// /auth/token/revoke.
+	AppleBaseURL string
 }
 
 // Options configures the auth service.
@@ -55,7 +96,15 @@ type Options struct {
 	Logger  *slog.Logger
 	// Now is injectable for tests; defaults to time.Now.
 	Now func() time.Time
+	// HTTPClient performs the outbound provider calls (JWKS fetch, code
+	// exchange, revocation); nil falls back to a timeout-bounded default.
+	HTTPClient oidc.Doer
+	// Endpoints override the provider endpoint locations for tests.
+	Endpoints ProviderEndpoints
 }
+
+// defaultGoogleAuthURL is Google's OAuth consent page.
+const defaultGoogleAuthURL = "https://accounts.google.com/o/oauth2/v2/auth"
 
 // New builds the auth service handler.
 func New(o Options) *Handler {
@@ -65,13 +114,42 @@ func New(o Options) *Handler {
 	if o.Now == nil {
 		o.Now = time.Now
 	}
+	if o.HTTPClient == nil {
+		o.HTTPClient = &http.Client{Timeout: 10 * time.Second}
+	}
+
+	google := oidc.Google()
+	if o.Endpoints.GoogleJWKSURL != "" {
+		google.JWKSURL = o.Endpoints.GoogleJWKSURL
+	}
+	apple := oidc.Apple()
+	if o.Endpoints.AppleBaseURL != "" {
+		apple.JWKSURL = o.Endpoints.AppleBaseURL + "/auth/keys"
+	}
+	googleAuthURL := o.Endpoints.GoogleAuthURL
+	if googleAuthURL == "" {
+		googleAuthURL = defaultGoogleAuthURL
+	}
+	appleAuthURL := oidc.AppleBaseURL + "/auth/authorize"
+	if o.Endpoints.AppleBaseURL != "" {
+		appleAuthURL = o.Endpoints.AppleBaseURL + "/auth/authorize"
+	}
+
 	return &Handler{
-		store:   o.Store,
-		master:  o.Master,
-		mailer:  o.Mailer,
-		baseURL: strings.TrimSuffix(o.BaseURL, "/"),
-		log:     o.Logger,
-		now:     o.Now,
+		store:          o.Store,
+		master:         o.Master,
+		mailer:         o.Mailer,
+		baseURL:        strings.TrimSuffix(o.BaseURL, "/"),
+		log:            o.Logger,
+		now:            o.Now,
+		httpc:          o.HTTPClient,
+		googleVerifier: oidc.NewVerifier(google, o.HTTPClient, o.Now),
+		appleVerifier:  oidc.NewVerifier(apple, o.HTTPClient, o.Now),
+		googleTokenURL: o.Endpoints.GoogleTokenURL,
+		googleAuthURL:  googleAuthURL,
+		appleBaseURL:   o.Endpoints.AppleBaseURL,
+		appleAuthURL:   appleAuthURL,
+		appleSecrets:   make(map[string]appleSecretsEntry),
 	}
 }
 
@@ -136,15 +214,22 @@ func bearerToken(header http.Header) (string, bool) {
 	return strings.TrimSpace(auth[len(prefix):]), true
 }
 
-// insertEvent writes a stub analytics event; failures are logged, never
-// surfaced (real analytics land in milestone 07).
+// insertEvent writes a stub analytics event for the password provider;
+// failures are logged, never surfaced (real analytics land in milestone
+// 07).
 func (h *Handler) insertEvent(ctx context.Context, projectID, userID, eventType string) {
+	h.insertProviderEvent(ctx, projectID, userID, eventType, store.IdentityProviderPassword)
+}
+
+// insertProviderEvent is insertEvent with an explicit identity provider
+// (social sign-ins).
+func (h *Handler) insertProviderEvent(ctx context.Context, projectID, userID, eventType, provider string) {
 	err := h.store.InsertEvent(ctx, store.Event{
 		ID:        NewID(),
 		ProjectID: projectID,
 		UserID:    userID,
 		Type:      eventType,
-		Provider:  store.IdentityProviderPassword,
+		Provider:  provider,
 		CreatedAt: h.now(),
 	})
 	if err != nil {

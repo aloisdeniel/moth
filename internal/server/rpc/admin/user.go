@@ -110,6 +110,13 @@ func (h *UserHandler) GetUser(ctx context.Context, req *connect.Request[adminv1.
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	resp := &adminv1.GetUserResponse{User: adminUserProto(user, identities[user.ID])}
+	for _, id := range identities[user.ID] {
+		resp.Identities = append(resp.Identities, &adminv1.Identity{
+			Provider:   id.Provider,
+			Email:      id.ProviderEmail,
+			CreateTime: timestamppb.New(id.CreatedAt),
+		})
+	}
 	for _, rt := range sessions {
 		resp.Sessions = append(resp.Sessions, &adminv1.UserSession{
 			Id:         rt.ID,
@@ -295,6 +302,18 @@ func (h *UserHandler) SendPasswordReset(ctx context.Context, req *connect.Reques
 	if user.Disabled() {
 		return nil, connect.NewError(connect.CodeFailedPrecondition,
 			errors.New("the user is disabled"))
+	}
+	// A social-only account has no password to reset; a passwordless user
+	// without provider identities is a pending invite and may be re-sent.
+	if user.PasswordHash == "" {
+		identities, err := h.store.ListUserIdentities(ctx, project.ID, user.ID)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		if len(identities) > 0 {
+			return nil, connect.NewError(connect.CodeFailedPrecondition,
+				errors.New("the user signs in with a provider; there is no password to reset"))
+		}
 	}
 	link, err := h.auth.IssuePasswordResetLink(ctx, project, user, authrpc.ResetTokenTTL)
 	if err != nil {

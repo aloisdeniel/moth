@@ -86,3 +86,35 @@ test("setup instructions render real values", async ({ page }) => {
     page.getByText("http://127.0.0.1:8990/p/birdwatch/.well-known/jwks.json").first(),
   ).toBeVisible();
 });
+
+test("enable Google sign-in and see it persist", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Providers" }).click();
+
+  // The guide interpolates the instance base URL into the redirect URIs.
+  await expect(
+    page.getByText("http://127.0.0.1:8990/oauth/google/callback").first(),
+  ).toBeVisible();
+  await expect(
+    page.getByText("http://127.0.0.1:8990/oauth/apple/callback").first(),
+  ).toBeVisible();
+
+  await page.getByLabel("Enable Sign in with Google").check();
+  await page
+    .getByLabel("Web client ID")
+    .fill("1234567890-birdwatch.apps.googleusercontent.com");
+  await page.getByRole("button", { name: "Save providers" }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+
+  // Survives a full reload — the config really landed in project settings.
+  await page.reload();
+  await expect(page.getByLabel("Enable Sign in with Google")).toBeChecked();
+  await expect(page.getByLabel("Web client ID")).toHaveValue(
+    "1234567890-birdwatch.apps.googleusercontent.com",
+  );
+});

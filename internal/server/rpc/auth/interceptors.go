@@ -69,6 +69,8 @@ func DefaultRateLimits() RateLimits {
 var throttledProcedures = map[string]bool{
 	"/moth.auth.v1.AuthService/SignUp":                   true,
 	"/moth.auth.v1.AuthService/SignIn":                   true,
+	"/moth.auth.v1.AuthService/SignInWithOAuth":          true,
+	"/moth.auth.v1.AuthService/ExchangeOAuthCode":        true,
 	"/moth.auth.v1.AuthService/RequestPasswordReset":     true,
 	"/moth.auth.v1.AuthService/RequestEmailVerification": true,
 }

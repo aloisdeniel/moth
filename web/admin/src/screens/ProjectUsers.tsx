@@ -357,6 +357,24 @@ function UserDrawer({
               {notice && <p className="caption text-success">{notice}</p>}
             </div>
 
+            <div className="stack-8">
+              <span className="field__label">Identities</span>
+              {(detail.data?.identities.length ?? 0) === 0 ? (
+                <p className="caption">No linked identities.</p>
+              ) : (
+                <div className="stack-8">
+                  {detail.data?.identities.map((i) => (
+                    <div key={i.provider} className="keywell">
+                      <Badge>{i.provider}</Badge>
+                      <span className="keywell__value">
+                        {i.email || u.email} · linked {formatDate(i.createTime)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <ClaimsEditor project={project} user={u} />
 
             <div className="stack-8">
@@ -398,13 +416,15 @@ function UserDrawer({
                     Disable
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="btn btn--secondary btn--compact"
-                  onClick={() => setConfirm("reset")}
-                >
-                  Send password reset
-                </button>
+                {u.providers.includes("password") && (
+                  <button
+                    type="button"
+                    className="btn btn--secondary btn--compact"
+                    onClick={() => setConfirm("reset")}
+                  >
+                    Send password reset
+                  </button>
+                )}
                 <button
                   type="button"
                   className="btn btn--secondary btn--compact"

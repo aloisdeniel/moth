@@ -67,6 +67,15 @@ const (
 	// AuthServiceConfirmEmailChangeProcedure is the fully-qualified name of the AuthService's
 	// ConfirmEmailChange RPC.
 	AuthServiceConfirmEmailChangeProcedure = "/moth.auth.v1.AuthService/ConfirmEmailChange"
+	// AuthServiceSignInWithOAuthProcedure is the fully-qualified name of the AuthService's
+	// SignInWithOAuth RPC.
+	AuthServiceSignInWithOAuthProcedure = "/moth.auth.v1.AuthService/SignInWithOAuth"
+	// AuthServiceExchangeOAuthCodeProcedure is the fully-qualified name of the AuthService's
+	// ExchangeOAuthCode RPC.
+	AuthServiceExchangeOAuthCodeProcedure = "/moth.auth.v1.AuthService/ExchangeOAuthCode"
+	// AuthServiceUnlinkIdentityProcedure is the fully-qualified name of the AuthService's
+	// UnlinkIdentity RPC.
+	AuthServiceUnlinkIdentityProcedure = "/moth.auth.v1.AuthService/UnlinkIdentity"
 	// AuthServiceDeleteAccountProcedure is the fully-qualified name of the AuthService's DeleteAccount
 	// RPC.
 	AuthServiceDeleteAccountProcedure = "/moth.auth.v1.AuthService/DeleteAccount"
@@ -115,6 +124,25 @@ type AuthServiceClient interface {
 	// pending address. The previous address receives a notification with a
 	// revert link (valid 72 h) that goes through this same RPC.
 	ConfirmEmailChange(context.Context, *connect.Request[v1.ConfirmEmailChangeRequest]) (*connect.Response[v1.ConfirmEmailChangeResponse], error)
+	// SignInWithOAuth signs in (or up) with a provider ID token obtained by a
+	// native Google/Apple flow on the device. The token is verified
+	// server-side (signature against the provider JWKS, issuer, audience
+	// against the project's configured client/bundle IDs, expiry, nonce);
+	// email, name and subject only ever come from the verified token. Account
+	// resolution: an existing (provider, subject) identity signs that user
+	// in; else a provider-verified email matching an existing user links a
+	// new identity to it (when the project's auto_link_verified_email policy
+	// allows); else a new user is created.
+	SignInWithOAuth(context.Context, *connect.Request[v1.SignInWithOAuthRequest]) (*connect.Response[v1.SignInWithOAuthResponse], error)
+	// ExchangeOAuthCode trades the one-time code minted by the web-redirect
+	// fallback flow (GET /oauth/{provider}/start → provider consent →
+	// callback → redirect back into the app) for a token pair. Codes are
+	// single-use and short-lived.
+	ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error)
+	// UnlinkIdentity removes the caller's identity for one provider. Requires
+	// a Bearer access token. Refused when it would leave the account without
+	// any way to sign in.
+	UnlinkIdentity(context.Context, *connect.Request[v1.UnlinkIdentityRequest]) (*connect.Response[v1.UnlinkIdentityResponse], error)
 	// DeleteAccount permanently deletes the user after fresh re-authentication
 	// (App Store guideline 5.1.1). Identities, sessions and email tokens are
 	// cascaded.
@@ -210,6 +238,24 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("ConfirmEmailChange")),
 			connect.WithClientOptions(opts...),
 		),
+		signInWithOAuth: connect.NewClient[v1.SignInWithOAuthRequest, v1.SignInWithOAuthResponse](
+			httpClient,
+			baseURL+AuthServiceSignInWithOAuthProcedure,
+			connect.WithSchema(authServiceMethods.ByName("SignInWithOAuth")),
+			connect.WithClientOptions(opts...),
+		),
+		exchangeOAuthCode: connect.NewClient[v1.ExchangeOAuthCodeRequest, v1.ExchangeOAuthCodeResponse](
+			httpClient,
+			baseURL+AuthServiceExchangeOAuthCodeProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ExchangeOAuthCode")),
+			connect.WithClientOptions(opts...),
+		),
+		unlinkIdentity: connect.NewClient[v1.UnlinkIdentityRequest, v1.UnlinkIdentityResponse](
+			httpClient,
+			baseURL+AuthServiceUnlinkIdentityProcedure,
+			connect.WithSchema(authServiceMethods.ByName("UnlinkIdentity")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteAccount: connect.NewClient[v1.DeleteAccountRequest, v1.DeleteAccountResponse](
 			httpClient,
 			baseURL+AuthServiceDeleteAccountProcedure,
@@ -234,6 +280,9 @@ type authServiceClient struct {
 	confirmPasswordReset     *connect.Client[v1.ConfirmPasswordResetRequest, v1.ConfirmPasswordResetResponse]
 	requestEmailChange       *connect.Client[v1.RequestEmailChangeRequest, v1.RequestEmailChangeResponse]
 	confirmEmailChange       *connect.Client[v1.ConfirmEmailChangeRequest, v1.ConfirmEmailChangeResponse]
+	signInWithOAuth          *connect.Client[v1.SignInWithOAuthRequest, v1.SignInWithOAuthResponse]
+	exchangeOAuthCode        *connect.Client[v1.ExchangeOAuthCodeRequest, v1.ExchangeOAuthCodeResponse]
+	unlinkIdentity           *connect.Client[v1.UnlinkIdentityRequest, v1.UnlinkIdentityResponse]
 	deleteAccount            *connect.Client[v1.DeleteAccountRequest, v1.DeleteAccountResponse]
 }
 
@@ -302,6 +351,21 @@ func (c *authServiceClient) ConfirmEmailChange(ctx context.Context, req *connect
 	return c.confirmEmailChange.CallUnary(ctx, req)
 }
 
+// SignInWithOAuth calls moth.auth.v1.AuthService.SignInWithOAuth.
+func (c *authServiceClient) SignInWithOAuth(ctx context.Context, req *connect.Request[v1.SignInWithOAuthRequest]) (*connect.Response[v1.SignInWithOAuthResponse], error) {
+	return c.signInWithOAuth.CallUnary(ctx, req)
+}
+
+// ExchangeOAuthCode calls moth.auth.v1.AuthService.ExchangeOAuthCode.
+func (c *authServiceClient) ExchangeOAuthCode(ctx context.Context, req *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error) {
+	return c.exchangeOAuthCode.CallUnary(ctx, req)
+}
+
+// UnlinkIdentity calls moth.auth.v1.AuthService.UnlinkIdentity.
+func (c *authServiceClient) UnlinkIdentity(ctx context.Context, req *connect.Request[v1.UnlinkIdentityRequest]) (*connect.Response[v1.UnlinkIdentityResponse], error) {
+	return c.unlinkIdentity.CallUnary(ctx, req)
+}
+
 // DeleteAccount calls moth.auth.v1.AuthService.DeleteAccount.
 func (c *authServiceClient) DeleteAccount(ctx context.Context, req *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {
 	return c.deleteAccount.CallUnary(ctx, req)
@@ -350,6 +414,25 @@ type AuthServiceHandler interface {
 	// pending address. The previous address receives a notification with a
 	// revert link (valid 72 h) that goes through this same RPC.
 	ConfirmEmailChange(context.Context, *connect.Request[v1.ConfirmEmailChangeRequest]) (*connect.Response[v1.ConfirmEmailChangeResponse], error)
+	// SignInWithOAuth signs in (or up) with a provider ID token obtained by a
+	// native Google/Apple flow on the device. The token is verified
+	// server-side (signature against the provider JWKS, issuer, audience
+	// against the project's configured client/bundle IDs, expiry, nonce);
+	// email, name and subject only ever come from the verified token. Account
+	// resolution: an existing (provider, subject) identity signs that user
+	// in; else a provider-verified email matching an existing user links a
+	// new identity to it (when the project's auto_link_verified_email policy
+	// allows); else a new user is created.
+	SignInWithOAuth(context.Context, *connect.Request[v1.SignInWithOAuthRequest]) (*connect.Response[v1.SignInWithOAuthResponse], error)
+	// ExchangeOAuthCode trades the one-time code minted by the web-redirect
+	// fallback flow (GET /oauth/{provider}/start → provider consent →
+	// callback → redirect back into the app) for a token pair. Codes are
+	// single-use and short-lived.
+	ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error)
+	// UnlinkIdentity removes the caller's identity for one provider. Requires
+	// a Bearer access token. Refused when it would leave the account without
+	// any way to sign in.
+	UnlinkIdentity(context.Context, *connect.Request[v1.UnlinkIdentityRequest]) (*connect.Response[v1.UnlinkIdentityResponse], error)
 	// DeleteAccount permanently deletes the user after fresh re-authentication
 	// (App Store guideline 5.1.1). Identities, sessions and email tokens are
 	// cascaded.
@@ -441,6 +524,24 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("ConfirmEmailChange")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceSignInWithOAuthHandler := connect.NewUnaryHandler(
+		AuthServiceSignInWithOAuthProcedure,
+		svc.SignInWithOAuth,
+		connect.WithSchema(authServiceMethods.ByName("SignInWithOAuth")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceExchangeOAuthCodeHandler := connect.NewUnaryHandler(
+		AuthServiceExchangeOAuthCodeProcedure,
+		svc.ExchangeOAuthCode,
+		connect.WithSchema(authServiceMethods.ByName("ExchangeOAuthCode")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceUnlinkIdentityHandler := connect.NewUnaryHandler(
+		AuthServiceUnlinkIdentityProcedure,
+		svc.UnlinkIdentity,
+		connect.WithSchema(authServiceMethods.ByName("UnlinkIdentity")),
+		connect.WithHandlerOptions(opts...),
+	)
 	authServiceDeleteAccountHandler := connect.NewUnaryHandler(
 		AuthServiceDeleteAccountProcedure,
 		svc.DeleteAccount,
@@ -475,6 +576,12 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceRequestEmailChangeHandler.ServeHTTP(w, r)
 		case AuthServiceConfirmEmailChangeProcedure:
 			authServiceConfirmEmailChangeHandler.ServeHTTP(w, r)
+		case AuthServiceSignInWithOAuthProcedure:
+			authServiceSignInWithOAuthHandler.ServeHTTP(w, r)
+		case AuthServiceExchangeOAuthCodeProcedure:
+			authServiceExchangeOAuthCodeHandler.ServeHTTP(w, r)
+		case AuthServiceUnlinkIdentityProcedure:
+			authServiceUnlinkIdentityHandler.ServeHTTP(w, r)
 		case AuthServiceDeleteAccountProcedure:
 			authServiceDeleteAccountHandler.ServeHTTP(w, r)
 		default:
@@ -536,6 +643,18 @@ func (UnimplementedAuthServiceHandler) RequestEmailChange(context.Context, *conn
 
 func (UnimplementedAuthServiceHandler) ConfirmEmailChange(context.Context, *connect.Request[v1.ConfirmEmailChangeRequest]) (*connect.Response[v1.ConfirmEmailChangeResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.auth.v1.AuthService.ConfirmEmailChange is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) SignInWithOAuth(context.Context, *connect.Request[v1.SignInWithOAuthRequest]) (*connect.Response[v1.SignInWithOAuthResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.auth.v1.AuthService.SignInWithOAuth is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ExchangeOAuthCode(context.Context, *connect.Request[v1.ExchangeOAuthCodeRequest]) (*connect.Response[v1.ExchangeOAuthCodeResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.auth.v1.AuthService.ExchangeOAuthCode is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) UnlinkIdentity(context.Context, *connect.Request[v1.UnlinkIdentityRequest]) (*connect.Response[v1.UnlinkIdentityResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.auth.v1.AuthService.UnlinkIdentity is not implemented"))
 }
 
 func (UnimplementedAuthServiceHandler) DeleteAccount(context.Context, *connect.Request[v1.DeleteAccountRequest]) (*connect.Response[v1.DeleteAccountResponse], error) {

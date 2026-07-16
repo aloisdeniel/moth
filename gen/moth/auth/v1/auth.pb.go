@@ -22,6 +22,60 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// OAuthProvider identifies a supported social sign-in provider.
+// (buf splits "OAuth" as "O_Auth"; the natural OAUTH_ prefix is kept.)
+type OAuthProvider int32
+
+const (
+	// buf:lint:ignore ENUM_VALUE_PREFIX
+	OAuthProvider_OAUTH_PROVIDER_UNSPECIFIED OAuthProvider = 0
+	// buf:lint:ignore ENUM_VALUE_PREFIX
+	OAuthProvider_OAUTH_PROVIDER_GOOGLE OAuthProvider = 1
+	// buf:lint:ignore ENUM_VALUE_PREFIX
+	OAuthProvider_OAUTH_PROVIDER_APPLE OAuthProvider = 2
+)
+
+// Enum value maps for OAuthProvider.
+var (
+	OAuthProvider_name = map[int32]string{
+		0: "OAUTH_PROVIDER_UNSPECIFIED",
+		1: "OAUTH_PROVIDER_GOOGLE",
+		2: "OAUTH_PROVIDER_APPLE",
+	}
+	OAuthProvider_value = map[string]int32{
+		"OAUTH_PROVIDER_UNSPECIFIED": 0,
+		"OAUTH_PROVIDER_GOOGLE":      1,
+		"OAUTH_PROVIDER_APPLE":       2,
+	}
+)
+
+func (x OAuthProvider) Enum() *OAuthProvider {
+	p := new(OAuthProvider)
+	*p = x
+	return p
+}
+
+func (x OAuthProvider) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OAuthProvider) Descriptor() protoreflect.EnumDescriptor {
+	return file_moth_auth_v1_auth_proto_enumTypes[0].Descriptor()
+}
+
+func (OAuthProvider) Type() protoreflect.EnumType {
+	return &file_moth_auth_v1_auth_proto_enumTypes[0]
+}
+
+func (x OAuthProvider) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OAuthProvider.Descriptor instead.
+func (OAuthProvider) EnumDescriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{0}
+}
+
 // User is the caller's own account as exposed to the app.
 type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1353,6 +1407,346 @@ func (*ConfirmEmailChangeResponse) Descriptor() ([]byte, []int) {
 	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{27}
 }
 
+type SignInWithOAuthRequest struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Provider OAuthProvider          `protobuf:"varint,1,opt,name=provider,proto3,enum=moth.auth.v1.OAuthProvider" json:"provider,omitempty"`
+	// The provider-issued OIDC ID token (JWT).
+	IdToken string `protobuf:"bytes,2,opt,name=id_token,json=idToken,proto3" json:"id_token,omitempty"`
+	// The raw per-attempt nonce the SDK generated for this sign-in. The
+	// server requires the ID token's `nonce` claim to match (Apple carries
+	// its SHA-256 per their scheme), so replayed ID tokens are rejected.
+	Nonce string `protobuf:"bytes,3,opt,name=nonce,proto3" json:"nonce,omitempty"`
+	// Apple only: the authorization code from the native flow, exchanged
+	// server-side for the refresh token that account deletion later revokes
+	// (App Store requirement).
+	AuthorizationCode string `protobuf:"bytes,4,opt,name=authorization_code,json=authorizationCode,proto3" json:"authorization_code,omitempty"`
+	// Apple only: the user's name, which Apple exposes solely to the app and
+	// solely on first authorization. Client-asserted — used for the initial
+	// display name, never for identity resolution.
+	GivenName  string `protobuf:"bytes,5,opt,name=given_name,json=givenName,proto3" json:"given_name,omitempty"`
+	FamilyName string `protobuf:"bytes,6,opt,name=family_name,json=familyName,proto3" json:"family_name,omitempty"`
+	// Free-form device description stored with the session, e.g. "iPhone 15".
+	DeviceInfo    string `protobuf:"bytes,7,opt,name=device_info,json=deviceInfo,proto3" json:"device_info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignInWithOAuthRequest) Reset() {
+	*x = SignInWithOAuthRequest{}
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[28]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignInWithOAuthRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignInWithOAuthRequest) ProtoMessage() {}
+
+func (x *SignInWithOAuthRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[28]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignInWithOAuthRequest.ProtoReflect.Descriptor instead.
+func (*SignInWithOAuthRequest) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{28}
+}
+
+func (x *SignInWithOAuthRequest) GetProvider() OAuthProvider {
+	if x != nil {
+		return x.Provider
+	}
+	return OAuthProvider_OAUTH_PROVIDER_UNSPECIFIED
+}
+
+func (x *SignInWithOAuthRequest) GetIdToken() string {
+	if x != nil {
+		return x.IdToken
+	}
+	return ""
+}
+
+func (x *SignInWithOAuthRequest) GetNonce() string {
+	if x != nil {
+		return x.Nonce
+	}
+	return ""
+}
+
+func (x *SignInWithOAuthRequest) GetAuthorizationCode() string {
+	if x != nil {
+		return x.AuthorizationCode
+	}
+	return ""
+}
+
+func (x *SignInWithOAuthRequest) GetGivenName() string {
+	if x != nil {
+		return x.GivenName
+	}
+	return ""
+}
+
+func (x *SignInWithOAuthRequest) GetFamilyName() string {
+	if x != nil {
+		return x.FamilyName
+	}
+	return ""
+}
+
+func (x *SignInWithOAuthRequest) GetDeviceInfo() string {
+	if x != nil {
+		return x.DeviceInfo
+	}
+	return ""
+}
+
+type SignInWithOAuthResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	Tokens        *TokenPair             `protobuf:"bytes,2,opt,name=tokens,proto3" json:"tokens,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SignInWithOAuthResponse) Reset() {
+	*x = SignInWithOAuthResponse{}
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[29]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SignInWithOAuthResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SignInWithOAuthResponse) ProtoMessage() {}
+
+func (x *SignInWithOAuthResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[29]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SignInWithOAuthResponse.ProtoReflect.Descriptor instead.
+func (*SignInWithOAuthResponse) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *SignInWithOAuthResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *SignInWithOAuthResponse) GetTokens() *TokenPair {
+	if x != nil {
+		return x.Tokens
+	}
+	return nil
+}
+
+type ExchangeOAuthCodeRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The one-time code from the web-redirect callback.
+	Code          string `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	DeviceInfo    string `protobuf:"bytes,2,opt,name=device_info,json=deviceInfo,proto3" json:"device_info,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExchangeOAuthCodeRequest) Reset() {
+	*x = ExchangeOAuthCodeRequest{}
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[30]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExchangeOAuthCodeRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExchangeOAuthCodeRequest) ProtoMessage() {}
+
+func (x *ExchangeOAuthCodeRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[30]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExchangeOAuthCodeRequest.ProtoReflect.Descriptor instead.
+func (*ExchangeOAuthCodeRequest) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *ExchangeOAuthCodeRequest) GetCode() string {
+	if x != nil {
+		return x.Code
+	}
+	return ""
+}
+
+func (x *ExchangeOAuthCodeRequest) GetDeviceInfo() string {
+	if x != nil {
+		return x.DeviceInfo
+	}
+	return ""
+}
+
+type ExchangeOAuthCodeResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	User          *User                  `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	Tokens        *TokenPair             `protobuf:"bytes,2,opt,name=tokens,proto3" json:"tokens,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ExchangeOAuthCodeResponse) Reset() {
+	*x = ExchangeOAuthCodeResponse{}
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[31]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ExchangeOAuthCodeResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ExchangeOAuthCodeResponse) ProtoMessage() {}
+
+func (x *ExchangeOAuthCodeResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[31]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ExchangeOAuthCodeResponse.ProtoReflect.Descriptor instead.
+func (*ExchangeOAuthCodeResponse) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{31}
+}
+
+func (x *ExchangeOAuthCodeResponse) GetUser() *User {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *ExchangeOAuthCodeResponse) GetTokens() *TokenPair {
+	if x != nil {
+		return x.Tokens
+	}
+	return nil
+}
+
+type UnlinkIdentityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Provider      OAuthProvider          `protobuf:"varint,1,opt,name=provider,proto3,enum=moth.auth.v1.OAuthProvider" json:"provider,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnlinkIdentityRequest) Reset() {
+	*x = UnlinkIdentityRequest{}
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[32]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnlinkIdentityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnlinkIdentityRequest) ProtoMessage() {}
+
+func (x *UnlinkIdentityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[32]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnlinkIdentityRequest.ProtoReflect.Descriptor instead.
+func (*UnlinkIdentityRequest) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{32}
+}
+
+func (x *UnlinkIdentityRequest) GetProvider() OAuthProvider {
+	if x != nil {
+		return x.Provider
+	}
+	return OAuthProvider_OAUTH_PROVIDER_UNSPECIFIED
+}
+
+type UnlinkIdentityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UnlinkIdentityResponse) Reset() {
+	*x = UnlinkIdentityResponse{}
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[33]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UnlinkIdentityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UnlinkIdentityResponse) ProtoMessage() {}
+
+func (x *UnlinkIdentityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[33]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UnlinkIdentityResponse.ProtoReflect.Descriptor instead.
+func (*UnlinkIdentityResponse) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{33}
+}
+
 type DeleteAccountRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Fresh re-authentication: the current password. (Recent social sign-in
@@ -1364,7 +1758,7 @@ type DeleteAccountRequest struct {
 
 func (x *DeleteAccountRequest) Reset() {
 	*x = DeleteAccountRequest{}
-	mi := &file_moth_auth_v1_auth_proto_msgTypes[28]
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1376,7 +1770,7 @@ func (x *DeleteAccountRequest) String() string {
 func (*DeleteAccountRequest) ProtoMessage() {}
 
 func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_auth_proto_msgTypes[28]
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1389,7 +1783,7 @@ func (x *DeleteAccountRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAccountRequest.ProtoReflect.Descriptor instead.
 func (*DeleteAccountRequest) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{28}
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *DeleteAccountRequest) GetPassword() string {
@@ -1407,7 +1801,7 @@ type DeleteAccountResponse struct {
 
 func (x *DeleteAccountResponse) Reset() {
 	*x = DeleteAccountResponse{}
-	mi := &file_moth_auth_v1_auth_proto_msgTypes[29]
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1419,7 +1813,7 @@ func (x *DeleteAccountResponse) String() string {
 func (*DeleteAccountResponse) ProtoMessage() {}
 
 func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_auth_proto_msgTypes[29]
+	mi := &file_moth_auth_v1_auth_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1432,7 +1826,7 @@ func (x *DeleteAccountResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteAccountResponse.ProtoReflect.Descriptor instead.
 func (*DeleteAccountResponse) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{29}
+	return file_moth_auth_v1_auth_proto_rawDescGZIP(), []int{35}
 }
 
 var File_moth_auth_v1_auth_proto protoreflect.FileDescriptor
@@ -1515,11 +1909,38 @@ const file_moth_auth_v1_auth_proto_rawDesc = "" +
 	"\x1aRequestEmailChangeResponse\"1\n" +
 	"\x19ConfirmEmailChangeRequest\x12\x14\n" +
 	"\x05token\x18\x01 \x01(\tR\x05token\"\x1c\n" +
-	"\x1aConfirmEmailChangeResponse\"2\n" +
+	"\x1aConfirmEmailChangeResponse\"\x92\x02\n" +
+	"\x16SignInWithOAuthRequest\x127\n" +
+	"\bprovider\x18\x01 \x01(\x0e2\x1b.moth.auth.v1.OAuthProviderR\bprovider\x12\x19\n" +
+	"\bid_token\x18\x02 \x01(\tR\aidToken\x12\x14\n" +
+	"\x05nonce\x18\x03 \x01(\tR\x05nonce\x12-\n" +
+	"\x12authorization_code\x18\x04 \x01(\tR\x11authorizationCode\x12\x1d\n" +
+	"\n" +
+	"given_name\x18\x05 \x01(\tR\tgivenName\x12\x1f\n" +
+	"\vfamily_name\x18\x06 \x01(\tR\n" +
+	"familyName\x12\x1f\n" +
+	"\vdevice_info\x18\a \x01(\tR\n" +
+	"deviceInfo\"r\n" +
+	"\x17SignInWithOAuthResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.moth.auth.v1.UserR\x04user\x12/\n" +
+	"\x06tokens\x18\x02 \x01(\v2\x17.moth.auth.v1.TokenPairR\x06tokens\"O\n" +
+	"\x18ExchangeOAuthCodeRequest\x12\x12\n" +
+	"\x04code\x18\x01 \x01(\tR\x04code\x12\x1f\n" +
+	"\vdevice_info\x18\x02 \x01(\tR\n" +
+	"deviceInfo\"t\n" +
+	"\x19ExchangeOAuthCodeResponse\x12&\n" +
+	"\x04user\x18\x01 \x01(\v2\x12.moth.auth.v1.UserR\x04user\x12/\n" +
+	"\x06tokens\x18\x02 \x01(\v2\x17.moth.auth.v1.TokenPairR\x06tokens\"P\n" +
+	"\x15UnlinkIdentityRequest\x127\n" +
+	"\bprovider\x18\x01 \x01(\x0e2\x1b.moth.auth.v1.OAuthProviderR\bprovider\"\x18\n" +
+	"\x16UnlinkIdentityResponse\"2\n" +
 	"\x14DeleteAccountRequest\x12\x1a\n" +
 	"\bpassword\x18\x01 \x01(\tR\bpassword\"\x17\n" +
-	"\x15DeleteAccountResponse2\xa0\n" +
-	"\n" +
+	"\x15DeleteAccountResponse*d\n" +
+	"\rOAuthProvider\x12\x1e\n" +
+	"\x1aOAUTH_PROVIDER_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15OAUTH_PROVIDER_GOOGLE\x10\x01\x12\x18\n" +
+	"\x14OAUTH_PROVIDER_APPLE\x10\x022\xc3\f\n" +
 	"\vAuthService\x12C\n" +
 	"\x06SignUp\x12\x1b.moth.auth.v1.SignUpRequest\x1a\x1c.moth.auth.v1.SignUpResponse\x12C\n" +
 	"\x06SignIn\x12\x1b.moth.auth.v1.SignInRequest\x1a\x1c.moth.auth.v1.SignInResponse\x12U\n" +
@@ -1533,7 +1954,10 @@ const file_moth_auth_v1_auth_proto_rawDesc = "" +
 	"\x14RequestPasswordReset\x12).moth.auth.v1.RequestPasswordResetRequest\x1a*.moth.auth.v1.RequestPasswordResetResponse\x12m\n" +
 	"\x14ConfirmPasswordReset\x12).moth.auth.v1.ConfirmPasswordResetRequest\x1a*.moth.auth.v1.ConfirmPasswordResetResponse\x12g\n" +
 	"\x12RequestEmailChange\x12'.moth.auth.v1.RequestEmailChangeRequest\x1a(.moth.auth.v1.RequestEmailChangeResponse\x12g\n" +
-	"\x12ConfirmEmailChange\x12'.moth.auth.v1.ConfirmEmailChangeRequest\x1a(.moth.auth.v1.ConfirmEmailChangeResponse\x12X\n" +
+	"\x12ConfirmEmailChange\x12'.moth.auth.v1.ConfirmEmailChangeRequest\x1a(.moth.auth.v1.ConfirmEmailChangeResponse\x12^\n" +
+	"\x0fSignInWithOAuth\x12$.moth.auth.v1.SignInWithOAuthRequest\x1a%.moth.auth.v1.SignInWithOAuthResponse\x12d\n" +
+	"\x11ExchangeOAuthCode\x12&.moth.auth.v1.ExchangeOAuthCodeRequest\x1a'.moth.auth.v1.ExchangeOAuthCodeResponse\x12[\n" +
+	"\x0eUnlinkIdentity\x12#.moth.auth.v1.UnlinkIdentityRequest\x1a$.moth.auth.v1.UnlinkIdentityResponse\x12X\n" +
 	"\rDeleteAccount\x12\".moth.auth.v1.DeleteAccountRequest\x1a#.moth.auth.v1.DeleteAccountResponseB5Z3github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1b\x06proto3"
 
 var (
@@ -1548,84 +1972,104 @@ func file_moth_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_moth_auth_v1_auth_proto_rawDescData
 }
 
-var file_moth_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_moth_auth_v1_auth_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_moth_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
 var file_moth_auth_v1_auth_proto_goTypes = []any{
-	(*User)(nil),                             // 0: moth.auth.v1.User
-	(*TokenPair)(nil),                        // 1: moth.auth.v1.TokenPair
-	(*SignUpRequest)(nil),                    // 2: moth.auth.v1.SignUpRequest
-	(*SignUpResponse)(nil),                   // 3: moth.auth.v1.SignUpResponse
-	(*SignInRequest)(nil),                    // 4: moth.auth.v1.SignInRequest
-	(*SignInResponse)(nil),                   // 5: moth.auth.v1.SignInResponse
-	(*RefreshTokenRequest)(nil),              // 6: moth.auth.v1.RefreshTokenRequest
-	(*RefreshTokenResponse)(nil),             // 7: moth.auth.v1.RefreshTokenResponse
-	(*SignOutRequest)(nil),                   // 8: moth.auth.v1.SignOutRequest
-	(*SignOutResponse)(nil),                  // 9: moth.auth.v1.SignOutResponse
-	(*GetMeRequest)(nil),                     // 10: moth.auth.v1.GetMeRequest
-	(*GetMeResponse)(nil),                    // 11: moth.auth.v1.GetMeResponse
-	(*UpdateMeRequest)(nil),                  // 12: moth.auth.v1.UpdateMeRequest
-	(*UpdateMeResponse)(nil),                 // 13: moth.auth.v1.UpdateMeResponse
-	(*ChangePasswordRequest)(nil),            // 14: moth.auth.v1.ChangePasswordRequest
-	(*ChangePasswordResponse)(nil),           // 15: moth.auth.v1.ChangePasswordResponse
-	(*RequestEmailVerificationRequest)(nil),  // 16: moth.auth.v1.RequestEmailVerificationRequest
-	(*RequestEmailVerificationResponse)(nil), // 17: moth.auth.v1.RequestEmailVerificationResponse
-	(*ConfirmEmailVerificationRequest)(nil),  // 18: moth.auth.v1.ConfirmEmailVerificationRequest
-	(*ConfirmEmailVerificationResponse)(nil), // 19: moth.auth.v1.ConfirmEmailVerificationResponse
-	(*RequestPasswordResetRequest)(nil),      // 20: moth.auth.v1.RequestPasswordResetRequest
-	(*RequestPasswordResetResponse)(nil),     // 21: moth.auth.v1.RequestPasswordResetResponse
-	(*ConfirmPasswordResetRequest)(nil),      // 22: moth.auth.v1.ConfirmPasswordResetRequest
-	(*ConfirmPasswordResetResponse)(nil),     // 23: moth.auth.v1.ConfirmPasswordResetResponse
-	(*RequestEmailChangeRequest)(nil),        // 24: moth.auth.v1.RequestEmailChangeRequest
-	(*RequestEmailChangeResponse)(nil),       // 25: moth.auth.v1.RequestEmailChangeResponse
-	(*ConfirmEmailChangeRequest)(nil),        // 26: moth.auth.v1.ConfirmEmailChangeRequest
-	(*ConfirmEmailChangeResponse)(nil),       // 27: moth.auth.v1.ConfirmEmailChangeResponse
-	(*DeleteAccountRequest)(nil),             // 28: moth.auth.v1.DeleteAccountRequest
-	(*DeleteAccountResponse)(nil),            // 29: moth.auth.v1.DeleteAccountResponse
-	(*timestamppb.Timestamp)(nil),            // 30: google.protobuf.Timestamp
+	(OAuthProvider)(0),                       // 0: moth.auth.v1.OAuthProvider
+	(*User)(nil),                             // 1: moth.auth.v1.User
+	(*TokenPair)(nil),                        // 2: moth.auth.v1.TokenPair
+	(*SignUpRequest)(nil),                    // 3: moth.auth.v1.SignUpRequest
+	(*SignUpResponse)(nil),                   // 4: moth.auth.v1.SignUpResponse
+	(*SignInRequest)(nil),                    // 5: moth.auth.v1.SignInRequest
+	(*SignInResponse)(nil),                   // 6: moth.auth.v1.SignInResponse
+	(*RefreshTokenRequest)(nil),              // 7: moth.auth.v1.RefreshTokenRequest
+	(*RefreshTokenResponse)(nil),             // 8: moth.auth.v1.RefreshTokenResponse
+	(*SignOutRequest)(nil),                   // 9: moth.auth.v1.SignOutRequest
+	(*SignOutResponse)(nil),                  // 10: moth.auth.v1.SignOutResponse
+	(*GetMeRequest)(nil),                     // 11: moth.auth.v1.GetMeRequest
+	(*GetMeResponse)(nil),                    // 12: moth.auth.v1.GetMeResponse
+	(*UpdateMeRequest)(nil),                  // 13: moth.auth.v1.UpdateMeRequest
+	(*UpdateMeResponse)(nil),                 // 14: moth.auth.v1.UpdateMeResponse
+	(*ChangePasswordRequest)(nil),            // 15: moth.auth.v1.ChangePasswordRequest
+	(*ChangePasswordResponse)(nil),           // 16: moth.auth.v1.ChangePasswordResponse
+	(*RequestEmailVerificationRequest)(nil),  // 17: moth.auth.v1.RequestEmailVerificationRequest
+	(*RequestEmailVerificationResponse)(nil), // 18: moth.auth.v1.RequestEmailVerificationResponse
+	(*ConfirmEmailVerificationRequest)(nil),  // 19: moth.auth.v1.ConfirmEmailVerificationRequest
+	(*ConfirmEmailVerificationResponse)(nil), // 20: moth.auth.v1.ConfirmEmailVerificationResponse
+	(*RequestPasswordResetRequest)(nil),      // 21: moth.auth.v1.RequestPasswordResetRequest
+	(*RequestPasswordResetResponse)(nil),     // 22: moth.auth.v1.RequestPasswordResetResponse
+	(*ConfirmPasswordResetRequest)(nil),      // 23: moth.auth.v1.ConfirmPasswordResetRequest
+	(*ConfirmPasswordResetResponse)(nil),     // 24: moth.auth.v1.ConfirmPasswordResetResponse
+	(*RequestEmailChangeRequest)(nil),        // 25: moth.auth.v1.RequestEmailChangeRequest
+	(*RequestEmailChangeResponse)(nil),       // 26: moth.auth.v1.RequestEmailChangeResponse
+	(*ConfirmEmailChangeRequest)(nil),        // 27: moth.auth.v1.ConfirmEmailChangeRequest
+	(*ConfirmEmailChangeResponse)(nil),       // 28: moth.auth.v1.ConfirmEmailChangeResponse
+	(*SignInWithOAuthRequest)(nil),           // 29: moth.auth.v1.SignInWithOAuthRequest
+	(*SignInWithOAuthResponse)(nil),          // 30: moth.auth.v1.SignInWithOAuthResponse
+	(*ExchangeOAuthCodeRequest)(nil),         // 31: moth.auth.v1.ExchangeOAuthCodeRequest
+	(*ExchangeOAuthCodeResponse)(nil),        // 32: moth.auth.v1.ExchangeOAuthCodeResponse
+	(*UnlinkIdentityRequest)(nil),            // 33: moth.auth.v1.UnlinkIdentityRequest
+	(*UnlinkIdentityResponse)(nil),           // 34: moth.auth.v1.UnlinkIdentityResponse
+	(*DeleteAccountRequest)(nil),             // 35: moth.auth.v1.DeleteAccountRequest
+	(*DeleteAccountResponse)(nil),            // 36: moth.auth.v1.DeleteAccountResponse
+	(*timestamppb.Timestamp)(nil),            // 37: google.protobuf.Timestamp
 }
 var file_moth_auth_v1_auth_proto_depIdxs = []int32{
-	30, // 0: moth.auth.v1.User.create_time:type_name -> google.protobuf.Timestamp
-	0,  // 1: moth.auth.v1.SignUpResponse.user:type_name -> moth.auth.v1.User
-	1,  // 2: moth.auth.v1.SignUpResponse.tokens:type_name -> moth.auth.v1.TokenPair
-	0,  // 3: moth.auth.v1.SignInResponse.user:type_name -> moth.auth.v1.User
-	1,  // 4: moth.auth.v1.SignInResponse.tokens:type_name -> moth.auth.v1.TokenPair
-	0,  // 5: moth.auth.v1.RefreshTokenResponse.user:type_name -> moth.auth.v1.User
-	1,  // 6: moth.auth.v1.RefreshTokenResponse.tokens:type_name -> moth.auth.v1.TokenPair
-	0,  // 7: moth.auth.v1.GetMeResponse.user:type_name -> moth.auth.v1.User
-	0,  // 8: moth.auth.v1.UpdateMeResponse.user:type_name -> moth.auth.v1.User
-	1,  // 9: moth.auth.v1.ChangePasswordResponse.tokens:type_name -> moth.auth.v1.TokenPair
-	2,  // 10: moth.auth.v1.AuthService.SignUp:input_type -> moth.auth.v1.SignUpRequest
-	4,  // 11: moth.auth.v1.AuthService.SignIn:input_type -> moth.auth.v1.SignInRequest
-	6,  // 12: moth.auth.v1.AuthService.RefreshToken:input_type -> moth.auth.v1.RefreshTokenRequest
-	8,  // 13: moth.auth.v1.AuthService.SignOut:input_type -> moth.auth.v1.SignOutRequest
-	10, // 14: moth.auth.v1.AuthService.GetMe:input_type -> moth.auth.v1.GetMeRequest
-	12, // 15: moth.auth.v1.AuthService.UpdateMe:input_type -> moth.auth.v1.UpdateMeRequest
-	14, // 16: moth.auth.v1.AuthService.ChangePassword:input_type -> moth.auth.v1.ChangePasswordRequest
-	16, // 17: moth.auth.v1.AuthService.RequestEmailVerification:input_type -> moth.auth.v1.RequestEmailVerificationRequest
-	18, // 18: moth.auth.v1.AuthService.ConfirmEmailVerification:input_type -> moth.auth.v1.ConfirmEmailVerificationRequest
-	20, // 19: moth.auth.v1.AuthService.RequestPasswordReset:input_type -> moth.auth.v1.RequestPasswordResetRequest
-	22, // 20: moth.auth.v1.AuthService.ConfirmPasswordReset:input_type -> moth.auth.v1.ConfirmPasswordResetRequest
-	24, // 21: moth.auth.v1.AuthService.RequestEmailChange:input_type -> moth.auth.v1.RequestEmailChangeRequest
-	26, // 22: moth.auth.v1.AuthService.ConfirmEmailChange:input_type -> moth.auth.v1.ConfirmEmailChangeRequest
-	28, // 23: moth.auth.v1.AuthService.DeleteAccount:input_type -> moth.auth.v1.DeleteAccountRequest
-	3,  // 24: moth.auth.v1.AuthService.SignUp:output_type -> moth.auth.v1.SignUpResponse
-	5,  // 25: moth.auth.v1.AuthService.SignIn:output_type -> moth.auth.v1.SignInResponse
-	7,  // 26: moth.auth.v1.AuthService.RefreshToken:output_type -> moth.auth.v1.RefreshTokenResponse
-	9,  // 27: moth.auth.v1.AuthService.SignOut:output_type -> moth.auth.v1.SignOutResponse
-	11, // 28: moth.auth.v1.AuthService.GetMe:output_type -> moth.auth.v1.GetMeResponse
-	13, // 29: moth.auth.v1.AuthService.UpdateMe:output_type -> moth.auth.v1.UpdateMeResponse
-	15, // 30: moth.auth.v1.AuthService.ChangePassword:output_type -> moth.auth.v1.ChangePasswordResponse
-	17, // 31: moth.auth.v1.AuthService.RequestEmailVerification:output_type -> moth.auth.v1.RequestEmailVerificationResponse
-	19, // 32: moth.auth.v1.AuthService.ConfirmEmailVerification:output_type -> moth.auth.v1.ConfirmEmailVerificationResponse
-	21, // 33: moth.auth.v1.AuthService.RequestPasswordReset:output_type -> moth.auth.v1.RequestPasswordResetResponse
-	23, // 34: moth.auth.v1.AuthService.ConfirmPasswordReset:output_type -> moth.auth.v1.ConfirmPasswordResetResponse
-	25, // 35: moth.auth.v1.AuthService.RequestEmailChange:output_type -> moth.auth.v1.RequestEmailChangeResponse
-	27, // 36: moth.auth.v1.AuthService.ConfirmEmailChange:output_type -> moth.auth.v1.ConfirmEmailChangeResponse
-	29, // 37: moth.auth.v1.AuthService.DeleteAccount:output_type -> moth.auth.v1.DeleteAccountResponse
-	24, // [24:38] is the sub-list for method output_type
-	10, // [10:24] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	37, // 0: moth.auth.v1.User.create_time:type_name -> google.protobuf.Timestamp
+	1,  // 1: moth.auth.v1.SignUpResponse.user:type_name -> moth.auth.v1.User
+	2,  // 2: moth.auth.v1.SignUpResponse.tokens:type_name -> moth.auth.v1.TokenPair
+	1,  // 3: moth.auth.v1.SignInResponse.user:type_name -> moth.auth.v1.User
+	2,  // 4: moth.auth.v1.SignInResponse.tokens:type_name -> moth.auth.v1.TokenPair
+	1,  // 5: moth.auth.v1.RefreshTokenResponse.user:type_name -> moth.auth.v1.User
+	2,  // 6: moth.auth.v1.RefreshTokenResponse.tokens:type_name -> moth.auth.v1.TokenPair
+	1,  // 7: moth.auth.v1.GetMeResponse.user:type_name -> moth.auth.v1.User
+	1,  // 8: moth.auth.v1.UpdateMeResponse.user:type_name -> moth.auth.v1.User
+	2,  // 9: moth.auth.v1.ChangePasswordResponse.tokens:type_name -> moth.auth.v1.TokenPair
+	0,  // 10: moth.auth.v1.SignInWithOAuthRequest.provider:type_name -> moth.auth.v1.OAuthProvider
+	1,  // 11: moth.auth.v1.SignInWithOAuthResponse.user:type_name -> moth.auth.v1.User
+	2,  // 12: moth.auth.v1.SignInWithOAuthResponse.tokens:type_name -> moth.auth.v1.TokenPair
+	1,  // 13: moth.auth.v1.ExchangeOAuthCodeResponse.user:type_name -> moth.auth.v1.User
+	2,  // 14: moth.auth.v1.ExchangeOAuthCodeResponse.tokens:type_name -> moth.auth.v1.TokenPair
+	0,  // 15: moth.auth.v1.UnlinkIdentityRequest.provider:type_name -> moth.auth.v1.OAuthProvider
+	3,  // 16: moth.auth.v1.AuthService.SignUp:input_type -> moth.auth.v1.SignUpRequest
+	5,  // 17: moth.auth.v1.AuthService.SignIn:input_type -> moth.auth.v1.SignInRequest
+	7,  // 18: moth.auth.v1.AuthService.RefreshToken:input_type -> moth.auth.v1.RefreshTokenRequest
+	9,  // 19: moth.auth.v1.AuthService.SignOut:input_type -> moth.auth.v1.SignOutRequest
+	11, // 20: moth.auth.v1.AuthService.GetMe:input_type -> moth.auth.v1.GetMeRequest
+	13, // 21: moth.auth.v1.AuthService.UpdateMe:input_type -> moth.auth.v1.UpdateMeRequest
+	15, // 22: moth.auth.v1.AuthService.ChangePassword:input_type -> moth.auth.v1.ChangePasswordRequest
+	17, // 23: moth.auth.v1.AuthService.RequestEmailVerification:input_type -> moth.auth.v1.RequestEmailVerificationRequest
+	19, // 24: moth.auth.v1.AuthService.ConfirmEmailVerification:input_type -> moth.auth.v1.ConfirmEmailVerificationRequest
+	21, // 25: moth.auth.v1.AuthService.RequestPasswordReset:input_type -> moth.auth.v1.RequestPasswordResetRequest
+	23, // 26: moth.auth.v1.AuthService.ConfirmPasswordReset:input_type -> moth.auth.v1.ConfirmPasswordResetRequest
+	25, // 27: moth.auth.v1.AuthService.RequestEmailChange:input_type -> moth.auth.v1.RequestEmailChangeRequest
+	27, // 28: moth.auth.v1.AuthService.ConfirmEmailChange:input_type -> moth.auth.v1.ConfirmEmailChangeRequest
+	29, // 29: moth.auth.v1.AuthService.SignInWithOAuth:input_type -> moth.auth.v1.SignInWithOAuthRequest
+	31, // 30: moth.auth.v1.AuthService.ExchangeOAuthCode:input_type -> moth.auth.v1.ExchangeOAuthCodeRequest
+	33, // 31: moth.auth.v1.AuthService.UnlinkIdentity:input_type -> moth.auth.v1.UnlinkIdentityRequest
+	35, // 32: moth.auth.v1.AuthService.DeleteAccount:input_type -> moth.auth.v1.DeleteAccountRequest
+	4,  // 33: moth.auth.v1.AuthService.SignUp:output_type -> moth.auth.v1.SignUpResponse
+	6,  // 34: moth.auth.v1.AuthService.SignIn:output_type -> moth.auth.v1.SignInResponse
+	8,  // 35: moth.auth.v1.AuthService.RefreshToken:output_type -> moth.auth.v1.RefreshTokenResponse
+	10, // 36: moth.auth.v1.AuthService.SignOut:output_type -> moth.auth.v1.SignOutResponse
+	12, // 37: moth.auth.v1.AuthService.GetMe:output_type -> moth.auth.v1.GetMeResponse
+	14, // 38: moth.auth.v1.AuthService.UpdateMe:output_type -> moth.auth.v1.UpdateMeResponse
+	16, // 39: moth.auth.v1.AuthService.ChangePassword:output_type -> moth.auth.v1.ChangePasswordResponse
+	18, // 40: moth.auth.v1.AuthService.RequestEmailVerification:output_type -> moth.auth.v1.RequestEmailVerificationResponse
+	20, // 41: moth.auth.v1.AuthService.ConfirmEmailVerification:output_type -> moth.auth.v1.ConfirmEmailVerificationResponse
+	22, // 42: moth.auth.v1.AuthService.RequestPasswordReset:output_type -> moth.auth.v1.RequestPasswordResetResponse
+	24, // 43: moth.auth.v1.AuthService.ConfirmPasswordReset:output_type -> moth.auth.v1.ConfirmPasswordResetResponse
+	26, // 44: moth.auth.v1.AuthService.RequestEmailChange:output_type -> moth.auth.v1.RequestEmailChangeResponse
+	28, // 45: moth.auth.v1.AuthService.ConfirmEmailChange:output_type -> moth.auth.v1.ConfirmEmailChangeResponse
+	30, // 46: moth.auth.v1.AuthService.SignInWithOAuth:output_type -> moth.auth.v1.SignInWithOAuthResponse
+	32, // 47: moth.auth.v1.AuthService.ExchangeOAuthCode:output_type -> moth.auth.v1.ExchangeOAuthCodeResponse
+	34, // 48: moth.auth.v1.AuthService.UnlinkIdentity:output_type -> moth.auth.v1.UnlinkIdentityResponse
+	36, // 49: moth.auth.v1.AuthService.DeleteAccount:output_type -> moth.auth.v1.DeleteAccountResponse
+	33, // [33:50] is the sub-list for method output_type
+	16, // [16:33] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_moth_auth_v1_auth_proto_init() }
@@ -1639,13 +2083,14 @@ func file_moth_auth_v1_auth_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_auth_v1_auth_proto_rawDesc), len(file_moth_auth_v1_auth_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   30,
+			NumEnums:      1,
+			NumMessages:   36,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_moth_auth_v1_auth_proto_goTypes,
 		DependencyIndexes: file_moth_auth_v1_auth_proto_depIdxs,
+		EnumInfos:         file_moth_auth_v1_auth_proto_enumTypes,
 		MessageInfos:      file_moth_auth_v1_auth_proto_msgTypes,
 	}.Build()
 	File_moth_auth_v1_auth_proto = out.File

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"sync/atomic"
+	"time"
 
 	"connectrpc.com/connect"
 	connectcors "connectrpc.com/cors"
@@ -32,6 +33,7 @@ import (
 type Store interface {
 	adminrpc.Store
 	store.EmailTokenStore
+	store.OAuthTokenStore
 	store.EventStore
 }
 
@@ -50,6 +52,11 @@ type Options struct {
 	// SetupToken guards the first-run admin setup screen. Empty when an
 	// admin account already exists.
 	SetupToken string
+	// AuthEndpoints override the Google/Apple OAuth endpoint locations;
+	// zero value means the real providers (tests point them at doubles).
+	AuthEndpoints authrpc.ProviderEndpoints
+	// Now is injectable for tests; defaults to time.Now.
+	Now func() time.Time
 }
 
 // Server is the assembled moth server.
@@ -61,6 +68,9 @@ type Server struct {
 	auth       *authrpc.Handler // shared with the hosted confirmation pages
 	setupToken atomic.Value     // string; "" once setup is complete
 	handler    http.Handler
+	// rateLimits also throttles the plain-HTTP OAuth endpoints, which sit
+	// outside the connect interceptor chain.
+	rateLimits authrpc.RateLimits
 }
 
 // New assembles the full handler.
@@ -75,10 +85,11 @@ func New(o Options) (*Server, error) {
 		o.RateLimits = authrpc.DefaultRateLimits()
 	}
 	s := &Server{
-		cfg:    o.Config,
-		store:  o.Store,
-		master: o.Master,
-		log:    o.Logger,
+		cfg:        o.Config,
+		store:      o.Store,
+		master:     o.Master,
+		log:        o.Logger,
+		rateLimits: o.RateLimits,
 	}
 	s.setupToken.Store(o.SetupToken)
 
@@ -93,12 +104,18 @@ func New(o Options) (*Server, error) {
 		return nil, fmt.Errorf("resolve smtp settings: %w", err)
 	}
 
+	// One shared, timeout-bounded client for every outbound provider call
+	// (JWKS fetches, code exchanges, Apple revocations).
+	httpc := &http.Client{Timeout: 10 * time.Second}
 	s.auth = authrpc.New(authrpc.Options{
-		Store:   o.Store,
-		Master:  o.Master,
-		Mailer:  dynMailer,
-		BaseURL: o.Config.BaseURL,
-		Logger:  o.Logger,
+		Store:      o.Store,
+		Master:     o.Master,
+		Mailer:     dynMailer,
+		BaseURL:    o.Config.BaseURL,
+		Logger:     o.Logger,
+		Now:        o.Now,
+		HTTPClient: httpc,
+		Endpoints:  o.AuthEndpoints,
 	})
 
 	// chain prepends the shared observability interceptors to a service's
@@ -140,6 +157,8 @@ func New(o Options) (*Server, error) {
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
 	mux.Handle(authPath, authHandler)
+	configPath, configHandler := authv1connect.NewConfigServiceHandler(s.auth, authInterceptors)
+	mux.Handle(configPath, configHandler)
 
 	// moth.server.v1 — the developer-backend API (secret-key auth).
 	tokenPath, tokenHandler := serverv1connect.NewTokenServiceHandler(
@@ -156,6 +175,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.AdminAccountServiceName,
 		adminv1connect.InstanceSettingsServiceName,
 		authv1connect.AuthServiceName,
+		authv1connect.ConfigServiceName,
 		serverv1connect.TokenServiceName,
 		serverv1connect.UserServiceName,
 	}
@@ -175,6 +195,12 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("GET /p/{slug}/reset", s.handleResetPage)
 	mux.HandleFunc("POST /p/{slug}/reset", s.handleResetSubmit)
 	mux.HandleFunc("GET /p/{slug}/confirm-email", s.handleConfirmEmailPage)
+	// Web-redirect OAuth fallback. The callback URL pasted into the
+	// provider consoles is project-agnostic; the state carries the project.
+	mux.HandleFunc("GET /oauth/{provider}/start", s.handleOAuthStart)
+	mux.HandleFunc("GET /oauth/{provider}/callback", s.handleOAuthCallback)
+	// Apple posts the callback (response_mode=form_post).
+	mux.HandleFunc("POST /oauth/{provider}/callback", s.handleOAuthCallback)
 	mux.HandleFunc("GET /admin", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)

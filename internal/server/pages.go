@@ -125,8 +125,13 @@ func (s *Server) pageProject(w http.ResponseWriter, r *http.Request) (store.Proj
 }
 
 func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, data pageData) {
+	s.renderPageStatus(w, r, http.StatusOK, data)
+}
+
+func (s *Server) renderPageStatus(w http.ResponseWriter, r *http.Request, status int, data pageData) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Referrer-Policy", "no-referrer")
+	w.WriteHeader(status)
 	if err := pageTemplate.Execute(w, data); err != nil {
 		s.log.Error("render page", "path", r.URL.Path, "error", err.Error())
 	}

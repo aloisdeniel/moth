@@ -56,6 +56,9 @@ func serve(ctx context.Context, cfg config.Config) error {
 	if err := st.DeleteExpiredSessions(ctx, time.Now()); err != nil {
 		return err
 	}
+	if err := st.DeleteExpiredOAuthTokens(ctx, time.Now()); err != nil {
+		return err
+	}
 
 	master, err := keys.LoadOrCreateMasterKey(cfg.DataDir, os.Getenv)
 	if err != nil {
@@ -106,6 +109,12 @@ func serve(ctx context.Context, cfg config.Config) error {
 	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// Periodic sweep of expired single-use rows: the unauthenticated
+	// /oauth/{provider}/start endpoint inserts a state row per hit and
+	// consumed codes/states are kept until expiry, so a long-running
+	// instance must not rely on the startup sweep alone.
+	go sweepExpired(ctx, st, log)
+
 	errCh := make(chan error, 1)
 	go func() { errCh <- httpServer.ListenAndServe() }()
 
@@ -120,5 +129,29 @@ func serve(ctx context.Context, cfg config.Config) error {
 			return err
 		}
 		return nil
+	}
+}
+
+// sweepExpiredInterval is how often expired sessions and OAuth artifacts
+// are deleted while serving.
+const sweepExpiredInterval = time.Hour
+
+// sweepExpired deletes expired admin sessions and single-use OAuth rows on
+// a ticker until ctx is done; failures are logged, never fatal.
+func sweepExpired(ctx context.Context, st *store.Store, log *slog.Logger) {
+	ticker := time.NewTicker(sweepExpiredInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case now := <-ticker.C:
+			if err := st.DeleteExpiredSessions(ctx, now); err != nil {
+				log.Error("sweep expired sessions", "error", err.Error())
+			}
+			if err := st.DeleteExpiredOAuthTokens(ctx, now); err != nil {
+				log.Error("sweep expired oauth tokens", "error", err.Error())
+			}
+		}
 	}
 }

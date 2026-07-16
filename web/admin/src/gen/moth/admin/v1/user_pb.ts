@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/user.proto.
  */
 export const file_moth_admin_v1_user: GenFile = /*@__PURE__*/
-  fileDesc("Chhtb3RoL2FkbWluL3YxL3VzZXIucHJvdG8SDW1vdGguYWRtaW4udjEiogIKBFVzZXISCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSFgoOZW1haWxfdmVyaWZpZWQYAyABKAgSFAoMZGlzcGxheV9uYW1lGAQgASgJEhAKCGRpc2FibGVkGAUgASgIEi8KC2NyZWF0ZV90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglwcm92aWRlcnMYByADKAkSMwoPbGFzdF9sb2dpbl90aW1lGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgt1cGRhdGVfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFQoNY3VzdG9tX2NsYWltcxgKIAEoCSKQAQoLVXNlclNlc3Npb24SCgoCaWQYASABKAkSEwoLZGV2aWNlX2luZm8YAiABKAkSLwoLY3JlYXRlX3RpbWUYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC2V4cGlyZV90aW1lGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJcChBMaXN0VXNlcnNSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSEQoJcGFnZV9zaXplGAIgASgFEhIKCnBhZ2VfdG9rZW4YAyABKAkSDQoFcXVlcnkYBCABKAkiZAoRTGlzdFVzZXJzUmVzcG9uc2USIgoFdXNlcnMYASADKAsyEy5tb3RoLmFkbWluLnYxLlVzZXISFwoPbmV4dF9wYWdlX3Rva2VuGAIgASgJEhIKCnRvdGFsX3NpemUYAyABKAMiNQoOR2V0VXNlclJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJImIKD0dldFVzZXJSZXNwb25zZRIhCgR1c2VyGAEgASgLMhMubW90aC5hZG1pbi52MS5Vc2VyEiwKCHNlc3Npb25zGAIgAygLMhoubW90aC5hZG1pbi52MS5Vc2VyU2Vzc2lvbiKLAQoRQ3JlYXRlVXNlclJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRINCgVlbWFpbBgCIAEoCRIUCgxkaXNwbGF5X25hbWUYAyABKAkSEAoIcGFzc3dvcmQYBCABKAkSFgoOZW1haWxfdmVyaWZpZWQYBSABKAgSEwoLc2VuZF9pbnZpdGUYBiABKAgiNwoSQ3JlYXRlVXNlclJlc3BvbnNlEiEKBHVzZXIYASABKAsyEy5tb3RoLmFkbWluLnYxLlVzZXIijAEKEVVwZGF0ZVVzZXJSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCRIhCgR1c2VyGAMgASgLMhMubW90aC5hZG1pbi52MS5Vc2VyEi8KC3VwZGF0ZV9tYXNrGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLkZpZWxkTWFzayI3ChJVcGRhdGVVc2VyUmVzcG9uc2USIQoEdXNlchgBIAEoCzITLm1vdGguYWRtaW4udjEuVXNlciI5ChJEaXNhYmxlVXNlclJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJIjgKE0Rpc2FibGVVc2VyUmVzcG9uc2USIQoEdXNlchgBIAEoCzITLm1vdGguYWRtaW4udjEuVXNlciI4ChFFbmFibGVVc2VyUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiNwoSRW5hYmxlVXNlclJlc3BvbnNlEiEKBHVzZXIYASABKAsyEy5tb3RoLmFkbWluLnYxLlVzZXIiOAoRRGVsZXRlVXNlclJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJIhQKEkRlbGV0ZVVzZXJSZXNwb25zZSJAChlSZXZva2VVc2VyU2Vzc2lvbnNSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCSIzChpSZXZva2VVc2VyU2Vzc2lvbnNSZXNwb25zZRIVCg1yZXZva2VkX2NvdW50GAEgASgDIj8KGFNlbmRQYXNzd29yZFJlc2V0UmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiGwoZU2VuZFBhc3N3b3JkUmVzZXRSZXNwb25zZTKcBgoLVXNlclNlcnZpY2USTgoJTGlzdFVzZXJzEh8ubW90aC5hZG1pbi52MS5MaXN0VXNlcnNSZXF1ZXN0GiAubW90aC5hZG1pbi52MS5MaXN0VXNlcnNSZXNwb25zZRJICgdHZXRVc2VyEh0ubW90aC5hZG1pbi52MS5HZXRVc2VyUmVxdWVzdBoeLm1vdGguYWRtaW4udjEuR2V0VXNlclJlc3BvbnNlElEKCkNyZWF0ZVVzZXISIC5tb3RoLmFkbWluLnYxLkNyZWF0ZVVzZXJSZXF1ZXN0GiEubW90aC5hZG1pbi52MS5DcmVhdGVVc2VyUmVzcG9uc2USUQoKVXBkYXRlVXNlchIgLm1vdGguYWRtaW4udjEuVXBkYXRlVXNlclJlcXVlc3QaIS5tb3RoLmFkbWluLnYxLlVwZGF0ZVVzZXJSZXNwb25zZRJUCgtEaXNhYmxlVXNlchIhLm1vdGguYWRtaW4udjEuRGlzYWJsZVVzZXJSZXF1ZXN0GiIubW90aC5hZG1pbi52MS5EaXNhYmxlVXNlclJlc3BvbnNlElEKCkVuYWJsZVVzZXISIC5tb3RoLmFkbWluLnYxLkVuYWJsZVVzZXJSZXF1ZXN0GiEubW90aC5hZG1pbi52MS5FbmFibGVVc2VyUmVzcG9uc2USUQoKRGVsZXRlVXNlchIgLm1vdGguYWRtaW4udjEuRGVsZXRlVXNlclJlcXVlc3QaIS5tb3RoLmFkbWluLnYxLkRlbGV0ZVVzZXJSZXNwb25zZRJpChJSZXZva2VVc2VyU2Vzc2lvbnMSKC5tb3RoLmFkbWluLnYxLlJldm9rZVVzZXJTZXNzaW9uc1JlcXVlc3QaKS5tb3RoLmFkbWluLnYxLlJldm9rZVVzZXJTZXNzaW9uc1Jlc3BvbnNlEmYKEVNlbmRQYXNzd29yZFJlc2V0EicubW90aC5hZG1pbi52MS5TZW5kUGFzc3dvcmRSZXNldFJlcXVlc3QaKC5tb3RoLmFkbWluLnYxLlNlbmRQYXNzd29yZFJlc2V0UmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_field_mask, file_google_protobuf_timestamp]);
+  fileDesc("Chhtb3RoL2FkbWluL3YxL3VzZXIucHJvdG8SDW1vdGguYWRtaW4udjEiogIKBFVzZXISCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSFgoOZW1haWxfdmVyaWZpZWQYAyABKAgSFAoMZGlzcGxheV9uYW1lGAQgASgJEhAKCGRpc2FibGVkGAUgASgIEi8KC2NyZWF0ZV90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIRCglwcm92aWRlcnMYByADKAkSMwoPbGFzdF9sb2dpbl90aW1lGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgt1cGRhdGVfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFQoNY3VzdG9tX2NsYWltcxgKIAEoCSJcCghJZGVudGl0eRIQCghwcm92aWRlchgBIAEoCRINCgVlbWFpbBgCIAEoCRIvCgtjcmVhdGVfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAikAEKC1VzZXJTZXNzaW9uEgoKAmlkGAEgASgJEhMKC2RldmljZV9pbmZvGAIgASgJEi8KC2NyZWF0ZV90aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtleHBpcmVfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiXAoQTGlzdFVzZXJzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEhEKCXBhZ2Vfc2l6ZRgCIAEoBRISCgpwYWdlX3Rva2VuGAMgASgJEg0KBXF1ZXJ5GAQgASgJImQKEUxpc3RVc2Vyc1Jlc3BvbnNlEiIKBXVzZXJzGAEgAygLMhMubW90aC5hZG1pbi52MS5Vc2VyEhcKD25leHRfcGFnZV90b2tlbhgCIAEoCRISCgp0b3RhbF9zaXplGAMgASgDIjUKDkdldFVzZXJSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCSKPAQoPR2V0VXNlclJlc3BvbnNlEiEKBHVzZXIYASABKAsyEy5tb3RoLmFkbWluLnYxLlVzZXISLAoIc2Vzc2lvbnMYAiADKAsyGi5tb3RoLmFkbWluLnYxLlVzZXJTZXNzaW9uEisKCmlkZW50aXRpZXMYAyADKAsyFy5tb3RoLmFkbWluLnYxLklkZW50aXR5IosBChFDcmVhdGVVc2VyUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg0KBWVtYWlsGAIgASgJEhQKDGRpc3BsYXlfbmFtZRgDIAEoCRIQCghwYXNzd29yZBgEIAEoCRIWCg5lbWFpbF92ZXJpZmllZBgFIAEoCBITCgtzZW5kX2ludml0ZRgGIAEoCCI3ChJDcmVhdGVVc2VyUmVzcG9uc2USIQoEdXNlchgBIAEoCzITLm1vdGguYWRtaW4udjEuVXNlciKMAQoRVXBkYXRlVXNlclJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJEiEKBHVzZXIYAyABKAsyEy5tb3RoLmFkbWluLnYxLlVzZXISLwoLdXBkYXRlX21hc2sYBCABKAsyGi5nb29nbGUucHJvdG9idWYuRmllbGRNYXNrIjcKElVwZGF0ZVVzZXJSZXNwb25zZRIhCgR1c2VyGAEgASgLMhMubW90aC5hZG1pbi52MS5Vc2VyIjkKEkRpc2FibGVVc2VyUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiOAoTRGlzYWJsZVVzZXJSZXNwb25zZRIhCgR1c2VyGAEgASgLMhMubW90aC5hZG1pbi52MS5Vc2VyIjgKEUVuYWJsZVVzZXJSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCSI3ChJFbmFibGVVc2VyUmVzcG9uc2USIQoEdXNlchgBIAEoCzITLm1vdGguYWRtaW4udjEuVXNlciI4ChFEZWxldGVVc2VyUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiFAoSRGVsZXRlVXNlclJlc3BvbnNlIkAKGVJldm9rZVVzZXJTZXNzaW9uc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIPCgd1c2VyX2lkGAIgASgJIjMKGlJldm9rZVVzZXJTZXNzaW9uc1Jlc3BvbnNlEhUKDXJldm9rZWRfY291bnQYASABKAMiPwoYU2VuZFBhc3N3b3JkUmVzZXRSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkSDwoHdXNlcl9pZBgCIAEoCSIbChlTZW5kUGFzc3dvcmRSZXNldFJlc3BvbnNlMpwGCgtVc2VyU2VydmljZRJOCglMaXN0VXNlcnMSHy5tb3RoLmFkbWluLnYxLkxpc3RVc2Vyc1JlcXVlc3QaIC5tb3RoLmFkbWluLnYxLkxpc3RVc2Vyc1Jlc3BvbnNlEkgKB0dldFVzZXISHS5tb3RoLmFkbWluLnYxLkdldFVzZXJSZXF1ZXN0Gh4ubW90aC5hZG1pbi52MS5HZXRVc2VyUmVzcG9uc2USUQoKQ3JlYXRlVXNlchIgLm1vdGguYWRtaW4udjEuQ3JlYXRlVXNlclJlcXVlc3QaIS5tb3RoLmFkbWluLnYxLkNyZWF0ZVVzZXJSZXNwb25zZRJRCgpVcGRhdGVVc2VyEiAubW90aC5hZG1pbi52MS5VcGRhdGVVc2VyUmVxdWVzdBohLm1vdGguYWRtaW4udjEuVXBkYXRlVXNlclJlc3BvbnNlElQKC0Rpc2FibGVVc2VyEiEubW90aC5hZG1pbi52MS5EaXNhYmxlVXNlclJlcXVlc3QaIi5tb3RoLmFkbWluLnYxLkRpc2FibGVVc2VyUmVzcG9uc2USUQoKRW5hYmxlVXNlchIgLm1vdGguYWRtaW4udjEuRW5hYmxlVXNlclJlcXVlc3QaIS5tb3RoLmFkbWluLnYxLkVuYWJsZVVzZXJSZXNwb25zZRJRCgpEZWxldGVVc2VyEiAubW90aC5hZG1pbi52MS5EZWxldGVVc2VyUmVxdWVzdBohLm1vdGguYWRtaW4udjEuRGVsZXRlVXNlclJlc3BvbnNlEmkKElJldm9rZVVzZXJTZXNzaW9ucxIoLm1vdGguYWRtaW4udjEuUmV2b2tlVXNlclNlc3Npb25zUmVxdWVzdBopLm1vdGguYWRtaW4udjEuUmV2b2tlVXNlclNlc3Npb25zUmVzcG9uc2USZgoRU2VuZFBhc3N3b3JkUmVzZXQSJy5tb3RoLmFkbWluLnYxLlNlbmRQYXNzd29yZFJlc2V0UmVxdWVzdBooLm1vdGguYWRtaW4udjEuU2VuZFBhc3N3b3JkUmVzZXRSZXNwb25zZUI3WjVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_field_mask, file_google_protobuf_timestamp]);
 
 /**
  * User is the operator's view of a project end user.
@@ -85,6 +85,41 @@ export const UserSchema: GenMessage<User> = /*@__PURE__*/
   messageDesc(file_moth_admin_v1_user, 0);
 
 /**
+ * Identity is one linked authentication provider of a user, shown on the
+ * user detail page (and driving its unlink action).
+ *
+ * @generated from message moth.admin.v1.Identity
+ */
+export type Identity = Message<"moth.admin.v1.Identity"> & {
+  /**
+   * "password", "google" or "apple".
+   *
+   * @generated from field: string provider = 1;
+   */
+  provider: string;
+
+  /**
+   * Email asserted by the provider when the identity was linked; empty for
+   * password identities.
+   *
+   * @generated from field: string email = 2;
+   */
+  email: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp create_time = 3;
+   */
+  createTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message moth.admin.v1.Identity.
+ * Use `create(IdentitySchema)` to create a new message.
+ */
+export const IdentitySchema: GenMessage<Identity> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_user, 1);
+
+/**
  * UserSession is one active device session (a live refresh-token chain).
  *
  * @generated from message moth.admin.v1.UserSession
@@ -116,7 +151,7 @@ export type UserSession = Message<"moth.admin.v1.UserSession"> & {
  * Use `create(UserSessionSchema)` to create a new message.
  */
 export const UserSessionSchema: GenMessage<UserSession> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 1);
+  messageDesc(file_moth_admin_v1_user, 2);
 
 /**
  * @generated from message moth.admin.v1.ListUsersRequest
@@ -154,7 +189,7 @@ export type ListUsersRequest = Message<"moth.admin.v1.ListUsersRequest"> & {
  * Use `create(ListUsersRequestSchema)` to create a new message.
  */
 export const ListUsersRequestSchema: GenMessage<ListUsersRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 2);
+  messageDesc(file_moth_admin_v1_user, 3);
 
 /**
  * @generated from message moth.admin.v1.ListUsersResponse
@@ -185,7 +220,7 @@ export type ListUsersResponse = Message<"moth.admin.v1.ListUsersResponse"> & {
  * Use `create(ListUsersResponseSchema)` to create a new message.
  */
 export const ListUsersResponseSchema: GenMessage<ListUsersResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 3);
+  messageDesc(file_moth_admin_v1_user, 4);
 
 /**
  * @generated from message moth.admin.v1.GetUserRequest
@@ -207,7 +242,7 @@ export type GetUserRequest = Message<"moth.admin.v1.GetUserRequest"> & {
  * Use `create(GetUserRequestSchema)` to create a new message.
  */
 export const GetUserRequestSchema: GenMessage<GetUserRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 4);
+  messageDesc(file_moth_admin_v1_user, 5);
 
 /**
  * @generated from message moth.admin.v1.GetUserResponse
@@ -222,6 +257,13 @@ export type GetUserResponse = Message<"moth.admin.v1.GetUserResponse"> & {
    * @generated from field: repeated moth.admin.v1.UserSession sessions = 2;
    */
   sessions: UserSession[];
+
+  /**
+   * Linked provider identities, in link order.
+   *
+   * @generated from field: repeated moth.admin.v1.Identity identities = 3;
+   */
+  identities: Identity[];
 };
 
 /**
@@ -229,7 +271,7 @@ export type GetUserResponse = Message<"moth.admin.v1.GetUserResponse"> & {
  * Use `create(GetUserResponseSchema)` to create a new message.
  */
 export const GetUserResponseSchema: GenMessage<GetUserResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 5);
+  messageDesc(file_moth_admin_v1_user, 6);
 
 /**
  * @generated from message moth.admin.v1.CreateUserRequest
@@ -278,7 +320,7 @@ export type CreateUserRequest = Message<"moth.admin.v1.CreateUserRequest"> & {
  * Use `create(CreateUserRequestSchema)` to create a new message.
  */
 export const CreateUserRequestSchema: GenMessage<CreateUserRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 6);
+  messageDesc(file_moth_admin_v1_user, 7);
 
 /**
  * @generated from message moth.admin.v1.CreateUserResponse
@@ -295,7 +337,7 @@ export type CreateUserResponse = Message<"moth.admin.v1.CreateUserResponse"> & {
  * Use `create(CreateUserResponseSchema)` to create a new message.
  */
 export const CreateUserResponseSchema: GenMessage<CreateUserResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 7);
+  messageDesc(file_moth_admin_v1_user, 8);
 
 /**
  * @generated from message moth.admin.v1.UpdateUserRequest
@@ -329,7 +371,7 @@ export type UpdateUserRequest = Message<"moth.admin.v1.UpdateUserRequest"> & {
  * Use `create(UpdateUserRequestSchema)` to create a new message.
  */
 export const UpdateUserRequestSchema: GenMessage<UpdateUserRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 8);
+  messageDesc(file_moth_admin_v1_user, 9);
 
 /**
  * @generated from message moth.admin.v1.UpdateUserResponse
@@ -346,7 +388,7 @@ export type UpdateUserResponse = Message<"moth.admin.v1.UpdateUserResponse"> & {
  * Use `create(UpdateUserResponseSchema)` to create a new message.
  */
 export const UpdateUserResponseSchema: GenMessage<UpdateUserResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 9);
+  messageDesc(file_moth_admin_v1_user, 10);
 
 /**
  * @generated from message moth.admin.v1.DisableUserRequest
@@ -368,7 +410,7 @@ export type DisableUserRequest = Message<"moth.admin.v1.DisableUserRequest"> & {
  * Use `create(DisableUserRequestSchema)` to create a new message.
  */
 export const DisableUserRequestSchema: GenMessage<DisableUserRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 10);
+  messageDesc(file_moth_admin_v1_user, 11);
 
 /**
  * @generated from message moth.admin.v1.DisableUserResponse
@@ -385,7 +427,7 @@ export type DisableUserResponse = Message<"moth.admin.v1.DisableUserResponse"> &
  * Use `create(DisableUserResponseSchema)` to create a new message.
  */
 export const DisableUserResponseSchema: GenMessage<DisableUserResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 11);
+  messageDesc(file_moth_admin_v1_user, 12);
 
 /**
  * @generated from message moth.admin.v1.EnableUserRequest
@@ -407,7 +449,7 @@ export type EnableUserRequest = Message<"moth.admin.v1.EnableUserRequest"> & {
  * Use `create(EnableUserRequestSchema)` to create a new message.
  */
 export const EnableUserRequestSchema: GenMessage<EnableUserRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 12);
+  messageDesc(file_moth_admin_v1_user, 13);
 
 /**
  * @generated from message moth.admin.v1.EnableUserResponse
@@ -424,7 +466,7 @@ export type EnableUserResponse = Message<"moth.admin.v1.EnableUserResponse"> & {
  * Use `create(EnableUserResponseSchema)` to create a new message.
  */
 export const EnableUserResponseSchema: GenMessage<EnableUserResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 13);
+  messageDesc(file_moth_admin_v1_user, 14);
 
 /**
  * @generated from message moth.admin.v1.DeleteUserRequest
@@ -446,7 +488,7 @@ export type DeleteUserRequest = Message<"moth.admin.v1.DeleteUserRequest"> & {
  * Use `create(DeleteUserRequestSchema)` to create a new message.
  */
 export const DeleteUserRequestSchema: GenMessage<DeleteUserRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 14);
+  messageDesc(file_moth_admin_v1_user, 15);
 
 /**
  * @generated from message moth.admin.v1.DeleteUserResponse
@@ -459,7 +501,7 @@ export type DeleteUserResponse = Message<"moth.admin.v1.DeleteUserResponse"> & {
  * Use `create(DeleteUserResponseSchema)` to create a new message.
  */
 export const DeleteUserResponseSchema: GenMessage<DeleteUserResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 15);
+  messageDesc(file_moth_admin_v1_user, 16);
 
 /**
  * @generated from message moth.admin.v1.RevokeUserSessionsRequest
@@ -481,7 +523,7 @@ export type RevokeUserSessionsRequest = Message<"moth.admin.v1.RevokeUserSession
  * Use `create(RevokeUserSessionsRequestSchema)` to create a new message.
  */
 export const RevokeUserSessionsRequestSchema: GenMessage<RevokeUserSessionsRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 16);
+  messageDesc(file_moth_admin_v1_user, 17);
 
 /**
  * @generated from message moth.admin.v1.RevokeUserSessionsResponse
@@ -500,7 +542,7 @@ export type RevokeUserSessionsResponse = Message<"moth.admin.v1.RevokeUserSessio
  * Use `create(RevokeUserSessionsResponseSchema)` to create a new message.
  */
 export const RevokeUserSessionsResponseSchema: GenMessage<RevokeUserSessionsResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 17);
+  messageDesc(file_moth_admin_v1_user, 18);
 
 /**
  * @generated from message moth.admin.v1.SendPasswordResetRequest
@@ -522,7 +564,7 @@ export type SendPasswordResetRequest = Message<"moth.admin.v1.SendPasswordResetR
  * Use `create(SendPasswordResetRequestSchema)` to create a new message.
  */
 export const SendPasswordResetRequestSchema: GenMessage<SendPasswordResetRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 18);
+  messageDesc(file_moth_admin_v1_user, 19);
 
 /**
  * @generated from message moth.admin.v1.SendPasswordResetResponse
@@ -535,7 +577,7 @@ export type SendPasswordResetResponse = Message<"moth.admin.v1.SendPasswordReset
  * Use `create(SendPasswordResetResponseSchema)` to create a new message.
  */
 export const SendPasswordResetResponseSchema: GenMessage<SendPasswordResetResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_user, 19);
+  messageDesc(file_moth_admin_v1_user, 20);
 
 /**
  * UserService gives instance operators visibility and control over a

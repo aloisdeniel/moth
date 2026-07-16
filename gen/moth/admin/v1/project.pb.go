@@ -143,8 +143,21 @@ type ProjectSettings struct {
 	AccessTokenTtlSeconds int32 `protobuf:"varint,5,opt,name=access_token_ttl_seconds,json=accessTokenTtlSeconds,proto3" json:"access_token_ttl_seconds,omitempty"`
 	// Refresh token sliding window in days (default 30).
 	RefreshTokenTtlDays int32 `protobuf:"varint,6,opt,name=refresh_token_ttl_days,json=refreshTokenTtlDays,proto3" json:"refresh_token_ttl_days,omitempty"`
-	unknownFields       protoimpl.UnknownFields
-	sizeCache           protoimpl.SizeCache
+	// Sign in with Google configuration.
+	Google *GoogleProviderConfig `protobuf:"bytes,7,opt,name=google,proto3" json:"google,omitempty"`
+	// Sign in with Apple configuration.
+	Apple *AppleProviderConfig `protobuf:"bytes,8,opt,name=apple,proto3" json:"apple,omitempty"`
+	// Link a social identity to an existing account when the provider asserts
+	// the same, verified email. The server default is TRUE: `optional` so that
+	// "unset" (from clients predating this field) is distinguishable from an
+	// explicit false and reads as the default. Reads always populate it.
+	AutoLinkVerifiedEmail *bool `protobuf:"varint,9,opt,name=auto_link_verified_email,json=autoLinkVerifiedEmail,proto3,oneof" json:"auto_link_verified_email,omitempty"`
+	// Custom URL schemes the web-redirect OAuth fallback may redirect back to
+	// (e.g. "myapp"). Open-redirect protection: callbacks only ever redirect
+	// to a scheme on this list.
+	RedirectSchemes []string `protobuf:"bytes,10,rep,name=redirect_schemes,json=redirectSchemes,proto3" json:"redirect_schemes,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ProjectSettings) Reset() {
@@ -219,6 +232,231 @@ func (x *ProjectSettings) GetRefreshTokenTtlDays() int32 {
 	return 0
 }
 
+func (x *ProjectSettings) GetGoogle() *GoogleProviderConfig {
+	if x != nil {
+		return x.Google
+	}
+	return nil
+}
+
+func (x *ProjectSettings) GetApple() *AppleProviderConfig {
+	if x != nil {
+		return x.Apple
+	}
+	return nil
+}
+
+func (x *ProjectSettings) GetAutoLinkVerifiedEmail() bool {
+	if x != nil && x.AutoLinkVerifiedEmail != nil {
+		return *x.AutoLinkVerifiedEmail
+	}
+	return false
+}
+
+func (x *ProjectSettings) GetRedirectSchemes() []string {
+	if x != nil {
+		return x.RedirectSchemes
+	}
+	return nil
+}
+
+// GoogleProviderConfig configures Sign in with Google for one project. The
+// client IDs are the allowed `aud` values when verifying Google ID tokens.
+type GoogleProviderConfig struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Enabled bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// OAuth client ID of type "Web application"; also used by the
+	// web-redirect fallback flow.
+	WebClientId string `protobuf:"bytes,2,opt,name=web_client_id,json=webClientId,proto3" json:"web_client_id,omitempty"`
+	// OAuth client ID of type "iOS".
+	IosClientId string `protobuf:"bytes,3,opt,name=ios_client_id,json=iosClientId,proto3" json:"ios_client_id,omitempty"`
+	// OAuth client ID of type "Android".
+	AndroidClientId string `protobuf:"bytes,4,opt,name=android_client_id,json=androidClientId,proto3" json:"android_client_id,omitempty"`
+	// Client secret of the web client, needed for the web-redirect code
+	// exchange. Write-only: accepted on update, never returned by reads. On
+	// update, an empty value keeps the stored one; reads report presence via
+	// has_web_client_secret. Stored encrypted at rest.
+	WebClientSecret string `protobuf:"bytes,5,opt,name=web_client_secret,json=webClientSecret,proto3" json:"web_client_secret,omitempty"`
+	// Output only: whether a web client secret is stored.
+	HasWebClientSecret bool `protobuf:"varint,6,opt,name=has_web_client_secret,json=hasWebClientSecret,proto3" json:"has_web_client_secret,omitempty"`
+	unknownFields      protoimpl.UnknownFields
+	sizeCache          protoimpl.SizeCache
+}
+
+func (x *GoogleProviderConfig) Reset() {
+	*x = GoogleProviderConfig{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GoogleProviderConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GoogleProviderConfig) ProtoMessage() {}
+
+func (x *GoogleProviderConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GoogleProviderConfig.ProtoReflect.Descriptor instead.
+func (*GoogleProviderConfig) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GoogleProviderConfig) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *GoogleProviderConfig) GetWebClientId() string {
+	if x != nil {
+		return x.WebClientId
+	}
+	return ""
+}
+
+func (x *GoogleProviderConfig) GetIosClientId() string {
+	if x != nil {
+		return x.IosClientId
+	}
+	return ""
+}
+
+func (x *GoogleProviderConfig) GetAndroidClientId() string {
+	if x != nil {
+		return x.AndroidClientId
+	}
+	return ""
+}
+
+func (x *GoogleProviderConfig) GetWebClientSecret() string {
+	if x != nil {
+		return x.WebClientSecret
+	}
+	return ""
+}
+
+func (x *GoogleProviderConfig) GetHasWebClientSecret() bool {
+	if x != nil {
+		return x.HasWebClientSecret
+	}
+	return false
+}
+
+// AppleProviderConfig configures Sign in with Apple for one project.
+type AppleProviderConfig struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Enabled bool                   `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// Services ID (web-redirect flow `aud`, e.g. "com.example.app.signin").
+	ServicesId string `protobuf:"bytes,2,opt,name=services_id,json=servicesId,proto3" json:"services_id,omitempty"`
+	// Apple Developer Team ID.
+	TeamId string `protobuf:"bytes,3,opt,name=team_id,json=teamId,proto3" json:"team_id,omitempty"`
+	// Key ID of the "Sign in with Apple" private key.
+	KeyId string `protobuf:"bytes,4,opt,name=key_id,json=keyId,proto3" json:"key_id,omitempty"`
+	// Contents of the `.p8` private key file, used to mint Apple client
+	// secrets. Write-only: accepted on update, never returned by reads. On
+	// update, an empty value keeps the stored one; reads report presence via
+	// has_private_key. Stored encrypted at rest.
+	PrivateKeyP8 string `protobuf:"bytes,5,opt,name=private_key_p8,json=privateKeyP8,proto3" json:"private_key_p8,omitempty"`
+	// Output only: whether a private key is stored.
+	HasPrivateKey bool `protobuf:"varint,6,opt,name=has_private_key,json=hasPrivateKey,proto3" json:"has_private_key,omitempty"`
+	// App bundle IDs accepted as `aud` on native Apple ID tokens.
+	BundleIds     []string `protobuf:"bytes,7,rep,name=bundle_ids,json=bundleIds,proto3" json:"bundle_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AppleProviderConfig) Reset() {
+	*x = AppleProviderConfig{}
+	mi := &file_moth_admin_v1_project_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AppleProviderConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AppleProviderConfig) ProtoMessage() {}
+
+func (x *AppleProviderConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_project_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AppleProviderConfig.ProtoReflect.Descriptor instead.
+func (*AppleProviderConfig) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *AppleProviderConfig) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *AppleProviderConfig) GetServicesId() string {
+	if x != nil {
+		return x.ServicesId
+	}
+	return ""
+}
+
+func (x *AppleProviderConfig) GetTeamId() string {
+	if x != nil {
+		return x.TeamId
+	}
+	return ""
+}
+
+func (x *AppleProviderConfig) GetKeyId() string {
+	if x != nil {
+		return x.KeyId
+	}
+	return ""
+}
+
+func (x *AppleProviderConfig) GetPrivateKeyP8() string {
+	if x != nil {
+		return x.PrivateKeyP8
+	}
+	return ""
+}
+
+func (x *AppleProviderConfig) GetHasPrivateKey() bool {
+	if x != nil {
+		return x.HasPrivateKey
+	}
+	return false
+}
+
+func (x *AppleProviderConfig) GetBundleIds() []string {
+	if x != nil {
+		return x.BundleIds
+	}
+	return nil
+}
+
 // SigningKey is the public half of one project token-signing keypair.
 type SigningKey struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
@@ -235,7 +473,7 @@ type SigningKey struct {
 
 func (x *SigningKey) Reset() {
 	*x = SigningKey{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[2]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -247,7 +485,7 @@ func (x *SigningKey) String() string {
 func (*SigningKey) ProtoMessage() {}
 
 func (x *SigningKey) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[2]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -260,7 +498,7 @@ func (x *SigningKey) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SigningKey.ProtoReflect.Descriptor instead.
 func (*SigningKey) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{2}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *SigningKey) GetKid() string {
@@ -300,7 +538,7 @@ type CreateProjectRequest struct {
 
 func (x *CreateProjectRequest) Reset() {
 	*x = CreateProjectRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[3]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -312,7 +550,7 @@ func (x *CreateProjectRequest) String() string {
 func (*CreateProjectRequest) ProtoMessage() {}
 
 func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[3]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -325,7 +563,7 @@ func (x *CreateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{3}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *CreateProjectRequest) GetName() string {
@@ -347,7 +585,7 @@ type CreateProjectResponse struct {
 
 func (x *CreateProjectResponse) Reset() {
 	*x = CreateProjectResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[4]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -359,7 +597,7 @@ func (x *CreateProjectResponse) String() string {
 func (*CreateProjectResponse) ProtoMessage() {}
 
 func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[4]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -372,7 +610,7 @@ func (x *CreateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateProjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{4}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateProjectResponse) GetProject() *Project {
@@ -398,7 +636,7 @@ type GetProjectRequest struct {
 
 func (x *GetProjectRequest) Reset() {
 	*x = GetProjectRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[5]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -410,7 +648,7 @@ func (x *GetProjectRequest) String() string {
 func (*GetProjectRequest) ProtoMessage() {}
 
 func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[5]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -423,7 +661,7 @@ func (x *GetProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{5}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetProjectRequest) GetId() string {
@@ -442,7 +680,7 @@ type GetProjectResponse struct {
 
 func (x *GetProjectResponse) Reset() {
 	*x = GetProjectResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[6]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -454,7 +692,7 @@ func (x *GetProjectResponse) String() string {
 func (*GetProjectResponse) ProtoMessage() {}
 
 func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[6]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -467,7 +705,7 @@ func (x *GetProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{6}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *GetProjectResponse) GetProject() *Project {
@@ -485,7 +723,7 @@ type ListProjectsRequest struct {
 
 func (x *ListProjectsRequest) Reset() {
 	*x = ListProjectsRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[7]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -497,7 +735,7 @@ func (x *ListProjectsRequest) String() string {
 func (*ListProjectsRequest) ProtoMessage() {}
 
 func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[7]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -510,7 +748,7 @@ func (x *ListProjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListProjectsRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{7}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{9}
 }
 
 type ListProjectsResponse struct {
@@ -522,7 +760,7 @@ type ListProjectsResponse struct {
 
 func (x *ListProjectsResponse) Reset() {
 	*x = ListProjectsResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[8]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -534,7 +772,7 @@ func (x *ListProjectsResponse) String() string {
 func (*ListProjectsResponse) ProtoMessage() {}
 
 func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[8]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -547,7 +785,7 @@ func (x *ListProjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListProjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListProjectsResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{8}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *ListProjectsResponse) GetProjects() []*Project {
@@ -573,7 +811,7 @@ type UpdateProjectRequest struct {
 
 func (x *UpdateProjectRequest) Reset() {
 	*x = UpdateProjectRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[9]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -585,7 +823,7 @@ func (x *UpdateProjectRequest) String() string {
 func (*UpdateProjectRequest) ProtoMessage() {}
 
 func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[9]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -598,7 +836,7 @@ func (x *UpdateProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectRequest.ProtoReflect.Descriptor instead.
 func (*UpdateProjectRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{9}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *UpdateProjectRequest) GetId() string {
@@ -638,7 +876,7 @@ type UpdateProjectResponse struct {
 
 func (x *UpdateProjectResponse) Reset() {
 	*x = UpdateProjectResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[10]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -650,7 +888,7 @@ func (x *UpdateProjectResponse) String() string {
 func (*UpdateProjectResponse) ProtoMessage() {}
 
 func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[10]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -663,7 +901,7 @@ func (x *UpdateProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateProjectResponse.ProtoReflect.Descriptor instead.
 func (*UpdateProjectResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{10}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateProjectResponse) GetProject() *Project {
@@ -682,7 +920,7 @@ type DeleteProjectRequest struct {
 
 func (x *DeleteProjectRequest) Reset() {
 	*x = DeleteProjectRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[11]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -694,7 +932,7 @@ func (x *DeleteProjectRequest) String() string {
 func (*DeleteProjectRequest) ProtoMessage() {}
 
 func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[11]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -707,7 +945,7 @@ func (x *DeleteProjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteProjectRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{11}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DeleteProjectRequest) GetId() string {
@@ -725,7 +963,7 @@ type DeleteProjectResponse struct {
 
 func (x *DeleteProjectResponse) Reset() {
 	*x = DeleteProjectResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[12]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -737,7 +975,7 @@ func (x *DeleteProjectResponse) String() string {
 func (*DeleteProjectResponse) ProtoMessage() {}
 
 func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[12]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -750,7 +988,7 @@ func (x *DeleteProjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteProjectResponse.ProtoReflect.Descriptor instead.
 func (*DeleteProjectResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{12}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{14}
 }
 
 type RegenerateSecretKeyRequest struct {
@@ -762,7 +1000,7 @@ type RegenerateSecretKeyRequest struct {
 
 func (x *RegenerateSecretKeyRequest) Reset() {
 	*x = RegenerateSecretKeyRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[13]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -774,7 +1012,7 @@ func (x *RegenerateSecretKeyRequest) String() string {
 func (*RegenerateSecretKeyRequest) ProtoMessage() {}
 
 func (x *RegenerateSecretKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[13]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -787,7 +1025,7 @@ func (x *RegenerateSecretKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegenerateSecretKeyRequest.ProtoReflect.Descriptor instead.
 func (*RegenerateSecretKeyRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{13}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *RegenerateSecretKeyRequest) GetProjectId() string {
@@ -808,7 +1046,7 @@ type RegenerateSecretKeyResponse struct {
 
 func (x *RegenerateSecretKeyResponse) Reset() {
 	*x = RegenerateSecretKeyResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[14]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -820,7 +1058,7 @@ func (x *RegenerateSecretKeyResponse) String() string {
 func (*RegenerateSecretKeyResponse) ProtoMessage() {}
 
 func (x *RegenerateSecretKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[14]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -833,7 +1071,7 @@ func (x *RegenerateSecretKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegenerateSecretKeyResponse.ProtoReflect.Descriptor instead.
 func (*RegenerateSecretKeyResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{14}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RegenerateSecretKeyResponse) GetProject() *Project {
@@ -859,7 +1097,7 @@ type GetSigningKeyRequest struct {
 
 func (x *GetSigningKeyRequest) Reset() {
 	*x = GetSigningKeyRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[15]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -871,7 +1109,7 @@ func (x *GetSigningKeyRequest) String() string {
 func (*GetSigningKeyRequest) ProtoMessage() {}
 
 func (x *GetSigningKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[15]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -884,7 +1122,7 @@ func (x *GetSigningKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSigningKeyRequest.ProtoReflect.Descriptor instead.
 func (*GetSigningKeyRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{15}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetSigningKeyRequest) GetProjectId() string {
@@ -909,7 +1147,7 @@ type GetSigningKeyResponse struct {
 
 func (x *GetSigningKeyResponse) Reset() {
 	*x = GetSigningKeyResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[16]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -921,7 +1159,7 @@ func (x *GetSigningKeyResponse) String() string {
 func (*GetSigningKeyResponse) ProtoMessage() {}
 
 func (x *GetSigningKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[16]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -934,7 +1172,7 @@ func (x *GetSigningKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetSigningKeyResponse.ProtoReflect.Descriptor instead.
 func (*GetSigningKeyResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{16}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *GetSigningKeyResponse) GetKey() *SigningKey {
@@ -974,7 +1212,7 @@ type ResetSigningKeyRequest struct {
 
 func (x *ResetSigningKeyRequest) Reset() {
 	*x = ResetSigningKeyRequest{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[17]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -986,7 +1224,7 @@ func (x *ResetSigningKeyRequest) String() string {
 func (*ResetSigningKeyRequest) ProtoMessage() {}
 
 func (x *ResetSigningKeyRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[17]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -999,7 +1237,7 @@ func (x *ResetSigningKeyRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetSigningKeyRequest.ProtoReflect.Descriptor instead.
 func (*ResetSigningKeyRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{17}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *ResetSigningKeyRequest) GetProjectId() string {
@@ -1019,7 +1257,7 @@ type ResetSigningKeyResponse struct {
 
 func (x *ResetSigningKeyResponse) Reset() {
 	*x = ResetSigningKeyResponse{}
-	mi := &file_moth_admin_v1_project_proto_msgTypes[18]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1031,7 +1269,7 @@ func (x *ResetSigningKeyResponse) String() string {
 func (*ResetSigningKeyResponse) ProtoMessage() {}
 
 func (x *ResetSigningKeyResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_project_proto_msgTypes[18]
+	mi := &file_moth_admin_v1_project_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1044,7 +1282,7 @@ func (x *ResetSigningKeyResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ResetSigningKeyResponse.ProtoReflect.Descriptor instead.
 func (*ResetSigningKeyResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{18}
+	return file_moth_admin_v1_project_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *ResetSigningKeyResponse) GetKey() *SigningKey {
@@ -1070,14 +1308,37 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"updateTime\x12:\n" +
 	"\bsettings\x18\a \x01(\v2\x1e.moth.admin.v1.ProjectSettingsR\bsettings\x12\x1d\n" +
 	"\n" +
-	"user_count\x18\b \x01(\x03R\tuserCount\"\xd5\x02\n" +
+	"user_count\x18\b \x01(\x03R\tuserCount\"\xd2\x04\n" +
 	"\x0fProjectSettings\x12.\n" +
 	"\x13password_min_length\x18\x01 \x01(\x05R\x11passwordMinLength\x12<\n" +
 	"\x1arequire_email_verification\x18\x02 \x01(\bR\x18requireEmailVerification\x12.\n" +
 	"\x13allow_public_signup\x18\x03 \x01(\bR\x11allowPublicSignup\x126\n" +
 	"\x17enumeration_safe_signup\x18\x04 \x01(\bR\x15enumerationSafeSignup\x127\n" +
 	"\x18access_token_ttl_seconds\x18\x05 \x01(\x05R\x15accessTokenTtlSeconds\x123\n" +
-	"\x16refresh_token_ttl_days\x18\x06 \x01(\x05R\x13refreshTokenTtlDays\"\x9f\x01\n" +
+	"\x16refresh_token_ttl_days\x18\x06 \x01(\x05R\x13refreshTokenTtlDays\x12;\n" +
+	"\x06google\x18\a \x01(\v2#.moth.admin.v1.GoogleProviderConfigR\x06google\x128\n" +
+	"\x05apple\x18\b \x01(\v2\".moth.admin.v1.AppleProviderConfigR\x05apple\x12<\n" +
+	"\x18auto_link_verified_email\x18\t \x01(\bH\x00R\x15autoLinkVerifiedEmail\x88\x01\x01\x12)\n" +
+	"\x10redirect_schemes\x18\n" +
+	" \x03(\tR\x0fredirectSchemesB\x1b\n" +
+	"\x19_auto_link_verified_email\"\x83\x02\n" +
+	"\x14GoogleProviderConfig\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\"\n" +
+	"\rweb_client_id\x18\x02 \x01(\tR\vwebClientId\x12\"\n" +
+	"\rios_client_id\x18\x03 \x01(\tR\viosClientId\x12*\n" +
+	"\x11android_client_id\x18\x04 \x01(\tR\x0fandroidClientId\x12*\n" +
+	"\x11web_client_secret\x18\x05 \x01(\tR\x0fwebClientSecret\x121\n" +
+	"\x15has_web_client_secret\x18\x06 \x01(\bR\x12hasWebClientSecret\"\xed\x01\n" +
+	"\x13AppleProviderConfig\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\x1f\n" +
+	"\vservices_id\x18\x02 \x01(\tR\n" +
+	"servicesId\x12\x17\n" +
+	"\ateam_id\x18\x03 \x01(\tR\x06teamId\x12\x15\n" +
+	"\x06key_id\x18\x04 \x01(\tR\x05keyId\x12$\n" +
+	"\x0eprivate_key_p8\x18\x05 \x01(\tR\fprivateKeyP8\x12&\n" +
+	"\x0fhas_private_key\x18\x06 \x01(\bR\rhasPrivateKey\x12\x1d\n" +
+	"\n" +
+	"bundle_ids\x18\a \x03(\tR\tbundleIds\"\x9f\x01\n" +
 	"\n" +
 	"SigningKey\x12\x10\n" +
 	"\x03kid\x18\x01 \x01(\tR\x03kid\x12\x1c\n" +
@@ -1152,65 +1413,69 @@ func file_moth_admin_v1_project_proto_rawDescGZIP() []byte {
 	return file_moth_admin_v1_project_proto_rawDescData
 }
 
-var file_moth_admin_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
+var file_moth_admin_v1_project_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_moth_admin_v1_project_proto_goTypes = []any{
 	(*Project)(nil),                     // 0: moth.admin.v1.Project
 	(*ProjectSettings)(nil),             // 1: moth.admin.v1.ProjectSettings
-	(*SigningKey)(nil),                  // 2: moth.admin.v1.SigningKey
-	(*CreateProjectRequest)(nil),        // 3: moth.admin.v1.CreateProjectRequest
-	(*CreateProjectResponse)(nil),       // 4: moth.admin.v1.CreateProjectResponse
-	(*GetProjectRequest)(nil),           // 5: moth.admin.v1.GetProjectRequest
-	(*GetProjectResponse)(nil),          // 6: moth.admin.v1.GetProjectResponse
-	(*ListProjectsRequest)(nil),         // 7: moth.admin.v1.ListProjectsRequest
-	(*ListProjectsResponse)(nil),        // 8: moth.admin.v1.ListProjectsResponse
-	(*UpdateProjectRequest)(nil),        // 9: moth.admin.v1.UpdateProjectRequest
-	(*UpdateProjectResponse)(nil),       // 10: moth.admin.v1.UpdateProjectResponse
-	(*DeleteProjectRequest)(nil),        // 11: moth.admin.v1.DeleteProjectRequest
-	(*DeleteProjectResponse)(nil),       // 12: moth.admin.v1.DeleteProjectResponse
-	(*RegenerateSecretKeyRequest)(nil),  // 13: moth.admin.v1.RegenerateSecretKeyRequest
-	(*RegenerateSecretKeyResponse)(nil), // 14: moth.admin.v1.RegenerateSecretKeyResponse
-	(*GetSigningKeyRequest)(nil),        // 15: moth.admin.v1.GetSigningKeyRequest
-	(*GetSigningKeyResponse)(nil),       // 16: moth.admin.v1.GetSigningKeyResponse
-	(*ResetSigningKeyRequest)(nil),      // 17: moth.admin.v1.ResetSigningKeyRequest
-	(*ResetSigningKeyResponse)(nil),     // 18: moth.admin.v1.ResetSigningKeyResponse
-	(*timestamppb.Timestamp)(nil),       // 19: google.protobuf.Timestamp
-	(*fieldmaskpb.FieldMask)(nil),       // 20: google.protobuf.FieldMask
+	(*GoogleProviderConfig)(nil),        // 2: moth.admin.v1.GoogleProviderConfig
+	(*AppleProviderConfig)(nil),         // 3: moth.admin.v1.AppleProviderConfig
+	(*SigningKey)(nil),                  // 4: moth.admin.v1.SigningKey
+	(*CreateProjectRequest)(nil),        // 5: moth.admin.v1.CreateProjectRequest
+	(*CreateProjectResponse)(nil),       // 6: moth.admin.v1.CreateProjectResponse
+	(*GetProjectRequest)(nil),           // 7: moth.admin.v1.GetProjectRequest
+	(*GetProjectResponse)(nil),          // 8: moth.admin.v1.GetProjectResponse
+	(*ListProjectsRequest)(nil),         // 9: moth.admin.v1.ListProjectsRequest
+	(*ListProjectsResponse)(nil),        // 10: moth.admin.v1.ListProjectsResponse
+	(*UpdateProjectRequest)(nil),        // 11: moth.admin.v1.UpdateProjectRequest
+	(*UpdateProjectResponse)(nil),       // 12: moth.admin.v1.UpdateProjectResponse
+	(*DeleteProjectRequest)(nil),        // 13: moth.admin.v1.DeleteProjectRequest
+	(*DeleteProjectResponse)(nil),       // 14: moth.admin.v1.DeleteProjectResponse
+	(*RegenerateSecretKeyRequest)(nil),  // 15: moth.admin.v1.RegenerateSecretKeyRequest
+	(*RegenerateSecretKeyResponse)(nil), // 16: moth.admin.v1.RegenerateSecretKeyResponse
+	(*GetSigningKeyRequest)(nil),        // 17: moth.admin.v1.GetSigningKeyRequest
+	(*GetSigningKeyResponse)(nil),       // 18: moth.admin.v1.GetSigningKeyResponse
+	(*ResetSigningKeyRequest)(nil),      // 19: moth.admin.v1.ResetSigningKeyRequest
+	(*ResetSigningKeyResponse)(nil),     // 20: moth.admin.v1.ResetSigningKeyResponse
+	(*timestamppb.Timestamp)(nil),       // 21: google.protobuf.Timestamp
+	(*fieldmaskpb.FieldMask)(nil),       // 22: google.protobuf.FieldMask
 }
 var file_moth_admin_v1_project_proto_depIdxs = []int32{
-	19, // 0: moth.admin.v1.Project.create_time:type_name -> google.protobuf.Timestamp
-	19, // 1: moth.admin.v1.Project.update_time:type_name -> google.protobuf.Timestamp
+	21, // 0: moth.admin.v1.Project.create_time:type_name -> google.protobuf.Timestamp
+	21, // 1: moth.admin.v1.Project.update_time:type_name -> google.protobuf.Timestamp
 	1,  // 2: moth.admin.v1.Project.settings:type_name -> moth.admin.v1.ProjectSettings
-	19, // 3: moth.admin.v1.SigningKey.create_time:type_name -> google.protobuf.Timestamp
-	0,  // 4: moth.admin.v1.CreateProjectResponse.project:type_name -> moth.admin.v1.Project
-	0,  // 5: moth.admin.v1.GetProjectResponse.project:type_name -> moth.admin.v1.Project
-	0,  // 6: moth.admin.v1.ListProjectsResponse.projects:type_name -> moth.admin.v1.Project
-	1,  // 7: moth.admin.v1.UpdateProjectRequest.settings:type_name -> moth.admin.v1.ProjectSettings
-	20, // 8: moth.admin.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
-	0,  // 9: moth.admin.v1.UpdateProjectResponse.project:type_name -> moth.admin.v1.Project
-	0,  // 10: moth.admin.v1.RegenerateSecretKeyResponse.project:type_name -> moth.admin.v1.Project
-	2,  // 11: moth.admin.v1.GetSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
-	2,  // 12: moth.admin.v1.ResetSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
-	3,  // 13: moth.admin.v1.ProjectService.CreateProject:input_type -> moth.admin.v1.CreateProjectRequest
-	5,  // 14: moth.admin.v1.ProjectService.GetProject:input_type -> moth.admin.v1.GetProjectRequest
-	7,  // 15: moth.admin.v1.ProjectService.ListProjects:input_type -> moth.admin.v1.ListProjectsRequest
-	9,  // 16: moth.admin.v1.ProjectService.UpdateProject:input_type -> moth.admin.v1.UpdateProjectRequest
-	11, // 17: moth.admin.v1.ProjectService.DeleteProject:input_type -> moth.admin.v1.DeleteProjectRequest
-	13, // 18: moth.admin.v1.ProjectService.RegenerateSecretKey:input_type -> moth.admin.v1.RegenerateSecretKeyRequest
-	15, // 19: moth.admin.v1.ProjectService.GetSigningKey:input_type -> moth.admin.v1.GetSigningKeyRequest
-	17, // 20: moth.admin.v1.ProjectService.ResetSigningKey:input_type -> moth.admin.v1.ResetSigningKeyRequest
-	4,  // 21: moth.admin.v1.ProjectService.CreateProject:output_type -> moth.admin.v1.CreateProjectResponse
-	6,  // 22: moth.admin.v1.ProjectService.GetProject:output_type -> moth.admin.v1.GetProjectResponse
-	8,  // 23: moth.admin.v1.ProjectService.ListProjects:output_type -> moth.admin.v1.ListProjectsResponse
-	10, // 24: moth.admin.v1.ProjectService.UpdateProject:output_type -> moth.admin.v1.UpdateProjectResponse
-	12, // 25: moth.admin.v1.ProjectService.DeleteProject:output_type -> moth.admin.v1.DeleteProjectResponse
-	14, // 26: moth.admin.v1.ProjectService.RegenerateSecretKey:output_type -> moth.admin.v1.RegenerateSecretKeyResponse
-	16, // 27: moth.admin.v1.ProjectService.GetSigningKey:output_type -> moth.admin.v1.GetSigningKeyResponse
-	18, // 28: moth.admin.v1.ProjectService.ResetSigningKey:output_type -> moth.admin.v1.ResetSigningKeyResponse
-	21, // [21:29] is the sub-list for method output_type
-	13, // [13:21] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	2,  // 3: moth.admin.v1.ProjectSettings.google:type_name -> moth.admin.v1.GoogleProviderConfig
+	3,  // 4: moth.admin.v1.ProjectSettings.apple:type_name -> moth.admin.v1.AppleProviderConfig
+	21, // 5: moth.admin.v1.SigningKey.create_time:type_name -> google.protobuf.Timestamp
+	0,  // 6: moth.admin.v1.CreateProjectResponse.project:type_name -> moth.admin.v1.Project
+	0,  // 7: moth.admin.v1.GetProjectResponse.project:type_name -> moth.admin.v1.Project
+	0,  // 8: moth.admin.v1.ListProjectsResponse.projects:type_name -> moth.admin.v1.Project
+	1,  // 9: moth.admin.v1.UpdateProjectRequest.settings:type_name -> moth.admin.v1.ProjectSettings
+	22, // 10: moth.admin.v1.UpdateProjectRequest.update_mask:type_name -> google.protobuf.FieldMask
+	0,  // 11: moth.admin.v1.UpdateProjectResponse.project:type_name -> moth.admin.v1.Project
+	0,  // 12: moth.admin.v1.RegenerateSecretKeyResponse.project:type_name -> moth.admin.v1.Project
+	4,  // 13: moth.admin.v1.GetSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
+	4,  // 14: moth.admin.v1.ResetSigningKeyResponse.key:type_name -> moth.admin.v1.SigningKey
+	5,  // 15: moth.admin.v1.ProjectService.CreateProject:input_type -> moth.admin.v1.CreateProjectRequest
+	7,  // 16: moth.admin.v1.ProjectService.GetProject:input_type -> moth.admin.v1.GetProjectRequest
+	9,  // 17: moth.admin.v1.ProjectService.ListProjects:input_type -> moth.admin.v1.ListProjectsRequest
+	11, // 18: moth.admin.v1.ProjectService.UpdateProject:input_type -> moth.admin.v1.UpdateProjectRequest
+	13, // 19: moth.admin.v1.ProjectService.DeleteProject:input_type -> moth.admin.v1.DeleteProjectRequest
+	15, // 20: moth.admin.v1.ProjectService.RegenerateSecretKey:input_type -> moth.admin.v1.RegenerateSecretKeyRequest
+	17, // 21: moth.admin.v1.ProjectService.GetSigningKey:input_type -> moth.admin.v1.GetSigningKeyRequest
+	19, // 22: moth.admin.v1.ProjectService.ResetSigningKey:input_type -> moth.admin.v1.ResetSigningKeyRequest
+	6,  // 23: moth.admin.v1.ProjectService.CreateProject:output_type -> moth.admin.v1.CreateProjectResponse
+	8,  // 24: moth.admin.v1.ProjectService.GetProject:output_type -> moth.admin.v1.GetProjectResponse
+	10, // 25: moth.admin.v1.ProjectService.ListProjects:output_type -> moth.admin.v1.ListProjectsResponse
+	12, // 26: moth.admin.v1.ProjectService.UpdateProject:output_type -> moth.admin.v1.UpdateProjectResponse
+	14, // 27: moth.admin.v1.ProjectService.DeleteProject:output_type -> moth.admin.v1.DeleteProjectResponse
+	16, // 28: moth.admin.v1.ProjectService.RegenerateSecretKey:output_type -> moth.admin.v1.RegenerateSecretKeyResponse
+	18, // 29: moth.admin.v1.ProjectService.GetSigningKey:output_type -> moth.admin.v1.GetSigningKeyResponse
+	20, // 30: moth.admin.v1.ProjectService.ResetSigningKey:output_type -> moth.admin.v1.ResetSigningKeyResponse
+	23, // [23:31] is the sub-list for method output_type
+	15, // [15:23] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_project_proto_init() }
@@ -1218,13 +1483,14 @@ func file_moth_admin_v1_project_proto_init() {
 	if File_moth_admin_v1_project_proto != nil {
 		return
 	}
+	file_moth_admin_v1_project_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_admin_v1_project_proto_rawDesc), len(file_moth_admin_v1_project_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   19,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

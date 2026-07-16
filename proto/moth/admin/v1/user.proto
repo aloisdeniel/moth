@@ -56,6 +56,17 @@ message User {
   string custom_claims = 10;
 }
 
+// Identity is one linked authentication provider of a user, shown on the
+// user detail page (and driving its unlink action).
+message Identity {
+  // "password", "google" or "apple".
+  string provider = 1;
+  // Email asserted by the provider when the identity was linked; empty for
+  // password identities.
+  string email = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
+
 // UserSession is one active device session (a live refresh-token chain).
 message UserSession {
   string id = 1;
@@ -90,6 +101,8 @@ message GetUserRequest {
 message GetUserResponse {
   User user = 1;
   repeated UserSession sessions = 2;
+  // Linked provider identities, in link order.
+  repeated Identity identities = 3;
 }
 
 message CreateUserRequest {

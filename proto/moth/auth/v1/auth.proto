@@ -65,10 +65,41 @@ service AuthService {
   // revert link (valid 72 h) that goes through this same RPC.
   rpc ConfirmEmailChange(ConfirmEmailChangeRequest) returns (ConfirmEmailChangeResponse);
 
+  // SignInWithOAuth signs in (or up) with a provider ID token obtained by a
+  // native Google/Apple flow on the device. The token is verified
+  // server-side (signature against the provider JWKS, issuer, audience
+  // against the project's configured client/bundle IDs, expiry, nonce);
+  // email, name and subject only ever come from the verified token. Account
+  // resolution: an existing (provider, subject) identity signs that user
+  // in; else a provider-verified email matching an existing user links a
+  // new identity to it (when the project's auto_link_verified_email policy
+  // allows); else a new user is created.
+  rpc SignInWithOAuth(SignInWithOAuthRequest) returns (SignInWithOAuthResponse);
+  // ExchangeOAuthCode trades the one-time code minted by the web-redirect
+  // fallback flow (GET /oauth/{provider}/start → provider consent →
+  // callback → redirect back into the app) for a token pair. Codes are
+  // single-use and short-lived.
+  rpc ExchangeOAuthCode(ExchangeOAuthCodeRequest) returns (ExchangeOAuthCodeResponse);
+  // UnlinkIdentity removes the caller's identity for one provider. Requires
+  // a Bearer access token. Refused when it would leave the account without
+  // any way to sign in.
+  rpc UnlinkIdentity(UnlinkIdentityRequest) returns (UnlinkIdentityResponse);
+
   // DeleteAccount permanently deletes the user after fresh re-authentication
   // (App Store guideline 5.1.1). Identities, sessions and email tokens are
   // cascaded.
   rpc DeleteAccount(DeleteAccountRequest) returns (DeleteAccountResponse);
+}
+
+// OAuthProvider identifies a supported social sign-in provider.
+// (buf splits "OAuth" as "O_Auth"; the natural OAUTH_ prefix is kept.)
+enum OAuthProvider {
+  // buf:lint:ignore ENUM_VALUE_PREFIX
+  OAUTH_PROVIDER_UNSPECIFIED = 0;
+  // buf:lint:ignore ENUM_VALUE_PREFIX
+  OAUTH_PROVIDER_GOOGLE = 1;
+  // buf:lint:ignore ENUM_VALUE_PREFIX
+  OAUTH_PROVIDER_APPLE = 2;
 }
 
 // User is the caller's own account as exposed to the app.
@@ -196,6 +227,49 @@ message ConfirmEmailChangeRequest {
 }
 
 message ConfirmEmailChangeResponse {}
+
+message SignInWithOAuthRequest {
+  OAuthProvider provider = 1;
+  // The provider-issued OIDC ID token (JWT).
+  string id_token = 2;
+  // The raw per-attempt nonce the SDK generated for this sign-in. The
+  // server requires the ID token's `nonce` claim to match (Apple carries
+  // its SHA-256 per their scheme), so replayed ID tokens are rejected.
+  string nonce = 3;
+  // Apple only: the authorization code from the native flow, exchanged
+  // server-side for the refresh token that account deletion later revokes
+  // (App Store requirement).
+  string authorization_code = 4;
+  // Apple only: the user's name, which Apple exposes solely to the app and
+  // solely on first authorization. Client-asserted — used for the initial
+  // display name, never for identity resolution.
+  string given_name = 5;
+  string family_name = 6;
+  // Free-form device description stored with the session, e.g. "iPhone 15".
+  string device_info = 7;
+}
+
+message SignInWithOAuthResponse {
+  User user = 1;
+  TokenPair tokens = 2;
+}
+
+message ExchangeOAuthCodeRequest {
+  // The one-time code from the web-redirect callback.
+  string code = 1;
+  string device_info = 2;
+}
+
+message ExchangeOAuthCodeResponse {
+  User user = 1;
+  TokenPair tokens = 2;
+}
+
+message UnlinkIdentityRequest {
+  OAuthProvider provider = 1;
+}
+
+message UnlinkIdentityResponse {}
 
 message DeleteAccountRequest {
   // Fresh re-authentication: the current password. (Recent social sign-in

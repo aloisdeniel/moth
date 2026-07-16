@@ -2,6 +2,7 @@ package authrpc
 
 import (
 	"context"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -66,20 +67,39 @@ func (h *Handler) ChangePassword(ctx context.Context, req *connect.Request[authv
 	return connect.NewResponse(&authv1.ChangePasswordResponse{Tokens: tokens}), nil
 }
 
+// deleteReauthWindow is how recent a social-only account's sign-in must be
+// for DeleteAccount: the user's last credential sign-in may be at most
+// this old.
+const deleteReauthWindow = 5 * time.Minute
+
 func (h *Handler) DeleteAccount(ctx context.Context, req *connect.Request[authv1.DeleteAccountRequest]) (*connect.Response[authv1.DeleteAccountResponse], error) {
 	project, user, err := h.requireUser(ctx, req.Header())
 	if err != nil {
 		return nil, err
 	}
-	// Fresh re-authentication (App Store guideline 5.1.1). Social-only
-	// accounts re-authenticate with a recent provider sign-in once
-	// milestone 04 lands; until then they cannot self-delete.
-	if user.PasswordHash == "" {
+	// Fresh re-authentication (App Store guideline 5.1.1). Accounts with a
+	// password always re-enter it; social-only accounts instead prove a
+	// recent provider sign-in: last_login_at must be within
+	// deleteReauthWindow. Token freshness would not do — RefreshToken mints
+	// a new access token from a stored refresh token without any provider
+	// interaction, while last_login_at only ever advances on real
+	// credential/provider sign-ins.
+	if user.PasswordHash != "" {
+		if !password.Verify(req.Msg.Password, user.PasswordHash) {
+			return nil, errInvalidCredentials()
+		}
+	} else if !h.recentSignIn(user) {
 		return nil, newError(connect.CodeFailedPrecondition, ReasonInvalidCredentials,
-			"account has no password; re-authentication is not possible yet")
+			"re-authentication required: sign in with the provider again, then retry")
 	}
-	if !password.Verify(req.Msg.Password, user.PasswordHash) {
-		return nil, errInvalidCredentials()
+	// App Store review also requires revoking Apple tokens on deletion;
+	// best effort before the identities cascade away.
+	identities, err := h.store.ListUserIdentities(ctx, project.ID, user.ID)
+	if err != nil {
+		h.log.ErrorContext(ctx, "list identities before delete", "error", err.Error())
+	}
+	for _, id := range identities {
+		h.revokeAppleRefreshToken(ctx, project, id)
 	}
 	// Identities, refresh tokens and email tokens cascade with the user
 	// row.
@@ -88,4 +108,10 @@ func (h *Handler) DeleteAccount(ctx context.Context, req *connect.Request[authv1
 	}
 	h.insertEvent(ctx, project.ID, user.ID, store.EventUserDeleted)
 	return connect.NewResponse(&authv1.DeleteAccountResponse{}), nil
+}
+
+// recentSignIn reports whether the user's last credential/provider sign-in
+// happened within deleteReauthWindow.
+func (h *Handler) recentSignIn(user store.User) bool {
+	return user.LastLoginAt != nil && h.now().Sub(*user.LastLoginAt) <= deleteReauthWindow
 }

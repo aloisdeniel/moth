@@ -45,6 +45,13 @@ export function ProjectSettings({ project }: { project: Project }) {
         enumerationSafeSignup: enumSafe,
         accessTokenTtlSeconds: parseInt(accessTTL, 10) || 900,
         refreshTokenTtlDays: parseInt(refreshTTL, 10) || 30,
+        // `settings` replaces wholesale under the update mask — carry the
+        // provider config owned by the Providers tab through unchanged
+        // (stored write-only secrets survive: empty means "keep").
+        google: s?.google,
+        apple: s?.apple,
+        autoLinkVerifiedEmail: s?.autoLinkVerifiedEmail,
+        redirectSchemes: s?.redirectSchemes ?? [],
       },
       updateMask: { paths: ["name", "settings"] },
     });

@@ -2,8 +2,8 @@
 // @generated from file moth/auth/v1/auth.proto (package moth.auth.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Timestamp } from "@bufbuild/protobuf/wkt";
 import { file_google_protobuf_timestamp } from "@bufbuild/protobuf/wkt";
 import type { Message } from "@bufbuild/protobuf";
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/auth/v1/auth.proto.
  */
 export const file_moth_auth_v1_auth: GenFile = /*@__PURE__*/
-  fileDesc("Chdtb3RoL2F1dGgvdjEvYXV0aC5wcm90bxIMbW90aC5hdXRoLnYxIpQBCgRVc2VyEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEhYKDmVtYWlsX3ZlcmlmaWVkGAMgASgIEhQKDGRpc3BsYXlfbmFtZRgEIAEoCRISCgphdmF0YXJfdXJsGAUgASgJEi8KC2NyZWF0ZV90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJMCglUb2tlblBhaXISFAoMYWNjZXNzX3Rva2VuGAEgASgJEhUKDXJlZnJlc2hfdG9rZW4YAiABKAkSEgoKZXhwaXJlc19pbhgDIAEoAyJbCg1TaWduVXBSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhQKDGRpc3BsYXlfbmFtZRgDIAEoCRITCgtkZXZpY2VfaW5mbxgEIAEoCSJbCg5TaWduVXBSZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXISJwoGdG9rZW5zGAIgASgLMhcubW90aC5hdXRoLnYxLlRva2VuUGFpciJFCg1TaWduSW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhMKC2RldmljZV9pbmZvGAMgASgJIlsKDlNpZ25JblJlc3BvbnNlEiAKBHVzZXIYASABKAsyEi5tb3RoLmF1dGgudjEuVXNlchInCgZ0b2tlbnMYAiABKAsyFy5tb3RoLmF1dGgudjEuVG9rZW5QYWlyIiwKE1JlZnJlc2hUb2tlblJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJhChRSZWZyZXNoVG9rZW5SZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXISJwoGdG9rZW5zGAIgASgLMhcubW90aC5hdXRoLnYxLlRva2VuUGFpciI8Cg5TaWduT3V0UmVxdWVzdBIVCg1yZWZyZXNoX3Rva2VuGAEgASgJEhMKC2FsbF9kZXZpY2VzGAIgASgIIhEKD1NpZ25PdXRSZXNwb25zZSIOCgxHZXRNZVJlcXVlc3QiMQoNR2V0TWVSZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXIiZQoPVXBkYXRlTWVSZXF1ZXN0EhkKDGRpc3BsYXlfbmFtZRgBIAEoCUgAiAEBEhcKCmF2YXRhcl91cmwYAiABKAlIAYgBAUIPCg1fZGlzcGxheV9uYW1lQg0KC19hdmF0YXJfdXJsIjQKEFVwZGF0ZU1lUmVzcG9uc2USIAoEdXNlchgBIAEoCzISLm1vdGguYXV0aC52MS5Vc2VyIkcKFUNoYW5nZVBhc3N3b3JkUmVxdWVzdBIYChBjdXJyZW50X3Bhc3N3b3JkGAEgASgJEhQKDG5ld19wYXNzd29yZBgCIAEoCSJBChZDaGFuZ2VQYXNzd29yZFJlc3BvbnNlEicKBnRva2VucxgBIAEoCzIXLm1vdGguYXV0aC52MS5Ub2tlblBhaXIiMAofUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uUmVxdWVzdBINCgVlbWFpbBgBIAEoCSIiCiBSZXF1ZXN0RW1haWxWZXJpZmljYXRpb25SZXNwb25zZSIwCh9Db25maXJtRW1haWxWZXJpZmljYXRpb25SZXF1ZXN0Eg0KBXRva2VuGAEgASgJIiIKIENvbmZpcm1FbWFpbFZlcmlmaWNhdGlvblJlc3BvbnNlIiwKG1JlcXVlc3RQYXNzd29yZFJlc2V0UmVxdWVzdBINCgVlbWFpbBgBIAEoCSIeChxSZXF1ZXN0UGFzc3dvcmRSZXNldFJlc3BvbnNlIkIKG0NvbmZpcm1QYXNzd29yZFJlc2V0UmVxdWVzdBINCgV0b2tlbhgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiHgocQ29uZmlybVBhc3N3b3JkUmVzZXRSZXNwb25zZSIuChlSZXF1ZXN0RW1haWxDaGFuZ2VSZXF1ZXN0EhEKCW5ld19lbWFpbBgBIAEoCSIcChpSZXF1ZXN0RW1haWxDaGFuZ2VSZXNwb25zZSIqChlDb25maXJtRW1haWxDaGFuZ2VSZXF1ZXN0Eg0KBXRva2VuGAEgASgJIhwKGkNvbmZpcm1FbWFpbENoYW5nZVJlc3BvbnNlIigKFERlbGV0ZUFjY291bnRSZXF1ZXN0EhAKCHBhc3N3b3JkGAEgASgJIhcKFURlbGV0ZUFjY291bnRSZXNwb25zZTKgCgoLQXV0aFNlcnZpY2USQwoGU2lnblVwEhsubW90aC5hdXRoLnYxLlNpZ25VcFJlcXVlc3QaHC5tb3RoLmF1dGgudjEuU2lnblVwUmVzcG9uc2USQwoGU2lnbkluEhsubW90aC5hdXRoLnYxLlNpZ25JblJlcXVlc3QaHC5tb3RoLmF1dGgudjEuU2lnbkluUmVzcG9uc2USVQoMUmVmcmVzaFRva2VuEiEubW90aC5hdXRoLnYxLlJlZnJlc2hUb2tlblJlcXVlc3QaIi5tb3RoLmF1dGgudjEuUmVmcmVzaFRva2VuUmVzcG9uc2USRgoHU2lnbk91dBIcLm1vdGguYXV0aC52MS5TaWduT3V0UmVxdWVzdBodLm1vdGguYXV0aC52MS5TaWduT3V0UmVzcG9uc2USQAoFR2V0TWUSGi5tb3RoLmF1dGgudjEuR2V0TWVSZXF1ZXN0GhsubW90aC5hdXRoLnYxLkdldE1lUmVzcG9uc2USSQoIVXBkYXRlTWUSHS5tb3RoLmF1dGgudjEuVXBkYXRlTWVSZXF1ZXN0Gh4ubW90aC5hdXRoLnYxLlVwZGF0ZU1lUmVzcG9uc2USWwoOQ2hhbmdlUGFzc3dvcmQSIy5tb3RoLmF1dGgudjEuQ2hhbmdlUGFzc3dvcmRSZXF1ZXN0GiQubW90aC5hdXRoLnYxLkNoYW5nZVBhc3N3b3JkUmVzcG9uc2USeQoYUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uEi0ubW90aC5hdXRoLnYxLlJlcXVlc3RFbWFpbFZlcmlmaWNhdGlvblJlcXVlc3QaLi5tb3RoLmF1dGgudjEuUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uUmVzcG9uc2USeQoYQ29uZmlybUVtYWlsVmVyaWZpY2F0aW9uEi0ubW90aC5hdXRoLnYxLkNvbmZpcm1FbWFpbFZlcmlmaWNhdGlvblJlcXVlc3QaLi5tb3RoLmF1dGgudjEuQ29uZmlybUVtYWlsVmVyaWZpY2F0aW9uUmVzcG9uc2USbQoUUmVxdWVzdFBhc3N3b3JkUmVzZXQSKS5tb3RoLmF1dGgudjEuUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0GioubW90aC5hdXRoLnYxLlJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2USbQoUQ29uZmlybVBhc3N3b3JkUmVzZXQSKS5tb3RoLmF1dGgudjEuQ29uZmlybVBhc3N3b3JkUmVzZXRSZXF1ZXN0GioubW90aC5hdXRoLnYxLkNvbmZpcm1QYXNzd29yZFJlc2V0UmVzcG9uc2USZwoSUmVxdWVzdEVtYWlsQ2hhbmdlEicubW90aC5hdXRoLnYxLlJlcXVlc3RFbWFpbENoYW5nZVJlcXVlc3QaKC5tb3RoLmF1dGgudjEuUmVxdWVzdEVtYWlsQ2hhbmdlUmVzcG9uc2USZwoSQ29uZmlybUVtYWlsQ2hhbmdlEicubW90aC5hdXRoLnYxLkNvbmZpcm1FbWFpbENoYW5nZVJlcXVlc3QaKC5tb3RoLmF1dGgudjEuQ29uZmlybUVtYWlsQ2hhbmdlUmVzcG9uc2USWAoNRGVsZXRlQWNjb3VudBIiLm1vdGguYXV0aC52MS5EZWxldGVBY2NvdW50UmVxdWVzdBojLm1vdGguYXV0aC52MS5EZWxldGVBY2NvdW50UmVzcG9uc2VCNVozZ2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2F1dGgvdjE7YXV0aHYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("Chdtb3RoL2F1dGgvdjEvYXV0aC5wcm90bxIMbW90aC5hdXRoLnYxIpQBCgRVc2VyEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEhYKDmVtYWlsX3ZlcmlmaWVkGAMgASgIEhQKDGRpc3BsYXlfbmFtZRgEIAEoCRISCgphdmF0YXJfdXJsGAUgASgJEi8KC2NyZWF0ZV90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJMCglUb2tlblBhaXISFAoMYWNjZXNzX3Rva2VuGAEgASgJEhUKDXJlZnJlc2hfdG9rZW4YAiABKAkSEgoKZXhwaXJlc19pbhgDIAEoAyJbCg1TaWduVXBSZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhQKDGRpc3BsYXlfbmFtZRgDIAEoCRITCgtkZXZpY2VfaW5mbxgEIAEoCSJbCg5TaWduVXBSZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXISJwoGdG9rZW5zGAIgASgLMhcubW90aC5hdXRoLnYxLlRva2VuUGFpciJFCg1TaWduSW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJEhAKCHBhc3N3b3JkGAIgASgJEhMKC2RldmljZV9pbmZvGAMgASgJIlsKDlNpZ25JblJlc3BvbnNlEiAKBHVzZXIYASABKAsyEi5tb3RoLmF1dGgudjEuVXNlchInCgZ0b2tlbnMYAiABKAsyFy5tb3RoLmF1dGgudjEuVG9rZW5QYWlyIiwKE1JlZnJlc2hUb2tlblJlcXVlc3QSFQoNcmVmcmVzaF90b2tlbhgBIAEoCSJhChRSZWZyZXNoVG9rZW5SZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXISJwoGdG9rZW5zGAIgASgLMhcubW90aC5hdXRoLnYxLlRva2VuUGFpciI8Cg5TaWduT3V0UmVxdWVzdBIVCg1yZWZyZXNoX3Rva2VuGAEgASgJEhMKC2FsbF9kZXZpY2VzGAIgASgIIhEKD1NpZ25PdXRSZXNwb25zZSIOCgxHZXRNZVJlcXVlc3QiMQoNR2V0TWVSZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXIiZQoPVXBkYXRlTWVSZXF1ZXN0EhkKDGRpc3BsYXlfbmFtZRgBIAEoCUgAiAEBEhcKCmF2YXRhcl91cmwYAiABKAlIAYgBAUIPCg1fZGlzcGxheV9uYW1lQg0KC19hdmF0YXJfdXJsIjQKEFVwZGF0ZU1lUmVzcG9uc2USIAoEdXNlchgBIAEoCzISLm1vdGguYXV0aC52MS5Vc2VyIkcKFUNoYW5nZVBhc3N3b3JkUmVxdWVzdBIYChBjdXJyZW50X3Bhc3N3b3JkGAEgASgJEhQKDG5ld19wYXNzd29yZBgCIAEoCSJBChZDaGFuZ2VQYXNzd29yZFJlc3BvbnNlEicKBnRva2VucxgBIAEoCzIXLm1vdGguYXV0aC52MS5Ub2tlblBhaXIiMAofUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uUmVxdWVzdBINCgVlbWFpbBgBIAEoCSIiCiBSZXF1ZXN0RW1haWxWZXJpZmljYXRpb25SZXNwb25zZSIwCh9Db25maXJtRW1haWxWZXJpZmljYXRpb25SZXF1ZXN0Eg0KBXRva2VuGAEgASgJIiIKIENvbmZpcm1FbWFpbFZlcmlmaWNhdGlvblJlc3BvbnNlIiwKG1JlcXVlc3RQYXNzd29yZFJlc2V0UmVxdWVzdBINCgVlbWFpbBgBIAEoCSIeChxSZXF1ZXN0UGFzc3dvcmRSZXNldFJlc3BvbnNlIkIKG0NvbmZpcm1QYXNzd29yZFJlc2V0UmVxdWVzdBINCgV0b2tlbhgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiHgocQ29uZmlybVBhc3N3b3JkUmVzZXRSZXNwb25zZSIuChlSZXF1ZXN0RW1haWxDaGFuZ2VSZXF1ZXN0EhEKCW5ld19lbWFpbBgBIAEoCSIcChpSZXF1ZXN0RW1haWxDaGFuZ2VSZXNwb25zZSIqChlDb25maXJtRW1haWxDaGFuZ2VSZXF1ZXN0Eg0KBXRva2VuGAEgASgJIhwKGkNvbmZpcm1FbWFpbENoYW5nZVJlc3BvbnNlIsIBChZTaWduSW5XaXRoT0F1dGhSZXF1ZXN0Ei0KCHByb3ZpZGVyGAEgASgOMhsubW90aC5hdXRoLnYxLk9BdXRoUHJvdmlkZXISEAoIaWRfdG9rZW4YAiABKAkSDQoFbm9uY2UYAyABKAkSGgoSYXV0aG9yaXphdGlvbl9jb2RlGAQgASgJEhIKCmdpdmVuX25hbWUYBSABKAkSEwoLZmFtaWx5X25hbWUYBiABKAkSEwoLZGV2aWNlX2luZm8YByABKAkiZAoXU2lnbkluV2l0aE9BdXRoUmVzcG9uc2USIAoEdXNlchgBIAEoCzISLm1vdGguYXV0aC52MS5Vc2VyEicKBnRva2VucxgCIAEoCzIXLm1vdGguYXV0aC52MS5Ub2tlblBhaXIiPQoYRXhjaGFuZ2VPQXV0aENvZGVSZXF1ZXN0EgwKBGNvZGUYASABKAkSEwoLZGV2aWNlX2luZm8YAiABKAkiZgoZRXhjaGFuZ2VPQXV0aENvZGVSZXNwb25zZRIgCgR1c2VyGAEgASgLMhIubW90aC5hdXRoLnYxLlVzZXISJwoGdG9rZW5zGAIgASgLMhcubW90aC5hdXRoLnYxLlRva2VuUGFpciJGChVVbmxpbmtJZGVudGl0eVJlcXVlc3QSLQoIcHJvdmlkZXIYASABKA4yGy5tb3RoLmF1dGgudjEuT0F1dGhQcm92aWRlciIYChZVbmxpbmtJZGVudGl0eVJlc3BvbnNlIigKFERlbGV0ZUFjY291bnRSZXF1ZXN0EhAKCHBhc3N3b3JkGAEgASgJIhcKFURlbGV0ZUFjY291bnRSZXNwb25zZSpkCg1PQXV0aFByb3ZpZGVyEh4KGk9BVVRIX1BST1ZJREVSX1VOU1BFQ0lGSUVEEAASGQoVT0FVVEhfUFJPVklERVJfR09PR0xFEAESGAoUT0FVVEhfUFJPVklERVJfQVBQTEUQAjLDDAoLQXV0aFNlcnZpY2USQwoGU2lnblVwEhsubW90aC5hdXRoLnYxLlNpZ25VcFJlcXVlc3QaHC5tb3RoLmF1dGgudjEuU2lnblVwUmVzcG9uc2USQwoGU2lnbkluEhsubW90aC5hdXRoLnYxLlNpZ25JblJlcXVlc3QaHC5tb3RoLmF1dGgudjEuU2lnbkluUmVzcG9uc2USVQoMUmVmcmVzaFRva2VuEiEubW90aC5hdXRoLnYxLlJlZnJlc2hUb2tlblJlcXVlc3QaIi5tb3RoLmF1dGgudjEuUmVmcmVzaFRva2VuUmVzcG9uc2USRgoHU2lnbk91dBIcLm1vdGguYXV0aC52MS5TaWduT3V0UmVxdWVzdBodLm1vdGguYXV0aC52MS5TaWduT3V0UmVzcG9uc2USQAoFR2V0TWUSGi5tb3RoLmF1dGgudjEuR2V0TWVSZXF1ZXN0GhsubW90aC5hdXRoLnYxLkdldE1lUmVzcG9uc2USSQoIVXBkYXRlTWUSHS5tb3RoLmF1dGgudjEuVXBkYXRlTWVSZXF1ZXN0Gh4ubW90aC5hdXRoLnYxLlVwZGF0ZU1lUmVzcG9uc2USWwoOQ2hhbmdlUGFzc3dvcmQSIy5tb3RoLmF1dGgudjEuQ2hhbmdlUGFzc3dvcmRSZXF1ZXN0GiQubW90aC5hdXRoLnYxLkNoYW5nZVBhc3N3b3JkUmVzcG9uc2USeQoYUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uEi0ubW90aC5hdXRoLnYxLlJlcXVlc3RFbWFpbFZlcmlmaWNhdGlvblJlcXVlc3QaLi5tb3RoLmF1dGgudjEuUmVxdWVzdEVtYWlsVmVyaWZpY2F0aW9uUmVzcG9uc2USeQoYQ29uZmlybUVtYWlsVmVyaWZpY2F0aW9uEi0ubW90aC5hdXRoLnYxLkNvbmZpcm1FbWFpbFZlcmlmaWNhdGlvblJlcXVlc3QaLi5tb3RoLmF1dGgudjEuQ29uZmlybUVtYWlsVmVyaWZpY2F0aW9uUmVzcG9uc2USbQoUUmVxdWVzdFBhc3N3b3JkUmVzZXQSKS5tb3RoLmF1dGgudjEuUmVxdWVzdFBhc3N3b3JkUmVzZXRSZXF1ZXN0GioubW90aC5hdXRoLnYxLlJlcXVlc3RQYXNzd29yZFJlc2V0UmVzcG9uc2USbQoUQ29uZmlybVBhc3N3b3JkUmVzZXQSKS5tb3RoLmF1dGgudjEuQ29uZmlybVBhc3N3b3JkUmVzZXRSZXF1ZXN0GioubW90aC5hdXRoLnYxLkNvbmZpcm1QYXNzd29yZFJlc2V0UmVzcG9uc2USZwoSUmVxdWVzdEVtYWlsQ2hhbmdlEicubW90aC5hdXRoLnYxLlJlcXVlc3RFbWFpbENoYW5nZVJlcXVlc3QaKC5tb3RoLmF1dGgudjEuUmVxdWVzdEVtYWlsQ2hhbmdlUmVzcG9uc2USZwoSQ29uZmlybUVtYWlsQ2hhbmdlEicubW90aC5hdXRoLnYxLkNvbmZpcm1FbWFpbENoYW5nZVJlcXVlc3QaKC5tb3RoLmF1dGgudjEuQ29uZmlybUVtYWlsQ2hhbmdlUmVzcG9uc2USXgoPU2lnbkluV2l0aE9BdXRoEiQubW90aC5hdXRoLnYxLlNpZ25JbldpdGhPQXV0aFJlcXVlc3QaJS5tb3RoLmF1dGgudjEuU2lnbkluV2l0aE9BdXRoUmVzcG9uc2USZAoRRXhjaGFuZ2VPQXV0aENvZGUSJi5tb3RoLmF1dGgudjEuRXhjaGFuZ2VPQXV0aENvZGVSZXF1ZXN0GicubW90aC5hdXRoLnYxLkV4Y2hhbmdlT0F1dGhDb2RlUmVzcG9uc2USWwoOVW5saW5rSWRlbnRpdHkSIy5tb3RoLmF1dGgudjEuVW5saW5rSWRlbnRpdHlSZXF1ZXN0GiQubW90aC5hdXRoLnYxLlVubGlua0lkZW50aXR5UmVzcG9uc2USWAoNRGVsZXRlQWNjb3VudBIiLm1vdGguYXV0aC52MS5EZWxldGVBY2NvdW50UmVxdWVzdBojLm1vdGguYXV0aC52MS5EZWxldGVBY2NvdW50UmVzcG9uc2VCNVozZ2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2F1dGgvdjE7YXV0aHYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
 
 /**
  * User is the caller's own account as exposed to the app.
@@ -573,6 +573,167 @@ export const ConfirmEmailChangeResponseSchema: GenMessage<ConfirmEmailChangeResp
   messageDesc(file_moth_auth_v1_auth, 27);
 
 /**
+ * @generated from message moth.auth.v1.SignInWithOAuthRequest
+ */
+export type SignInWithOAuthRequest = Message<"moth.auth.v1.SignInWithOAuthRequest"> & {
+  /**
+   * @generated from field: moth.auth.v1.OAuthProvider provider = 1;
+   */
+  provider: OAuthProvider;
+
+  /**
+   * The provider-issued OIDC ID token (JWT).
+   *
+   * @generated from field: string id_token = 2;
+   */
+  idToken: string;
+
+  /**
+   * The raw per-attempt nonce the SDK generated for this sign-in. The
+   * server requires the ID token's `nonce` claim to match (Apple carries
+   * its SHA-256 per their scheme), so replayed ID tokens are rejected.
+   *
+   * @generated from field: string nonce = 3;
+   */
+  nonce: string;
+
+  /**
+   * Apple only: the authorization code from the native flow, exchanged
+   * server-side for the refresh token that account deletion later revokes
+   * (App Store requirement).
+   *
+   * @generated from field: string authorization_code = 4;
+   */
+  authorizationCode: string;
+
+  /**
+   * Apple only: the user's name, which Apple exposes solely to the app and
+   * solely on first authorization. Client-asserted — used for the initial
+   * display name, never for identity resolution.
+   *
+   * @generated from field: string given_name = 5;
+   */
+  givenName: string;
+
+  /**
+   * @generated from field: string family_name = 6;
+   */
+  familyName: string;
+
+  /**
+   * Free-form device description stored with the session, e.g. "iPhone 15".
+   *
+   * @generated from field: string device_info = 7;
+   */
+  deviceInfo: string;
+};
+
+/**
+ * Describes the message moth.auth.v1.SignInWithOAuthRequest.
+ * Use `create(SignInWithOAuthRequestSchema)` to create a new message.
+ */
+export const SignInWithOAuthRequestSchema: GenMessage<SignInWithOAuthRequest> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_auth, 28);
+
+/**
+ * @generated from message moth.auth.v1.SignInWithOAuthResponse
+ */
+export type SignInWithOAuthResponse = Message<"moth.auth.v1.SignInWithOAuthResponse"> & {
+  /**
+   * @generated from field: moth.auth.v1.User user = 1;
+   */
+  user?: User | undefined;
+
+  /**
+   * @generated from field: moth.auth.v1.TokenPair tokens = 2;
+   */
+  tokens?: TokenPair | undefined;
+};
+
+/**
+ * Describes the message moth.auth.v1.SignInWithOAuthResponse.
+ * Use `create(SignInWithOAuthResponseSchema)` to create a new message.
+ */
+export const SignInWithOAuthResponseSchema: GenMessage<SignInWithOAuthResponse> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_auth, 29);
+
+/**
+ * @generated from message moth.auth.v1.ExchangeOAuthCodeRequest
+ */
+export type ExchangeOAuthCodeRequest = Message<"moth.auth.v1.ExchangeOAuthCodeRequest"> & {
+  /**
+   * The one-time code from the web-redirect callback.
+   *
+   * @generated from field: string code = 1;
+   */
+  code: string;
+
+  /**
+   * @generated from field: string device_info = 2;
+   */
+  deviceInfo: string;
+};
+
+/**
+ * Describes the message moth.auth.v1.ExchangeOAuthCodeRequest.
+ * Use `create(ExchangeOAuthCodeRequestSchema)` to create a new message.
+ */
+export const ExchangeOAuthCodeRequestSchema: GenMessage<ExchangeOAuthCodeRequest> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_auth, 30);
+
+/**
+ * @generated from message moth.auth.v1.ExchangeOAuthCodeResponse
+ */
+export type ExchangeOAuthCodeResponse = Message<"moth.auth.v1.ExchangeOAuthCodeResponse"> & {
+  /**
+   * @generated from field: moth.auth.v1.User user = 1;
+   */
+  user?: User | undefined;
+
+  /**
+   * @generated from field: moth.auth.v1.TokenPair tokens = 2;
+   */
+  tokens?: TokenPair | undefined;
+};
+
+/**
+ * Describes the message moth.auth.v1.ExchangeOAuthCodeResponse.
+ * Use `create(ExchangeOAuthCodeResponseSchema)` to create a new message.
+ */
+export const ExchangeOAuthCodeResponseSchema: GenMessage<ExchangeOAuthCodeResponse> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_auth, 31);
+
+/**
+ * @generated from message moth.auth.v1.UnlinkIdentityRequest
+ */
+export type UnlinkIdentityRequest = Message<"moth.auth.v1.UnlinkIdentityRequest"> & {
+  /**
+   * @generated from field: moth.auth.v1.OAuthProvider provider = 1;
+   */
+  provider: OAuthProvider;
+};
+
+/**
+ * Describes the message moth.auth.v1.UnlinkIdentityRequest.
+ * Use `create(UnlinkIdentityRequestSchema)` to create a new message.
+ */
+export const UnlinkIdentityRequestSchema: GenMessage<UnlinkIdentityRequest> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_auth, 32);
+
+/**
+ * @generated from message moth.auth.v1.UnlinkIdentityResponse
+ */
+export type UnlinkIdentityResponse = Message<"moth.auth.v1.UnlinkIdentityResponse"> & {
+};
+
+/**
+ * Describes the message moth.auth.v1.UnlinkIdentityResponse.
+ * Use `create(UnlinkIdentityResponseSchema)` to create a new message.
+ */
+export const UnlinkIdentityResponseSchema: GenMessage<UnlinkIdentityResponse> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_auth, 33);
+
+/**
  * @generated from message moth.auth.v1.DeleteAccountRequest
  */
 export type DeleteAccountRequest = Message<"moth.auth.v1.DeleteAccountRequest"> & {
@@ -590,7 +751,7 @@ export type DeleteAccountRequest = Message<"moth.auth.v1.DeleteAccountRequest"> 
  * Use `create(DeleteAccountRequestSchema)` to create a new message.
  */
 export const DeleteAccountRequestSchema: GenMessage<DeleteAccountRequest> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_auth, 28);
+  messageDesc(file_moth_auth_v1_auth, 34);
 
 /**
  * @generated from message moth.auth.v1.DeleteAccountResponse
@@ -603,7 +764,42 @@ export type DeleteAccountResponse = Message<"moth.auth.v1.DeleteAccountResponse"
  * Use `create(DeleteAccountResponseSchema)` to create a new message.
  */
 export const DeleteAccountResponseSchema: GenMessage<DeleteAccountResponse> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_auth, 29);
+  messageDesc(file_moth_auth_v1_auth, 35);
+
+/**
+ * OAuthProvider identifies a supported social sign-in provider.
+ * (buf splits "OAuth" as "O_Auth"; the natural OAUTH_ prefix is kept.)
+ *
+ * @generated from enum moth.auth.v1.OAuthProvider
+ */
+export enum OAuthProvider {
+  /**
+   * buf:lint:ignore ENUM_VALUE_PREFIX
+   *
+   * @generated from enum value: OAUTH_PROVIDER_UNSPECIFIED = 0;
+   */
+  OAUTH_PROVIDER_UNSPECIFIED = 0,
+
+  /**
+   * buf:lint:ignore ENUM_VALUE_PREFIX
+   *
+   * @generated from enum value: OAUTH_PROVIDER_GOOGLE = 1;
+   */
+  OAUTH_PROVIDER_GOOGLE = 1,
+
+  /**
+   * buf:lint:ignore ENUM_VALUE_PREFIX
+   *
+   * @generated from enum value: OAUTH_PROVIDER_APPLE = 2;
+   */
+  OAUTH_PROVIDER_APPLE = 2,
+}
+
+/**
+ * Describes the enum moth.auth.v1.OAuthProvider.
+ */
+export const OAuthProviderSchema: GenEnum<OAuthProvider> = /*@__PURE__*/
+  enumDesc(file_moth_auth_v1_auth, 0);
 
 /**
  * AuthService is the public end-user authentication API consumed by mobile
@@ -766,6 +962,49 @@ export const AuthService: GenService<{
     methodKind: "unary";
     input: typeof ConfirmEmailChangeRequestSchema;
     output: typeof ConfirmEmailChangeResponseSchema;
+  },
+  /**
+   * SignInWithOAuth signs in (or up) with a provider ID token obtained by a
+   * native Google/Apple flow on the device. The token is verified
+   * server-side (signature against the provider JWKS, issuer, audience
+   * against the project's configured client/bundle IDs, expiry, nonce);
+   * email, name and subject only ever come from the verified token. Account
+   * resolution: an existing (provider, subject) identity signs that user
+   * in; else a provider-verified email matching an existing user links a
+   * new identity to it (when the project's auto_link_verified_email policy
+   * allows); else a new user is created.
+   *
+   * @generated from rpc moth.auth.v1.AuthService.SignInWithOAuth
+   */
+  signInWithOAuth: {
+    methodKind: "unary";
+    input: typeof SignInWithOAuthRequestSchema;
+    output: typeof SignInWithOAuthResponseSchema;
+  },
+  /**
+   * ExchangeOAuthCode trades the one-time code minted by the web-redirect
+   * fallback flow (GET /oauth/{provider}/start → provider consent →
+   * callback → redirect back into the app) for a token pair. Codes are
+   * single-use and short-lived.
+   *
+   * @generated from rpc moth.auth.v1.AuthService.ExchangeOAuthCode
+   */
+  exchangeOAuthCode: {
+    methodKind: "unary";
+    input: typeof ExchangeOAuthCodeRequestSchema;
+    output: typeof ExchangeOAuthCodeResponseSchema;
+  },
+  /**
+   * UnlinkIdentity removes the caller's identity for one provider. Requires
+   * a Bearer access token. Refused when it would leave the account without
+   * any way to sign in.
+   *
+   * @generated from rpc moth.auth.v1.AuthService.UnlinkIdentity
+   */
+  unlinkIdentity: {
+    methodKind: "unary";
+    input: typeof UnlinkIdentityRequestSchema;
+    output: typeof UnlinkIdentityResponseSchema;
   },
   /**
    * DeleteAccount permanently deletes the user after fresh re-authentication

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -247,7 +248,7 @@ func TestProjectSettingsRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Settings != DefaultProjectSettings() {
+	if !reflect.DeepEqual(got.Settings, DefaultProjectSettings()) {
 		t.Fatalf("settings = %+v, want defaults", got.Settings)
 	}
 
