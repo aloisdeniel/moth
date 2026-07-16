@@ -51,6 +51,15 @@ const (
 	// AdminAccountServiceChangePasswordProcedure is the fully-qualified name of the
 	// AdminAccountService's ChangePassword RPC.
 	AdminAccountServiceChangePasswordProcedure = "/moth.admin.v1.AdminAccountService/ChangePassword"
+	// AdminAccountServiceCreatePersonalAccessTokenProcedure is the fully-qualified name of the
+	// AdminAccountService's CreatePersonalAccessToken RPC.
+	AdminAccountServiceCreatePersonalAccessTokenProcedure = "/moth.admin.v1.AdminAccountService/CreatePersonalAccessToken"
+	// AdminAccountServiceListPersonalAccessTokensProcedure is the fully-qualified name of the
+	// AdminAccountService's ListPersonalAccessTokens RPC.
+	AdminAccountServiceListPersonalAccessTokensProcedure = "/moth.admin.v1.AdminAccountService/ListPersonalAccessTokens"
+	// AdminAccountServiceRevokePersonalAccessTokenProcedure is the fully-qualified name of the
+	// AdminAccountService's RevokePersonalAccessToken RPC.
+	AdminAccountServiceRevokePersonalAccessTokenProcedure = "/moth.admin.v1.AdminAccountService/RevokePersonalAccessToken"
 )
 
 // AdminAccountServiceClient is a client for the moth.admin.v1.AdminAccountService service.
@@ -68,6 +77,20 @@ type AdminAccountServiceClient interface {
 	// ChangePassword changes the calling admin's password after verifying
 	// the current one, and ends the admin's other browser sessions.
 	ChangePassword(context.Context, *connect.Request[v1.ChangePasswordRequest]) (*connect.Response[v1.ChangePasswordResponse], error)
+	// CreatePersonalAccessToken mints a `moth_pat_...` credential for the
+	// calling admin, accepted by every admin RPC as
+	// `authorization: Bearer` metadata (the moth CLI's credential). Stored
+	// hashed; the plaintext is returned exactly once, in this response.
+	// A token minted over a PAT never outlives the creating token: its
+	// expiry is capped at the creator's, so a leaked short-lived token
+	// cannot be laundered into a longer-lived one.
+	CreatePersonalAccessToken(context.Context, *connect.Request[v1.CreatePersonalAccessTokenRequest]) (*connect.Response[v1.CreatePersonalAccessTokenResponse], error)
+	// ListPersonalAccessTokens returns the calling admin's tokens (metadata
+	// only, revoked ones included), newest first.
+	ListPersonalAccessTokens(context.Context, *connect.Request[v1.ListPersonalAccessTokensRequest]) (*connect.Response[v1.ListPersonalAccessTokensResponse], error)
+	// RevokePersonalAccessToken immediately ends one of the calling admin's
+	// tokens; its next use fails UNAUTHENTICATED.
+	RevokePersonalAccessToken(context.Context, *connect.Request[v1.RevokePersonalAccessTokenRequest]) (*connect.Response[v1.RevokePersonalAccessTokenResponse], error)
 }
 
 // NewAdminAccountServiceClient constructs a client for the moth.admin.v1.AdminAccountService
@@ -117,17 +140,38 @@ func NewAdminAccountServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(adminAccountServiceMethods.ByName("ChangePassword")),
 			connect.WithClientOptions(opts...),
 		),
+		createPersonalAccessToken: connect.NewClient[v1.CreatePersonalAccessTokenRequest, v1.CreatePersonalAccessTokenResponse](
+			httpClient,
+			baseURL+AdminAccountServiceCreatePersonalAccessTokenProcedure,
+			connect.WithSchema(adminAccountServiceMethods.ByName("CreatePersonalAccessToken")),
+			connect.WithClientOptions(opts...),
+		),
+		listPersonalAccessTokens: connect.NewClient[v1.ListPersonalAccessTokensRequest, v1.ListPersonalAccessTokensResponse](
+			httpClient,
+			baseURL+AdminAccountServiceListPersonalAccessTokensProcedure,
+			connect.WithSchema(adminAccountServiceMethods.ByName("ListPersonalAccessTokens")),
+			connect.WithClientOptions(opts...),
+		),
+		revokePersonalAccessToken: connect.NewClient[v1.RevokePersonalAccessTokenRequest, v1.RevokePersonalAccessTokenResponse](
+			httpClient,
+			baseURL+AdminAccountServiceRevokePersonalAccessTokenProcedure,
+			connect.WithSchema(adminAccountServiceMethods.ByName("RevokePersonalAccessToken")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // adminAccountServiceClient implements AdminAccountServiceClient.
 type adminAccountServiceClient struct {
-	listAdmins        *connect.Client[v1.ListAdminsRequest, v1.ListAdminsResponse]
-	inviteAdmin       *connect.Client[v1.InviteAdminRequest, v1.InviteAdminResponse]
-	listAdminInvites  *connect.Client[v1.ListAdminInvitesRequest, v1.ListAdminInvitesResponse]
-	revokeAdminInvite *connect.Client[v1.RevokeAdminInviteRequest, v1.RevokeAdminInviteResponse]
-	acceptAdminInvite *connect.Client[v1.AcceptAdminInviteRequest, v1.AcceptAdminInviteResponse]
-	changePassword    *connect.Client[v1.ChangePasswordRequest, v1.ChangePasswordResponse]
+	listAdmins                *connect.Client[v1.ListAdminsRequest, v1.ListAdminsResponse]
+	inviteAdmin               *connect.Client[v1.InviteAdminRequest, v1.InviteAdminResponse]
+	listAdminInvites          *connect.Client[v1.ListAdminInvitesRequest, v1.ListAdminInvitesResponse]
+	revokeAdminInvite         *connect.Client[v1.RevokeAdminInviteRequest, v1.RevokeAdminInviteResponse]
+	acceptAdminInvite         *connect.Client[v1.AcceptAdminInviteRequest, v1.AcceptAdminInviteResponse]
+	changePassword            *connect.Client[v1.ChangePasswordRequest, v1.ChangePasswordResponse]
+	createPersonalAccessToken *connect.Client[v1.CreatePersonalAccessTokenRequest, v1.CreatePersonalAccessTokenResponse]
+	listPersonalAccessTokens  *connect.Client[v1.ListPersonalAccessTokensRequest, v1.ListPersonalAccessTokensResponse]
+	revokePersonalAccessToken *connect.Client[v1.RevokePersonalAccessTokenRequest, v1.RevokePersonalAccessTokenResponse]
 }
 
 // ListAdmins calls moth.admin.v1.AdminAccountService.ListAdmins.
@@ -160,6 +204,21 @@ func (c *adminAccountServiceClient) ChangePassword(ctx context.Context, req *con
 	return c.changePassword.CallUnary(ctx, req)
 }
 
+// CreatePersonalAccessToken calls moth.admin.v1.AdminAccountService.CreatePersonalAccessToken.
+func (c *adminAccountServiceClient) CreatePersonalAccessToken(ctx context.Context, req *connect.Request[v1.CreatePersonalAccessTokenRequest]) (*connect.Response[v1.CreatePersonalAccessTokenResponse], error) {
+	return c.createPersonalAccessToken.CallUnary(ctx, req)
+}
+
+// ListPersonalAccessTokens calls moth.admin.v1.AdminAccountService.ListPersonalAccessTokens.
+func (c *adminAccountServiceClient) ListPersonalAccessTokens(ctx context.Context, req *connect.Request[v1.ListPersonalAccessTokensRequest]) (*connect.Response[v1.ListPersonalAccessTokensResponse], error) {
+	return c.listPersonalAccessTokens.CallUnary(ctx, req)
+}
+
+// RevokePersonalAccessToken calls moth.admin.v1.AdminAccountService.RevokePersonalAccessToken.
+func (c *adminAccountServiceClient) RevokePersonalAccessToken(ctx context.Context, req *connect.Request[v1.RevokePersonalAccessTokenRequest]) (*connect.Response[v1.RevokePersonalAccessTokenResponse], error) {
+	return c.revokePersonalAccessToken.CallUnary(ctx, req)
+}
+
 // AdminAccountServiceHandler is an implementation of the moth.admin.v1.AdminAccountService service.
 type AdminAccountServiceHandler interface {
 	ListAdmins(context.Context, *connect.Request[v1.ListAdminsRequest]) (*connect.Response[v1.ListAdminsResponse], error)
@@ -175,6 +234,20 @@ type AdminAccountServiceHandler interface {
 	// ChangePassword changes the calling admin's password after verifying
 	// the current one, and ends the admin's other browser sessions.
 	ChangePassword(context.Context, *connect.Request[v1.ChangePasswordRequest]) (*connect.Response[v1.ChangePasswordResponse], error)
+	// CreatePersonalAccessToken mints a `moth_pat_...` credential for the
+	// calling admin, accepted by every admin RPC as
+	// `authorization: Bearer` metadata (the moth CLI's credential). Stored
+	// hashed; the plaintext is returned exactly once, in this response.
+	// A token minted over a PAT never outlives the creating token: its
+	// expiry is capped at the creator's, so a leaked short-lived token
+	// cannot be laundered into a longer-lived one.
+	CreatePersonalAccessToken(context.Context, *connect.Request[v1.CreatePersonalAccessTokenRequest]) (*connect.Response[v1.CreatePersonalAccessTokenResponse], error)
+	// ListPersonalAccessTokens returns the calling admin's tokens (metadata
+	// only, revoked ones included), newest first.
+	ListPersonalAccessTokens(context.Context, *connect.Request[v1.ListPersonalAccessTokensRequest]) (*connect.Response[v1.ListPersonalAccessTokensResponse], error)
+	// RevokePersonalAccessToken immediately ends one of the calling admin's
+	// tokens; its next use fails UNAUTHENTICATED.
+	RevokePersonalAccessToken(context.Context, *connect.Request[v1.RevokePersonalAccessTokenRequest]) (*connect.Response[v1.RevokePersonalAccessTokenResponse], error)
 }
 
 // NewAdminAccountServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -220,6 +293,24 @@ func NewAdminAccountServiceHandler(svc AdminAccountServiceHandler, opts ...conne
 		connect.WithSchema(adminAccountServiceMethods.ByName("ChangePassword")),
 		connect.WithHandlerOptions(opts...),
 	)
+	adminAccountServiceCreatePersonalAccessTokenHandler := connect.NewUnaryHandler(
+		AdminAccountServiceCreatePersonalAccessTokenProcedure,
+		svc.CreatePersonalAccessToken,
+		connect.WithSchema(adminAccountServiceMethods.ByName("CreatePersonalAccessToken")),
+		connect.WithHandlerOptions(opts...),
+	)
+	adminAccountServiceListPersonalAccessTokensHandler := connect.NewUnaryHandler(
+		AdminAccountServiceListPersonalAccessTokensProcedure,
+		svc.ListPersonalAccessTokens,
+		connect.WithSchema(adminAccountServiceMethods.ByName("ListPersonalAccessTokens")),
+		connect.WithHandlerOptions(opts...),
+	)
+	adminAccountServiceRevokePersonalAccessTokenHandler := connect.NewUnaryHandler(
+		AdminAccountServiceRevokePersonalAccessTokenProcedure,
+		svc.RevokePersonalAccessToken,
+		connect.WithSchema(adminAccountServiceMethods.ByName("RevokePersonalAccessToken")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.admin.v1.AdminAccountService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AdminAccountServiceListAdminsProcedure:
@@ -234,6 +325,12 @@ func NewAdminAccountServiceHandler(svc AdminAccountServiceHandler, opts ...conne
 			adminAccountServiceAcceptAdminInviteHandler.ServeHTTP(w, r)
 		case AdminAccountServiceChangePasswordProcedure:
 			adminAccountServiceChangePasswordHandler.ServeHTTP(w, r)
+		case AdminAccountServiceCreatePersonalAccessTokenProcedure:
+			adminAccountServiceCreatePersonalAccessTokenHandler.ServeHTTP(w, r)
+		case AdminAccountServiceListPersonalAccessTokensProcedure:
+			adminAccountServiceListPersonalAccessTokensHandler.ServeHTTP(w, r)
+		case AdminAccountServiceRevokePersonalAccessTokenProcedure:
+			adminAccountServiceRevokePersonalAccessTokenHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -265,4 +362,16 @@ func (UnimplementedAdminAccountServiceHandler) AcceptAdminInvite(context.Context
 
 func (UnimplementedAdminAccountServiceHandler) ChangePassword(context.Context, *connect.Request[v1.ChangePasswordRequest]) (*connect.Response[v1.ChangePasswordResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.AdminAccountService.ChangePassword is not implemented"))
+}
+
+func (UnimplementedAdminAccountServiceHandler) CreatePersonalAccessToken(context.Context, *connect.Request[v1.CreatePersonalAccessTokenRequest]) (*connect.Response[v1.CreatePersonalAccessTokenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.AdminAccountService.CreatePersonalAccessToken is not implemented"))
+}
+
+func (UnimplementedAdminAccountServiceHandler) ListPersonalAccessTokens(context.Context, *connect.Request[v1.ListPersonalAccessTokensRequest]) (*connect.Response[v1.ListPersonalAccessTokensResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.AdminAccountService.ListPersonalAccessTokens is not implemented"))
+}
+
+func (UnimplementedAdminAccountServiceHandler) RevokePersonalAccessToken(context.Context, *connect.Request[v1.RevokePersonalAccessTokenRequest]) (*connect.Response[v1.RevokePersonalAccessTokenResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.AdminAccountService.RevokePersonalAccessToken is not implemented"))
 }

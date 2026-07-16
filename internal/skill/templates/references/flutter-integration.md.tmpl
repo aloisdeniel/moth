@@ -1,0 +1,131 @@
+# Integrate moth into a Flutter app
+
+Values: endpoint `{{.Endpoint}}` · publishable key `{{.PublishableKey}}`.
+
+## 1. Add the SDK
+
+The instance serves the `moth_auth` package from its own pub repository —
+there is no pub.dev dependency and the SDK version tracks the server. In
+`pubspec.yaml`:
+
+```yaml
+dependencies:
+  moth_auth:
+    hosted: {{.Endpoint}}/pub
+    version: {{.SDKVersion}}
+```
+
+Run `flutter pub get`. Expected: `+ moth_auth` resolves from
+`{{.Endpoint}}/pub`.
+
+Failure: `version solving failed` → the constraint does not match the
+served version. Check `curl {{.Endpoint}}/pub/api/packages/moth_auth`
+(field `latest.version`); pin pre-release versions (anything containing
+`-`) exactly — Dart version ranges never match pre-releases.
+
+## 2. Wrap the app
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:moth_auth/moth_auth.dart';
+
+void main() {
+  runApp(
+    MothApp(
+      config: MothConfig(
+        endpoint: Uri.parse('{{.Endpoint}}'),
+        publishableKey: '{{.PublishableKey}}',
+      ),
+      // Signed out -> the SDK's built-in MothLoginScreen; signed in -> child.
+      child: const MyApp(),
+    ),
+  );
+}
+```
+
+`MothApp` restores any persisted session on mount, renders the built-in
+project-themed login screen while signed out (email/password plus exactly
+the providers the project enables — the login UI adapts to the project
+config at runtime), and renders `child` once signed in. Pass
+`requireAuth: false` to always render `child` and branch on the auth state
+yourself.
+
+## 3. Read auth state, act on it
+
+Anywhere below `MothApp` (the widget rebuilds on every auth change):
+
+```dart
+final scope = MothScope.of(context);
+final user = scope.user;            // null while loading / signed out
+await scope.signOut();              // signOut(allDevices: true) revokes all sessions
+await scope.refreshUser();          // re-fetch the profile
+await scope.deleteAccount(password: '...'); // permanent; re-auth required
+```
+
+Without widgets (services, tests), own a client directly:
+
+```dart
+final moth = MothClient(MothConfig(
+  endpoint: Uri.parse('{{.Endpoint}}'),
+  publishableKey: '{{.PublishableKey}}',
+));
+await moth.restore(); // resume a persisted session, if any
+final user = await moth.signIn(email: 'jane@example.com', password: '...');
+moth.authStateChanges.listen((state) { /* MothAuthLoading / MothSignedOut / MothSignedIn */ });
+```
+
+Sessions persist in the platform keystore and survive restarts; access
+tokens auto-refresh before expiry. In widget tests pass
+`tokenStore: InMemoryTokenStore()`.
+
+## 4. Call your own backend with the token
+
+`moth.accessToken()` always returns a valid, auto-refreshed JWT. With
+`package:http` there is a drop-in client:
+
+```dart
+final api = authenticatedClient(MothScope.of(context).client);
+final resp = await api.get(Uri.parse('https://api.example.com/todos'));
+```
+
+With dio (not a moth_auth dependency — wire it yourself):
+
+```dart
+dio.interceptors.add(InterceptorsWrapper(
+  onRequest: (options, handler) async {
+    options.headers['authorization'] = 'Bearer ${await moth.accessToken()}';
+    handler.next(options);
+  },
+));
+```
+
+The backend side of this loop is
+[backend-verification.md](backend-verification.md).
+
+## 5. Typed errors
+
+All SDK errors extend `MothException`; catch the specific ones:
+`MothInvalidCredentials`, `MothEmailNotVerified`, `MothWeakPassword`,
+`MothEmailTaken`, `MothRateLimited`, `MothInvalidProviderToken`;
+transport failures are `MothNetworkError`.
+
+## Local development
+
+- `http://` endpoints work (e.g. `http://localhost:8080`). Android
+  emulators cannot reach the host's `localhost` — use `http://10.0.2.2:8080`
+  there, and allow cleartext traffic in the Android manifest
+  (`android:usesCleartextTraffic="true"` in the `<application>` tag) for
+  plain-HTTP dev servers. iOS ATS similarly blocks plain HTTP to
+  non-localhost hosts.
+- Without SMTP configured, moth prints verification/reset emails to the
+  server console — look there for the links during development.
+
+## Failure modes
+
+| Symptom | Fix |
+| --- | --- |
+| `version solving failed` on `pub get` | Constraint vs served version mismatch — see step 1 |
+| `MothNetworkError` on Android emulator | Endpoint is `localhost`; use `10.0.2.2` and allow cleartext |
+| `unauthenticated: unknown publishable key` | Wrong `pk_...` or wrong instance — re-check both against `moth project get` |
+| Sign-in returns `MothEmailNotVerified` | Project requires verified email; the verification link is emailed (or printed to the server console in dev) |
+| Provider button says setup is missing | No `MothOAuthAdapter` wired, or native setup incomplete — see [provider-setup.md](provider-setup.md) |

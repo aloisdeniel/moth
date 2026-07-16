@@ -39,4 +39,8 @@ message GetCurrentAdminRequest {}
 
 message GetCurrentAdminResponse {
   Admin admin = 1;
+  // The moth build version of the answering server ("dev", or "vX.Y.Z" on
+  // release builds), so a CLI can validate a context and report what it
+  // talks to in one round trip.
+  string server_version = 2;
 }

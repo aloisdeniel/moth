@@ -40,8 +40,24 @@ func (h *ProjectHandler) CreateProject(ctx context.Context, req *connect.Request
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	slug, err := h.uniqueSlug(ctx, name)
-	if err != nil {
+	var slug string
+	if requested := strings.TrimSpace(req.Msg.Slug); requested != "" {
+		// An explicit slug (the CLI's `project apply`) is taken verbatim or
+		// not at all: no derivation, no collision suffix.
+		if requested != Slugify(requested) {
+			return nil, connect.NewError(connect.CodeInvalidArgument,
+				fmt.Errorf("invalid slug %q: lowercase letters, digits and single dashes only", requested))
+		}
+		exists, err := h.store.SlugExists(ctx, requested)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		if exists {
+			return nil, connect.NewError(connect.CodeAlreadyExists,
+				fmt.Errorf("slug %q is already taken", requested))
+		}
+		slug = requested
+	} else if slug, err = h.uniqueSlug(ctx, name); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 

@@ -1,0 +1,118 @@
+# Google & Apple sign-in
+
+Two halves: the **server side** (provider config stored in the moth
+project — client IDs, Apple key) and the **app side** (native SDK setup
+plus a small adapter class). The login screen shows a provider button as
+soon as the provider is enabled in the project; until the app side is
+done, tapping it explains what is missing instead of crashing.
+
+{{if .Interpolated -}}
+Current state for `{{.Slug}}`:
+
+| Provider | Status | Values |
+| --- | --- | --- |
+| Google | {{if .Google.Enabled}}enabled{{else}}disabled{{end}} | {{if .Google.WebClientID}}web `{{.Google.WebClientID}}`{{end}}{{if .Google.IOSClientID}} · iOS `{{.Google.IOSClientID}}`{{end}}{{if .Google.AndroidClientID}} · Android `{{.Google.AndroidClientID}}`{{end}} |
+| Apple | {{if .Apple.Enabled}}enabled{{else}}disabled{{end}} | {{if .Apple.ServicesID}}services ID `{{.Apple.ServicesID}}`{{end}}{{range .Apple.BundleIDs}} · bundle `{{.}}`{{end}} |
+{{- else -}}
+Check the current state with
+`moth project get PROJECT_SLUG --json` (fields `settings.google`,
+`settings.apple`).
+{{- end}}
+
+## Server side: configure the moth project
+
+Preferred: the one-command setup flows (idempotent and re-runnable; they
+diff current state, automate what Google/Apple expose via API, and print
+exact console steps plus paste-back prompts for the rest — never a silent
+skip). Both end with a verification checklist.
+
+```sh
+# Google: needs a GCP project, bundle/package ids, Android SHA fingerprints
+moth setup google --project {{.Slug}}
+
+# Apple: needs an App Store Connect API key (issuer id, key id, .p8 path)
+moth setup apple --project {{.Slug}}
+```
+
+Alternative: declare the provider config in the project spec and
+`moth project apply -f moth.yaml` (see
+[cli-administration.md](cli-administration.md)), or fill the Providers
+page in the admin SPA. Secrets (Google web client secret, Apple `.p8`
+key) are write-only: reads only report `hasWebClientSecret` /
+`hasPrivateKey`, and an empty secret on update keeps the stored value.
+
+Afterwards verify end to end:
+
+```sh
+moth doctor --project {{.Slug}}
+```
+
+## App side: wire the native flows
+
+`moth_auth` deliberately does not depend on `google_sign_in` or
+`sign_in_with_apple`. Add them to the app and implement `MothOAuthAdapter`
+(the SDK's example app ships this exact class to copy):
+
+```dart
+class AppOAuthAdapter implements MothOAuthAdapter {
+  bool _googleInitialized = false;
+
+  @override
+  Future<MothGoogleCredential?> getGoogleIdToken(MothGoogleConfig config) async {
+    final signIn = GoogleSignIn.instance;
+    if (!_googleInitialized) {
+      // Client IDs come from the project config — never hardcode them.
+      await signIn.initialize(
+        clientId: defaultTargetPlatform == TargetPlatform.iOS
+            ? config.iosClientId
+            : null,
+        serverClientId: config.webClientId,
+      );
+      _googleInitialized = true;
+    }
+    final account = await signIn.authenticate();
+    final idToken = account.authentication.idToken;
+    if (idToken == null) return null;
+    return MothGoogleCredential(idToken: idToken);
+  }
+
+  @override
+  Future<MothAppleCredential?> getAppleCredential({required String hashedNonce}) async {
+    final credential = await SignInWithApple.getAppleIDCredential(
+      scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+      nonce: hashedNonce, // moth verifies the nonce embedded in the token
+    );
+    final idToken = credential.identityToken;
+    if (idToken == null) return null;
+    return MothAppleCredential(
+      idToken: idToken,
+      authorizationCode: credential.authorizationCode,
+      givenName: credential.givenName,   // only sent on first authorization
+      familyName: credential.familyName,
+    );
+  }
+}
+```
+
+Pass it to the app shell: `MothApp(oauthAdapter: AppOAuthAdapter(), ...)`.
+
+Native setup the adapter needs:
+
+- **Google / iOS**: add the reversed iOS client ID as a URL scheme in
+  `ios/Runner/Info.plist` (`CFBundleURLSchemes`).
+- **Google / Android**: register the app's SHA-1/SHA-256 fingerprints on
+  the Android OAuth client (`moth setup google` walks through this;
+  fingerprints come from `keytool` or the Play Console).
+- **Apple / iOS**: enable the "Sign in with Apple" capability on the app
+  target in Xcode; the app's bundle ID must be in the project's
+  `settings.apple.bundleIds`.
+
+## Failure modes
+
+| Symptom | Fix |
+| --- | --- |
+| Provider button missing | Provider disabled in the project — enable it server-side (above) |
+| Button says an adapter/setup is missing | Pass `oauthAdapter:` to `MothApp` and finish the native setup |
+| Google returns no ID token | Client ID set mismatch — `serverClientId` must be the project's web client ID |
+| `invalid provider token` from moth | Token `aud` not among the project's configured client IDs / bundle IDs; re-run `moth setup ...` or fix the project settings |
+| Apple works on device, fails in moth | Nonce mismatch (pass `hashedNonce` through untouched) or bundle ID missing from `settings.apple.bundleIds` |

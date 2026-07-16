@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/account.proto.
  */
 export const file_moth_admin_v1_account: GenFile = /*@__PURE__*/
-  fileDesc("Chttb3RoL2FkbWluL3YxL2FjY291bnQucHJvdG8SDW1vdGguYWRtaW4udjEiigEKC0FkbWluSW52aXRlEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEi8KC2NyZWF0ZV90aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtleHBpcmVfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiEwoRTGlzdEFkbWluc1JlcXVlc3QiOgoSTGlzdEFkbWluc1Jlc3BvbnNlEiQKBmFkbWlucxgBIAMoCzIULm1vdGguYWRtaW4udjEuQWRtaW4iIwoSSW52aXRlQWRtaW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJImYKE0ludml0ZUFkbWluUmVzcG9uc2USKgoGaW52aXRlGAEgASgLMhoubW90aC5hZG1pbi52MS5BZG1pbkludml0ZRISCgppbnZpdGVfdXJsGAIgASgJEg8KB2VtYWlsZWQYAyABKAgiGQoXTGlzdEFkbWluSW52aXRlc1JlcXVlc3QiRwoYTGlzdEFkbWluSW52aXRlc1Jlc3BvbnNlEisKB2ludml0ZXMYASADKAsyGi5tb3RoLmFkbWluLnYxLkFkbWluSW52aXRlIiYKGFJldm9rZUFkbWluSW52aXRlUmVxdWVzdBIKCgJpZBgBIAEoCSIbChlSZXZva2VBZG1pbkludml0ZVJlc3BvbnNlIjsKGEFjY2VwdEFkbWluSW52aXRlUmVxdWVzdBINCgV0b2tlbhgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJAChlBY2NlcHRBZG1pbkludml0ZVJlc3BvbnNlEiMKBWFkbWluGAEgASgLMhQubW90aC5hZG1pbi52MS5BZG1pbiJHChVDaGFuZ2VQYXNzd29yZFJlcXVlc3QSGAoQY3VycmVudF9wYXNzd29yZBgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiGAoWQ2hhbmdlUGFzc3dvcmRSZXNwb25zZTLSBAoTQWRtaW5BY2NvdW50U2VydmljZRJRCgpMaXN0QWRtaW5zEiAubW90aC5hZG1pbi52MS5MaXN0QWRtaW5zUmVxdWVzdBohLm1vdGguYWRtaW4udjEuTGlzdEFkbWluc1Jlc3BvbnNlElQKC0ludml0ZUFkbWluEiEubW90aC5hZG1pbi52MS5JbnZpdGVBZG1pblJlcXVlc3QaIi5tb3RoLmFkbWluLnYxLkludml0ZUFkbWluUmVzcG9uc2USYwoQTGlzdEFkbWluSW52aXRlcxImLm1vdGguYWRtaW4udjEuTGlzdEFkbWluSW52aXRlc1JlcXVlc3QaJy5tb3RoLmFkbWluLnYxLkxpc3RBZG1pbkludml0ZXNSZXNwb25zZRJmChFSZXZva2VBZG1pbkludml0ZRInLm1vdGguYWRtaW4udjEuUmV2b2tlQWRtaW5JbnZpdGVSZXF1ZXN0GigubW90aC5hZG1pbi52MS5SZXZva2VBZG1pbkludml0ZVJlc3BvbnNlEmYKEUFjY2VwdEFkbWluSW52aXRlEicubW90aC5hZG1pbi52MS5BY2NlcHRBZG1pbkludml0ZVJlcXVlc3QaKC5tb3RoLmFkbWluLnYxLkFjY2VwdEFkbWluSW52aXRlUmVzcG9uc2USXQoOQ2hhbmdlUGFzc3dvcmQSJC5tb3RoLmFkbWluLnYxLkNoYW5nZVBhc3N3b3JkUmVxdWVzdBolLm1vdGguYWRtaW4udjEuQ2hhbmdlUGFzc3dvcmRSZXNwb25zZUI3WjVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_timestamp, file_moth_admin_v1_session]);
+  fileDesc("Chttb3RoL2FkbWluL3YxL2FjY291bnQucHJvdG8SDW1vdGguYWRtaW4udjEiigEKC0FkbWluSW52aXRlEgoKAmlkGAEgASgJEg0KBWVtYWlsGAIgASgJEi8KC2NyZWF0ZV90aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtleHBpcmVfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiEwoRTGlzdEFkbWluc1JlcXVlc3QiOgoSTGlzdEFkbWluc1Jlc3BvbnNlEiQKBmFkbWlucxgBIAMoCzIULm1vdGguYWRtaW4udjEuQWRtaW4iIwoSSW52aXRlQWRtaW5SZXF1ZXN0Eg0KBWVtYWlsGAEgASgJImYKE0ludml0ZUFkbWluUmVzcG9uc2USKgoGaW52aXRlGAEgASgLMhoubW90aC5hZG1pbi52MS5BZG1pbkludml0ZRISCgppbnZpdGVfdXJsGAIgASgJEg8KB2VtYWlsZWQYAyABKAgiGQoXTGlzdEFkbWluSW52aXRlc1JlcXVlc3QiRwoYTGlzdEFkbWluSW52aXRlc1Jlc3BvbnNlEisKB2ludml0ZXMYASADKAsyGi5tb3RoLmFkbWluLnYxLkFkbWluSW52aXRlIiYKGFJldm9rZUFkbWluSW52aXRlUmVxdWVzdBIKCgJpZBgBIAEoCSIbChlSZXZva2VBZG1pbkludml0ZVJlc3BvbnNlIjsKGEFjY2VwdEFkbWluSW52aXRlUmVxdWVzdBINCgV0b2tlbhgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSJAChlBY2NlcHRBZG1pbkludml0ZVJlc3BvbnNlEiMKBWFkbWluGAEgASgLMhQubW90aC5hZG1pbi52MS5BZG1pbiJHChVDaGFuZ2VQYXNzd29yZFJlcXVlc3QSGAoQY3VycmVudF9wYXNzd29yZBgBIAEoCRIUCgxuZXdfcGFzc3dvcmQYAiABKAkiGAoWQ2hhbmdlUGFzc3dvcmRSZXNwb25zZSL2AQoTUGVyc29uYWxBY2Nlc3NUb2tlbhIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEi8KC2NyZWF0ZV90aW1lGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIyCg5sYXN0X3VzZWRfdGltZRgEIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLZXhwaXJlX3RpbWUYBSABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEi8KC3Jldm9rZV90aW1lGAYgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcCJJCiBDcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuUmVxdWVzdBIMCgRuYW1lGAEgASgJEhcKD2V4cGlyZXNfaW5fZGF5cxgCIAEoBSJoCiFDcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuUmVzcG9uc2USDQoFdG9rZW4YASABKAkSNAoIbWV0YWRhdGEYAiABKAsyIi5tb3RoLmFkbWluLnYxLlBlcnNvbmFsQWNjZXNzVG9rZW4iIQofTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zUmVxdWVzdCJWCiBMaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXNwb25zZRIyCgZ0b2tlbnMYASADKAsyIi5tb3RoLmFkbWluLnYxLlBlcnNvbmFsQWNjZXNzVG9rZW4iLgogUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlcXVlc3QSCgoCaWQYASABKAkiIwohUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlc3BvbnNlMs8HChNBZG1pbkFjY291bnRTZXJ2aWNlElEKCkxpc3RBZG1pbnMSIC5tb3RoLmFkbWluLnYxLkxpc3RBZG1pbnNSZXF1ZXN0GiEubW90aC5hZG1pbi52MS5MaXN0QWRtaW5zUmVzcG9uc2USVAoLSW52aXRlQWRtaW4SIS5tb3RoLmFkbWluLnYxLkludml0ZUFkbWluUmVxdWVzdBoiLm1vdGguYWRtaW4udjEuSW52aXRlQWRtaW5SZXNwb25zZRJjChBMaXN0QWRtaW5JbnZpdGVzEiYubW90aC5hZG1pbi52MS5MaXN0QWRtaW5JbnZpdGVzUmVxdWVzdBonLm1vdGguYWRtaW4udjEuTGlzdEFkbWluSW52aXRlc1Jlc3BvbnNlEmYKEVJldm9rZUFkbWluSW52aXRlEicubW90aC5hZG1pbi52MS5SZXZva2VBZG1pbkludml0ZVJlcXVlc3QaKC5tb3RoLmFkbWluLnYxLlJldm9rZUFkbWluSW52aXRlUmVzcG9uc2USZgoRQWNjZXB0QWRtaW5JbnZpdGUSJy5tb3RoLmFkbWluLnYxLkFjY2VwdEFkbWluSW52aXRlUmVxdWVzdBooLm1vdGguYWRtaW4udjEuQWNjZXB0QWRtaW5JbnZpdGVSZXNwb25zZRJdCg5DaGFuZ2VQYXNzd29yZBIkLm1vdGguYWRtaW4udjEuQ2hhbmdlUGFzc3dvcmRSZXF1ZXN0GiUubW90aC5hZG1pbi52MS5DaGFuZ2VQYXNzd29yZFJlc3BvbnNlEn4KGUNyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW4SLy5tb3RoLmFkbWluLnYxLkNyZWF0ZVBlcnNvbmFsQWNjZXNzVG9rZW5SZXF1ZXN0GjAubW90aC5hZG1pbi52MS5DcmVhdGVQZXJzb25hbEFjY2Vzc1Rva2VuUmVzcG9uc2USewoYTGlzdFBlcnNvbmFsQWNjZXNzVG9rZW5zEi4ubW90aC5hZG1pbi52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXF1ZXN0Gi8ubW90aC5hZG1pbi52MS5MaXN0UGVyc29uYWxBY2Nlc3NUb2tlbnNSZXNwb25zZRJ+ChlSZXZva2VQZXJzb25hbEFjY2Vzc1Rva2VuEi8ubW90aC5hZG1pbi52MS5SZXZva2VQZXJzb25hbEFjY2Vzc1Rva2VuUmVxdWVzdBowLm1vdGguYWRtaW4udjEuUmV2b2tlUGVyc29uYWxBY2Nlc3NUb2tlblJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hZG1pbi92MTthZG1pbnYxYgZwcm90bzM", [file_google_protobuf_timestamp, file_moth_admin_v1_session]);
 
 /**
  * AdminInvite is a pending operator invitation.
@@ -264,6 +264,170 @@ export const ChangePasswordResponseSchema: GenMessage<ChangePasswordResponse> = 
   messageDesc(file_moth_admin_v1_account, 12);
 
 /**
+ * PersonalAccessToken is the metadata of one `moth_pat_...` credential.
+ * The token value itself is stored hashed and only ever returned by
+ * CreatePersonalAccessToken.
+ *
+ * @generated from message moth.admin.v1.PersonalAccessToken
+ */
+export type PersonalAccessToken = Message<"moth.admin.v1.PersonalAccessToken"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * Operator-chosen label ("ci", "laptop").
+   *
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  /**
+   * @generated from field: google.protobuf.Timestamp create_time = 3;
+   */
+  createTime?: Timestamp | undefined;
+
+  /**
+   * When the token last authenticated a request; unset when never used.
+   *
+   * @generated from field: google.protobuf.Timestamp last_used_time = 4;
+   */
+  lastUsedTime?: Timestamp | undefined;
+
+  /**
+   * Unset means the token never expires.
+   *
+   * @generated from field: google.protobuf.Timestamp expire_time = 5;
+   */
+  expireTime?: Timestamp | undefined;
+
+  /**
+   * Set once the token has been revoked.
+   *
+   * @generated from field: google.protobuf.Timestamp revoke_time = 6;
+   */
+  revokeTime?: Timestamp | undefined;
+};
+
+/**
+ * Describes the message moth.admin.v1.PersonalAccessToken.
+ * Use `create(PersonalAccessTokenSchema)` to create a new message.
+ */
+export const PersonalAccessTokenSchema: GenMessage<PersonalAccessToken> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 13);
+
+/**
+ * @generated from message moth.admin.v1.CreatePersonalAccessTokenRequest
+ */
+export type CreatePersonalAccessTokenRequest = Message<"moth.admin.v1.CreatePersonalAccessTokenRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * Days until the token expires; 0 means it never expires.
+   *
+   * @generated from field: int32 expires_in_days = 2;
+   */
+  expiresInDays: number;
+};
+
+/**
+ * Describes the message moth.admin.v1.CreatePersonalAccessTokenRequest.
+ * Use `create(CreatePersonalAccessTokenRequestSchema)` to create a new message.
+ */
+export const CreatePersonalAccessTokenRequestSchema: GenMessage<CreatePersonalAccessTokenRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 14);
+
+/**
+ * @generated from message moth.admin.v1.CreatePersonalAccessTokenResponse
+ */
+export type CreatePersonalAccessTokenResponse = Message<"moth.admin.v1.CreatePersonalAccessTokenResponse"> & {
+  /**
+   * The `moth_pat_...` plaintext, returned exactly once.
+   *
+   * @generated from field: string token = 1;
+   */
+  token: string;
+
+  /**
+   * @generated from field: moth.admin.v1.PersonalAccessToken metadata = 2;
+   */
+  metadata?: PersonalAccessToken | undefined;
+};
+
+/**
+ * Describes the message moth.admin.v1.CreatePersonalAccessTokenResponse.
+ * Use `create(CreatePersonalAccessTokenResponseSchema)` to create a new message.
+ */
+export const CreatePersonalAccessTokenResponseSchema: GenMessage<CreatePersonalAccessTokenResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 15);
+
+/**
+ * @generated from message moth.admin.v1.ListPersonalAccessTokensRequest
+ */
+export type ListPersonalAccessTokensRequest = Message<"moth.admin.v1.ListPersonalAccessTokensRequest"> & {
+};
+
+/**
+ * Describes the message moth.admin.v1.ListPersonalAccessTokensRequest.
+ * Use `create(ListPersonalAccessTokensRequestSchema)` to create a new message.
+ */
+export const ListPersonalAccessTokensRequestSchema: GenMessage<ListPersonalAccessTokensRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 16);
+
+/**
+ * @generated from message moth.admin.v1.ListPersonalAccessTokensResponse
+ */
+export type ListPersonalAccessTokensResponse = Message<"moth.admin.v1.ListPersonalAccessTokensResponse"> & {
+  /**
+   * Newest first; revoked tokens are included until they are pruned.
+   *
+   * @generated from field: repeated moth.admin.v1.PersonalAccessToken tokens = 1;
+   */
+  tokens: PersonalAccessToken[];
+};
+
+/**
+ * Describes the message moth.admin.v1.ListPersonalAccessTokensResponse.
+ * Use `create(ListPersonalAccessTokensResponseSchema)` to create a new message.
+ */
+export const ListPersonalAccessTokensResponseSchema: GenMessage<ListPersonalAccessTokensResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 17);
+
+/**
+ * @generated from message moth.admin.v1.RevokePersonalAccessTokenRequest
+ */
+export type RevokePersonalAccessTokenRequest = Message<"moth.admin.v1.RevokePersonalAccessTokenRequest"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+};
+
+/**
+ * Describes the message moth.admin.v1.RevokePersonalAccessTokenRequest.
+ * Use `create(RevokePersonalAccessTokenRequestSchema)` to create a new message.
+ */
+export const RevokePersonalAccessTokenRequestSchema: GenMessage<RevokePersonalAccessTokenRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 18);
+
+/**
+ * @generated from message moth.admin.v1.RevokePersonalAccessTokenResponse
+ */
+export type RevokePersonalAccessTokenResponse = Message<"moth.admin.v1.RevokePersonalAccessTokenResponse"> & {
+};
+
+/**
+ * Describes the message moth.admin.v1.RevokePersonalAccessTokenResponse.
+ * Use `create(RevokePersonalAccessTokenResponseSchema)` to create a new message.
+ */
+export const RevokePersonalAccessTokenResponseSchema: GenMessage<RevokePersonalAccessTokenResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_account, 19);
+
+/**
  * AdminAccountService manages the operator accounts of this moth instance:
  * inviting additional admins and changing one's own password. All RPCs
  * except AcceptAdminInvite require an authenticated admin session.
@@ -328,6 +492,44 @@ export const AdminAccountService: GenService<{
     methodKind: "unary";
     input: typeof ChangePasswordRequestSchema;
     output: typeof ChangePasswordResponseSchema;
+  },
+  /**
+   * CreatePersonalAccessToken mints a `moth_pat_...` credential for the
+   * calling admin, accepted by every admin RPC as
+   * `authorization: Bearer` metadata (the moth CLI's credential). Stored
+   * hashed; the plaintext is returned exactly once, in this response.
+   * A token minted over a PAT never outlives the creating token: its
+   * expiry is capped at the creator's, so a leaked short-lived token
+   * cannot be laundered into a longer-lived one.
+   *
+   * @generated from rpc moth.admin.v1.AdminAccountService.CreatePersonalAccessToken
+   */
+  createPersonalAccessToken: {
+    methodKind: "unary";
+    input: typeof CreatePersonalAccessTokenRequestSchema;
+    output: typeof CreatePersonalAccessTokenResponseSchema;
+  },
+  /**
+   * ListPersonalAccessTokens returns the calling admin's tokens (metadata
+   * only, revoked ones included), newest first.
+   *
+   * @generated from rpc moth.admin.v1.AdminAccountService.ListPersonalAccessTokens
+   */
+  listPersonalAccessTokens: {
+    methodKind: "unary";
+    input: typeof ListPersonalAccessTokensRequestSchema;
+    output: typeof ListPersonalAccessTokensResponseSchema;
+  },
+  /**
+   * RevokePersonalAccessToken immediately ends one of the calling admin's
+   * tokens; its next use fails UNAUTHENTICATED.
+   *
+   * @generated from rpc moth.admin.v1.AdminAccountService.RevokePersonalAccessToken
+   */
+  revokePersonalAccessToken: {
+    methodKind: "unary";
+    input: typeof RevokePersonalAccessTokenRequestSchema;
+    output: typeof RevokePersonalAccessTokenResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_moth_admin_v1_account, 0);

@@ -1,0 +1,71 @@
+{{if .Claude -}}
+---
+name: moth
+description: Integrate moth authentication into a Flutter app (email/password, Google and Apple sign-in) and administer a moth server from the terminal. Use when wiring a Flutter app to a moth instance, verifying moth-issued JWTs in a backend, or managing moth projects, users and sign-in providers with the moth CLI.
+---
+{{else -}}
+# moth — integrate and administer
+
+Integrate moth authentication into a Flutter app (email/password, Google
+and Apple sign-in) and administer a moth server from the terminal.
+{{end}}
+moth is a one-binary authentication server for mobile apps. One instance
+hosts many independent projects (one per app), each with its own users,
+ES256 signing keypair and configuration. Apps talk to it through the
+`moth_auth` Flutter SDK the instance serves itself at `/pub`; operators
+talk to it through the admin SPA at `/admin` or the `moth` CLI.
+
+## Values used throughout this skill
+
+{{if .Interpolated -}}
+Exported for project **{{.ProjectName}}** (`{{.Slug}}`) — every snippet in
+this skill already carries the real values:
+
+| Value | |
+| --- | --- |
+| Endpoint (base URL) | `{{.Endpoint}}` |
+| Publishable key | `{{.PublishableKey}}` |
+| JWKS URL | `{{.JWKSURL}}` |
+| JWT issuer | `{{.Issuer}}` |
+| JWT audience | `{{.Audience}}` |
+| moth_auth version constraint | `{{.SDKVersion}}` |
+| Sign in with Google | {{if .Google.Enabled}}enabled{{else}}disabled{{end}} |
+| Sign in with Apple | {{if .Apple.Enabled}}enabled{{else}}disabled{{end}} |
+{{- else -}}
+This is the un-interpolated template. Replace these placeholders in every
+snippet before use:
+
+| Placeholder | Meaning | Where to find it |
+| --- | --- | --- |
+| `MOTH_BASE_URL` | Instance base URL (no trailing slash) | ask the operator |
+| `PROJECT_SLUG` | URL-safe project identifier | `moth project list --json`, or the admin sidebar |
+| `pk_YOUR_PUBLISHABLE_KEY` | The project's publishable key — safe to embed in an app | `moth project get PROJECT_SLUG --json` (field `publishableKey`), or the project's Setup page |
+| `MOTH_SDK_VERSION` | Version constraint for the served SDK | `curl MOTH_BASE_URL/pub/api/packages/moth_auth` → `latest.version`; pin pre-releases (any version containing `-`) exactly, prefix releases with `^` |
+
+Better: re-export this skill with the real values already substituted —
+`moth skill export --project PROJECT_SLUG --dir <this dir>` against a
+configured CLI context (see
+[references/cli-administration.md](references/cli-administration.md)).
+{{- end}}
+
+## Task routing
+
+| Task | Read |
+| --- | --- |
+| Add authentication to a Flutter app | [references/flutter-integration.md](references/flutter-integration.md) |
+| Verify moth tokens in a backend, call an API as the signed-in user | [references/backend-verification.md](references/backend-verification.md) |
+| Enable / wire Google or Apple sign-in | [references/provider-setup.md](references/provider-setup.md) |
+| Create or configure projects, manage users, diagnose an instance | [references/cli-administration.md](references/cli-administration.md) |
+
+## Ground rules (apply everywhere)
+
+- The publishable key (`pk_...`) is safe to ship inside an app. Secret
+  keys (`sk_...`) and personal access tokens (`moth_pat_...`) are
+  server-side credentials — never put them in app code, never commit them.
+- Google client IDs reach the app at runtime via the project config RPC —
+  never hardcode them in Dart code.
+- All admin state lives server-side. The CLI and the admin SPA drive the
+  same `moth.admin.v1` RPCs, so anything scripted here is inspectable in
+  the SPA and vice versa.
+- Every CLI command accepts `--json` for parseable output on stdout;
+  errors go to stderr with a non-zero exit code.

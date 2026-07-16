@@ -150,6 +150,11 @@ Future<Map<String, dynamic>> verifyMothToken(String token) async {
   ${grpcHost} \\
   moth.server.v1.TokenService/IntrospectToken`;
 
+  const cliSetup = `moth login ${base}
+moth setup google --project ${project.slug}
+moth setup apple --project ${project.slug}
+moth doctor --project ${project.slug}`;
+
   return (
     <div className="stack-32" style={{ maxWidth: 720 }}>
       <section className="stack-12">
@@ -224,6 +229,19 @@ Future<Map<String, dynamic>> verifyMothToken(String token) async {
             moth.server.v1 users
           </a>
         </p>
+      </section>
+
+      <section className="stack-12">
+        <h2>5 · Prefer the terminal?</h2>
+        <p className="caption">
+          The <span className="inline-code">moth</span> CLI configures the
+          Google and Apple sign-in consoles for this project in one command
+          each — automated where the providers expose APIs, guided (with the
+          exact values to paste) where they don't — then verifies the result.
+          Create a personal access token under Settings first;{" "}
+          <span className="inline-code">moth login</span> asks for it.
+        </p>
+        <CodeBlock code={cliSetup} />
       </section>
     </div>
   );

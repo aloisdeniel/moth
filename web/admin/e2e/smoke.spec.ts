@@ -85,6 +85,12 @@ test("setup instructions render real values", async ({ page }) => {
   await expect(
     page.getByText("http://127.0.0.1:8990/p/birdwatch/.well-known/jwks.json").first(),
   ).toBeVisible();
+
+  // The CLI path sits next to the manual walkthrough, with this project's
+  // real slug and the instance URL baked in.
+  await expect(page.getByText("moth login http://127.0.0.1:8990")).toBeVisible();
+  await expect(page.getByText("moth setup google --project birdwatch")).toBeVisible();
+  await expect(page.getByText("moth setup apple --project birdwatch")).toBeVisible();
 });
 
 test("enable Google sign-in and see it persist", async ({ page }) => {
@@ -268,6 +274,45 @@ test("contrast validation warns and blocks an illegible palette", async ({ page 
     page.getByText("Fix the failing contrast pairs before saving", { exact: false }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Save theme" })).toBeDisabled();
+});
+
+test("personal access tokens: create shows the plaintext once, list, revoke", async ({
+  page,
+}) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page.getByRole("heading", { name: "Projects" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Instance settings" }).click();
+  await expect(page.getByRole("heading", { name: "Instance settings" })).toBeVisible();
+
+  // The CLI helper interpolates the real instance base URL.
+  await expect(page.getByText("moth login http://127.0.0.1:8990")).toBeVisible();
+
+  // Create a token; the dialog shows the moth_pat_ plaintext exactly once.
+  // (Dialog-scoped: the SMTP card's "Username (optional)" also matches "Name".)
+  await page.getByRole("button", { name: "Create token" }).click();
+  await page.getByRole("dialog").getByLabel("Name").fill("laptop");
+  await page.getByRole("dialog").getByRole("button", { name: "Create token" }).click();
+  await expect(page.getByText(/moth_pat_[A-Za-z0-9_-]+/)).toBeVisible();
+  await expect(
+    page.getByText("You won't see this token again", { exact: false }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Done" }).click();
+
+  // Listed as active; the plaintext is gone for good.
+  const row = page.getByRole("row", { name: /laptop/ });
+  await expect(row).toBeVisible();
+  await expect(row.getByText("Active")).toBeVisible();
+  await expect(page.getByText(/moth_pat_[A-Za-z0-9_-]+/)).toBeHidden();
+
+  // Revoke flips the state and removes the revoke action.
+  await row.getByRole("button", { name: "Revoke" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Revoke token" }).click();
+  await expect(row.getByText("Revoked")).toBeVisible();
+  await expect(row.getByRole("button", { name: "Revoke" })).toBeHidden();
 });
 
 test("analytics tab renders the empty state for a zero-traffic project", async ({ page }) => {

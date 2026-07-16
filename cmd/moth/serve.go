@@ -59,6 +59,9 @@ func serve(ctx context.Context, cfg config.Config) error {
 	if err := st.DeleteExpiredOAuthTokens(ctx, time.Now()); err != nil {
 		return err
 	}
+	if err := st.DeleteExpiredPATs(ctx, time.Now()); err != nil {
+		return err
+	}
 
 	master, err := keys.LoadOrCreateMasterKey(cfg.DataDir, os.Getenv)
 	if err != nil {
@@ -144,8 +147,9 @@ func serve(ctx context.Context, cfg config.Config) error {
 // are deleted while serving.
 const sweepExpiredInterval = time.Hour
 
-// sweepExpired deletes expired admin sessions and single-use OAuth rows on
-// a ticker until ctx is done; failures are logged, never fatal.
+// sweepExpired deletes expired admin sessions, single-use OAuth rows and
+// personal access tokens on a ticker until ctx is done; failures are
+// logged, never fatal.
 func sweepExpired(ctx context.Context, st *store.Store, log *slog.Logger) {
 	ticker := time.NewTicker(sweepExpiredInterval)
 	defer ticker.Stop()
@@ -159,6 +163,9 @@ func sweepExpired(ctx context.Context, st *store.Store, log *slog.Logger) {
 			}
 			if err := st.DeleteExpiredOAuthTokens(ctx, now); err != nil {
 				log.Error("sweep expired oauth tokens", "error", err.Error())
+			}
+			if err := st.DeleteExpiredPATs(ctx, now); err != nil {
+				log.Error("sweep expired personal access tokens", "error", err.Error())
 			}
 		}
 	}

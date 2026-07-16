@@ -622,6 +622,364 @@ func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {
 	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{12}
 }
 
+// PersonalAccessToken is the metadata of one `moth_pat_...` credential.
+// The token value itself is stored hashed and only ever returned by
+// CreatePersonalAccessToken.
+type PersonalAccessToken struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Operator-chosen label ("ci", "laptop").
+	Name       string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	CreateTime *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
+	// When the token last authenticated a request; unset when never used.
+	LastUsedTime *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=last_used_time,json=lastUsedTime,proto3" json:"last_used_time,omitempty"`
+	// Unset means the token never expires.
+	ExpireTime *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=expire_time,json=expireTime,proto3" json:"expire_time,omitempty"`
+	// Set once the token has been revoked.
+	RevokeTime    *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=revoke_time,json=revokeTime,proto3" json:"revoke_time,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PersonalAccessToken) Reset() {
+	*x = PersonalAccessToken{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PersonalAccessToken) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PersonalAccessToken) ProtoMessage() {}
+
+func (x *PersonalAccessToken) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PersonalAccessToken.ProtoReflect.Descriptor instead.
+func (*PersonalAccessToken) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *PersonalAccessToken) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *PersonalAccessToken) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PersonalAccessToken) GetCreateTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreateTime
+	}
+	return nil
+}
+
+func (x *PersonalAccessToken) GetLastUsedTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastUsedTime
+	}
+	return nil
+}
+
+func (x *PersonalAccessToken) GetExpireTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.ExpireTime
+	}
+	return nil
+}
+
+func (x *PersonalAccessToken) GetRevokeTime() *timestamppb.Timestamp {
+	if x != nil {
+		return x.RevokeTime
+	}
+	return nil
+}
+
+type CreatePersonalAccessTokenRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Name  string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Days until the token expires; 0 means it never expires.
+	ExpiresInDays int32 `protobuf:"varint,2,opt,name=expires_in_days,json=expiresInDays,proto3" json:"expires_in_days,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePersonalAccessTokenRequest) Reset() {
+	*x = CreatePersonalAccessTokenRequest{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePersonalAccessTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePersonalAccessTokenRequest) ProtoMessage() {}
+
+func (x *CreatePersonalAccessTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePersonalAccessTokenRequest.ProtoReflect.Descriptor instead.
+func (*CreatePersonalAccessTokenRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *CreatePersonalAccessTokenRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *CreatePersonalAccessTokenRequest) GetExpiresInDays() int32 {
+	if x != nil {
+		return x.ExpiresInDays
+	}
+	return 0
+}
+
+type CreatePersonalAccessTokenResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The `moth_pat_...` plaintext, returned exactly once.
+	Token         string               `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
+	Metadata      *PersonalAccessToken `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreatePersonalAccessTokenResponse) Reset() {
+	*x = CreatePersonalAccessTokenResponse{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreatePersonalAccessTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreatePersonalAccessTokenResponse) ProtoMessage() {}
+
+func (x *CreatePersonalAccessTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreatePersonalAccessTokenResponse.ProtoReflect.Descriptor instead.
+func (*CreatePersonalAccessTokenResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreatePersonalAccessTokenResponse) GetToken() string {
+	if x != nil {
+		return x.Token
+	}
+	return ""
+}
+
+func (x *CreatePersonalAccessTokenResponse) GetMetadata() *PersonalAccessToken {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+type ListPersonalAccessTokensRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPersonalAccessTokensRequest) Reset() {
+	*x = ListPersonalAccessTokensRequest{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPersonalAccessTokensRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPersonalAccessTokensRequest) ProtoMessage() {}
+
+func (x *ListPersonalAccessTokensRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPersonalAccessTokensRequest.ProtoReflect.Descriptor instead.
+func (*ListPersonalAccessTokensRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{16}
+}
+
+type ListPersonalAccessTokensResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Newest first; revoked tokens are included until they are pruned.
+	Tokens        []*PersonalAccessToken `protobuf:"bytes,1,rep,name=tokens,proto3" json:"tokens,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPersonalAccessTokensResponse) Reset() {
+	*x = ListPersonalAccessTokensResponse{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPersonalAccessTokensResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPersonalAccessTokensResponse) ProtoMessage() {}
+
+func (x *ListPersonalAccessTokensResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPersonalAccessTokensResponse.ProtoReflect.Descriptor instead.
+func (*ListPersonalAccessTokensResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *ListPersonalAccessTokensResponse) GetTokens() []*PersonalAccessToken {
+	if x != nil {
+		return x.Tokens
+	}
+	return nil
+}
+
+type RevokePersonalAccessTokenRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokePersonalAccessTokenRequest) Reset() {
+	*x = RevokePersonalAccessTokenRequest{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokePersonalAccessTokenRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokePersonalAccessTokenRequest) ProtoMessage() {}
+
+func (x *RevokePersonalAccessTokenRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokePersonalAccessTokenRequest.ProtoReflect.Descriptor instead.
+func (*RevokePersonalAccessTokenRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RevokePersonalAccessTokenRequest) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+type RevokePersonalAccessTokenResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RevokePersonalAccessTokenResponse) Reset() {
+	*x = RevokePersonalAccessTokenResponse{}
+	mi := &file_moth_admin_v1_account_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RevokePersonalAccessTokenResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RevokePersonalAccessTokenResponse) ProtoMessage() {}
+
+func (x *RevokePersonalAccessTokenResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_account_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RevokePersonalAccessTokenResponse.ProtoReflect.Descriptor instead.
+func (*RevokePersonalAccessTokenResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_account_proto_rawDescGZIP(), []int{19}
+}
+
 var File_moth_admin_v1_account_proto protoreflect.FileDescriptor
 
 const file_moth_admin_v1_account_proto_rawDesc = "" +
@@ -658,7 +1016,29 @@ const file_moth_admin_v1_account_proto_rawDesc = "" +
 	"\x15ChangePasswordRequest\x12)\n" +
 	"\x10current_password\x18\x01 \x01(\tR\x0fcurrentPassword\x12!\n" +
 	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"\x18\n" +
-	"\x16ChangePasswordResponse2\xd2\x04\n" +
+	"\x16ChangePasswordResponse\"\xb2\x02\n" +
+	"\x13PersonalAccessToken\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12;\n" +
+	"\vcreate_time\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"createTime\x12@\n" +
+	"\x0elast_used_time\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\flastUsedTime\x12;\n" +
+	"\vexpire_time\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"expireTime\x12;\n" +
+	"\vrevoke_time\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"revokeTime\"^\n" +
+	" CreatePersonalAccessTokenRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12&\n" +
+	"\x0fexpires_in_days\x18\x02 \x01(\x05R\rexpiresInDays\"y\n" +
+	"!CreatePersonalAccessTokenResponse\x12\x14\n" +
+	"\x05token\x18\x01 \x01(\tR\x05token\x12>\n" +
+	"\bmetadata\x18\x02 \x01(\v2\".moth.admin.v1.PersonalAccessTokenR\bmetadata\"!\n" +
+	"\x1fListPersonalAccessTokensRequest\"^\n" +
+	" ListPersonalAccessTokensResponse\x12:\n" +
+	"\x06tokens\x18\x01 \x03(\v2\".moth.admin.v1.PersonalAccessTokenR\x06tokens\"2\n" +
+	" RevokePersonalAccessTokenRequest\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\"#\n" +
+	"!RevokePersonalAccessTokenResponse2\xcf\a\n" +
 	"\x13AdminAccountService\x12Q\n" +
 	"\n" +
 	"ListAdmins\x12 .moth.admin.v1.ListAdminsRequest\x1a!.moth.admin.v1.ListAdminsResponse\x12T\n" +
@@ -666,7 +1046,10 @@ const file_moth_admin_v1_account_proto_rawDesc = "" +
 	"\x10ListAdminInvites\x12&.moth.admin.v1.ListAdminInvitesRequest\x1a'.moth.admin.v1.ListAdminInvitesResponse\x12f\n" +
 	"\x11RevokeAdminInvite\x12'.moth.admin.v1.RevokeAdminInviteRequest\x1a(.moth.admin.v1.RevokeAdminInviteResponse\x12f\n" +
 	"\x11AcceptAdminInvite\x12'.moth.admin.v1.AcceptAdminInviteRequest\x1a(.moth.admin.v1.AcceptAdminInviteResponse\x12]\n" +
-	"\x0eChangePassword\x12$.moth.admin.v1.ChangePasswordRequest\x1a%.moth.admin.v1.ChangePasswordResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
+	"\x0eChangePassword\x12$.moth.admin.v1.ChangePasswordRequest\x1a%.moth.admin.v1.ChangePasswordResponse\x12~\n" +
+	"\x19CreatePersonalAccessToken\x12/.moth.admin.v1.CreatePersonalAccessTokenRequest\x1a0.moth.admin.v1.CreatePersonalAccessTokenResponse\x12{\n" +
+	"\x18ListPersonalAccessTokens\x12..moth.admin.v1.ListPersonalAccessTokensRequest\x1a/.moth.admin.v1.ListPersonalAccessTokensResponse\x12~\n" +
+	"\x19RevokePersonalAccessToken\x12/.moth.admin.v1.RevokePersonalAccessTokenRequest\x1a0.moth.admin.v1.RevokePersonalAccessTokenResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_moth_admin_v1_account_proto_rawDescOnce sync.Once
@@ -680,48 +1063,67 @@ func file_moth_admin_v1_account_proto_rawDescGZIP() []byte {
 	return file_moth_admin_v1_account_proto_rawDescData
 }
 
-var file_moth_admin_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_moth_admin_v1_account_proto_msgTypes = make([]protoimpl.MessageInfo, 20)
 var file_moth_admin_v1_account_proto_goTypes = []any{
-	(*AdminInvite)(nil),               // 0: moth.admin.v1.AdminInvite
-	(*ListAdminsRequest)(nil),         // 1: moth.admin.v1.ListAdminsRequest
-	(*ListAdminsResponse)(nil),        // 2: moth.admin.v1.ListAdminsResponse
-	(*InviteAdminRequest)(nil),        // 3: moth.admin.v1.InviteAdminRequest
-	(*InviteAdminResponse)(nil),       // 4: moth.admin.v1.InviteAdminResponse
-	(*ListAdminInvitesRequest)(nil),   // 5: moth.admin.v1.ListAdminInvitesRequest
-	(*ListAdminInvitesResponse)(nil),  // 6: moth.admin.v1.ListAdminInvitesResponse
-	(*RevokeAdminInviteRequest)(nil),  // 7: moth.admin.v1.RevokeAdminInviteRequest
-	(*RevokeAdminInviteResponse)(nil), // 8: moth.admin.v1.RevokeAdminInviteResponse
-	(*AcceptAdminInviteRequest)(nil),  // 9: moth.admin.v1.AcceptAdminInviteRequest
-	(*AcceptAdminInviteResponse)(nil), // 10: moth.admin.v1.AcceptAdminInviteResponse
-	(*ChangePasswordRequest)(nil),     // 11: moth.admin.v1.ChangePasswordRequest
-	(*ChangePasswordResponse)(nil),    // 12: moth.admin.v1.ChangePasswordResponse
-	(*timestamppb.Timestamp)(nil),     // 13: google.protobuf.Timestamp
-	(*Admin)(nil),                     // 14: moth.admin.v1.Admin
+	(*AdminInvite)(nil),                       // 0: moth.admin.v1.AdminInvite
+	(*ListAdminsRequest)(nil),                 // 1: moth.admin.v1.ListAdminsRequest
+	(*ListAdminsResponse)(nil),                // 2: moth.admin.v1.ListAdminsResponse
+	(*InviteAdminRequest)(nil),                // 3: moth.admin.v1.InviteAdminRequest
+	(*InviteAdminResponse)(nil),               // 4: moth.admin.v1.InviteAdminResponse
+	(*ListAdminInvitesRequest)(nil),           // 5: moth.admin.v1.ListAdminInvitesRequest
+	(*ListAdminInvitesResponse)(nil),          // 6: moth.admin.v1.ListAdminInvitesResponse
+	(*RevokeAdminInviteRequest)(nil),          // 7: moth.admin.v1.RevokeAdminInviteRequest
+	(*RevokeAdminInviteResponse)(nil),         // 8: moth.admin.v1.RevokeAdminInviteResponse
+	(*AcceptAdminInviteRequest)(nil),          // 9: moth.admin.v1.AcceptAdminInviteRequest
+	(*AcceptAdminInviteResponse)(nil),         // 10: moth.admin.v1.AcceptAdminInviteResponse
+	(*ChangePasswordRequest)(nil),             // 11: moth.admin.v1.ChangePasswordRequest
+	(*ChangePasswordResponse)(nil),            // 12: moth.admin.v1.ChangePasswordResponse
+	(*PersonalAccessToken)(nil),               // 13: moth.admin.v1.PersonalAccessToken
+	(*CreatePersonalAccessTokenRequest)(nil),  // 14: moth.admin.v1.CreatePersonalAccessTokenRequest
+	(*CreatePersonalAccessTokenResponse)(nil), // 15: moth.admin.v1.CreatePersonalAccessTokenResponse
+	(*ListPersonalAccessTokensRequest)(nil),   // 16: moth.admin.v1.ListPersonalAccessTokensRequest
+	(*ListPersonalAccessTokensResponse)(nil),  // 17: moth.admin.v1.ListPersonalAccessTokensResponse
+	(*RevokePersonalAccessTokenRequest)(nil),  // 18: moth.admin.v1.RevokePersonalAccessTokenRequest
+	(*RevokePersonalAccessTokenResponse)(nil), // 19: moth.admin.v1.RevokePersonalAccessTokenResponse
+	(*timestamppb.Timestamp)(nil),             // 20: google.protobuf.Timestamp
+	(*Admin)(nil),                             // 21: moth.admin.v1.Admin
 }
 var file_moth_admin_v1_account_proto_depIdxs = []int32{
-	13, // 0: moth.admin.v1.AdminInvite.create_time:type_name -> google.protobuf.Timestamp
-	13, // 1: moth.admin.v1.AdminInvite.expire_time:type_name -> google.protobuf.Timestamp
-	14, // 2: moth.admin.v1.ListAdminsResponse.admins:type_name -> moth.admin.v1.Admin
+	20, // 0: moth.admin.v1.AdminInvite.create_time:type_name -> google.protobuf.Timestamp
+	20, // 1: moth.admin.v1.AdminInvite.expire_time:type_name -> google.protobuf.Timestamp
+	21, // 2: moth.admin.v1.ListAdminsResponse.admins:type_name -> moth.admin.v1.Admin
 	0,  // 3: moth.admin.v1.InviteAdminResponse.invite:type_name -> moth.admin.v1.AdminInvite
 	0,  // 4: moth.admin.v1.ListAdminInvitesResponse.invites:type_name -> moth.admin.v1.AdminInvite
-	14, // 5: moth.admin.v1.AcceptAdminInviteResponse.admin:type_name -> moth.admin.v1.Admin
-	1,  // 6: moth.admin.v1.AdminAccountService.ListAdmins:input_type -> moth.admin.v1.ListAdminsRequest
-	3,  // 7: moth.admin.v1.AdminAccountService.InviteAdmin:input_type -> moth.admin.v1.InviteAdminRequest
-	5,  // 8: moth.admin.v1.AdminAccountService.ListAdminInvites:input_type -> moth.admin.v1.ListAdminInvitesRequest
-	7,  // 9: moth.admin.v1.AdminAccountService.RevokeAdminInvite:input_type -> moth.admin.v1.RevokeAdminInviteRequest
-	9,  // 10: moth.admin.v1.AdminAccountService.AcceptAdminInvite:input_type -> moth.admin.v1.AcceptAdminInviteRequest
-	11, // 11: moth.admin.v1.AdminAccountService.ChangePassword:input_type -> moth.admin.v1.ChangePasswordRequest
-	2,  // 12: moth.admin.v1.AdminAccountService.ListAdmins:output_type -> moth.admin.v1.ListAdminsResponse
-	4,  // 13: moth.admin.v1.AdminAccountService.InviteAdmin:output_type -> moth.admin.v1.InviteAdminResponse
-	6,  // 14: moth.admin.v1.AdminAccountService.ListAdminInvites:output_type -> moth.admin.v1.ListAdminInvitesResponse
-	8,  // 15: moth.admin.v1.AdminAccountService.RevokeAdminInvite:output_type -> moth.admin.v1.RevokeAdminInviteResponse
-	10, // 16: moth.admin.v1.AdminAccountService.AcceptAdminInvite:output_type -> moth.admin.v1.AcceptAdminInviteResponse
-	12, // 17: moth.admin.v1.AdminAccountService.ChangePassword:output_type -> moth.admin.v1.ChangePasswordResponse
-	12, // [12:18] is the sub-list for method output_type
-	6,  // [6:12] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	21, // 5: moth.admin.v1.AcceptAdminInviteResponse.admin:type_name -> moth.admin.v1.Admin
+	20, // 6: moth.admin.v1.PersonalAccessToken.create_time:type_name -> google.protobuf.Timestamp
+	20, // 7: moth.admin.v1.PersonalAccessToken.last_used_time:type_name -> google.protobuf.Timestamp
+	20, // 8: moth.admin.v1.PersonalAccessToken.expire_time:type_name -> google.protobuf.Timestamp
+	20, // 9: moth.admin.v1.PersonalAccessToken.revoke_time:type_name -> google.protobuf.Timestamp
+	13, // 10: moth.admin.v1.CreatePersonalAccessTokenResponse.metadata:type_name -> moth.admin.v1.PersonalAccessToken
+	13, // 11: moth.admin.v1.ListPersonalAccessTokensResponse.tokens:type_name -> moth.admin.v1.PersonalAccessToken
+	1,  // 12: moth.admin.v1.AdminAccountService.ListAdmins:input_type -> moth.admin.v1.ListAdminsRequest
+	3,  // 13: moth.admin.v1.AdminAccountService.InviteAdmin:input_type -> moth.admin.v1.InviteAdminRequest
+	5,  // 14: moth.admin.v1.AdminAccountService.ListAdminInvites:input_type -> moth.admin.v1.ListAdminInvitesRequest
+	7,  // 15: moth.admin.v1.AdminAccountService.RevokeAdminInvite:input_type -> moth.admin.v1.RevokeAdminInviteRequest
+	9,  // 16: moth.admin.v1.AdminAccountService.AcceptAdminInvite:input_type -> moth.admin.v1.AcceptAdminInviteRequest
+	11, // 17: moth.admin.v1.AdminAccountService.ChangePassword:input_type -> moth.admin.v1.ChangePasswordRequest
+	14, // 18: moth.admin.v1.AdminAccountService.CreatePersonalAccessToken:input_type -> moth.admin.v1.CreatePersonalAccessTokenRequest
+	16, // 19: moth.admin.v1.AdminAccountService.ListPersonalAccessTokens:input_type -> moth.admin.v1.ListPersonalAccessTokensRequest
+	18, // 20: moth.admin.v1.AdminAccountService.RevokePersonalAccessToken:input_type -> moth.admin.v1.RevokePersonalAccessTokenRequest
+	2,  // 21: moth.admin.v1.AdminAccountService.ListAdmins:output_type -> moth.admin.v1.ListAdminsResponse
+	4,  // 22: moth.admin.v1.AdminAccountService.InviteAdmin:output_type -> moth.admin.v1.InviteAdminResponse
+	6,  // 23: moth.admin.v1.AdminAccountService.ListAdminInvites:output_type -> moth.admin.v1.ListAdminInvitesResponse
+	8,  // 24: moth.admin.v1.AdminAccountService.RevokeAdminInvite:output_type -> moth.admin.v1.RevokeAdminInviteResponse
+	10, // 25: moth.admin.v1.AdminAccountService.AcceptAdminInvite:output_type -> moth.admin.v1.AcceptAdminInviteResponse
+	12, // 26: moth.admin.v1.AdminAccountService.ChangePassword:output_type -> moth.admin.v1.ChangePasswordResponse
+	15, // 27: moth.admin.v1.AdminAccountService.CreatePersonalAccessToken:output_type -> moth.admin.v1.CreatePersonalAccessTokenResponse
+	17, // 28: moth.admin.v1.AdminAccountService.ListPersonalAccessTokens:output_type -> moth.admin.v1.ListPersonalAccessTokensResponse
+	19, // 29: moth.admin.v1.AdminAccountService.RevokePersonalAccessToken:output_type -> moth.admin.v1.RevokePersonalAccessTokenResponse
+	21, // [21:30] is the sub-list for method output_type
+	12, // [12:21] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_account_proto_init() }
@@ -736,7 +1138,7 @@ func file_moth_admin_v1_account_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_admin_v1_account_proto_rawDesc), len(file_moth_admin_v1_account_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   20,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

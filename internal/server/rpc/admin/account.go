@@ -192,11 +192,13 @@ func (h *AccountHandler) ChangePassword(ctx context.Context, req *connect.Reques
 	if err := h.store.UpdateAdminPassword(ctx, admin.ID, hash, h.now()); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	// End the admin's other browser sessions; the current one stays.
-	if current, ok := SessionHashFromContext(ctx); ok {
-		if err := h.store.DeleteAdminSessionsExcept(ctx, admin.ID, current); err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
-		}
+	// End the admin's other browser sessions; the current one stays. Over a
+	// PAT there is no session hash in the context, so the empty "current"
+	// ends every browser session — rotating a password from the CLI is
+	// exactly the "my browser session was stolen" recovery path.
+	current, _ := SessionHashFromContext(ctx)
+	if err := h.store.DeleteAdminSessionsExcept(ctx, admin.ID, current); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&adminv1.ChangePasswordResponse{}), nil
 }

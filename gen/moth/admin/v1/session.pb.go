@@ -287,8 +287,12 @@ func (*GetCurrentAdminRequest) Descriptor() ([]byte, []int) {
 }
 
 type GetCurrentAdminResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Admin         *Admin                 `protobuf:"bytes,1,opt,name=admin,proto3" json:"admin,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Admin *Admin                 `protobuf:"bytes,1,opt,name=admin,proto3" json:"admin,omitempty"`
+	// The moth build version of the answering server ("dev", or "vX.Y.Z" on
+	// release builds), so a CLI can validate a context and report what it
+	// talks to in one round trip.
+	ServerVersion string `protobuf:"bytes,2,opt,name=server_version,json=serverVersion,proto3" json:"server_version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -330,6 +334,13 @@ func (x *GetCurrentAdminResponse) GetAdmin() *Admin {
 	return nil
 }
 
+func (x *GetCurrentAdminResponse) GetServerVersion() string {
+	if x != nil {
+		return x.ServerVersion
+	}
+	return ""
+}
+
 var File_moth_admin_v1_session_proto protoreflect.FileDescriptor
 
 const file_moth_admin_v1_session_proto_rawDesc = "" +
@@ -347,9 +358,10 @@ const file_moth_admin_v1_session_proto_rawDesc = "" +
 	"\x05admin\x18\x01 \x01(\v2\x14.moth.admin.v1.AdminR\x05admin\"\x0f\n" +
 	"\rLogoutRequest\"\x10\n" +
 	"\x0eLogoutResponse\"\x18\n" +
-	"\x16GetCurrentAdminRequest\"E\n" +
+	"\x16GetCurrentAdminRequest\"l\n" +
 	"\x17GetCurrentAdminResponse\x12*\n" +
-	"\x05admin\x18\x01 \x01(\v2\x14.moth.admin.v1.AdminR\x05admin2\xfd\x01\n" +
+	"\x05admin\x18\x01 \x01(\v2\x14.moth.admin.v1.AdminR\x05admin\x12%\n" +
+	"\x0eserver_version\x18\x02 \x01(\tR\rserverVersion2\xfd\x01\n" +
 	"\x0eSessionService\x12B\n" +
 	"\x05Login\x12\x1b.moth.admin.v1.LoginRequest\x1a\x1c.moth.admin.v1.LoginResponse\x12E\n" +
 	"\x06Logout\x12\x1c.moth.admin.v1.LogoutRequest\x1a\x1d.moth.admin.v1.LogoutResponse\x12`\n" +

@@ -4,6 +4,7 @@ package moth.admin.v1;
 
 import "google/protobuf/field_mask.proto";
 import "google/protobuf/timestamp.proto";
+import "moth/admin/v1/theme.proto";
 
 option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
 
@@ -131,8 +132,35 @@ message SigningKey {
   google.protobuf.Timestamp create_time = 4;
 }
 
+// ProjectSpec is the full desired state of one project: the document
+// `moth project dump` emits and `moth project apply` consumes (serialized
+// as JSON/YAML via protojson). It reuses this package's messages verbatim,
+// so no apply RPC is needed server-side — the CLI composes the existing
+// calls, keyed on the slug: CreateProject (when no project has the slug)
+// or UpdateProject (name + settings), then ThemeService.UpdateTheme.
+// Write-only provider secrets never appear in dumps (reads only report
+// has_* presence) and an empty secret field on apply keeps the stored
+// value, matching UpdateProject semantics. Output-only fields (has_*,
+// logo asset paths) are ignored on apply.
+message ProjectSpec {
+  string name = 1;
+  // Identity of the spec: apply creates the project when no project has
+  // this slug and updates it otherwise.
+  string slug = 2;
+  ProjectSettings settings = 3;
+  // Design-system theme (legal links included); unset means the built-in
+  // default theme.
+  Theme theme = 4;
+}
+
 message CreateProjectRequest {
   string name = 1;
+  // Optional explicit slug (lowercase letters, digits and single dashes).
+  // Empty derives one from the name, adding a suffix on collision; an
+  // explicit slug that is already taken fails ALREADY_EXISTS. Lets
+  // `moth project apply` create a project under the exact slug its spec
+  // is keyed on.
+  string slug = 2;
 }
 
 message CreateProjectResponse {

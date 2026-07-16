@@ -17,6 +17,7 @@ import (
 	"github.com/aloisdeniel/moth/internal/password"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
+	"github.com/aloisdeniel/moth/internal/version"
 )
 
 // Store is everything the admin services need from persistence.
@@ -24,6 +25,7 @@ type Store interface {
 	store.AdminStore
 	store.AdminInviteStore
 	store.SessionStore
+	store.PersonalAccessTokenStore
 	store.InstanceSettingStore
 	store.ProjectStore
 	store.UserStore
@@ -96,7 +98,10 @@ func (h *SessionHandler) GetCurrentAdmin(ctx context.Context, _ *connect.Request
 	if !ok {
 		return nil, errUnauthenticated()
 	}
-	return connect.NewResponse(&adminv1.GetCurrentAdminResponse{Admin: adminProto(admin)}), nil
+	return connect.NewResponse(&adminv1.GetCurrentAdminResponse{
+		Admin:         adminProto(admin),
+		ServerVersion: version.Version,
+	}), nil
 }
 
 // IssueSession creates a server-side session for adminID and returns the

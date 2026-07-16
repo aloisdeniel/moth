@@ -1,8 +1,10 @@
+import { timestampDate } from "@bufbuild/protobuf/wkt";
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { useEffect, useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
 import {
+  Badge,
   ConfirmDialog,
   Dialog,
   ErrorNote,
@@ -12,9 +14,10 @@ import {
   PasswordInput,
   Status,
 } from "../components/ui";
+import type { PersonalAccessToken } from "../gen/moth/admin/v1/account_pb";
 import { AdminAccountService } from "../gen/moth/admin/v1/account_pb";
 import { InstanceSettingsService, SmtpSource } from "../gen/moth/admin/v1/settings_pb";
-import { formatDate } from "../lib/format";
+import { formatDate, formatRelative } from "../lib/format";
 
 export function InstanceSettings() {
   return (
@@ -22,6 +25,7 @@ export function InstanceSettings() {
       <h1>Instance settings</h1>
       <AdminsCard />
       <ChangePasswordCard />
+      <PatsCard />
       <SmtpCard />
     </main>
   );
@@ -241,6 +245,212 @@ function ChangePasswordCard() {
         </div>
       </form>
     </section>
+  );
+}
+
+// ---------- Personal access tokens ----------
+
+// PatStateBadge renders the lifecycle state of a token: revoked wins over
+// expired wins over active.
+function PatStateBadge({ token }: { token: PersonalAccessToken }) {
+  if (token.revokeTime) return <Badge tone="danger">Revoked</Badge>;
+  if (token.expireTime && timestampDate(token.expireTime).getTime() <= Date.now()) {
+    return <Badge tone="warning">Expired</Badge>;
+  }
+  return <Badge tone="success">Active</Badge>;
+}
+
+function PatsCard() {
+  const tokens = useQuery(AdminAccountService.method.listPersonalAccessTokens);
+  const instance = useQuery(InstanceSettingsService.method.getInstanceSettings);
+  const [creating, setCreating] = useState(false);
+  const [revokeTarget, setRevokeTarget] = useState<PersonalAccessToken>();
+
+  const revoke = useMutation(AdminAccountService.method.revokePersonalAccessToken, {
+    onSuccess: () => {
+      invalidate(AdminAccountService.method.listPersonalAccessTokens);
+      setRevokeTarget(undefined);
+    },
+  });
+
+  return (
+    <section className="card card--pad stack-16">
+      <div className="page__header">
+        <h3 className="card__title">Personal access tokens</h3>
+        <button
+          type="button"
+          className="btn btn--secondary btn--compact"
+          onClick={() => setCreating(true)}
+        >
+          Create token
+        </button>
+      </div>
+      <p className="caption">
+        Tokens authenticate the <span className="inline-code">moth</span> CLI
+        (and scripts) as your admin account. They carry the same permissions
+        as your session.
+      </p>
+
+      {tokens.isPending && <Loading />}
+      {tokens.isError && <ErrorNote message={errorMessage(tokens.error)} />}
+      {tokens.data && tokens.data.tokens.length > 0 && (
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Created</th>
+              <th>Last used</th>
+              <th>Expires</th>
+              <th>State</th>
+              <th />
+            </tr>
+          </thead>
+          <tbody>
+            {tokens.data.tokens.map((t) => (
+              <tr key={t.id}>
+                <td>{t.name}</td>
+                <td className="mono">{formatDate(t.createTime)}</td>
+                <td className="mono">{formatRelative(t.lastUsedTime)}</td>
+                <td className="mono">{t.expireTime ? formatDate(t.expireTime) : "never"}</td>
+                <td>
+                  <PatStateBadge token={t} />
+                </td>
+                <td style={{ textAlign: "right" }}>
+                  {!t.revokeTime && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--compact"
+                      onClick={() => setRevokeTarget(t)}
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {tokens.data && tokens.data.tokens.length === 0 && (
+        <p className="caption">No tokens yet.</p>
+      )}
+
+      {instance.data && (
+        <div className="stack-8" style={{ borderTop: "1px solid var(--border)", paddingTop: 16 }}>
+          <span className="field__label">Use the CLI</span>
+          <p className="caption">
+            Sign in from a terminal — the command asks for a personal access
+            token and remembers this instance:
+          </p>
+          <KeyWell value={`moth login ${instance.data.baseUrl}`} />
+        </div>
+      )}
+
+      <CreatePatDialog open={creating} onClose={() => setCreating(false)} />
+      <ConfirmDialog
+        title="Revoke token"
+        open={revokeTarget !== undefined}
+        onClose={() => setRevokeTarget(undefined)}
+        onConfirm={() => revokeTarget && revoke.mutate({ id: revokeTarget.id })}
+        confirmLabel="Revoke token"
+        busy={revoke.isPending}
+        error={revoke.isError ? errorMessage(revoke.error) : undefined}
+      >
+        <p>
+          “{revokeTarget?.name}” stops authenticating immediately. Anything
+          still using it (a CLI context, a script) has to log in again.
+        </p>
+      </ConfirmDialog>
+    </section>
+  );
+}
+
+function CreatePatDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState("90");
+  const [token, setToken] = useState<string>();
+
+  const create = useMutation(AdminAccountService.method.createPersonalAccessToken, {
+    onSuccess: (resp) => {
+      invalidate(AdminAccountService.method.listPersonalAccessTokens);
+      setToken(resp.token);
+    },
+  });
+
+  function close() {
+    setName("");
+    setExpiresInDays("90");
+    setToken(undefined);
+    create.reset();
+    onClose();
+  }
+
+  if (token) {
+    return (
+      <Dialog title="Token created" open={open} onClose={close}>
+        <div className="stack-16">
+          <KeyWell value={token} secret />
+          <p className="caption">
+            You won't see this token again — copy it now. Paste it when{" "}
+            <span className="inline-code">moth login</span> asks for it.
+          </p>
+          <div className="dialog__actions">
+            <button type="button" className="btn btn--primary" onClick={close}>
+              Done
+            </button>
+          </div>
+        </div>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog title="Create token" open={open} onClose={close}>
+      <form
+        className="stack-16"
+        onSubmit={(e) => {
+          e.preventDefault();
+          create.mutate({ name, expiresInDays: parseInt(expiresInDays, 10) });
+        }}
+      >
+        <Field
+          label="Name"
+          help="What will use it — “laptop”, “ci”."
+          error={create.isError ? errorMessage(create.error) : undefined}
+        >
+          <input
+            className="input"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoFocus
+          />
+        </Field>
+        <Field label="Expires">
+          <select
+            className="input"
+            value={expiresInDays}
+            onChange={(e) => setExpiresInDays(e.target.value)}
+          >
+            <option value="30">In 30 days</option>
+            <option value="90">In 90 days</option>
+            <option value="365">In 1 year</option>
+            <option value="0">Never</option>
+          </select>
+        </Field>
+        <div className="dialog__actions">
+          <button type="button" className="btn btn--secondary" onClick={close}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={create.isPending || name === ""}
+          >
+            {create.isPending ? "Creating…" : "Create token"}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

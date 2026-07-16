@@ -24,7 +24,10 @@ type rootFlags struct {
 	file    string
 }
 
-func main() {
+// newRootCmd assembles the full command tree. Docs generation and tests
+// build the same tree, so the rendered CLI reference always matches the
+// real binary.
+func newRootCmd() *cobra.Command {
 	root := &cobra.Command{
 		Use:           "moth",
 		Short:         "moth — authentication for your mobile apps in one binary",
@@ -32,10 +35,21 @@ func main() {
 		SilenceErrors: true,
 	}
 	root.AddCommand(newServeCmd(), newAdminCmd(), newVersionCmd())
+	// Remote client mode: kubectl-style commands against a configured
+	// context (see 'moth login').
+	root.AddCommand(newLoginCmd(), newProjectCmd(), newUserCmd(),
+		newStatsCmd(), newInstanceCmd(), newTokenCmd())
+	// Provider-console orchestration + health checks (milestone 08).
+	root.AddCommand(newSetupCmd(), newDoctorCmd())
+	// Agent-facing artifacts: the exported skill and the generated docs.
+	root.AddCommand(newSkillCmd(), newDocsCmd())
+	return root
+}
 
-	if err := root.Execute(); err != nil {
+func main() {
+	if err := newRootCmd().Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, "error:", err)
-		os.Exit(1)
+		os.Exit(exitCode(err))
 	}
 }
 

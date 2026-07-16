@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/session.proto.
  */
 export const file_moth_admin_v1_session: GenFile = /*@__PURE__*/
-  fileDesc("Chttb3RoL2FkbWluL3YxL3Nlc3Npb24ucHJvdG8SDW1vdGguYWRtaW4udjEiUwoFQWRtaW4SCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSLwoLY3JlYXRlX3RpbWUYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSI0Cg1Mb2dpblJlc3BvbnNlEiMKBWFkbWluGAEgASgLMhQubW90aC5hZG1pbi52MS5BZG1pbiIPCg1Mb2dvdXRSZXF1ZXN0IhAKDkxvZ291dFJlc3BvbnNlIhgKFkdldEN1cnJlbnRBZG1pblJlcXVlc3QiPgoXR2V0Q3VycmVudEFkbWluUmVzcG9uc2USIwoFYWRtaW4YASABKAsyFC5tb3RoLmFkbWluLnYxLkFkbWluMv0BCg5TZXNzaW9uU2VydmljZRJCCgVMb2dpbhIbLm1vdGguYWRtaW4udjEuTG9naW5SZXF1ZXN0GhwubW90aC5hZG1pbi52MS5Mb2dpblJlc3BvbnNlEkUKBkxvZ291dBIcLm1vdGguYWRtaW4udjEuTG9nb3V0UmVxdWVzdBodLm1vdGguYWRtaW4udjEuTG9nb3V0UmVzcG9uc2USYAoPR2V0Q3VycmVudEFkbWluEiUubW90aC5hZG1pbi52MS5HZXRDdXJyZW50QWRtaW5SZXF1ZXN0GiYubW90aC5hZG1pbi52MS5HZXRDdXJyZW50QWRtaW5SZXNwb25zZUI3WjVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Chttb3RoL2FkbWluL3YxL3Nlc3Npb24ucHJvdG8SDW1vdGguYWRtaW4udjEiUwoFQWRtaW4SCgoCaWQYASABKAkSDQoFZW1haWwYAiABKAkSLwoLY3JlYXRlX3RpbWUYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wIi8KDExvZ2luUmVxdWVzdBINCgVlbWFpbBgBIAEoCRIQCghwYXNzd29yZBgCIAEoCSI0Cg1Mb2dpblJlc3BvbnNlEiMKBWFkbWluGAEgASgLMhQubW90aC5hZG1pbi52MS5BZG1pbiIPCg1Mb2dvdXRSZXF1ZXN0IhAKDkxvZ291dFJlc3BvbnNlIhgKFkdldEN1cnJlbnRBZG1pblJlcXVlc3QiVgoXR2V0Q3VycmVudEFkbWluUmVzcG9uc2USIwoFYWRtaW4YASABKAsyFC5tb3RoLmFkbWluLnYxLkFkbWluEhYKDnNlcnZlcl92ZXJzaW9uGAIgASgJMv0BCg5TZXNzaW9uU2VydmljZRJCCgVMb2dpbhIbLm1vdGguYWRtaW4udjEuTG9naW5SZXF1ZXN0GhwubW90aC5hZG1pbi52MS5Mb2dpblJlc3BvbnNlEkUKBkxvZ291dBIcLm1vdGguYWRtaW4udjEuTG9nb3V0UmVxdWVzdBodLm1vdGguYWRtaW4udjEuTG9nb3V0UmVzcG9uc2USYAoPR2V0Q3VycmVudEFkbWluEiUubW90aC5hZG1pbi52MS5HZXRDdXJyZW50QWRtaW5SZXF1ZXN0GiYubW90aC5hZG1pbi52MS5HZXRDdXJyZW50QWRtaW5SZXNwb25zZUI3WjVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message moth.admin.v1.Admin
@@ -127,6 +127,15 @@ export type GetCurrentAdminResponse = Message<"moth.admin.v1.GetCurrentAdminResp
    * @generated from field: moth.admin.v1.Admin admin = 1;
    */
   admin?: Admin | undefined;
+
+  /**
+   * The moth build version of the answering server ("dev", or "vX.Y.Z" on
+   * release builds), so a CLI can validate a context and report what it
+   * talks to in one round trip.
+   *
+   * @generated from field: string server_version = 2;
+   */
+  serverVersion: string;
 };
 
 /**

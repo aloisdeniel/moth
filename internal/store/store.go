@@ -51,6 +51,17 @@ type SessionStore interface {
 	DeleteExpiredSessions(ctx context.Context, now time.Time) error
 }
 
+// PersonalAccessTokenStore persists admin CLI/API credentials
+// (moth_pat_... values are stored hashed).
+type PersonalAccessTokenStore interface {
+	CreatePAT(ctx context.Context, t PersonalAccessToken) error
+	GetPATByHash(ctx context.Context, tokenHash string) (PersonalAccessToken, error)
+	ListPATs(ctx context.Context, adminID string) ([]PersonalAccessToken, error)
+	TouchPAT(ctx context.Context, id string, at time.Time) error
+	RevokePAT(ctx context.Context, adminID, id string, now time.Time) error
+	DeleteExpiredPATs(ctx context.Context, now time.Time) error
+}
+
 // InstanceSettingStore persists instance-wide admin-edited settings.
 type InstanceSettingStore interface {
 	GetInstanceSetting(ctx context.Context, key string) (string, error)
@@ -178,19 +189,20 @@ type Store struct {
 }
 
 var (
-	_ AdminStore           = (*Store)(nil)
-	_ AdminInviteStore     = (*Store)(nil)
-	_ SessionStore         = (*Store)(nil)
-	_ InstanceSettingStore = (*Store)(nil)
-	_ ProjectStore         = (*Store)(nil)
-	_ UserStore            = (*Store)(nil)
-	_ RefreshTokenStore    = (*Store)(nil)
-	_ EmailTokenStore      = (*Store)(nil)
-	_ OAuthTokenStore      = (*Store)(nil)
-	_ ProviderSecretStore  = (*Store)(nil)
-	_ ThemeStore           = (*Store)(nil)
-	_ EventStore           = (*Store)(nil)
-	_ StatsStore           = (*Store)(nil)
+	_ AdminStore               = (*Store)(nil)
+	_ AdminInviteStore         = (*Store)(nil)
+	_ SessionStore             = (*Store)(nil)
+	_ PersonalAccessTokenStore = (*Store)(nil)
+	_ InstanceSettingStore     = (*Store)(nil)
+	_ ProjectStore             = (*Store)(nil)
+	_ UserStore                = (*Store)(nil)
+	_ RefreshTokenStore        = (*Store)(nil)
+	_ EmailTokenStore          = (*Store)(nil)
+	_ OAuthTokenStore          = (*Store)(nil)
+	_ ProviderSecretStore      = (*Store)(nil)
+	_ ThemeStore               = (*Store)(nil)
+	_ EventStore               = (*Store)(nil)
+	_ StatsStore               = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL

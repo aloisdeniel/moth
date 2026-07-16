@@ -17,6 +17,10 @@ const (
 	SecretKeyPrefix      = "sk_"
 )
 
+// PATPrefix is the prefix of admin personal access tokens, the credential
+// the moth CLI presents as `authorization: Bearer` metadata.
+const PATPrefix = "moth_pat_"
+
 // lowercase base32 without padding: URL-safe, case-insensitive-proof, and
 // double-click selectable in a terminal.
 var encoding = base32.StdEncoding.WithPadding(base32.NoPadding)
