@@ -72,6 +72,12 @@ message ProjectSettings {
   // (e.g. "myapp"). Open-redirect protection: callbacks only ever redirect
   // to a scheme on this list.
   repeated string redirect_schemes = 10;
+  // How long raw analytics events are kept before the rollup job prunes
+  // them, in days (default 90).
+  int32 analytics_retention_days = 11;
+  // IANA timezone name (e.g. "Europe/Paris") the analytics rollup buckets
+  // days in (default "UTC").
+  string rollup_timezone = 12;
 }
 
 // GoogleProviderConfig configures Sign in with Google for one project. The

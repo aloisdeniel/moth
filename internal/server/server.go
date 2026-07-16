@@ -21,7 +21,9 @@ import (
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/server/v1/serverv1connect"
+	"github.com/aloisdeniel/moth/internal/analytics"
 	"github.com/aloisdeniel/moth/internal/config"
+	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/fonts"
 	"github.com/aloisdeniel/moth/internal/keys"
 	"github.com/aloisdeniel/moth/internal/mail"
@@ -40,11 +42,12 @@ import (
 const rpcReadMaxBytes = 1 << 20
 
 // Store is everything the assembled server needs from persistence.
+// adminrpc.Store already covers the event and daily-stats surfaces the
+// analytics pipeline needs.
 type Store interface {
 	adminrpc.Store
 	store.EmailTokenStore
 	store.OAuthTokenStore
-	store.EventStore
 }
 
 // Options configures a Server.
@@ -89,6 +92,12 @@ type Server struct {
 	uploads string
 	// fonts serves the embedded font catalogue under /assets/fonts/.
 	fonts http.Handler
+	// events is the async analytics writer the handlers emit through;
+	// Close drains it on shutdown.
+	events *events.Writer
+	// rollup is the analytics aggregate-and-prune job, shared by the
+	// AnalyticsService handler and the serve-loop scheduler.
+	rollup *analytics.Rollup
 }
 
 // New assembles the full handler.
@@ -110,6 +119,10 @@ func New(o Options) (*Server, error) {
 		rateLimits: o.RateLimits,
 		uploads:    filepath.Join(o.Config.DataDir, "uploads"),
 		fonts:      http.StripPrefix("/assets/fonts/", fonts.Handler()),
+		// Analytics events flow through a bounded async writer so emission
+		// never adds latency to auth; Server.Close drains it on shutdown.
+		events: events.NewWriter(eventSink{o.Store}, events.Config{Logger: o.Logger}),
+		rollup: analytics.NewRollup(o.Store, o.Logger, o.Now),
 	}
 	s.setupToken.Store(o.SetupToken)
 
@@ -144,6 +157,7 @@ func New(o Options) (*Server, error) {
 		Now:        o.Now,
 		HTTPClient: httpc,
 		Endpoints:  o.AuthEndpoints,
+		Events:     s.events,
 	})
 
 	// chain prepends the shared observability interceptors to a service's
@@ -180,7 +194,7 @@ func New(o Options) (*Server, error) {
 		adminrpc.NewProjectHandler(o.Store, o.Master, o.Config.BaseURL), adminInterceptors)
 	mux.Handle(projectPath, projectHandler)
 	adminUserPath, adminUserHandler := adminv1connect.NewUserServiceHandler(
-		adminrpc.NewUserHandler(o.Store, s.auth, dynMailer), adminInterceptors)
+		adminrpc.NewUserHandler(o.Store, s.auth, dynMailer, s.events), adminInterceptors)
 	mux.Handle(adminUserPath, adminUserHandler)
 	accountPath, accountHandler := adminv1connect.NewAdminAccountServiceHandler(
 		adminrpc.NewAccountHandler(o.Store, dynMailer, o.Config.BaseURL,
@@ -192,6 +206,9 @@ func New(o Options) (*Server, error) {
 	themePath, themeHandler := adminv1connect.NewThemeServiceHandler(
 		adminrpc.NewThemeHandler(o.Store, s.uploads), adminInterceptors)
 	mux.Handle(themePath, themeHandler)
+	analyticsPath, analyticsHandler := adminv1connect.NewAnalyticsServiceHandler(
+		adminrpc.NewAnalyticsHandler(o.Store, s.rollup, o.Now), adminInterceptors)
+	mux.Handle(analyticsPath, analyticsHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -214,6 +231,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.AdminAccountServiceName,
 		adminv1connect.InstanceSettingsServiceName,
 		adminv1connect.ThemeServiceName,
+		adminv1connect.AnalyticsServiceName,
 		authv1connect.AuthServiceName,
 		authv1connect.ConfigServiceName,
 		serverv1connect.TokenServiceName,
@@ -254,6 +272,7 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("GET /admin", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)
+	mux.HandleFunc("GET /admin/export/stats.csv", s.handleExportStats)
 	mux.HandleFunc("POST /admin/setup", s.handleAdminSetup)
 	mux.HandleFunc("/", s.handleRoot)
 
@@ -310,6 +329,15 @@ func isPublicSurface(path string) bool {
 // native gRPC clients can speak HTTP/2 without TLS (h2c) on the same port
 // as plain HTTP/1.1 (browsers, curl, pub client).
 func (s *Server) Handler() http.Handler { return s.handler }
+
+// Close stops the async analytics writer, draining its buffered events
+// until ctx expires. Call it after the HTTP server has stopped accepting
+// requests so no event is emitted into a closed writer.
+func (s *Server) Close(ctx context.Context) error { return s.events.Close(ctx) }
+
+// Rollup exposes the analytics aggregate-and-prune job so the serve loop
+// can schedule it next to its other maintenance goroutines.
+func (s *Server) Rollup() *analytics.Rollup { return s.rollup }
 
 // Protocols returns the protocol set for the http.Server: HTTP/1.1 plus
 // unencrypted HTTP/2.

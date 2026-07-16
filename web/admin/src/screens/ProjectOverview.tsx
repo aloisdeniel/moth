@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 
 import { errorMessage, invalidate } from "../api";
 import {
@@ -11,17 +11,39 @@ import {
   KeyWell,
   Loading,
 } from "../components/ui";
+import { AnalyticsService } from "../gen/moth/admin/v1/analytics_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
+import { failuresElevated, loginAttempts7d } from "../lib/failures";
 import { formatDate } from "../lib/format";
 
 export function ProjectOverview({ project }: { project: Project }) {
   return (
     <div className="stack-24">
+      <FailureBanner project={project} />
       <PublishableKeyCard project={project} />
       <SecretKeyCard project={project} />
       <SigningKeyCard project={project} />
       <DangerZone project={project} />
+    </div>
+  );
+}
+
+// The threshold-based ops signal from plan/07: elevated login failures
+// (e.g. an expired Apple key) surface on the default tab first, not only
+// after clicking through to Analytics. Silent while loading or on error —
+// the overview stays usable without analytics.
+function FailureBanner({ project }: { project: Project }) {
+  const stats = useQuery(AnalyticsService.method.getStats, { projectId: project.id });
+  const tiles = stats.data?.tiles;
+  if (!tiles || !failuresElevated(tiles)) {
+    return null;
+  }
+  return (
+    <div className="banner banner--warning" role="status">
+      Login failures elevated — {tiles.loginFailures7d.toString()} of{" "}
+      {loginAttempts7d(tiles)} sign-in attempts failed over the last 7 days.{" "}
+      <Link to={`/projects/${project.id}/analytics`}>View analytics</Link>
     </div>
   );
 }

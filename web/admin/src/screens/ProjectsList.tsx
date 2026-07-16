@@ -3,10 +3,13 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { errorMessage, invalidate } from "../api";
-import { Dialog, ErrorNote, Field, KeyWell, Loading } from "../components/ui";
+import { Sparkline } from "../components/charts";
+import { Badge, Dialog, ErrorNote, Field, KeyWell, Loading } from "../components/ui";
+import { AnalyticsService, Granularity } from "../gen/moth/admin/v1/analytics_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
-import { formatDate } from "../lib/format";
+import { failuresElevated } from "../lib/failures";
+import { dayAgo, formatDate } from "../lib/format";
 
 // slugPreview mirrors the server's Slugify (lowercase, [a-z0-9-]).
 function slugPreview(name: string): string {
@@ -56,11 +59,36 @@ export function ProjectsList() {
 }
 
 function ProjectCard({ project }: { project: Project }) {
+  // 30 completed days of logins as a sparkline (today is never rolled up,
+  // so including it would fake a final dip); failures elevated → warning
+  // badge. Analytics is decoration on this screen: while loading (or on
+  // error) the card simply renders without it, keeping the list usable.
+  const stats = useQuery(AnalyticsService.method.getStats, {
+    projectId: project.id,
+    fromDate: dayAgo(30),
+    toDate: dayAgo(1),
+    granularity: Granularity.DAY,
+  });
+  const tiles = stats.data?.tiles;
+  const elevated = failuresElevated(tiles);
+  const logins = stats.data?.series.map((d) => Number(d.logins)) ?? [];
+
   return (
     <Link to={`/projects/${project.id}`} style={{ textDecoration: "none", color: "inherit" }}>
       <div className="card card--pad card--hover stack-12">
-        <div className="card__title">{project.name}</div>
+        <div className="row-8">
+          <div className="card__title" style={{ flex: 1 }}>
+            {project.name}
+          </div>
+          {elevated && <Badge tone="warning">Failures elevated</Badge>}
+        </div>
         <div className="mono text-secondary">{project.slug}</div>
+        {logins.some((v) => v > 0) && (
+          <div className="stack-8" style={{ gap: 4 }} title="Logins, last 30 days">
+            <Sparkline values={logins} width={160} height={28} />
+            <span className="caption text-tertiary">logins · 30d</span>
+          </div>
+        )}
         <div className="row-12 caption">
           <span className="tabular mono">
             {project.userCount.toString()} {project.userCount === 1n ? "user" : "users"}

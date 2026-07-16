@@ -28,6 +28,7 @@ type testEnv struct {
 	projects adminv1connect.ProjectServiceClient
 	store    *store.Store
 	mails    *captureMailer
+	srv      *Server // e.g. to drain the async event writer
 }
 
 func newTestEnv(t *testing.T, setupToken string, opts ...func(*Options)) *testEnv {
@@ -78,6 +79,7 @@ func newTestEnv(t *testing.T, setupToken string, opts ...func(*Options)) *testEn
 		projects: adminv1connect.NewProjectServiceClient(client, ts.URL),
 		store:    st,
 		mails:    mails,
+		srv:      srv,
 	}
 }
 

@@ -20,6 +20,8 @@ export function ProjectSettings({ project }: { project: Project }) {
   const [enumSafe, setEnumSafe] = useState(s?.enumerationSafeSignup ?? false);
   const [accessTTL, setAccessTTL] = useState(String(s?.accessTokenTtlSeconds ?? 900));
   const [refreshTTL, setRefreshTTL] = useState(String(s?.refreshTokenTtlDays ?? 30));
+  const [retention, setRetention] = useState(String(s?.analyticsRetentionDays || 90));
+  const [rollupTz, setRollupTz] = useState(s?.rollupTimezone || "UTC");
   const [saved, setSaved] = useState(false);
 
   const update = useMutation(ProjectService.method.updateProject, {
@@ -45,6 +47,8 @@ export function ProjectSettings({ project }: { project: Project }) {
         enumerationSafeSignup: enumSafe,
         accessTokenTtlSeconds: parseInt(accessTTL, 10) || 900,
         refreshTokenTtlDays: parseInt(refreshTTL, 10) || 30,
+        analyticsRetentionDays: parseInt(retention, 10) || 90,
+        rollupTimezone: rollupTz.trim(),
         // `settings` replaces wholesale under the update mask — carry the
         // provider config owned by the Providers tab through unchanged
         // (stored write-only secrets survive: empty means "keep").
@@ -157,6 +161,33 @@ export function ProjectSettings({ project }: { project: Project }) {
             max={365}
             value={refreshTTL}
             onChange={(e) => setRefreshTTL(e.target.value)}
+          />
+        </Field>
+      </section>
+
+      <section className="card card--pad stack-16">
+        <h3 className="card__title">Analytics</h3>
+        <Field
+          label="Raw event retention (days)"
+          help="Events older than this are pruned by the daily rollup; default 90."
+        >
+          <input
+            className="input"
+            type="number"
+            min={1}
+            max={366}
+            value={retention}
+            onChange={(e) => setRetention(e.target.value)}
+          />
+        </Field>
+        <Field
+          label="Rollup timezone"
+          help='IANA name (e.g. "Europe/Paris") the daily stats are bucketed in; default UTC.'
+        >
+          <input
+            className="input"
+            value={rollupTz}
+            onChange={(e) => setRollupTz(e.target.value)}
           />
         </Field>
       </section>

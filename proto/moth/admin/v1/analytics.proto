@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// AnalyticsService serves the project analytics dashboards. Numbers come
+// from pre-aggregated daily rollups (daily_stats) so dashboards never scan
+// the raw event stream; the activity feed reads the newest raw events.
+// Dates are calendar days ("YYYY-MM-DD") bucketed in the project's rollup
+// timezone (ProjectSettings.rollup_timezone). All RPCs require an
+// authenticated admin session.
+service AnalyticsService {
+  // GetStats returns the stat tiles, the per-day time series and the
+  // provider/platform breakdowns for one project over [from_date, to_date]
+  // (inclusive).
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  // ListRecentEvents returns the project's newest raw events for the
+  // activity feed, newest first.
+  rpc ListRecentEvents(ListRecentEventsRequest) returns (ListRecentEventsResponse);
+  // RunRollup triggers the aggregate-and-prune job immediately — for one
+  // project or the whole instance — and returns the run summary. The same
+  // job also runs nightly; re-rolling a day is idempotent.
+  rpc RunRollup(RunRollupRequest) returns (RunRollupResponse);
+}
+
+// Granularity selects the time-series bucket size. Only daily buckets are
+// rolled up today.
+enum Granularity {
+  GRANULARITY_UNSPECIFIED = 0;
+  GRANULARITY_DAY = 1;
+}
+
+message GetStatsRequest {
+  string project_id = 1;
+  // First day of the range, "YYYY-MM-DD" in the project's rollup timezone.
+  string from_date = 2;
+  // Last day of the range (inclusive), same format.
+  string to_date = 3;
+  // Bucket size; unspecified means DAY.
+  Granularity granularity = 4;
+}
+
+// StatTiles is the headline block of the project analytics tab. The 7-day
+// figures cover the last 7 rolled-up days.
+message StatTiles {
+  // End-user accounts in the project right now (all time, live count).
+  int64 total_users = 1;
+  // Signups over the last 7 days, and over the 7 days before those (the
+  // pair renders the trend arrow).
+  int64 new_users_7d = 2;
+  int64 new_users_previous_7d = 3;
+  // Distinct active users on the most recent rolled-up day (usually
+  // yesterday) and which day that was ("YYYY-MM-DD", empty when no data).
+  // DAU approximates "active" as: had a login or token-refresh event.
+  int64 latest_dau = 4;
+  string latest_dau_date = 5;
+  // Login attempts over the last 7 days, split by outcome. An elevated
+  // failure count is an ops signal (misconfigured provider, expired key).
+  int64 logins_7d = 6;
+  int64 login_failures_7d = 7;
+  // logins / (logins + failures) over the last 7 days, 0..1. Zero when
+  // there were no attempts — check the raw counts before rendering.
+  double login_success_rate_7d = 8;
+}
+
+// DailyStat is one day of the time series. Days without traffic are
+// zero-filled so charts render contiguous ranges.
+message DailyStat {
+  // "YYYY-MM-DD" in the project's rollup timezone.
+  string date = 1;
+  int64 signups = 2;
+  int64 logins = 3;
+  // Distinct users with a login or token-refresh event that day.
+  int64 dau = 4;
+  // Failed login attempts (no user attribution).
+  int64 failures = 5;
+}
+
+// ProviderBreakdown splits the range's logins by identity provider.
+message ProviderBreakdown {
+  int64 password = 1;
+  int64 google = 2;
+  int64 apple = 3;
+}
+
+// PlatformBreakdown splits the range's logins by SDK-reported platform;
+// other collects everything that is not ios/android/web, including logins
+// with no reported platform.
+message PlatformBreakdown {
+  int64 ios = 1;
+  int64 android = 2;
+  int64 web = 3;
+  int64 other = 4;
+}
+
+message GetStatsResponse {
+  StatTiles tiles = 1;
+  // One entry per day in [from_date, to_date], oldest first, zero-filled.
+  repeated DailyStat series = 2;
+  // Totals over the requested range.
+  ProviderBreakdown providers = 3;
+  PlatformBreakdown platforms = 4;
+}
+
+// Event is one server-emitted analytics event, trimmed for the activity
+// feed. PII-minimal by construction: the user id only — no email, no
+// metadata payload, no IP, no device ids.
+message Event {
+  string id = 1;
+  // Canonical event type, e.g. "user.signup", "user.login",
+  // "user.login_failed", "token.refresh", "user.deleted".
+  string type = 2;
+  // Empty for events without a subject (login failures).
+  string user_id = 3;
+  // Identity provider involved ("password", "google", "apple"); empty when
+  // not applicable.
+  string provider = 4;
+  // SDK-reported platform ("ios", "android", "web"); empty when none was
+  // reported.
+  string platform = 5;
+  google.protobuf.Timestamp create_time = 6;
+}
+
+message ListRecentEventsRequest {
+  string project_id = 1;
+  // Maximum events to return; the server defaults and caps it (50).
+  int32 limit = 2;
+}
+
+message ListRecentEventsResponse {
+  // Newest first.
+  repeated Event events = 1;
+}
+
+message RunRollupRequest {
+  // Project to roll up; empty rolls up every project.
+  string project_id = 1;
+}
+
+// RunRollupResponse summarizes the completed run (also recorded server-side
+// for observability).
+message RunRollupResponse {
+  string run_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp finish_time = 3;
+  // Number of (project, day) windows re-aggregated.
+  int32 days_processed = 4;
+  // Raw events removed by retention pruning.
+  int64 events_pruned = 5;
+}

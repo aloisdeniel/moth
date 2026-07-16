@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	"github.com/aloisdeniel/moth/internal/events"
 	mailpkg "github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/password"
 	"github.com/aloisdeniel/moth/internal/store"
@@ -60,6 +61,7 @@ func (h *Handler) ConfirmEmailVerification(ctx context.Context, req *connect.Req
 		if err := h.store.UpdateUser(ctx, user); err != nil {
 			return nil, errInternal(err)
 		}
+		h.emit(events.EmailVerified(ctx, project.ID, user.ID))
 	}
 	return connect.NewResponse(&authv1.ConfirmEmailVerificationResponse{}), nil
 }
@@ -119,6 +121,7 @@ func (h *Handler) ConfirmPasswordReset(ctx context.Context, req *connect.Request
 	if err := h.store.RevokeUserRefreshTokens(ctx, project.ID, user.ID, now); err != nil {
 		return nil, errInternal(err)
 	}
+	h.emit(events.PasswordResetCompleted(ctx, project.ID, user.ID))
 	return connect.NewResponse(&authv1.ConfirmPasswordResetResponse{}), nil
 }
 

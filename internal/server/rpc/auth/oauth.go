@@ -15,6 +15,7 @@ import (
 	"connectrpc.com/connect"
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/oidc"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
@@ -37,6 +38,7 @@ func (h *Handler) SignInWithOAuth(ctx context.Context, req *connect.Request[auth
 	}
 	audiences, err := nativeAudiences(project.Settings, provider)
 	if err != nil {
+		h.emit(events.LoginFailed(ctx, project.ID, provider, events.ReasonProviderDisabled))
 		return nil, err
 	}
 	if req.Msg.IdToken == "" {
@@ -54,6 +56,7 @@ func (h *Handler) SignInWithOAuth(ctx context.Context, req *connect.Request[auth
 	if err != nil {
 		h.log.InfoContext(ctx, "provider token rejected",
 			"provider", provider, "error", err.Error())
+		h.emit(events.LoginFailed(ctx, project.ID, provider, events.ReasonInvalidCredentials))
 		return nil, errInvalidProviderToken()
 	}
 	// A native ID token is single-use: its hash is recorded until the token
@@ -73,6 +76,7 @@ func (h *Handler) SignInWithOAuth(ctx context.Context, req *connect.Request[auth
 	})
 	if errors.Is(err, store.ErrConflict) {
 		h.log.WarnContext(ctx, "replayed provider token rejected", "provider", provider)
+		h.emit(events.LoginFailed(ctx, project.ID, provider, events.ReasonInvalidCredentials))
 		return nil, errInvalidProviderToken()
 	}
 	if err != nil {
@@ -101,7 +105,7 @@ func (h *Handler) SignInWithOAuth(ctx context.Context, req *connect.Request[auth
 		h.log.ErrorContext(ctx, "set last login", "error", err.Error())
 	}
 	if !created {
-		h.insertProviderEvent(ctx, project.ID, user.ID, store.EventUserSignedIn, provider)
+		h.emit(events.Login(ctx, project.ID, user.ID, provider))
 	}
 	return connect.NewResponse(&authv1.SignInWithOAuthResponse{
 		User:   userProto(user),
@@ -124,6 +128,8 @@ func (h *Handler) ExchangeOAuthCode(ctx context.Context, req *connect.Request[au
 	ot, err := h.store.ConsumeOAuthToken(ctx, project.ID, store.OAuthTokenPurposeCode,
 		hashToken(req.Msg.Code), h.now())
 	if errors.Is(err, store.ErrNotFound) {
+		// The provider of an unknown code is itself unknown.
+		h.emit(events.LoginFailed(ctx, project.ID, "", events.ReasonInvalidCredentials))
 		return nil, invalid
 	}
 	if err != nil {
@@ -132,17 +138,20 @@ func (h *Handler) ExchangeOAuthCode(ctx context.Context, req *connect.Request[au
 	// An admin disable takes effect immediately, even for codes minted
 	// while the provider was still enabled.
 	if !providerEnabled(project.Settings, ot.Provider) {
+		h.emit(events.LoginFailed(ctx, project.ID, ot.Provider, events.ReasonProviderDisabled))
 		return nil, errProviderDisabled(ot.Provider)
 	}
 	user, err := h.store.GetUser(ctx, project.ID, ot.UserID)
 	if errors.Is(err, store.ErrNotFound) {
 		// The user vanished between callback and exchange.
+		h.emit(events.LoginFailed(ctx, project.ID, ot.Provider, events.ReasonInvalidCredentials))
 		return nil, invalid
 	}
 	if err != nil {
 		return nil, errInternal(err)
 	}
 	if user.Disabled() {
+		h.emit(events.LoginFailed(ctx, project.ID, ot.Provider, events.ReasonDisabled))
 		return nil, errUserDisabled()
 	}
 	tokens, err := h.issueSession(ctx, project, user, req.Msg.DeviceInfo)
@@ -152,7 +161,17 @@ func (h *Handler) ExchangeOAuthCode(ctx context.Context, req *connect.Request[au
 	if err := h.store.SetUserLastLogin(ctx, project.ID, user.ID, h.now()); err != nil {
 		h.log.ErrorContext(ctx, "set last login", "error", err.Error())
 	}
-	h.insertProviderEvent(ctx, project.ID, user.ID, store.EventUserSignedIn, ot.Provider)
+	// Same event semantics as the native flow: a code minted for a user the
+	// callback just created already produced user.signup, not user.login.
+	var payload oauthCodePayload
+	if ot.Payload != "" {
+		if err := json.Unmarshal([]byte(ot.Payload), &payload); err != nil {
+			h.log.ErrorContext(ctx, "decode oauth code payload", "error", err.Error())
+		}
+	}
+	if !payload.Signup {
+		h.emit(events.Login(ctx, project.ID, user.ID, ot.Provider))
+	}
 	return connect.NewResponse(&authv1.ExchangeOAuthCodeResponse{
 		User:   userProto(user),
 		Tokens: tokens,
@@ -350,12 +369,24 @@ func (h *Handler) OAuthCallback(ctx context.Context, project store.Project, prov
 		return "", "", errInvalidProviderToken()
 	}
 	givenName, familyName := appleUserName(userJSON)
-	user, identity, _, err := h.resolveOAuthUser(ctx, project, provider, ident, givenName, familyName)
+	user, identity, created, err := h.resolveOAuthUser(ctx, project, provider, ident, givenName, familyName)
 	if err != nil {
 		return "", "", err
 	}
 	if provider == store.IdentityProviderApple && tokens.RefreshToken != "" {
 		h.storeAppleRefreshToken(ctx, project, identity, audience, tokens.RefreshToken)
+	}
+
+	// The exchange emits the user.login analytics event; a code for a
+	// just-created user carries a signup marker so it does not (the native
+	// flow's semantics: a first sign-in produces only user.signup).
+	var codePayload string
+	if created {
+		raw, err := json.Marshal(oauthCodePayload{Signup: true})
+		if err != nil {
+			return "", "", errInternal(fmt.Errorf("encode oauth code payload: %w", err))
+		}
+		codePayload = string(raw)
 	}
 
 	appCode := token.Random(32)
@@ -368,6 +399,7 @@ func (h *Handler) OAuthCallback(ctx context.Context, project store.Project, prov
 		Provider:    provider,
 		UserID:      user.ID,
 		RedirectURI: ot.RedirectURI,
+		Payload:     codePayload,
 		ExpiresAt:   now.Add(oauthCodeTTL),
 		CreatedAt:   now,
 	})
@@ -381,6 +413,13 @@ func (h *Handler) OAuthCallback(ctx context.Context, project store.Project, prov
 // legs of the web-redirect flow.
 type oauthStatePayload struct {
 	Nonce string `json:"nonce"`
+}
+
+// oauthCodePayload rides JSON-encoded in the one-time code row between the
+// callback and ExchangeOAuthCode.
+type oauthCodePayload struct {
+	// Signup marks a code minted for a user the callback just created.
+	Signup bool `json:"signup,omitempty"`
 }
 
 // resolveOAuthUser turns a verified provider identity into a moth user,
@@ -415,6 +454,7 @@ func (h *Handler) resolveOAuthUser(ctx context.Context, project store.Project, p
 			return store.User{}, store.Identity{}, false, errInternal(err)
 		}
 		if user.Disabled() {
+			h.emit(events.LoginFailed(ctx, project.ID, provider, events.ReasonDisabled))
 			return store.User{}, store.Identity{}, false, errUserDisabled()
 		}
 		if email := normalizeEmail(ident.Email); email != "" && email != identity.ProviderEmail {
@@ -445,6 +485,7 @@ func (h *Handler) resolveOAuthUser(ctx context.Context, project store.Project, p
 				"an account with this email already exists; sign in with it to link this provider")
 		}
 		if existing.Disabled() {
+			h.emit(events.LoginFailed(ctx, project.ID, provider, events.ReasonDisabled))
 			return store.User{}, store.Identity{}, false, errUserDisabled()
 		}
 		identity := store.Identity{
@@ -469,6 +510,7 @@ func (h *Handler) resolveOAuthUser(ctx context.Context, project store.Project, p
 			}
 			return store.User{}, store.Identity{}, false, errInternal(err)
 		}
+		h.emit(events.IdentityLinked(ctx, project.ID, existing.ID, provider))
 		return existing, identity, false, nil
 	}
 	if !errors.Is(err, store.ErrNotFound) {
@@ -511,7 +553,7 @@ func (h *Handler) resolveOAuthUser(ctx context.Context, project store.Project, p
 		}
 		return store.User{}, store.Identity{}, false, errInternal(err)
 	}
-	h.insertProviderEvent(ctx, project.ID, user.ID, store.EventUserSignedUp, provider)
+	h.emit(events.Signup(ctx, project.ID, user.ID, provider))
 	return user, identity, true, nil
 }
 

@@ -7,6 +7,7 @@ import (
 	"connectrpc.com/connect"
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/password"
 	"github.com/aloisdeniel/moth/internal/store"
 )
@@ -106,7 +107,7 @@ func (h *Handler) DeleteAccount(ctx context.Context, req *connect.Request[authv1
 	if err := h.store.DeleteUser(ctx, project.ID, user.ID); err != nil {
 		return nil, errInternal(err)
 	}
-	h.insertEvent(ctx, project.ID, user.ID, store.EventUserDeleted)
+	h.emit(events.UserDeleted(ctx, project.ID, user.ID))
 	return connect.NewResponse(&authv1.DeleteAccountResponse{}), nil
 }
 

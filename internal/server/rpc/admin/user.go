@@ -14,6 +14,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
+	"github.com/aloisdeniel/moth/internal/events"
 	mailpkg "github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/password"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
@@ -37,12 +38,13 @@ type UserHandler struct {
 	store  Store
 	auth   *authrpc.Handler // issues hosted-page reset/invite links
 	mailer mailpkg.Mailer
+	events *events.Writer // async analytics writer; nil disables emission
 	now    func() time.Time
 }
 
-// NewUserHandler builds the admin user service.
-func NewUserHandler(st Store, auth *authrpc.Handler, mailer mailpkg.Mailer) *UserHandler {
-	return &UserHandler{store: st, auth: auth, mailer: mailer, now: time.Now}
+// NewUserHandler builds the admin user service. events may be nil (tests).
+func NewUserHandler(st Store, auth *authrpc.Handler, mailer mailpkg.Mailer, ev *events.Writer) *UserHandler {
+	return &UserHandler{store: st, auth: auth, mailer: mailer, events: ev, now: time.Now}
 }
 
 func (h *UserHandler) ListUsers(ctx context.Context, req *connect.Request[adminv1.ListUsersRequest]) (*connect.Response[adminv1.ListUsersResponse], error) {
@@ -268,6 +270,9 @@ func (h *UserHandler) DeleteUser(ctx context.Context, req *connect.Request[admin
 	}
 	if err := h.store.DeleteUser(ctx, req.Msg.ProjectId, req.Msg.UserId); err != nil {
 		return nil, userErr(err)
+	}
+	if h.events != nil {
+		h.events.Emit(events.UserDeleted(ctx, req.Msg.ProjectId, req.Msg.UserId))
 	}
 	return connect.NewResponse(&adminv1.DeleteUserResponse{}), nil
 }

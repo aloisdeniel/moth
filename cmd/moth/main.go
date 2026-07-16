@@ -5,6 +5,12 @@ import (
 	"fmt"
 	"os"
 
+	// Embed the IANA timezone database: the analytics rollup timezone
+	// (ProjectSettings.rollup_timezone) must resolve on hosts without
+	// /usr/share/zoneinfo (scratch containers, Windows) — one binary,
+	// everything embedded.
+	_ "time/tzdata"
+
 	"github.com/spf13/cobra"
 
 	"github.com/aloisdeniel/moth/internal/config"

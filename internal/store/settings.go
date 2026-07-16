@@ -1,6 +1,9 @@
 package store
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"time"
+)
 
 // ProjectSettings is the per-project auth policy, stored as a JSON column
 // on the project row and editable through the admin projects API.
@@ -34,6 +37,25 @@ type ProjectSettings struct {
 	// RedirectSchemes are the custom URL schemes the web-redirect OAuth
 	// fallback may redirect back to (open-redirect protection).
 	RedirectSchemes []string `json:"redirect_schemes,omitempty"`
+	// AnalyticsRetentionDays is how long raw analytics events are kept
+	// before the rollup job prunes them (default 90).
+	AnalyticsRetentionDays int `json:"analytics_retention_days"`
+	// RollupTimezone is the IANA timezone name (e.g. "Europe/Paris") the
+	// daily analytics rollup buckets days in (default "UTC").
+	RollupTimezone string `json:"rollup_timezone"`
+}
+
+// RollupLocation resolves RollupTimezone, falling back to UTC when the
+// stored name is empty or no longer resolves.
+func (ps ProjectSettings) RollupLocation() *time.Location {
+	if ps.RollupTimezone == "" {
+		return time.UTC
+	}
+	loc, err := time.LoadLocation(ps.RollupTimezone)
+	if err != nil {
+		return time.UTC
+	}
+	return loc
 }
 
 // AutoLinkEnabled reports the effective auto_link_verified_email policy.
@@ -64,10 +86,12 @@ type AppleProviderSettings struct {
 // settings fields left at their zero value.
 func DefaultProjectSettings() ProjectSettings {
 	return ProjectSettings{
-		PasswordMinLength:     8,
-		AllowPublicSignup:     true,
-		AccessTokenTTLSeconds: 15 * 60,
-		RefreshTokenTTLDays:   30,
+		PasswordMinLength:      8,
+		AllowPublicSignup:      true,
+		AccessTokenTTLSeconds:  15 * 60,
+		RefreshTokenTTLDays:    30,
+		AnalyticsRetentionDays: 90,
+		RollupTimezone:         "UTC",
 	}
 }
 
@@ -89,6 +113,12 @@ func parseProjectSettings(raw string) (ProjectSettings, error) {
 	}
 	if ps.RefreshTokenTTLDays <= 0 {
 		ps.RefreshTokenTTLDays = def.RefreshTokenTTLDays
+	}
+	if ps.AnalyticsRetentionDays <= 0 {
+		ps.AnalyticsRetentionDays = def.AnalyticsRetentionDays
+	}
+	if ps.RollupTimezone == "" {
+		ps.RollupTimezone = def.RollupTimezone
 	}
 	return ps, nil
 }

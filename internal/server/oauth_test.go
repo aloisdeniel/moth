@@ -867,6 +867,32 @@ func TestOAuthRedirectFlowGoogle(t *testing.T) {
 	}
 	_, err = auth.ExchangeOAuthCode(ctx, connect.NewRequest(&authv1.ExchangeOAuthCodeRequest{Code: appCode}))
 	wantReason(t, err, connect.CodeUnauthenticated, authrpc.ReasonInvalidOAuthCode)
+
+	// Event semantics match the native flow: the brand-new web-flow user
+	// produced one user.signup and no user.login (the code carried the
+	// signup marker into the exchange).
+	drainCtx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	if err := e.srv.Close(drainCtx); err != nil {
+		t.Fatalf("drain events: %v", err)
+	}
+	events, err := e.store.ListRecentEvents(ctx, p.Id, 50)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var signups, logins int
+	for _, ev := range events {
+		switch ev.Type {
+		case store.EventUserSignup:
+			signups++
+		case store.EventUserLogin:
+			logins++
+		}
+	}
+	if signups != 1 || logins != 0 {
+		t.Fatalf("web-flow first sign-in events: %d signups, %d logins, want 1/0 (%+v)",
+			signups, logins, events)
+	}
 }
 
 func TestOAuthRedirectFlowApple(t *testing.T) {

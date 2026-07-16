@@ -9,6 +9,7 @@ import (
 	"connectrpc.com/connect"
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/ratelimit"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/token"
@@ -20,9 +21,12 @@ const KeyHeader = "x-moth-key"
 // NewProjectInterceptor resolves the project from the publishable key in
 // x-moth-key metadata and injects it into the context. It rejects calls
 // without a valid pk_ key, so handlers can rely on the project being set.
+// It also captures the SDK's ambient analytics context (x-moth-platform,
+// x-moth-sdk-version) so the handlers' event emissions can carry it.
 func NewProjectInterceptor(st store.ProjectStore) connect.UnaryInterceptorFunc {
 	return func(next connect.UnaryFunc) connect.UnaryFunc {
 		return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+			ctx = events.WithClientInfo(ctx, events.ClientInfoFromHeader(req.Header()))
 			key := strings.TrimSpace(req.Header().Get(KeyHeader))
 			if !strings.HasPrefix(key, token.PublishableKeyPrefix) {
 				return nil, connect.NewError(connect.CodeUnauthenticated,

@@ -156,8 +156,14 @@ type ProjectSettings struct {
 	// (e.g. "myapp"). Open-redirect protection: callbacks only ever redirect
 	// to a scheme on this list.
 	RedirectSchemes []string `protobuf:"bytes,10,rep,name=redirect_schemes,json=redirectSchemes,proto3" json:"redirect_schemes,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// How long raw analytics events are kept before the rollup job prunes
+	// them, in days (default 90).
+	AnalyticsRetentionDays int32 `protobuf:"varint,11,opt,name=analytics_retention_days,json=analyticsRetentionDays,proto3" json:"analytics_retention_days,omitempty"`
+	// IANA timezone name (e.g. "Europe/Paris") the analytics rollup buckets
+	// days in (default "UTC").
+	RollupTimezone string `protobuf:"bytes,12,opt,name=rollup_timezone,json=rollupTimezone,proto3" json:"rollup_timezone,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
 }
 
 func (x *ProjectSettings) Reset() {
@@ -258,6 +264,20 @@ func (x *ProjectSettings) GetRedirectSchemes() []string {
 		return x.RedirectSchemes
 	}
 	return nil
+}
+
+func (x *ProjectSettings) GetAnalyticsRetentionDays() int32 {
+	if x != nil {
+		return x.AnalyticsRetentionDays
+	}
+	return 0
+}
+
+func (x *ProjectSettings) GetRollupTimezone() string {
+	if x != nil {
+		return x.RollupTimezone
+	}
+	return ""
 }
 
 // GoogleProviderConfig configures Sign in with Google for one project. The
@@ -1308,7 +1328,7 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"updateTime\x12:\n" +
 	"\bsettings\x18\a \x01(\v2\x1e.moth.admin.v1.ProjectSettingsR\bsettings\x12\x1d\n" +
 	"\n" +
-	"user_count\x18\b \x01(\x03R\tuserCount\"\xd2\x04\n" +
+	"user_count\x18\b \x01(\x03R\tuserCount\"\xb5\x05\n" +
 	"\x0fProjectSettings\x12.\n" +
 	"\x13password_min_length\x18\x01 \x01(\x05R\x11passwordMinLength\x12<\n" +
 	"\x1arequire_email_verification\x18\x02 \x01(\bR\x18requireEmailVerification\x12.\n" +
@@ -1320,7 +1340,9 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"\x05apple\x18\b \x01(\v2\".moth.admin.v1.AppleProviderConfigR\x05apple\x12<\n" +
 	"\x18auto_link_verified_email\x18\t \x01(\bH\x00R\x15autoLinkVerifiedEmail\x88\x01\x01\x12)\n" +
 	"\x10redirect_schemes\x18\n" +
-	" \x03(\tR\x0fredirectSchemesB\x1b\n" +
+	" \x03(\tR\x0fredirectSchemes\x128\n" +
+	"\x18analytics_retention_days\x18\v \x01(\x05R\x16analyticsRetentionDays\x12'\n" +
+	"\x0frollup_timezone\x18\f \x01(\tR\x0erollupTimezoneB\x1b\n" +
 	"\x19_auto_link_verified_email\"\x83\x02\n" +
 	"\x14GoogleProviderConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\"\n" +

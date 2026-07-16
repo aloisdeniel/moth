@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	"github.com/aloisdeniel/moth/internal/events"
 	mailpkg "github.com/aloisdeniel/moth/internal/mail"
 	"github.com/aloisdeniel/moth/internal/password"
 	"github.com/aloisdeniel/moth/internal/store"
@@ -63,7 +64,7 @@ func (h *Handler) SignUp(ctx context.Context, req *connect.Request[authv1.SignUp
 		}
 		return nil, errInternal(err)
 	}
-	h.insertEvent(ctx, project.ID, user.ID, store.EventUserSignedUp)
+	h.emit(events.Signup(ctx, project.ID, user.ID, store.IdentityProviderPassword))
 
 	// The verification email goes out on every signup so the address can
 	// become verified even when the project does not require it.
@@ -109,15 +110,23 @@ func (h *Handler) SignIn(ctx context.Context, req *connect.Request[authv1.SignIn
 		// Unknown email and social-only accounts fail exactly like a wrong
 		// password, including the hashing cost.
 		password.Verify(req.Msg.Password, dummyHash)
+		h.emit(events.LoginFailed(ctx, project.ID, store.IdentityProviderPassword,
+			events.ReasonInvalidCredentials))
 		return nil, errInvalidCredentials()
 	}
 	if !password.Verify(req.Msg.Password, user.PasswordHash) {
+		h.emit(events.LoginFailed(ctx, project.ID, store.IdentityProviderPassword,
+			events.ReasonInvalidCredentials))
 		return nil, errInvalidCredentials()
 	}
 	if user.Disabled() {
+		h.emit(events.LoginFailed(ctx, project.ID, store.IdentityProviderPassword,
+			events.ReasonDisabled))
 		return nil, errUserDisabled()
 	}
 	if project.Settings.RequireEmailVerification && !user.Verified() {
+		h.emit(events.LoginFailed(ctx, project.ID, store.IdentityProviderPassword,
+			events.ReasonOther))
 		return nil, newError(connect.CodeFailedPrecondition, ReasonEmailNotVerified,
 			"email address is not verified")
 	}
@@ -129,7 +138,7 @@ func (h *Handler) SignIn(ctx context.Context, req *connect.Request[authv1.SignIn
 	if err := h.store.SetUserLastLogin(ctx, project.ID, user.ID, h.now()); err != nil {
 		h.log.ErrorContext(ctx, "set last login", "error", err.Error())
 	}
-	h.insertEvent(ctx, project.ID, user.ID, store.EventUserSignedIn)
+	h.emit(events.Login(ctx, project.ID, user.ID, store.IdentityProviderPassword))
 	return connect.NewResponse(&authv1.SignInResponse{
 		User:   userProto(user),
 		Tokens: tokens,
@@ -200,6 +209,9 @@ func (h *Handler) RefreshToken(ctx context.Context, req *connect.Request[authv1.
 	if err != nil {
 		return nil, errInternal(err)
 	}
+	// Sampled by the writer; exists to approximate DAU, not to count every
+	// refresh.
+	h.emit(events.TokenRefresh(ctx, project.ID, user.ID))
 	return connect.NewResponse(&authv1.RefreshTokenResponse{
 		User: userProto(user),
 		Tokens: &authv1.TokenPair{

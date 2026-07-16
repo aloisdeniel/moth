@@ -19,6 +19,7 @@ import (
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
+	"github.com/aloisdeniel/moth/internal/events"
 	"github.com/aloisdeniel/moth/internal/jwt"
 	"github.com/aloisdeniel/moth/internal/keys"
 	"github.com/aloisdeniel/moth/internal/mail"
@@ -35,7 +36,6 @@ type Store interface {
 	store.EmailTokenStore
 	store.OAuthTokenStore
 	store.ProviderSecretStore
-	store.EventStore
 }
 
 // Handler implements moth.auth.v1.AuthService.
@@ -48,6 +48,7 @@ type Handler struct {
 	baseURL string // no trailing slash; hosted-page links hang off it
 	log     *slog.Logger
 	now     func() time.Time
+	events  *events.Writer // async analytics writer; nil disables emission
 
 	// Social sign-in: shared outbound HTTP client, one verifier per
 	// provider (each caches that provider's JWKS) and the OAuth endpoint
@@ -101,6 +102,9 @@ type Options struct {
 	HTTPClient oidc.Doer
 	// Endpoints override the provider endpoint locations for tests.
 	Endpoints ProviderEndpoints
+	// Events receives the analytics events emitted by the handlers; nil
+	// disables emission (unit tests).
+	Events *events.Writer
 }
 
 // defaultGoogleAuthURL is Google's OAuth consent page.
@@ -142,6 +146,7 @@ func New(o Options) *Handler {
 		baseURL:        strings.TrimSuffix(o.BaseURL, "/"),
 		log:            o.Logger,
 		now:            o.Now,
+		events:         o.Events,
 		httpc:          o.HTTPClient,
 		googleVerifier: oidc.NewVerifier(google, o.HTTPClient, o.Now),
 		appleVerifier:  oidc.NewVerifier(apple, o.HTTPClient, o.Now),
@@ -214,26 +219,12 @@ func bearerToken(header http.Header) (string, bool) {
 	return strings.TrimSpace(auth[len(prefix):]), true
 }
 
-// insertEvent writes a stub analytics event for the password provider;
-// failures are logged, never surfaced (real analytics land in milestone
-// 07).
-func (h *Handler) insertEvent(ctx context.Context, projectID, userID, eventType string) {
-	h.insertProviderEvent(ctx, projectID, userID, eventType, store.IdentityProviderPassword)
-}
-
-// insertProviderEvent is insertEvent with an explicit identity provider
-// (social sign-ins).
-func (h *Handler) insertProviderEvent(ctx context.Context, projectID, userID, eventType, provider string) {
-	err := h.store.InsertEvent(ctx, store.Event{
-		ID:        NewID(),
-		ProjectID: projectID,
-		UserID:    userID,
-		Type:      eventType,
-		Provider:  provider,
-		CreatedAt: h.now(),
-	})
-	if err != nil {
-		h.log.ErrorContext(ctx, "insert event", "type", eventType, "error", err.Error())
+// emit hands an analytics event to the async writer. Fire-and-forget: Emit
+// never blocks (a full buffer drops the event), so emission adds nothing to
+// the RPC's latency. Nil-safe for tests built without a writer.
+func (h *Handler) emit(e events.Event) {
+	if h.events != nil {
+		h.events.Emit(e)
 	}
 }
 

@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router";
 import { errorMessage } from "../api";
 import { ErrorNote, Loading } from "../components/ui";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
+import { ProjectAnalytics } from "./ProjectAnalytics";
 import { ProjectDesign } from "./ProjectDesign";
 import { ProjectOverview } from "./ProjectOverview";
 import { ProjectProviders } from "./ProjectProviders";
@@ -17,6 +18,7 @@ const TABS = [
   { id: "providers", label: "Providers" },
   { id: "design", label: "Design" },
   { id: "settings", label: "Settings" },
+  { id: "analytics", label: "Analytics" },
   { id: "setup", label: "Setup" },
 ] as const;
 
@@ -74,6 +76,7 @@ export function Project() {
       {active === "providers" && <ProjectProviders project={p} />}
       {active === "design" && <ProjectDesign project={p} />}
       {active === "settings" && <ProjectSettings project={p} />}
+      {active === "analytics" && <ProjectAnalytics project={p} />}
       {active === "setup" && <ProjectSetup project={p} />}
     </main>
   );

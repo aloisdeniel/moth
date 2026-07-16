@@ -392,8 +392,10 @@ func (h *ProjectHandler) settingsProto(ctx context.Context, projectID string, s 
 			HasPrivateKey: hasAppleKey,
 			BundleIds:     s.Apple.BundleIDs,
 		},
-		AutoLinkVerifiedEmail: &autoLink,
-		RedirectSchemes:       s.RedirectSchemes,
+		AutoLinkVerifiedEmail:  &autoLink,
+		RedirectSchemes:        s.RedirectSchemes,
+		AnalyticsRetentionDays: int32(s.AnalyticsRetentionDays),
+		RollupTimezone:         s.RollupTimezone,
 	}, nil
 }
 
@@ -411,6 +413,13 @@ func (h *ProjectHandler) hasProviderSecret(ctx context.Context, projectID, name 
 // redirectSchemeRE matches a valid URL scheme (RFC 3986), lowercased.
 var redirectSchemeRE = regexp.MustCompile(`^[a-z][a-z0-9+.-]*$`)
 
+// Accepted analytics_retention_days range; the upper bound matches the
+// rollup's maximum backfill window.
+const (
+	minAnalyticsRetentionDays = 1
+	maxAnalyticsRetentionDays = 366
+)
+
 // settingsFromProto converts and validates the admin message; zero numeric
 // fields fall back to defaults when the row is next loaded. Write-only
 // secret fields are handled separately (providerSecretsFromProto).
@@ -423,6 +432,21 @@ func settingsFromProto(s *adminv1.ProjectSettings) (store.ProjectSettings, error
 		AccessTokenTTLSeconds:    int(s.AccessTokenTtlSeconds),
 		RefreshTokenTTLDays:      int(s.RefreshTokenTtlDays),
 		AutoLinkVerifiedEmail:    s.AutoLinkVerifiedEmail,
+		AnalyticsRetentionDays:   int(s.AnalyticsRetentionDays),
+	}
+	// Zero means "default" (90 on the next load); anything else must stay
+	// inside the range the rollup can honor — an unbounded value would keep
+	// raw per-user events forever, breaking the plan's capped-retention
+	// privacy guarantee.
+	if d := s.AnalyticsRetentionDays; d != 0 && (d < minAnalyticsRetentionDays || d > maxAnalyticsRetentionDays) {
+		return store.ProjectSettings{}, fmt.Errorf("analytics retention must be between %d and %d days",
+			minAnalyticsRetentionDays, maxAnalyticsRetentionDays)
+	}
+	if tz := strings.TrimSpace(s.RollupTimezone); tz != "" {
+		if _, err := time.LoadLocation(tz); err != nil {
+			return store.ProjectSettings{}, fmt.Errorf("unknown rollup timezone %q", tz)
+		}
+		out.RollupTimezone = tz
 	}
 	if g := s.Google; g != nil {
 		out.Google = store.GoogleProviderSettings{

@@ -269,3 +269,19 @@ test("contrast validation warns and blocks an illegible palette", async ({ page 
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Save theme" })).toBeDisabled();
 });
+
+test("analytics tab renders the empty state for a zero-traffic project", async ({ page }) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Analytics" }).click();
+
+  // Zero traffic → stat tiles of zeros plus a friendly empty state, never
+  // broken charts. (Seeded-data correctness is covered by the Go tests.)
+  await expect(page.getByText("Total users")).toBeVisible();
+  await expect(page.getByText("Login success rate")).toBeVisible();
+  await expect(page.getByText("No activity yet")).toBeVisible();
+});

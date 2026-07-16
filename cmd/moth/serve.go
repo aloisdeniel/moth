@@ -115,6 +115,10 @@ func serve(ctx context.Context, cfg config.Config) error {
 	// instance must not rely on the startup sweep alone.
 	go sweepExpired(ctx, st, log)
 
+	// Analytics rollup: hourly with jitter, processing only completed local
+	// days (see analytics.RunPeriodically) and pruning expired raw events.
+	go srv.Rollup().RunPeriodically(ctx)
+
 	errCh := make(chan error, 1)
 	go func() { errCh <- httpServer.ListenAndServe() }()
 
@@ -127,6 +131,10 @@ func serve(ctx context.Context, cfg config.Config) error {
 		defer cancel()
 		if err := httpServer.Shutdown(shutdownCtx); err != nil && !errors.Is(err, context.DeadlineExceeded) {
 			return err
+		}
+		// Drain the buffered analytics events once no request can emit more.
+		if err := srv.Close(shutdownCtx); err != nil {
+			log.Warn("analytics event writer drain", "error", err.Error())
 		}
 		return nil
 	}

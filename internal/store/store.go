@@ -144,9 +144,32 @@ type ThemeStore interface {
 	ListThemeRevisions(ctx context.Context, projectID string, limit int) ([]ThemeRevision, error)
 }
 
-// EventStore records analytics events (stub until milestone 07).
+// EventStore records and reads the raw analytics event stream.
 type EventStore interface {
 	InsertEvent(ctx context.Context, e Event) error
+	// InsertEvents writes a batch in one transaction (the async event
+	// writer flushes through this).
+	InsertEvents(ctx context.Context, events []Event) error
+	ListRecentEvents(ctx context.Context, projectID string, limit int) ([]Event, error)
+	// DeleteEventsBefore prunes events older than cutoff (the project's
+	// analytics retention window) and reports how many were removed.
+	DeleteEventsBefore(ctx context.Context, projectID string, cutoff time.Time) (int64, error)
+}
+
+// StatsStore persists the daily analytics rollups and the runs of the job
+// that produces them. Aggregation windows are UTC instants; the caller
+// converts the project's local day with DayWindow.
+type StatsStore interface {
+	AggregateDailyStats(ctx context.Context, projectID, date string, from, to time.Time) (DailyStats, error)
+	// UpsertDailyStats replaces the (project, date) row; re-rolling a day
+	// is idempotent.
+	UpsertDailyStats(ctx context.Context, ds DailyStats) error
+	GetDailyStats(ctx context.Context, projectID, fromDate, toDate string) ([]DailyStats, error)
+	// LatestDailyStatsDate returns the newest rolled-up date of a project,
+	// "" when none.
+	LatestDailyStatsDate(ctx context.Context, projectID string) (string, error)
+	InsertRollupRun(ctx context.Context, r RollupRun) error
+	ListRollupRuns(ctx context.Context, limit int) ([]RollupRun, error)
 }
 
 // Store implements every per-domain store interface on SQLite.
@@ -167,6 +190,7 @@ var (
 	_ ProviderSecretStore  = (*Store)(nil)
 	_ ThemeStore           = (*Store)(nil)
 	_ EventStore           = (*Store)(nil)
+	_ StatsStore           = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL

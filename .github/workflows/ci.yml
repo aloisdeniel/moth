@@ -17,6 +17,11 @@ jobs:
         with:
           go-version-file: go.mod
       - run: go test ./...
+      # The async event writer (channels, atomics, concurrent Close/Emit)
+      # and the server that drives it end-to-end run under the race
+      # detector; without -race their concurrency tests cannot fail on a
+      # data race.
+      - run: go test -race ./internal/events/... ./internal/server/...
 
   lint:
     runs-on: ubuntu-latest
