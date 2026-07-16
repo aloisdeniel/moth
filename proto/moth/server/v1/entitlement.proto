@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package moth.server.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/server/v1;serverv1";
+
+// EntitlementService lets the developer's own backend read a user's derived
+// entitlements, so it can gate server-side features without trusting the
+// client. It returns exactly the set the client sees from
+// moth.billing.v1.GetCustomerInfo. Authenticated with the project secret key
+// (`x-moth-key: sk_...`); always scoped to that project.
+service EntitlementService {
+  // GetUserEntitlements returns a user's currently active entitlements. A
+  // user with no subscription and no grant returns an empty list (the free
+  // `none` tier) — not an error.
+  rpc GetUserEntitlements(GetUserEntitlementsRequest) returns (GetUserEntitlementsResponse);
+}
+
+// Entitlement is one active capability a user holds, derived from store
+// subscriptions and operator grants.
+message Entitlement {
+  // Stable identifier the app gates on (e.g. "pro").
+  string identifier = 1;
+  // When the entitlement lapses; unset for a non-expiring grant.
+  google.protobuf.Timestamp expire_time = 2;
+  // Why it is active: "store" (an active subscription) or "grant" (an
+  // operator promo/comp).
+  string source = 3;
+  // The moth product identifier that granted it, when source is "store".
+  string product_identifier = 4;
+  // True when this entitlement is backed by a store sandbox / license-tester
+  // subscription rather than a real production purchase. A backend gating paid
+  // features server-side should treat a sandbox entitlement as non-paying.
+  // Always false for operator grants.
+  bool is_sandbox = 5;
+}
+
+message GetUserEntitlementsRequest {
+  string user_id = 1;
+}
+
+message GetUserEntitlementsResponse {
+  repeated Entitlement entitlements = 1;
+}

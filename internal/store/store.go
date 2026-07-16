@@ -223,6 +223,80 @@ type StatsStore interface {
 	ListRollupRuns(ctx context.Context, limit int) ([]RollupRun, error)
 }
 
+// EntitlementStore persists a project's named capability definitions.
+type EntitlementStore interface {
+	CreateEntitlement(ctx context.Context, e Entitlement) error
+	GetEntitlement(ctx context.Context, projectID, id string) (Entitlement, error)
+	GetEntitlementByIdentifier(ctx context.Context, projectID, identifier string) (Entitlement, error)
+	ListEntitlements(ctx context.Context, projectID string) ([]Entitlement, error)
+	UpdateEntitlement(ctx context.Context, e Entitlement) error
+	DeleteEntitlement(ctx context.Context, projectID, id string) error
+}
+
+// ProductStore persists a project's subscription tiers and the entitlements
+// each grants.
+type ProductStore interface {
+	CreateProduct(ctx context.Context, p Product) error
+	GetProduct(ctx context.Context, projectID, id string) (Product, error)
+	ListProducts(ctx context.Context, projectID string) ([]Product, error)
+	UpdateProduct(ctx context.Context, p Product) error
+	DeleteProduct(ctx context.Context, projectID, id string) error
+}
+
+// SubscriptionStore persists moth's mirror of store subscriptions. The store
+// returns rows and active grants; entitlement derivation lives above it.
+type SubscriptionStore interface {
+	// UpsertSubscription inserts or updates by store identity (project_id,
+	// store, store_transaction_id) and returns the stored row.
+	UpsertSubscription(ctx context.Context, sub Subscription) (Subscription, error)
+	GetSubscription(ctx context.Context, projectID, id string) (Subscription, error)
+	GetSubscriptionByStoreID(ctx context.Context, projectID, store, storeTransactionID string) (Subscription, error)
+	ListUserSubscriptions(ctx context.Context, projectID, userID string) ([]Subscription, error)
+	// ListSubscriptionsForReconciliation returns access-granting subscriptions
+	// whose current_period_end is before cutoff, across all projects — the rows
+	// a reconciliation sweep re-reads to catch missed store notifications.
+	ListSubscriptionsForReconciliation(ctx context.Context, cutoff time.Time, limit int) ([]Subscription, error)
+}
+
+// SubscriptionGrantStore persists manual/promotional entitlement grants.
+type SubscriptionGrantStore interface {
+	CreateSubscriptionGrant(ctx context.Context, g SubscriptionGrant) error
+	GetSubscriptionGrant(ctx context.Context, projectID, id string) (SubscriptionGrant, error)
+	ListUserGrants(ctx context.Context, projectID, userID string) ([]SubscriptionGrant, error)
+	// ListActiveUserGrants returns grants neither revoked nor expired at now.
+	ListActiveUserGrants(ctx context.Context, projectID, userID string, now time.Time) ([]SubscriptionGrant, error)
+	RevokeSubscriptionGrant(ctx context.Context, projectID, id string, now time.Time) error
+}
+
+// StoreNotificationStore persists raw store notifications for idempotency and
+// audit.
+type StoreNotificationStore interface {
+	// InsertStoreNotificationIfNew reports whether the notification was new
+	// (false on a deduped replay).
+	InsertStoreNotificationIfNew(ctx context.Context, n StoreNotification) (bool, error)
+	// GetStoreNotification returns a recorded notification by its store
+	// identity (project_id, store, notification_id), or ErrNotFound. Callers
+	// use ProcessedAt to distinguish a still-unprocessed row (re-processable
+	// after a transient failure) from a genuinely applied replay.
+	GetStoreNotification(ctx context.Context, projectID, storeName, notificationID string) (StoreNotification, error)
+	MarkStoreNotificationProcessed(ctx context.Context, projectID, id string, now time.Time) error
+}
+
+// BillingCredentialStore persists per-project store API credentials. Secret
+// fields are AES-GCM ciphertext under the master key (encryption in the handler
+// layer); a nil *Enc slice on upsert keeps the stored value.
+type BillingCredentialStore interface {
+	UpsertBillingCredentials(ctx context.Context, c BillingCredentials) error
+	GetBillingCredentials(ctx context.Context, projectID string) (BillingCredentials, error)
+}
+
+// SubscriptionEventStore records the raw revenue event stream (milestone 14
+// rolls it up).
+type SubscriptionEventStore interface {
+	InsertSubscriptionEvent(ctx context.Context, e SubscriptionEvent) error
+	InsertSubscriptionEvents(ctx context.Context, events []SubscriptionEvent) error
+}
+
 // Store implements every per-domain store interface on SQLite.
 type Store struct {
 	db *sql.DB
@@ -247,6 +321,13 @@ var (
 	_ ThemeStore               = (*Store)(nil)
 	_ EventStore               = (*Store)(nil)
 	_ StatsStore               = (*Store)(nil)
+	_ EntitlementStore         = (*Store)(nil)
+	_ ProductStore             = (*Store)(nil)
+	_ SubscriptionStore        = (*Store)(nil)
+	_ SubscriptionGrantStore   = (*Store)(nil)
+	_ StoreNotificationStore   = (*Store)(nil)
+	_ BillingCredentialStore   = (*Store)(nil)
+	_ SubscriptionEventStore   = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL

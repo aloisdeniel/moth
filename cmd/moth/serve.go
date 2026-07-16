@@ -159,6 +159,11 @@ func serve(ctx context.Context, cfg config.Config) error {
 	// The observer feeds moth_rollup_runs_total.
 	go srv.Rollup().RunPeriodically(ctx, srv.RollupObserver())
 
+	// Subscription reconciliation: re-read store state for subscriptions whose
+	// paid period lapsed while still marked active, catching missed store
+	// notifications.
+	go reconcileBilling(ctx, srv, log)
+
 	// Scheduled local backups when a backup directory is configured.
 	if cfg.BackupDir != "" {
 		go scheduledBackup(ctx, cfg, log)
@@ -194,6 +199,29 @@ func serve(ctx context.Context, cfg config.Config) error {
 			log.Warn("analytics event writer drain", "error", err.Error())
 		}
 		return nil
+	}
+}
+
+// reconcileBillingInterval is how often the subscription reconciliation sweep
+// runs. Renewals fire at most daily, so an hourly sweep with the webhook path
+// as the fast lane is ample.
+const reconcileBillingInterval = time.Hour
+
+// reconcileBilling periodically re-validates subscriptions near expiry to catch
+// missed store notifications, until ctx is done. Failures are logged, never
+// fatal.
+func reconcileBilling(ctx context.Context, srv *server.Server, log *slog.Logger) {
+	ticker := time.NewTicker(reconcileBillingInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			if err := srv.Billing().Reconcile(ctx); err != nil {
+				log.Error("subscription reconciliation sweep", "error", err.Error())
+			}
+		}
 	}
 }
 

@@ -1,6 +1,6 @@
 version: v2
-# Dart stubs for the Flutter SDK (moth.auth.v1 only) — run via `make
-# proto-dart` and commit the output. Kept out of buf.gen.yaml on purpose:
+# Dart stubs for the Flutter SDK (moth.auth.v1 + moth.billing.v1) — run via
+# `make proto-dart` and commit the output. Kept out of buf.gen.yaml on purpose:
 # CI's proto job has no Dart toolchain. Needs protoc-gen-dart on PATH
 # (`dart pub global activate protoc_plugin`).
 clean: true
@@ -8,6 +8,7 @@ inputs:
   - directory: proto
     paths:
       - proto/moth/auth/v1
+      - proto/moth/billing/v1
 plugins:
   - local: protoc-gen-dart
     out: sdk/flutter/lib/src/gen

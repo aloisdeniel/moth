@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@connectrpc/connect-query";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { useEffect, useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
@@ -11,9 +12,18 @@ import {
   Loading,
   PasswordInput,
 } from "../components/ui";
+import { EntitlementService } from "../gen/moth/admin/v1/entitlement_pb";
+import { ProductService } from "../gen/moth/admin/v1/product_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
+import { SubscriptionService, type Grant } from "../gen/moth/admin/v1/subscription_pb";
 import type { User } from "../gen/moth/admin/v1/user_pb";
 import { UserService } from "../gen/moth/admin/v1/user_pb";
+import {
+  formatPrice,
+  statusGrantsAccess,
+  storeLabel,
+  subscriptionStatusMeta,
+} from "../lib/billing";
 import { formatDate, formatDateTime } from "../lib/format";
 
 const PAGE_SIZE = 25;
@@ -377,6 +387,8 @@ function UserDrawer({
 
             <ClaimsEditor project={project} user={u} />
 
+            <SubscriptionSection project={project} userId={userId} />
+
             <div className="stack-8">
               <span className="field__label">Active sessions</span>
               {(detail.data?.sessions.length ?? 0) === 0 ? (
@@ -558,5 +570,258 @@ function ClaimsEditor({ project, user }: { project: Project; user: User }) {
         {saved && <span className="caption text-success">Saved — applies to new tokens.</span>}
       </div>
     </div>
+  );
+}
+
+function grantIsActive(g: Grant, now: number): boolean {
+  if (g.revokeTime) return false;
+  if (g.expireTime && Number(g.expireTime.seconds) * 1000 <= now) return false;
+  return true;
+}
+
+// SubscriptionSection shows the user's store subscriptions, derived active
+// entitlements and operator grants, plus the comp/revoke actions.
+function SubscriptionSection({ project, userId }: { project: Project; userId: string }) {
+  const subs = useQuery(SubscriptionService.method.listUserSubscriptions, {
+    projectId: project.id,
+    userId,
+  });
+  const ents = useQuery(EntitlementService.method.listEntitlements, { projectId: project.id });
+  const prods = useQuery(ProductService.method.listProducts, { projectId: project.id });
+  const [granting, setGranting] = useState(false);
+
+  const entName = (id: string) => ents.data?.entitlements.find((e) => e.id === id)?.identifier ?? id;
+  const prodName = (id: string) => {
+    const p = prods.data?.products.find((x) => x.id === id);
+    return p ? p.displayName || p.identifier : "";
+  };
+
+  const revoke = useMutation(SubscriptionService.method.revokeGrant, {
+    onSuccess: () => invalidate(SubscriptionService.method.listUserSubscriptions),
+  });
+
+  // Derive the active entitlement set client-side (plan/11 matrix): granting
+  // store statuses contribute their product's entitlements, plus every active
+  // grant.
+  const now = Date.now();
+  const active = new Set<string>();
+  for (const s of subs.data?.subscriptions ?? []) {
+    if (!statusGrantsAccess(s.status) || !s.productId) continue;
+    const p = prods.data?.products.find((x) => x.id === s.productId);
+    for (const id of p?.entitlementIds ?? []) active.add(id);
+  }
+  for (const g of subs.data?.grants ?? []) {
+    if (grantIsActive(g, now)) active.add(g.entitlementId);
+  }
+
+  return (
+    <div className="stack-8">
+      <div className="page__header">
+        <span className="field__label">Subscriptions &amp; entitlements</span>
+        <button
+          type="button"
+          className="btn btn--secondary btn--compact"
+          onClick={() => setGranting(true)}
+          disabled={(ents.data?.entitlements.length ?? 0) === 0}
+        >
+          Grant entitlement
+        </button>
+      </div>
+
+      {(subs.isPending || ents.isPending) && <Loading />}
+      {subs.isError && <ErrorNote message={errorMessage(subs.error)} />}
+
+      {subs.data && (
+        <>
+          <div className="row-8" style={{ flexWrap: "wrap" }}>
+            {active.size === 0 ? (
+              <Badge>none (free)</Badge>
+            ) : (
+              [...active].map((id) => (
+                <Badge key={id} tone="success">
+                  {entName(id)}
+                </Badge>
+              ))
+            )}
+          </div>
+
+          {subs.data.subscriptions.length === 0 ? (
+            <p className="caption">No store subscriptions.</p>
+          ) : (
+            <div className="stack-8">
+              {subs.data.subscriptions.map((s) => {
+                const meta = subscriptionStatusMeta(s.status);
+                const p = prods.data?.products.find((x) => x.id === s.productId);
+                return (
+                  <div key={s.id} className="keywell" style={{ alignItems: "flex-start" }}>
+                    <div className="keywell__value stack-8" style={{ gap: 2 }}>
+                      <span className="row-8" style={{ flexWrap: "wrap" }}>
+                        <strong>{prodName(s.productId) || "Unmapped product"}</strong>
+                        <Badge>{storeLabel(s.store)}</Badge>
+                        <Badge tone={meta.tone}>{meta.label}</Badge>
+                        {s.environment === "sandbox" && <Badge tone="warning">sandbox</Badge>}
+                      </span>
+                      <span className="caption">
+                        {p && `${formatPrice(p.priceAmountMicros, p.currency)} · `}
+                        renews {formatDate(s.currentPeriodEnd)}
+                        {s.autoRenew ? "" : " · auto-renew off"}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <span className="field__label">Operator grants</span>
+          {subs.data.grants.length === 0 ? (
+            <p className="caption">No promo or comp grants.</p>
+          ) : (
+            <div className="stack-8">
+              {subs.data.grants.map((g) => {
+                const activeGrant = grantIsActive(g, now);
+                return (
+                  <div key={g.id} className="keywell" style={{ alignItems: "flex-start" }}>
+                    <div className="keywell__value stack-8" style={{ gap: 2 }}>
+                      <span className="row-8" style={{ flexWrap: "wrap" }}>
+                        <Badge tone={activeGrant ? "success" : "neutral"}>
+                          {entName(g.entitlementId)}
+                        </Badge>
+                        {g.revokeTime ? (
+                          <span className="caption">revoked {formatDate(g.revokeTime)}</span>
+                        ) : g.expireTime ? (
+                          <span className="caption">
+                            {activeGrant ? "expires" : "expired"} {formatDate(g.expireTime)}
+                          </span>
+                        ) : (
+                          <span className="caption">no expiry</span>
+                        )}
+                      </span>
+                      <span className="caption">
+                        {g.reason || "no reason"}
+                        {g.grantedBy && ` · by ${g.grantedBy}`}
+                      </span>
+                    </div>
+                    {activeGrant && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost btn--compact"
+                        disabled={revoke.isPending}
+                        onClick={() => revoke.mutate({ projectId: project.id, grantId: g.id })}
+                      >
+                        Revoke
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {revoke.isError && <p className="field__error">{errorMessage(revoke.error)}</p>}
+        </>
+      )}
+
+      {granting && (
+        <GrantDialog
+          project={project}
+          userId={userId}
+          entitlements={(ents.data?.entitlements ?? []).map((e) => ({
+            id: e.id,
+            label: `${e.displayName || e.identifier} (${e.identifier})`,
+          }))}
+          onClose={() => setGranting(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function GrantDialog({
+  project,
+  userId,
+  entitlements,
+  onClose,
+}: {
+  project: Project;
+  userId: string;
+  entitlements: { id: string; label: string }[];
+  onClose: () => void;
+}) {
+  const [entitlementId, setEntitlementId] = useState(entitlements[0]?.id ?? "");
+  const [expiry, setExpiry] = useState("");
+  const [reason, setReason] = useState("");
+
+  const grant = useMutation(SubscriptionService.method.grantEntitlement, {
+    onSuccess: () => {
+      invalidate(SubscriptionService.method.listUserSubscriptions);
+      onClose();
+    },
+  });
+
+  return (
+    <Dialog title="Grant entitlement" open onClose={onClose}>
+      <form
+        className="stack-16"
+        onSubmit={(e) => {
+          e.preventDefault();
+          grant.mutate({
+            projectId: project.id,
+            userId,
+            entitlementId,
+            reason: reason.trim(),
+            expireTime:
+              expiry.trim() === "" ? undefined : timestampFromDate(new Date(expiry)),
+          });
+        }}
+      >
+        <p className="caption">
+          A comp/promo grant unlocks an entitlement independent of any store
+          purchase (grant it to a reviewer, extend a grace period). It is
+          audit-logged.
+        </p>
+        <Field label="Entitlement">
+          <select
+            className="select"
+            value={entitlementId}
+            onChange={(e) => setEntitlementId(e.target.value)}
+          >
+            {entitlements.map((e) => (
+              <option key={e.id} value={e.id}>
+                {e.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Expiry (optional)" help="Leave blank for an indefinite grant.">
+          <input
+            className="input"
+            type="date"
+            value={expiry}
+            onChange={(e) => setExpiry(e.target.value)}
+          />
+        </Field>
+        <Field label="Reason">
+          <input
+            className="input"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="App Store reviewer comp"
+          />
+        </Field>
+        {grant.isError && <p className="field__error">{errorMessage(grant.error)}</p>}
+        <div className="dialog__actions">
+          <button type="button" className="btn btn--secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="btn btn--primary"
+            disabled={grant.isPending || entitlementId === ""}
+          >
+            {grant.isPending ? "Granting…" : "Grant"}
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }

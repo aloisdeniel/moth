@@ -35,7 +35,18 @@ const (
 	ReasonLastLoginMethod      = "LAST_LOGIN_METHOD"
 	// Milestone 10 — abuse controls.
 	ReasonEmailDomainNotAllowed = "EMAIL_DOMAIN_NOT_ALLOWED"
+	// Milestone 11 — subscriptions & entitlements.
+	ReasonBillingNotConfigured = "BILLING_NOT_CONFIGURED"
+	ReasonInvalidReceipt       = "INVALID_RECEIPT"
+	ReasonStoreUnavailable     = "STORE_UNAVAILABLE"
 )
+
+// NewError builds a connect error carrying a stable moth reason detail.
+// Exported for sibling publishable-key services (moth.billing.v1) so their
+// errors carry the same ErrorInfo the SDK maps to typed errors.
+func NewError(code connect.Code, reason, msg string) *connect.Error {
+	return newError(code, reason, msg)
+}
 
 // rateLimitError builds the CodeResourceExhausted error the rate-limit
 // interceptor returns: the stable RATE_LIMITED reason plus a

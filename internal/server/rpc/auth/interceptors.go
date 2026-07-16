@@ -54,6 +54,10 @@ var throttledProcedures = map[string]bool{
 	"/moth.auth.v1.AuthService/ExchangeOAuthCode":        true,
 	"/moth.auth.v1.AuthService/RequestPasswordReset":     true,
 	"/moth.auth.v1.AuthService/RequestEmailVerification": true,
+	// Milestone 11 — SubmitPurchase does an outbound store round-trip per call,
+	// so it is throttled per IP and per project (no account bucket: the request
+	// carries no email).
+	"/moth.billing.v1.BillingService/SubmitPurchase": true,
 }
 
 // NewRateLimitInterceptor throttles the sensitive RPCs against the shared,

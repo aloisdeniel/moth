@@ -1,0 +1,97 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// ProductService manages a project's subscription tiers (products): their store
+// SKUs, the entitlements they grant, price metadata, and paywall placement.
+// This is the catalog the store-catalog automation (milestone 12) and the
+// paywall (milestone 13) consume. All RPCs require an authenticated admin
+// session.
+service ProductService {
+  // ListProducts returns the project's products in paywall order (by
+  // sort_order).
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc GetProduct(GetProductRequest) returns (GetProductResponse);
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (UpdateProductResponse);
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
+}
+
+// Product is one subscription tier. An "offering" is not a separate object: the
+// products sharing an `offering` tag, ordered by `sort_order`, form one paywall
+// listing.
+message Product {
+  string id = 1;
+  // Internal catalog identifier, unique within the project (e.g. "monthly").
+  string identifier = 2;
+  string display_name = 3;
+  // Store SKUs; either may be empty when the tier ships on one store only.
+  string apple_product_id = 4;
+  string google_product_id = 5;
+  // Billing period ("weekly", "monthly", "yearly", …); free-form, the store
+  // read is authoritative.
+  string billing_period = 6;
+  // List price metadata (display + analytics only). Micros = price * 1_000_000.
+  int64 price_amount_micros = 7;
+  string currency = 8;
+  // Intro/trial descriptor (display + analytics only).
+  string trial_period = 9;
+  int64 intro_price_amount_micros = 10;
+  string intro_period = 11;
+  // Paywall grouping tag and order within it.
+  string offering = 12;
+  int32 sort_order = 13;
+  // The entitlements this product grants while active (entitlement ids).
+  repeated string entitlement_ids = 14;
+  google.protobuf.Timestamp create_time = 15;
+  google.protobuf.Timestamp update_time = 16;
+}
+
+message ListProductsRequest {
+  string project_id = 1;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+}
+
+message GetProductRequest {
+  string project_id = 1;
+  string id = 2;
+}
+
+message GetProductResponse {
+  Product product = 1;
+}
+
+message CreateProductRequest {
+  string project_id = 1;
+  // The product to create; id and timestamps are ignored (server-assigned).
+  Product product = 2;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+message UpdateProductRequest {
+  string project_id = 1;
+  string id = 2;
+  // The desired product state; entitlement_ids replaces the whole grant set.
+  Product product = 3;
+}
+
+message UpdateProductResponse {
+  Product product = 1;
+}
+
+message DeleteProductRequest {
+  string project_id = 1;
+  string id = 2;
+}
+
+message DeleteProductResponse {}

@@ -6,6 +6,7 @@ import { ErrorNote, Loading } from "../components/ui";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { ProjectAnalytics } from "./ProjectAnalytics";
 import { ProjectDesign } from "./ProjectDesign";
+import { ProjectMonetization } from "./ProjectMonetization";
 import { ProjectOverview } from "./ProjectOverview";
 import { ProjectProviders } from "./ProjectProviders";
 import { ProjectSettings } from "./ProjectSettings";
@@ -16,6 +17,7 @@ const TABS = [
   { id: "overview", label: "Overview" },
   { id: "users", label: "Users" },
   { id: "providers", label: "Providers" },
+  { id: "monetization", label: "Monetization" },
   { id: "design", label: "Design" },
   { id: "settings", label: "Settings" },
   { id: "analytics", label: "Analytics" },
@@ -74,6 +76,7 @@ export function Project() {
       {active === "overview" && <ProjectOverview project={p} />}
       {active === "users" && <ProjectUsers project={p} />}
       {active === "providers" && <ProjectProviders project={p} />}
+      {active === "monetization" && <ProjectMonetization project={p} />}
       {active === "design" && <ProjectDesign project={p} />}
       {active === "settings" && <ProjectSettings project={p} />}
       {active === "analytics" && <ProjectAnalytics project={p} />}

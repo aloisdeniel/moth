@@ -41,6 +41,16 @@ const (
 	ActionThemeReset       = "theme.reset"
 	ActionThemeLogoUpload  = "theme.logo.upload"
 	ActionThemeLogoDelete  = "theme.logo.delete"
+	// Milestone 11 — subscriptions & entitlements.
+	ActionEntitlementCreate  = "entitlement.create"
+	ActionEntitlementUpdate  = "entitlement.update"
+	ActionEntitlementDelete  = "entitlement.delete"
+	ActionProductCreate      = "product.create"
+	ActionProductUpdate      = "product.update"
+	ActionProductDelete      = "product.delete"
+	ActionGrantCreate        = "subscription.grant"
+	ActionGrantRevoke        = "subscription.grant.revoke"
+	ActionBillingCredsUpdate = "billing.credentials.update"
 )
 
 type clientIPCtxKey struct{}

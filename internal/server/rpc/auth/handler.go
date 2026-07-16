@@ -187,6 +187,14 @@ func (h *Handler) project(ctx context.Context) (store.Project, error) {
 	return p, nil
 }
 
+// AuthenticateUser authenticates the Bearer access token in header against the
+// request's project (set by the publishable-key interceptor). Exported so
+// sibling publishable-key services — moth.billing.v1 — share the exact token
+// verification (signature, audience, disabled check) the auth service uses.
+func (h *Handler) AuthenticateUser(ctx context.Context, header http.Header) (store.Project, store.User, error) {
+	return h.requireUser(ctx, header)
+}
+
 // requireUser authenticates the current user from the `authorization:
 // Bearer ...` access token, scoped to the request's project.
 func (h *Handler) requireUser(ctx context.Context, header http.Header) (store.Project, store.User, error) {

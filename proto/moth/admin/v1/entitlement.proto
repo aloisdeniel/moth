@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// EntitlementService manages a project's entitlement definitions — the named
+// capabilities (`pro`, `premium`, …) apps gate features on, decoupled from the
+// products that grant them. All RPCs require an authenticated admin session.
+service EntitlementService {
+  rpc ListEntitlements(ListEntitlementsRequest) returns (ListEntitlementsResponse);
+  rpc CreateEntitlement(CreateEntitlementRequest) returns (CreateEntitlementResponse);
+  rpc UpdateEntitlement(UpdateEntitlementRequest) returns (UpdateEntitlementResponse);
+  // DeleteEntitlement removes the definition; it cascades to product grants and
+  // operator grants referencing it.
+  rpc DeleteEntitlement(DeleteEntitlementRequest) returns (DeleteEntitlementResponse);
+}
+
+// Entitlement is one named capability of a project.
+message Entitlement {
+  string id = 1;
+  // Stable identifier the app checks (e.g. "pro"); unique within the project.
+  string identifier = 2;
+  string display_name = 3;
+  google.protobuf.Timestamp create_time = 4;
+  google.protobuf.Timestamp update_time = 5;
+}
+
+message ListEntitlementsRequest {
+  string project_id = 1;
+}
+
+message ListEntitlementsResponse {
+  repeated Entitlement entitlements = 1;
+}
+
+message CreateEntitlementRequest {
+  string project_id = 1;
+  string identifier = 2;
+  string display_name = 3;
+}
+
+message CreateEntitlementResponse {
+  Entitlement entitlement = 1;
+}
+
+message UpdateEntitlementRequest {
+  string project_id = 1;
+  string id = 2;
+  // The identifier is immutable (apps depend on it); only display_name is
+  // editable.
+  string display_name = 3;
+}
+
+message UpdateEntitlementResponse {
+  Entitlement entitlement = 1;
+}
+
+message DeleteEntitlementRequest {
+  string project_id = 1;
+  string id = 2;
+}
+
+message DeleteEntitlementResponse {}

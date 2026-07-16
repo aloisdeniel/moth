@@ -1,0 +1,147 @@
+syntax = "proto3";
+
+package moth.billing.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/billing/v1;billingv1";
+
+// BillingService is the client-facing subscription API, consumed by the moth
+// Flutter SDK. Authenticated exactly like AuthService: every call carries the
+// project publishable key in `x-moth-key: pk_...` request metadata AND a user
+// access token in the `Authorization: Bearer <jwt>` header — every RPC is
+// scoped to the signed-in user.
+//
+// The core contract: **a user always has a valid subscription state.** A
+// never-paid user, a free-tier user, and a user in a project that has declared
+// no products all get a well-formed CustomerInfo with an empty
+// active_entitlements list (the built-in `none` tier) — never an error. moth is
+// a validating mirror of the store: it never marks a subscription active on the
+// client's say-so, only after verifying a signed transaction or reading the
+// store's authoritative state.
+service BillingService {
+  // GetCustomerInfo returns the signed-in user's active entitlements and
+  // subscriptions. Always succeeds with a valid object; `none` (empty
+  // entitlements) for free users. Cheap and safe to call on every app launch.
+  rpc GetCustomerInfo(GetCustomerInfoRequest) returns (GetCustomerInfoResponse);
+  // SubmitPurchase hands moth the receipt of a purchase the app just completed
+  // natively. moth validates it against the store, links the subscription to
+  // the current user, derives entitlements, and returns the fresh CustomerInfo.
+  rpc SubmitPurchase(SubmitPurchaseRequest) returns (SubmitPurchaseResponse);
+  // RestorePurchases re-links a user's existing store purchases to the current
+  // account (new device, reinstall, account change), applying the store's own
+  // transfer rules, then returns the fresh CustomerInfo.
+  rpc RestorePurchases(RestorePurchasesRequest) returns (RestorePurchasesResponse);
+}
+
+// Store identifies which app store a purchase or subscription belongs to.
+enum Store {
+  STORE_UNSPECIFIED = 0;
+  STORE_APPLE = 1;
+  STORE_GOOGLE = 2;
+}
+
+// SubscriptionStatus mirrors the store's renewal state, mapped to a small set
+// common to Apple and Google. active/trialing/in_grace_period/in_billing_retry
+// all keep access; paused/expired/revoked do not.
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_ACTIVE = 1;
+  SUBSCRIPTION_STATUS_TRIALING = 2;
+  SUBSCRIPTION_STATUS_IN_GRACE_PERIOD = 3;
+  // Google "on hold": the renewal is being retried after a payment failure.
+  SUBSCRIPTION_STATUS_IN_BILLING_RETRY = 4;
+  SUBSCRIPTION_STATUS_PAUSED = 5;
+  SUBSCRIPTION_STATUS_EXPIRED = 6;
+  SUBSCRIPTION_STATUS_REVOKED = 7;
+}
+
+// EntitlementSource explains why an entitlement is active.
+enum EntitlementSource {
+  ENTITLEMENT_SOURCE_UNSPECIFIED = 0;
+  // Granted by an active store subscription.
+  ENTITLEMENT_SOURCE_STORE = 1;
+  // Granted by an operator (promo/comp), independent of store state.
+  ENTITLEMENT_SOURCE_GRANT = 2;
+  // The built-in free tier (no active subscription or grant). Reserved; the
+  // free tier is normally conveyed by an empty active_entitlements list.
+  ENTITLEMENT_SOURCE_NONE = 3;
+}
+
+// CustomerInfo is the complete subscription picture for one user. Apps gate
+// features on active_entitlements (never on a product id): check whether the
+// stable entitlement identifier (e.g. "pro") is present.
+message CustomerInfo {
+  // The entitlements the user currently holds. Empty means the free `none`
+  // tier — a valid, expected state, not an error.
+  repeated Entitlement active_entitlements = 1;
+  // The user's known subscriptions across stores (may include inactive ones,
+  // for history/paywall display).
+  repeated ActiveSubscription subscriptions = 2;
+}
+
+// Entitlement is one active capability the user holds.
+message Entitlement {
+  // Stable identifier the app checks (e.g. "pro"). Never changes across app
+  // releases even when the granting product does.
+  string identifier = 1;
+  // When the entitlement lapses; unset for a non-expiring grant.
+  google.protobuf.Timestamp expire_time = 2;
+  // Why it is active (store subscription vs operator grant).
+  EntitlementSource source = 3;
+  // The moth product identifier that granted it, when source is STORE; empty
+  // for grants.
+  string product_identifier = 4;
+}
+
+// ActiveSubscription is one of the user's store subscriptions.
+message ActiveSubscription {
+  // The moth product identifier, when the store SKU is mapped; empty otherwise.
+  string product_identifier = 1;
+  Store store = 2;
+  SubscriptionStatus status = 3;
+  // End of the current paid (or trial) period; the renewal date when
+  // auto_renew is true.
+  google.protobuf.Timestamp current_period_end = 4;
+  bool auto_renew = 5;
+  // Whether this subscription is a sandbox/test purchase.
+  bool is_sandbox = 6;
+}
+
+message GetCustomerInfoRequest {}
+
+message GetCustomerInfoResponse {
+  CustomerInfo customer_info = 1;
+}
+
+message SubmitPurchaseRequest {
+  Store store = 1;
+  // The moth product identifier the app is purchasing (its own catalog id, not
+  // the store SKU). moth maps it to the store product for validation.
+  string product_identifier = 2;
+  // The store receipt. For Apple, a StoreKit 2 signed transaction (JWS). For
+  // Google, the Play Billing purchase token — pair it with
+  // google_subscription_id (Google needs both to resolve the purchase).
+  oneof receipt {
+    string apple_jws_transaction = 3;
+    string google_purchase_token = 4;
+  }
+  // Google Play subscription id (the store product id); required alongside
+  // google_purchase_token, ignored for Apple.
+  string google_subscription_id = 5;
+}
+
+message SubmitPurchaseResponse {
+  CustomerInfo customer_info = 1;
+}
+
+message RestorePurchasesRequest {
+  Store store = 1;
+  // The receipts to re-link. For Apple, StoreKit 2 signed transactions (JWS);
+  // for Google, Play Billing purchase tokens.
+  repeated string receipts = 2;
+}
+
+message RestorePurchasesResponse {
+  CustomerInfo customer_info = 1;
+}

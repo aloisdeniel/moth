@@ -18,12 +18,14 @@ jobs:
           go-version-file: go.mod
       - run: go test ./...
       # The async event writer (channels, atomics, concurrent Close/Emit),
-      # the server that drives it end-to-end, and the shared persistent rate
+      # the server that drives it end-to-end, the shared persistent rate
       # limiter (one SQLite-backed limiter behind concurrent gRPC + HTTP
-      # callers) run under the race detector; without -race their concurrency
-      # tests — including TestTakeRateLimitConcurrent — cannot fail on a data
-      # race.
-      - run: go test -race ./internal/events/... ./internal/server/... ./internal/store/... ./internal/ratelimit/...
+      # callers), and the billing store clients (the mutex-guarded Google
+      # OAuth2 token cache hit concurrently by 20 goroutines in
+      # TestGoogleTokenCaching) run under the race detector; without -race
+      # their concurrency tests — including TestTakeRateLimitConcurrent — cannot
+      # fail on a data race.
+      - run: go test -race ./internal/events/... ./internal/server/... ./internal/store/... ./internal/ratelimit/... ./internal/billing/...
 
   lint:
     runs-on: ubuntu-latest

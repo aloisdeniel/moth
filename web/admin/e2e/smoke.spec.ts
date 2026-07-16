@@ -125,6 +125,50 @@ test("enable Google sign-in and see it persist", async ({ page }) => {
   );
 });
 
+test("monetization: create an entitlement and a product, and show the store URLs", async ({
+  page,
+}) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Monetization" }).click();
+
+  // The store-notification URLs interpolate the instance base URL and slug.
+  await expect(
+    page.getByText("http://127.0.0.1:8990/billing/apple/notifications/birdwatch"),
+  ).toBeVisible();
+  await expect(
+    page.getByText("http://127.0.0.1:8990/billing/google/rtdn/birdwatch"),
+  ).toBeVisible();
+
+  // Create an entitlement (dialog-scoped: the product dialog also has an
+  // "Identifier" field).
+  await page.getByRole("button", { name: "Add entitlement" }).click();
+  const entDialog = page.getByRole("dialog");
+  await entDialog.getByLabel("Identifier").fill("pro");
+  await entDialog.getByLabel("Display name").fill("Pro");
+  await entDialog.getByRole("button", { name: "Add entitlement" }).click();
+  await expect(page.getByText("Pro", { exact: true })).toBeVisible();
+
+  // Create a product that grants it.
+  await page.getByRole("button", { name: "Add product" }).click();
+  const prodDialog = page.getByRole("dialog");
+  await prodDialog.getByLabel("Identifier").fill("monthly");
+  await prodDialog.getByLabel("Display name").fill("Monthly Pro");
+  await prodDialog.getByLabel("Price").fill("9.99");
+  await prodDialog.getByRole("checkbox").first().check();
+  await prodDialog.getByRole("button", { name: "Add product" }).click();
+  await expect(page.getByText("Monthly Pro")).toBeVisible();
+
+  // Both survive a full reload — they really landed in the project catalog.
+  await page.reload();
+  await expect(page.getByText("Pro", { exact: true })).toBeVisible();
+  await expect(page.getByText("Monthly Pro")).toBeVisible();
+});
+
 test("theme editor saves a primary color and persists it", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(admin.email);

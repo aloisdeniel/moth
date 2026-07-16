@@ -22,6 +22,7 @@ import (
 
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
+	"github.com/aloisdeniel/moth/gen/moth/billing/v1/billingv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/server/v1/serverv1connect"
 	"github.com/aloisdeniel/moth/internal/analytics"
 	"github.com/aloisdeniel/moth/internal/audit"
@@ -37,6 +38,7 @@ import (
 	"github.com/aloisdeniel/moth/internal/ratelimit"
 	adminrpc "github.com/aloisdeniel/moth/internal/server/rpc/admin"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
+	billingrpc "github.com/aloisdeniel/moth/internal/server/rpc/billing"
 	"github.com/aloisdeniel/moth/internal/server/rpc/serverapi"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/version"
@@ -57,6 +59,9 @@ type Store interface {
 	store.EmailTokenStore
 	store.OAuthTokenStore
 	store.RateLimitStore
+	// StoreNotificationStore backs the billing webhook idempotency; the other
+	// billing surfaces come in through adminrpc.Store.
+	store.StoreNotificationStore
 }
 
 // Options configures a Server.
@@ -89,12 +94,15 @@ type Options struct {
 
 // Server is the assembled moth server.
 type Server struct {
-	cfg        config.Config
-	store      Store
-	master     keys.MasterKey
-	log        *slog.Logger
-	auth       *authrpc.Handler // shared with the hosted confirmation pages
-	setupToken atomic.Value     // string; "" once setup is complete
+	cfg    config.Config
+	store  Store
+	master keys.MasterKey
+	log    *slog.Logger
+	auth   *authrpc.Handler // shared with the hosted confirmation pages
+	// billing backs the moth.billing.v1 client API, the store-notification
+	// webhooks and the reconciliation sweep (exposed via Billing()).
+	billing    *billingrpc.Handler
+	setupToken atomic.Value // string; "" once setup is complete
 	handler    http.Handler
 	// pub is the embedded moth_auth Flutter package, built once so the
 	// sha256 in the /pub version listing always matches the served bytes.
@@ -206,6 +214,18 @@ func New(o Options) (*Server, error) {
 		Audit:      auditSink,
 	})
 
+	// moth.billing.v1 + the store-notification webhooks + reconciliation sweep.
+	// It reuses the auth handler for Bearer user authentication and the shared
+	// outbound HTTP client for store API calls.
+	s.billing = billingrpc.New(billingrpc.Options{
+		Store:      o.Store,
+		Master:     o.Master,
+		Auth:       s.auth,
+		Logger:     o.Logger,
+		Now:        o.Now,
+		HTTPClient: httpc,
+	})
+
 	// chain prepends the shared observability interceptors to a service's
 	// own auth interceptors, and caps how much of a request body connect
 	// will buffer for a single message: interceptors (auth included) only
@@ -231,6 +251,11 @@ func New(o Options) (*Server, error) {
 		authrpc.NewRateLimitInterceptor(limiter, o.Logger),
 		newAuthMetricsInterceptor(o.Metrics))
 	serverInterceptors := chain(serverapi.NewSecretKeyInterceptor(o.Store))
+	// moth.billing.v1 rides the same publishable-key project resolution as
+	// moth.auth.v1 and carries the rate limiter (SubmitPurchase is throttled).
+	billingInterceptors := chain(
+		authrpc.NewProjectInterceptor(o.Store),
+		authrpc.NewRateLimitInterceptor(limiter, o.Logger))
 
 	mux := http.NewServeMux()
 
@@ -260,12 +285,26 @@ func New(o Options) (*Server, error) {
 	auditPath, auditHandler := adminv1connect.NewAuditServiceHandler(
 		adminrpc.NewAuditHandler(o.Store), adminInterceptors)
 	mux.Handle(auditPath, auditHandler)
+	// moth.admin.v1 billing management — one handler backs all four services.
+	billingAdmin := adminrpc.NewBillingHandler(o.Store, o.Master, auditor, o.Now)
+	entPath, entHandler := adminv1connect.NewEntitlementServiceHandler(billingAdmin, adminInterceptors)
+	mux.Handle(entPath, entHandler)
+	prodPath, prodHandler := adminv1connect.NewProductServiceHandler(billingAdmin, adminInterceptors)
+	mux.Handle(prodPath, prodHandler)
+	subPath, subHandler := adminv1connect.NewSubscriptionServiceHandler(billingAdmin, adminInterceptors)
+	mux.Handle(subPath, subHandler)
+	billingCredPath, billingCredHandler := adminv1connect.NewBillingCredentialsServiceHandler(billingAdmin, adminInterceptors)
+	mux.Handle(billingCredPath, billingCredHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
 	mux.Handle(authPath, authHandler)
 	configPath, configHandler := authv1connect.NewConfigServiceHandler(s.auth, authInterceptors)
 	mux.Handle(configPath, configHandler)
+
+	// moth.billing.v1 — the client subscription/entitlement API.
+	billingPath, billingHandler := billingv1connect.NewBillingServiceHandler(s.billing, billingInterceptors)
+	mux.Handle(billingPath, billingHandler)
 
 	// moth.server.v1 — the developer-backend API (secret-key auth).
 	tokenPath, tokenHandler := serverv1connect.NewTokenServiceHandler(
@@ -274,6 +313,9 @@ func New(o Options) (*Server, error) {
 	serverUserPath, serverUserHandler := serverv1connect.NewUserServiceHandler(
 		serverapi.NewUserHandler(o.Store, nil), serverInterceptors)
 	mux.Handle(serverUserPath, serverUserHandler)
+	entlPath, entlHandler := serverv1connect.NewEntitlementServiceHandler(
+		serverapi.NewEntitlementHandler(o.Store, o.Now), serverInterceptors)
+	mux.Handle(entlPath, entlHandler)
 
 	serviceNames := []string{
 		adminv1connect.SessionServiceName,
@@ -286,8 +328,14 @@ func New(o Options) (*Server, error) {
 		adminv1connect.AuditServiceName,
 		authv1connect.AuthServiceName,
 		authv1connect.ConfigServiceName,
+		billingv1connect.BillingServiceName,
+		adminv1connect.EntitlementServiceName,
+		adminv1connect.ProductServiceName,
+		adminv1connect.SubscriptionServiceName,
+		adminv1connect.BillingCredentialsServiceName,
 		serverv1connect.TokenServiceName,
 		serverv1connect.UserServiceName,
+		serverv1connect.EntitlementServiceName,
 	}
 	// The gRPC health service reports live status: a broken database or a
 	// non-writable data dir flips every service to NOT_SERVING so load
@@ -336,6 +384,10 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("GET /oauth/{provider}/callback", s.handleOAuthCallback)
 	// Apple posts the callback (response_mode=form_post).
 	mux.HandleFunc("POST /oauth/{provider}/callback", s.handleOAuthCallback)
+	// Store notification webhooks (App Store Server Notifications V2, Play
+	// RTDN via Pub/Sub push). Project-scoped by slug; plain HTTP.
+	mux.HandleFunc("POST /billing/apple/notifications/{slug}", s.handleAppleNotification)
+	mux.HandleFunc("POST /billing/google/rtdn/{slug}", s.handleGoogleRTDN)
 	mux.HandleFunc("GET /admin", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)
@@ -425,7 +477,8 @@ func rateLimitConfigFrom(c config.Config) ratelimit.Config {
 func httpThrottled(path string) bool {
 	return strings.HasPrefix(path, "/oauth/") ||
 		strings.HasPrefix(path, "/p/") ||
-		strings.HasPrefix(path, "/pub/")
+		strings.HasPrefix(path, "/pub/") ||
+		strings.HasPrefix(path, "/billing/")
 }
 
 // allowHTTP applies the per-IP rate limit to a plain-HTTP request. It writes a
@@ -461,9 +514,11 @@ func (s *Server) allowHTTP(w http.ResponseWriter, r *http.Request) bool {
 // theme assets (logos, fonts) that Flutter Web apps download.
 func isPublicSurface(path string) bool {
 	return strings.HasPrefix(path, "/moth.auth.v1.") ||
+		strings.HasPrefix(path, "/moth.billing.v1.") ||
 		strings.HasPrefix(path, "/pub/") ||
 		strings.HasPrefix(path, "/p/") ||
-		strings.HasPrefix(path, "/assets/")
+		strings.HasPrefix(path, "/assets/") ||
+		strings.HasPrefix(path, "/billing/")
 }
 
 // Handler returns the root HTTP handler. Serve it with Protocols() so
@@ -479,6 +534,10 @@ func (s *Server) Close(ctx context.Context) error { return s.events.Close(ctx) }
 // Rollup exposes the analytics aggregate-and-prune job so the serve loop
 // can schedule it next to its other maintenance goroutines.
 func (s *Server) Rollup() *analytics.Rollup { return s.rollup }
+
+// Billing exposes the billing handler so the serve loop can schedule the
+// subscription reconciliation sweep.
+func (s *Server) Billing() *billingrpc.Handler { return s.billing }
 
 // Protocols returns the protocol set for the http.Server: HTTP/1.1 plus
 // unencrypted HTTP/2.
