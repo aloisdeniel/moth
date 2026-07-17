@@ -197,7 +197,8 @@ func (h *Handler) applyFromNotification(ctx context.Context, projectID string, n
 	if eventType != "" && !isAcquisitionEvent(eventType) {
 		products, _ := h.store.ListProducts(ctx, projectID)
 		_, product := matchProduct(products, stored.Store, norm.ProductID)
-		h.emitEvent(ctx, projectID, stored, product, eventType)
+		price, currency := eventPrice(norm, product)
+		h.emitEvent(ctx, projectID, stored, price, currency, eventType)
 	}
 	return nil
 }

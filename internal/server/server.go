@@ -402,6 +402,7 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)
 	mux.HandleFunc("GET /admin/export/stats.csv", s.handleExportStats)
+	mux.HandleFunc("GET /admin/export/subscriptions.csv", s.handleExportSubscriptions)
 	mux.HandleFunc("GET /admin/export/audit.csv", s.handleExportAudit)
 	mux.HandleFunc("POST /admin/setup", s.handleAdminSetup)
 	mux.HandleFunc("/", s.handleRoot)

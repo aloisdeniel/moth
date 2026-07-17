@@ -56,3 +56,23 @@ export function formatPrice(micros: bigint, currency: string): string {
   const amount = Number(micros) / 1_000_000;
   return `${amount.toFixed(2)}${currency ? ` ${currency}` : ""}`;
 }
+
+// formatMoney renders a store-reported revenue amount (micros) in its own
+// currency — always per currency, never blended. `fractionDigits` lets axis
+// ticks drop the cents while tooltips/tiles keep them. Falls back to a plain
+// "12.00 USD" when the ISO code is unknown to Intl.
+export function formatMoney(micros: bigint, currency: string, fractionDigits = 2): string {
+  const amount = Number(micros) / 1_000_000;
+  if (currency) {
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: "currency",
+        currency,
+        maximumFractionDigits: fractionDigits,
+      }).format(amount);
+    } catch {
+      // Unknown ISO-4217 code — fall through to the plain form.
+    }
+  }
+  return `${amount.toFixed(fractionDigits)}${currency ? ` ${currency}` : ""}`;
+}

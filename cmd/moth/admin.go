@@ -306,9 +306,12 @@ func newSeedAnalyticsCmd() *cobra.Command {
 				return fmt.Errorf("project %q: %w", slug, err)
 			}
 
-			n, err := analytics.Seed(cmd.Context(), st, project, analytics.SeedOptions{
-				Days: days, Seed: seed,
-			})
+			opts := analytics.SeedOptions{Days: days, Seed: seed}
+			n, err := analytics.Seed(cmd.Context(), st, project, opts)
+			if err != nil {
+				return err
+			}
+			subN, err := analytics.SeedSubscriptions(cmd.Context(), st, project, opts)
 			if err != nil {
 				return err
 			}
@@ -317,8 +320,8 @@ func newSeedAnalyticsCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("seeded %d events over %d days for %s; rollup processed %d days (pruned %d)\n",
-				n, days, slug, run.DaysProcessed, run.EventsPruned)
+			fmt.Printf("seeded %d auth + %d subscription events over %d days for %s; rollup processed %d days (pruned %d)\n",
+				n, subN, days, slug, run.DaysProcessed, run.EventsPruned)
 			return nil
 		},
 	}

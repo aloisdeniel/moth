@@ -39,11 +39,16 @@ const (
 	SubscriptionEventPurchased    = "subscription.purchased"
 	SubscriptionEventRenewed      = "subscription.renewed"
 	SubscriptionEventTrialStarted = "subscription.trial_started"
-	SubscriptionEventCanceled     = "subscription.canceled"
-	SubscriptionEventExpired      = "subscription.expired"
-	SubscriptionEventRefunded     = "subscription.refunded"
-	SubscriptionEventGranted      = "subscription.granted"
-	SubscriptionEventRevoked      = "subscription.revoked"
+	// SubscriptionEventConverted marks a trial converting to a paid
+	// subscription. The milestone-14 rollup consumes it for trial-conversion
+	// stats; wiring its emission from the billing engine (a trialing sub going
+	// active) is a milestone-11 follow-up — until then trials_converted is 0.
+	SubscriptionEventConverted = "subscription.converted"
+	SubscriptionEventCanceled  = "subscription.canceled"
+	SubscriptionEventExpired   = "subscription.expired"
+	SubscriptionEventRefunded  = "subscription.refunded"
+	SubscriptionEventGranted   = "subscription.granted"
+	SubscriptionEventRevoked   = "subscription.revoked"
 )
 
 // Entitlement is a named capability a project's apps gate features on.

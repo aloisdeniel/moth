@@ -428,6 +428,11 @@ test("analytics tab renders the empty state for a zero-traffic project", async (
   await expect(page.getByText("Total users")).toBeVisible();
   await expect(page.getByText("Login success rate")).toBeVisible();
   await expect(page.getByText("No activity yet")).toBeVisible();
+
+  // The subscriptions revenue dashboard (milestone 14) renders its own
+  // friendly empty state for a project that has sold nothing.
+  await expect(page.getByRole("heading", { name: "Subscriptions" })).toBeVisible();
+  await expect(page.getByText("No subscriptions yet")).toBeVisible();
 });
 
 test("audit log viewer renders with filters and log card", async ({ page }) => {

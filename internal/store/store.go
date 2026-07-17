@@ -232,6 +232,32 @@ type StatsStore interface {
 	ListRollupRuns(ctx context.Context, limit int) ([]RollupRun, error)
 }
 
+// SubscriptionStatsStore persists the milestone-14 subscription revenue
+// rollups (monthly, per currency) and the per-tier slices. Aggregation windows
+// are UTC instants; the caller converts the project's local month with
+// MonthWindow. Dashboards read these rows, never the raw subscription_events.
+type SubscriptionStatsStore interface {
+	// AggregateSubscription computes the (project, month) rollup from the raw
+	// events in [from, to); includeSandbox=false excludes sandbox events. It
+	// also returns the currency-agnostic distinct active-subscriber counts
+	// (per month and per tier) that must not be summed from the per-currency
+	// rows.
+	AggregateSubscription(ctx context.Context, projectID, period string, from, to time.Time, includeSandbox bool) ([]SubscriptionStats, []SubscriptionTierStats, []SubscriptionPeriodActive, error)
+	// UpsertSubscriptionStats replaces all rows for (project, period); re-rolling
+	// a month is idempotent.
+	UpsertSubscriptionStats(ctx context.Context, projectID, period string, stats []SubscriptionStats, tiers []SubscriptionTierStats, periodActive []SubscriptionPeriodActive) error
+	GetSubscriptionStats(ctx context.Context, projectID, fromPeriod, toPeriod string) ([]SubscriptionStats, error)
+	GetSubscriptionTierStats(ctx context.Context, projectID, fromPeriod, toPeriod string) ([]SubscriptionTierStats, error)
+	// GetSubscriptionPeriodActive returns the currency-agnostic distinct
+	// active-subscriber counts per (period, product_id); product_id "" is the
+	// all-products month total.
+	GetSubscriptionPeriodActive(ctx context.Context, projectID, fromPeriod, toPeriod string) ([]SubscriptionPeriodActive, error)
+	// LatestSubscriptionStatsPeriod returns the newest rolled-up month, "" when none.
+	LatestSubscriptionStatsPeriod(ctx context.Context, projectID string) (string, error)
+	// DeleteSubscriptionEventsBefore prunes raw events older than cutoff.
+	DeleteSubscriptionEventsBefore(ctx context.Context, projectID string, cutoff time.Time) (int64, error)
+}
+
 // EntitlementStore persists a project's named capability definitions.
 type EntitlementStore interface {
 	CreateEntitlement(ctx context.Context, e Entitlement) error
@@ -345,6 +371,7 @@ var (
 	_ PaywallStore             = (*Store)(nil)
 	_ EventStore               = (*Store)(nil)
 	_ StatsStore               = (*Store)(nil)
+	_ SubscriptionStatsStore   = (*Store)(nil)
 	_ EntitlementStore         = (*Store)(nil)
 	_ ProductStore             = (*Store)(nil)
 	_ SubscriptionStore        = (*Store)(nil)

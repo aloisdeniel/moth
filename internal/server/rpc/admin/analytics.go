@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"connectrpc.com/connect"
@@ -18,6 +19,13 @@ import (
 const (
 	// statsDateFormat is the calendar-day key of the analytics API.
 	statsDateFormat = "2006-01-02"
+	// statsMonthFormat is the month key of the subscription analytics API.
+	statsMonthFormat = "2006-01"
+	// defaultStatsRangeMonths is the subscription series range when the
+	// request leaves from_period/to_period empty.
+	defaultStatsRangeMonths = 12
+	// maxStatsRangeMonths bounds one GetSubscriptionStats range.
+	maxStatsRangeMonths = 60
 	// defaultStatsRangeDays is the series range when the request leaves
 	// from_date/to_date empty.
 	defaultStatsRangeDays = 30
@@ -214,6 +222,246 @@ func (h *AnalyticsHandler) ListRecentEvents(ctx context.Context, req *connect.Re
 		})
 	}
 	return connect.NewResponse(resp), nil
+}
+
+// GetSubscriptionStats serves the subscription revenue dashboards from the
+// pre-aggregated monthly rollup (subscription_monthly_stats /
+// subscription_tier_stats) — it never scans raw subscription_events. Money is
+// per currency, never blended.
+func (h *AnalyticsHandler) GetSubscriptionStats(ctx context.Context, req *connect.Request[adminv1.GetSubscriptionStatsRequest]) (*connect.Response[adminv1.GetSubscriptionStatsResponse], error) {
+	project, err := h.store.GetProject(ctx, req.Msg.ProjectId)
+	if err != nil {
+		return nil, projectErr(err)
+	}
+	loc := project.Settings.RollupLocation()
+	latestMonth := h.now().In(loc).Format(statsMonthFormat)
+
+	from, to, err := statsMonthRange(req.Msg.FromPeriod, req.Msg.ToPeriod, latestMonth)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInvalidArgument, err)
+	}
+
+	rows, err := h.store.GetSubscriptionStats(ctx, project.ID, from, to)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	tierRows, err := h.store.GetSubscriptionTierStats(ctx, project.ID, from, to)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	activeRows, err := h.store.GetSubscriptionPeriodActive(ctx, project.ID, from, to)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+
+	byPeriod := make(map[string][]store.SubscriptionStats)
+	for _, r := range rows {
+		byPeriod[r.Period] = append(byPeriod[r.Period], r)
+	}
+
+	// Currency-agnostic active-subscriber counts, keyed period -> product ("" =
+	// month total). Active is a COUNT(DISTINCT user_id) and is NOT additive
+	// across currencies, so it comes from these dedicated rows, never from
+	// summing the per-currency SubscriptionStats.ActiveSubscribers. latestActive
+	// is the newest month in range with data — the per-tier "active" card shows
+	// that month's counts, matching the headline tile rather than summing every
+	// month in the window.
+	activeByPeriod := make(map[string]map[string]int)
+	latestActive := ""
+	for _, a := range activeRows {
+		if activeByPeriod[a.Period] == nil {
+			activeByPeriod[a.Period] = map[string]int{}
+		}
+		activeByPeriod[a.Period][a.ProductID] = a.ActiveSubscribers
+		if a.Period > latestActive {
+			latestActive = a.Period
+		}
+	}
+
+	resp := &adminv1.GetSubscriptionStatsResponse{
+		Stores: &adminv1.SubscriptionStoreBreakdown{},
+	}
+	// Contiguous, zero-filled monthly series.
+	appleRev, googleRev := map[string]int64{}, map[string]int64{}
+	for m := from; m <= to; m = nextMonth(m) {
+		stat := &adminv1.SubscriptionMonthlyStat{Period: m}
+		rev := map[string]int64{}
+		for _, r := range byPeriod[m] {
+			rev[r.Currency] += r.RevenueMicros
+			// NewSubscribers/Renewals/Churned/Trials are event counts, additive
+			// across currencies. ActiveSubscribers is NOT — set below from the
+			// currency-agnostic distinct count.
+			stat.NewSubscribers += int64(r.NewSubscribers)
+			stat.Renewals += int64(r.Renewals)
+			stat.Churned += int64(r.Churned)
+			stat.TrialsStarted += int64(r.TrialsStarted)
+			stat.TrialsConverted += int64(r.TrialsConverted)
+			appleRev[r.Currency] += r.StoreAppleRevenueMicros
+			googleRev[r.Currency] += r.StoreGoogleRevenueMicros
+		}
+		stat.ActiveSubscribers = int64(activeByPeriod[m][""])
+		stat.Revenue = currencyAmounts(rev)
+		resp.Series = append(resp.Series, stat)
+	}
+	resp.Stores.Apple = currencyAmounts(appleRev)
+	resp.Stores.Google = currencyAmounts(googleRev)
+
+	// Per-tier breakdown over the whole range. Revenue and new-subscriber counts
+	// are additive, so they sum across every month/currency in the range. Active
+	// subscribers is a non-additive distinct count, so it is taken from the
+	// latest month's currency-agnostic per-tier row (activeByPeriod[latest]) —
+	// this both avoids inflating a distinct count by summing it across N months
+	// (a user active all N months would otherwise count N times) and matches the
+	// headline "Active subscribers" tile.
+	type tierAgg struct {
+		revenue        map[string]int64
+		newSubscribers int64
+	}
+	tiers := map[string]*tierAgg{}
+	var tierOrder []string
+	for _, t := range tierRows {
+		a, ok := tiers[t.ProductID]
+		if !ok {
+			a = &tierAgg{revenue: map[string]int64{}}
+			tiers[t.ProductID] = a
+			tierOrder = append(tierOrder, t.ProductID)
+		}
+		a.revenue[t.Currency] += t.RevenueMicros
+		a.newSubscribers += int64(t.NewSubscribers)
+	}
+	for _, id := range tierOrder {
+		a := tiers[id]
+		resp.Tiers = append(resp.Tiers, &adminv1.SubscriptionTierBreakdown{
+			ProductId:         id,
+			Revenue:           currencyAmounts(a.revenue),
+			NewSubscribers:    a.newSubscribers,
+			ActiveSubscribers: int64(activeByPeriod[latestActive][id]),
+		})
+	}
+
+	if resp.Tiles, err = h.subscriptionTiles(ctx, project.ID); err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	return connect.NewResponse(resp), nil
+}
+
+// subscriptionTiles computes the headline block: the latest rolled-up month
+// against the one before it.
+func (h *AnalyticsHandler) subscriptionTiles(ctx context.Context, projectID string) (*adminv1.SubscriptionTiles, error) {
+	tiles := &adminv1.SubscriptionTiles{}
+	latest, err := h.store.LatestSubscriptionStatsPeriod(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if latest == "" {
+		return tiles, nil
+	}
+	previous := prevMonth(latest)
+	rows, err := h.store.GetSubscriptionStats(ctx, projectID, previous, latest)
+	if err != nil {
+		return nil, err
+	}
+	active, err := h.store.GetSubscriptionPeriodActive(ctx, projectID, previous, latest)
+	if err != nil {
+		return nil, err
+	}
+	tiles.LatestPeriod = latest
+	thisRev, prevRev := map[string]int64{}, map[string]int64{}
+	for _, r := range rows {
+		switch r.Period {
+		case latest:
+			thisRev[r.Currency] += r.RevenueMicros
+			// Event counts are additive across currencies; active is not (set
+			// below from the currency-agnostic distinct count).
+			tiles.NewSubscribers += int64(r.NewSubscribers)
+			tiles.Churned += int64(r.Churned)
+			tiles.TrialsStarted += int64(r.TrialsStarted)
+			tiles.TrialsConverted += int64(r.TrialsConverted)
+		case previous:
+			prevRev[r.Currency] += r.RevenueMicros
+		}
+	}
+	for _, a := range active {
+		if a.ProductID != "" {
+			continue // "" is the all-products month total
+		}
+		switch a.Period {
+		case latest:
+			tiles.ActiveSubscribers = int64(a.ActiveSubscribers)
+		case previous:
+			tiles.ActiveSubscribersPrevious = int64(a.ActiveSubscribers)
+		}
+	}
+	tiles.RevenueThisMonth = currencyAmounts(thisRev)
+	tiles.RevenuePreviousMonth = currencyAmounts(prevRev)
+	if tiles.TrialsStarted > 0 {
+		// Clamp to 1.0: trials_started and trials_converted are independent
+		// single-month event counts (a trial started in month M-1 can convert in
+		// M), so converted can exceed started in a low-volume or seasonally
+		// shifting month. Report at most 100% rather than a nonsensical ">100%".
+		rate := float64(tiles.TrialsConverted) / float64(tiles.TrialsStarted)
+		if rate > 1 {
+			rate = 1
+		}
+		tiles.TrialConversionRate = rate
+	}
+	return tiles, nil
+}
+
+// statsMonthRange resolves and validates the [from, to] month range,
+// defaulting to defaultStatsRangeMonths months ending at latestMonth.
+func statsMonthRange(fromPeriod, toPeriod, latestMonth string) (from, to string, err error) {
+	to = latestMonth
+	if toPeriod != "" {
+		if _, err = time.Parse(statsMonthFormat, toPeriod); err != nil {
+			return "", "", fmt.Errorf("invalid to_period %q", toPeriod)
+		}
+		to = toPeriod
+	}
+	toT, _ := time.Parse(statsMonthFormat, to)
+	from = toT.AddDate(0, -(defaultStatsRangeMonths - 1), 0).Format(statsMonthFormat)
+	if fromPeriod != "" {
+		if _, err = time.Parse(statsMonthFormat, fromPeriod); err != nil {
+			return "", "", fmt.Errorf("invalid from_period %q", fromPeriod)
+		}
+		from = fromPeriod
+	}
+	if from > to {
+		return "", "", errors.New("from_period is after to_period")
+	}
+	fromT, _ := time.Parse(statsMonthFormat, from)
+	if months := monthsBetween(fromT, toT); months >= maxStatsRangeMonths {
+		return "", "", fmt.Errorf("range longer than %d months", maxStatsRangeMonths)
+	}
+	return from, to, nil
+}
+
+// currencyAmounts turns a currency→micros map into a stable, currency-sorted
+// slice, dropping zero entries so a refunded-to-zero currency does not linger.
+func currencyAmounts(m map[string]int64) []*adminv1.CurrencyAmount {
+	out := make([]*adminv1.CurrencyAmount, 0, len(m))
+	for cur, amt := range m {
+		if amt == 0 {
+			continue
+		}
+		out = append(out, &adminv1.CurrencyAmount{Currency: cur, AmountMicros: amt})
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].Currency < out[j].Currency })
+	return out
+}
+
+func nextMonth(period string) string {
+	t, _ := time.Parse(statsMonthFormat, period)
+	return t.AddDate(0, 1, 0).Format(statsMonthFormat)
+}
+
+func prevMonth(period string) string {
+	t, _ := time.Parse(statsMonthFormat, period)
+	return t.AddDate(0, -1, 0).Format(statsMonthFormat)
+}
+
+func monthsBetween(from, to time.Time) int {
+	return int(to.Year()-from.Year())*12 + int(to.Month()) - int(from.Month())
 }
 
 func (h *AnalyticsHandler) RunRollup(ctx context.Context, req *connect.Request[adminv1.RunRollupRequest]) (*connect.Response[adminv1.RunRollupResponse], error) {

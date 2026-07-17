@@ -38,6 +38,7 @@ type Store interface {
 	store.PaywallStore
 	store.EventStore
 	store.StatsStore
+	store.SubscriptionStatsStore
 	store.EntitlementStore
 	store.ProductStore
 	store.SubscriptionStore

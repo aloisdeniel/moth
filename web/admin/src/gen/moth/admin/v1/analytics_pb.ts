@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/analytics.proto.
  */
 export const file_moth_admin_v1_analytics: GenFile = /*@__PURE__*/
-  fileDesc("Ch1tb3RoL2FkbWluL3YxL2FuYWx5dGljcy5wcm90bxINbW90aC5hZG1pbi52MSJ6Cg9HZXRTdGF0c1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIRCglmcm9tX2RhdGUYAiABKAkSDwoHdG9fZGF0ZRgDIAEoCRIvCgtncmFudWxhcml0eRgEIAEoDjIaLm1vdGguYWRtaW4udjEuR3JhbnVsYXJpdHkizwEKCVN0YXRUaWxlcxITCgt0b3RhbF91c2VycxgBIAEoAxIUCgxuZXdfdXNlcnNfN2QYAiABKAMSHQoVbmV3X3VzZXJzX3ByZXZpb3VzXzdkGAMgASgDEhIKCmxhdGVzdF9kYXUYBCABKAMSFwoPbGF0ZXN0X2RhdV9kYXRlGAUgASgJEhEKCWxvZ2luc183ZBgGIAEoAxIZChFsb2dpbl9mYWlsdXJlc183ZBgHIAEoAxIdChVsb2dpbl9zdWNjZXNzX3JhdGVfN2QYCCABKAEiWQoJRGFpbHlTdGF0EgwKBGRhdGUYASABKAkSDwoHc2lnbnVwcxgCIAEoAxIOCgZsb2dpbnMYAyABKAMSCwoDZGF1GAQgASgDEhAKCGZhaWx1cmVzGAUgASgDIkQKEVByb3ZpZGVyQnJlYWtkb3duEhAKCHBhc3N3b3JkGAEgASgDEg4KBmdvb2dsZRgCIAEoAxINCgVhcHBsZRgDIAEoAyJNChFQbGF0Zm9ybUJyZWFrZG93bhILCgNpb3MYASABKAMSDwoHYW5kcm9pZBgCIAEoAxILCgN3ZWIYAyABKAMSDQoFb3RoZXIYBCABKAMizwEKEEdldFN0YXRzUmVzcG9uc2USJwoFdGlsZXMYASABKAsyGC5tb3RoLmFkbWluLnYxLlN0YXRUaWxlcxIoCgZzZXJpZXMYAiADKAsyGC5tb3RoLmFkbWluLnYxLkRhaWx5U3RhdBIzCglwcm92aWRlcnMYAyABKAsyIC5tb3RoLmFkbWluLnYxLlByb3ZpZGVyQnJlYWtkb3duEjMKCXBsYXRmb3JtcxgEIAEoCzIgLm1vdGguYWRtaW4udjEuUGxhdGZvcm1CcmVha2Rvd24ihwEKBUV2ZW50EgoKAmlkGAEgASgJEgwKBHR5cGUYAiABKAkSDwoHdXNlcl9pZBgDIAEoCRIQCghwcm92aWRlchgEIAEoCRIQCghwbGF0Zm9ybRgFIAEoCRIvCgtjcmVhdGVfdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiPAoXTGlzdFJlY2VudEV2ZW50c1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRINCgVsaW1pdBgCIAEoBSJAChhMaXN0UmVjZW50RXZlbnRzUmVzcG9uc2USJAoGZXZlbnRzGAEgAygLMhQubW90aC5hZG1pbi52MS5FdmVudCImChBSdW5Sb2xsdXBSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkiswEKEVJ1blJvbGx1cFJlc3BvbnNlEg4KBnJ1bl9pZBgBIAEoCRIuCgpzdGFydF90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtmaW5pc2hfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFgoOZGF5c19wcm9jZXNzZWQYBCABKAUSFQoNZXZlbnRzX3BydW5lZBgFIAEoAyo/CgtHcmFudWxhcml0eRIbChdHUkFOVUxBUklUWV9VTlNQRUNJRklFRBAAEhMKD0dSQU5VTEFSSVRZX0RBWRABMpQCChBBbmFseXRpY3NTZXJ2aWNlEksKCEdldFN0YXRzEh4ubW90aC5hZG1pbi52MS5HZXRTdGF0c1JlcXVlc3QaHy5tb3RoLmFkbWluLnYxLkdldFN0YXRzUmVzcG9uc2USYwoQTGlzdFJlY2VudEV2ZW50cxImLm1vdGguYWRtaW4udjEuTGlzdFJlY2VudEV2ZW50c1JlcXVlc3QaJy5tb3RoLmFkbWluLnYxLkxpc3RSZWNlbnRFdmVudHNSZXNwb25zZRJOCglSdW5Sb2xsdXASHy5tb3RoLmFkbWluLnYxLlJ1blJvbGx1cFJlcXVlc3QaIC5tb3RoLmFkbWluLnYxLlJ1blJvbGx1cFJlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hZG1pbi92MTthZG1pbnYxYgZwcm90bzM", [file_google_protobuf_timestamp]);
+  fileDesc("Ch1tb3RoL2FkbWluL3YxL2FuYWx5dGljcy5wcm90bxINbW90aC5hZG1pbi52MSJ6Cg9HZXRTdGF0c1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIRCglmcm9tX2RhdGUYAiABKAkSDwoHdG9fZGF0ZRgDIAEoCRIvCgtncmFudWxhcml0eRgEIAEoDjIaLm1vdGguYWRtaW4udjEuR3JhbnVsYXJpdHkizwEKCVN0YXRUaWxlcxITCgt0b3RhbF91c2VycxgBIAEoAxIUCgxuZXdfdXNlcnNfN2QYAiABKAMSHQoVbmV3X3VzZXJzX3ByZXZpb3VzXzdkGAMgASgDEhIKCmxhdGVzdF9kYXUYBCABKAMSFwoPbGF0ZXN0X2RhdV9kYXRlGAUgASgJEhEKCWxvZ2luc183ZBgGIAEoAxIZChFsb2dpbl9mYWlsdXJlc183ZBgHIAEoAxIdChVsb2dpbl9zdWNjZXNzX3JhdGVfN2QYCCABKAEiWQoJRGFpbHlTdGF0EgwKBGRhdGUYASABKAkSDwoHc2lnbnVwcxgCIAEoAxIOCgZsb2dpbnMYAyABKAMSCwoDZGF1GAQgASgDEhAKCGZhaWx1cmVzGAUgASgDIkQKEVByb3ZpZGVyQnJlYWtkb3duEhAKCHBhc3N3b3JkGAEgASgDEg4KBmdvb2dsZRgCIAEoAxINCgVhcHBsZRgDIAEoAyJNChFQbGF0Zm9ybUJyZWFrZG93bhILCgNpb3MYASABKAMSDwoHYW5kcm9pZBgCIAEoAxILCgN3ZWIYAyABKAMSDQoFb3RoZXIYBCABKAMizwEKEEdldFN0YXRzUmVzcG9uc2USJwoFdGlsZXMYASABKAsyGC5tb3RoLmFkbWluLnYxLlN0YXRUaWxlcxIoCgZzZXJpZXMYAiADKAsyGC5tb3RoLmFkbWluLnYxLkRhaWx5U3RhdBIzCglwcm92aWRlcnMYAyABKAsyIC5tb3RoLmFkbWluLnYxLlByb3ZpZGVyQnJlYWtkb3duEjMKCXBsYXRmb3JtcxgEIAEoCzIgLm1vdGguYWRtaW4udjEuUGxhdGZvcm1CcmVha2Rvd24ihwEKBUV2ZW50EgoKAmlkGAEgASgJEgwKBHR5cGUYAiABKAkSDwoHdXNlcl9pZBgDIAEoCRIQCghwcm92aWRlchgEIAEoCRIQCghwbGF0Zm9ybRgFIAEoCRIvCgtjcmVhdGVfdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAiPAoXTGlzdFJlY2VudEV2ZW50c1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRINCgVsaW1pdBgCIAEoBSJAChhMaXN0UmVjZW50RXZlbnRzUmVzcG9uc2USJAoGZXZlbnRzGAEgAygLMhQubW90aC5hZG1pbi52MS5FdmVudCJZChtHZXRTdWJzY3JpcHRpb25TdGF0c1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRITCgtmcm9tX3BlcmlvZBgCIAEoCRIRCgl0b19wZXJpb2QYAyABKAkiOQoOQ3VycmVuY3lBbW91bnQSEAoIY3VycmVuY3kYASABKAkSFQoNYW1vdW50X21pY3JvcxgCIAEoAyLgAgoRU3Vic2NyaXB0aW9uVGlsZXMSFQoNbGF0ZXN0X3BlcmlvZBgBIAEoCRI5ChJyZXZlbnVlX3RoaXNfbW9udGgYAiADKAsyHS5tb3RoLmFkbWluLnYxLkN1cnJlbmN5QW1vdW50Ej0KFnJldmVudWVfcHJldmlvdXNfbW9udGgYAyADKAsyHS5tb3RoLmFkbWluLnYxLkN1cnJlbmN5QW1vdW50EhoKEmFjdGl2ZV9zdWJzY3JpYmVycxgEIAEoAxIjChthY3RpdmVfc3Vic2NyaWJlcnNfcHJldmlvdXMYBSABKAMSFwoPbmV3X3N1YnNjcmliZXJzGAYgASgDEg8KB2NodXJuZWQYByABKAMSFgoOdHJpYWxzX3N0YXJ0ZWQYCCABKAMSGAoQdHJpYWxzX2NvbnZlcnRlZBgJIAEoAxIdChV0cmlhbF9jb252ZXJzaW9uX3JhdGUYCiABKAEi4wEKF1N1YnNjcmlwdGlvbk1vbnRobHlTdGF0Eg4KBnBlcmlvZBgBIAEoCRIuCgdyZXZlbnVlGAIgAygLMh0ubW90aC5hZG1pbi52MS5DdXJyZW5jeUFtb3VudBIaChJhY3RpdmVfc3Vic2NyaWJlcnMYAyABKAMSFwoPbmV3X3N1YnNjcmliZXJzGAQgASgDEhAKCHJlbmV3YWxzGAUgASgDEg8KB2NodXJuZWQYBiABKAMSFgoOdHJpYWxzX3N0YXJ0ZWQYByABKAMSGAoQdHJpYWxzX2NvbnZlcnRlZBgIIAEoAyKUAQoZU3Vic2NyaXB0aW9uVGllckJyZWFrZG93bhISCgpwcm9kdWN0X2lkGAEgASgJEi4KB3JldmVudWUYAiADKAsyHS5tb3RoLmFkbWluLnYxLkN1cnJlbmN5QW1vdW50EhcKD25ld19zdWJzY3JpYmVycxgDIAEoAxIaChJhY3RpdmVfc3Vic2NyaWJlcnMYBCABKAMieQoaU3Vic2NyaXB0aW9uU3RvcmVCcmVha2Rvd24SLAoFYXBwbGUYASADKAsyHS5tb3RoLmFkbWluLnYxLkN1cnJlbmN5QW1vdW50Ei0KBmdvb2dsZRgCIAMoCzIdLm1vdGguYWRtaW4udjEuQ3VycmVuY3lBbW91bnQi+wEKHEdldFN1YnNjcmlwdGlvblN0YXRzUmVzcG9uc2USLwoFdGlsZXMYASABKAsyIC5tb3RoLmFkbWluLnYxLlN1YnNjcmlwdGlvblRpbGVzEjYKBnNlcmllcxgCIAMoCzImLm1vdGguYWRtaW4udjEuU3Vic2NyaXB0aW9uTW9udGhseVN0YXQSNwoFdGllcnMYAyADKAsyKC5tb3RoLmFkbWluLnYxLlN1YnNjcmlwdGlvblRpZXJCcmVha2Rvd24SOQoGc3RvcmVzGAQgASgLMikubW90aC5hZG1pbi52MS5TdWJzY3JpcHRpb25TdG9yZUJyZWFrZG93biImChBSdW5Sb2xsdXBSZXF1ZXN0EhIKCnByb2plY3RfaWQYASABKAkiswEKEVJ1blJvbGx1cFJlc3BvbnNlEg4KBnJ1bl9pZBgBIAEoCRIuCgpzdGFydF90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtmaW5pc2hfdGltZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASFgoOZGF5c19wcm9jZXNzZWQYBCABKAUSFQoNZXZlbnRzX3BydW5lZBgFIAEoAyo/CgtHcmFudWxhcml0eRIbChdHUkFOVUxBUklUWV9VTlNQRUNJRklFRBAAEhMKD0dSQU5VTEFSSVRZX0RBWRABMoUDChBBbmFseXRpY3NTZXJ2aWNlEksKCEdldFN0YXRzEh4ubW90aC5hZG1pbi52MS5HZXRTdGF0c1JlcXVlc3QaHy5tb3RoLmFkbWluLnYxLkdldFN0YXRzUmVzcG9uc2USYwoQTGlzdFJlY2VudEV2ZW50cxImLm1vdGguYWRtaW4udjEuTGlzdFJlY2VudEV2ZW50c1JlcXVlc3QaJy5tb3RoLmFkbWluLnYxLkxpc3RSZWNlbnRFdmVudHNSZXNwb25zZRJOCglSdW5Sb2xsdXASHy5tb3RoLmFkbWluLnYxLlJ1blJvbGx1cFJlcXVlc3QaIC5tb3RoLmFkbWluLnYxLlJ1blJvbGx1cFJlc3BvbnNlEm8KFEdldFN1YnNjcmlwdGlvblN0YXRzEioubW90aC5hZG1pbi52MS5HZXRTdWJzY3JpcHRpb25TdGF0c1JlcXVlc3QaKy5tb3RoLmFkbWluLnYxLkdldFN1YnNjcmlwdGlvblN0YXRzUmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * @generated from message moth.admin.v1.GetStatsRequest
@@ -370,6 +370,306 @@ export const ListRecentEventsResponseSchema: GenMessage<ListRecentEventsResponse
   messageDesc(file_moth_admin_v1_analytics, 8);
 
 /**
+ * @generated from message moth.admin.v1.GetSubscriptionStatsRequest
+ */
+export type GetSubscriptionStatsRequest = Message<"moth.admin.v1.GetSubscriptionStatsRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * First month of the range, "YYYY-MM" in the project's rollup timezone.
+   *
+   * @generated from field: string from_period = 2;
+   */
+  fromPeriod: string;
+
+  /**
+   * Last month of the range (inclusive), same format.
+   *
+   * @generated from field: string to_period = 3;
+   */
+  toPeriod: string;
+};
+
+/**
+ * Describes the message moth.admin.v1.GetSubscriptionStatsRequest.
+ * Use `create(GetSubscriptionStatsRequestSchema)` to create a new message.
+ */
+export const GetSubscriptionStatsRequestSchema: GenMessage<GetSubscriptionStatsRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 9);
+
+/**
+ * Money is always reported per currency — never blended. amount_micros is
+ * store-reported gross (net of refunds), not net of store commission or tax.
+ *
+ * @generated from message moth.admin.v1.CurrencyAmount
+ */
+export type CurrencyAmount = Message<"moth.admin.v1.CurrencyAmount"> & {
+  /**
+   * ISO-4217 code; empty when the underlying events carried no currency.
+   *
+   * @generated from field: string currency = 1;
+   */
+  currency: string;
+
+  /**
+   * @generated from field: int64 amount_micros = 2;
+   */
+  amountMicros: bigint;
+};
+
+/**
+ * Describes the message moth.admin.v1.CurrencyAmount.
+ * Use `create(CurrencyAmountSchema)` to create a new message.
+ */
+export const CurrencyAmountSchema: GenMessage<CurrencyAmount> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 10);
+
+/**
+ * SubscriptionTiles is the headline block of the subscriptions section — the
+ * current (latest rolled-up) month against the previous one.
+ *
+ * @generated from message moth.admin.v1.SubscriptionTiles
+ */
+export type SubscriptionTiles = Message<"moth.admin.v1.SubscriptionTiles"> & {
+  /**
+   * The latest rolled-up month ("YYYY-MM", empty when no data) these figures
+   * describe, and the month before it for the trend arrows.
+   *
+   * @generated from field: string latest_period = 1;
+   */
+  latestPeriod: string;
+
+  /**
+   * Total revenue this month and last month, per currency (the headline).
+   *
+   * @generated from field: repeated moth.admin.v1.CurrencyAmount revenue_this_month = 2;
+   */
+  revenueThisMonth: CurrencyAmount[];
+
+  /**
+   * @generated from field: repeated moth.admin.v1.CurrencyAmount revenue_previous_month = 3;
+   */
+  revenuePreviousMonth: CurrencyAmount[];
+
+  /**
+   * Active subscribers this month and last: distinct users with an active
+   * event (purchased, renewed or trial_started), counted across all currencies
+   * as a single distinct-user total — never the sum of per-currency counts,
+   * which would double-count a user transacting in more than one currency.
+   *
+   * @generated from field: int64 active_subscribers = 4;
+   */
+  activeSubscribers: bigint;
+
+  /**
+   * @generated from field: int64 active_subscribers_previous = 5;
+   */
+  activeSubscribersPrevious: bigint;
+
+  /**
+   * @generated from field: int64 new_subscribers = 6;
+   */
+  newSubscribers: bigint;
+
+  /**
+   * @generated from field: int64 churned = 7;
+   */
+  churned: bigint;
+
+  /**
+   * @generated from field: int64 trials_started = 8;
+   */
+  trialsStarted: bigint;
+
+  /**
+   * @generated from field: int64 trials_converted = 9;
+   */
+  trialsConverted: bigint;
+
+  /**
+   * trials_converted / trials_started over the latest month, 0..1. Zero when
+   * no trials started — check the raw counts before rendering.
+   *
+   * @generated from field: double trial_conversion_rate = 10;
+   */
+  trialConversionRate: number;
+};
+
+/**
+ * Describes the message moth.admin.v1.SubscriptionTiles.
+ * Use `create(SubscriptionTilesSchema)` to create a new message.
+ */
+export const SubscriptionTilesSchema: GenMessage<SubscriptionTiles> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 11);
+
+/**
+ * SubscriptionMonthlyStat is one month of the time series. Revenue and the
+ * per-store split are per currency; new/renewed/churned/trial counts are event
+ * counts summed across currencies, while active_subscribers is a currency-
+ * agnostic distinct-user count (not a per-currency sum). Months without data
+ * are zero-filled so charts render contiguous ranges.
+ *
+ * @generated from message moth.admin.v1.SubscriptionMonthlyStat
+ */
+export type SubscriptionMonthlyStat = Message<"moth.admin.v1.SubscriptionMonthlyStat"> & {
+  /**
+   * "YYYY-MM" in the project's rollup timezone.
+   *
+   * @generated from field: string period = 1;
+   */
+  period: string;
+
+  /**
+   * Total revenue this month, per currency (net of refunds).
+   *
+   * @generated from field: repeated moth.admin.v1.CurrencyAmount revenue = 2;
+   */
+  revenue: CurrencyAmount[];
+
+  /**
+   * @generated from field: int64 active_subscribers = 3;
+   */
+  activeSubscribers: bigint;
+
+  /**
+   * @generated from field: int64 new_subscribers = 4;
+   */
+  newSubscribers: bigint;
+
+  /**
+   * @generated from field: int64 renewals = 5;
+   */
+  renewals: bigint;
+
+  /**
+   * @generated from field: int64 churned = 6;
+   */
+  churned: bigint;
+
+  /**
+   * @generated from field: int64 trials_started = 7;
+   */
+  trialsStarted: bigint;
+
+  /**
+   * @generated from field: int64 trials_converted = 8;
+   */
+  trialsConverted: bigint;
+};
+
+/**
+ * Describes the message moth.admin.v1.SubscriptionMonthlyStat.
+ * Use `create(SubscriptionMonthlyStatSchema)` to create a new message.
+ */
+export const SubscriptionMonthlyStatSchema: GenMessage<SubscriptionMonthlyStat> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 12);
+
+/**
+ * SubscriptionTierBreakdown is one product's share of the requested range.
+ * Revenue (per currency) and new_subscribers sum over the whole range; because
+ * active_subscribers is a non-additive distinct-user count, it is that
+ * product's currency-agnostic distinct count for the latest month in the range
+ * (matching the headline tile), not a sum across months.
+ *
+ * @generated from message moth.admin.v1.SubscriptionTierBreakdown
+ */
+export type SubscriptionTierBreakdown = Message<"moth.admin.v1.SubscriptionTierBreakdown"> & {
+  /**
+   * Empty for events with no mapped moth product.
+   *
+   * @generated from field: string product_id = 1;
+   */
+  productId: string;
+
+  /**
+   * @generated from field: repeated moth.admin.v1.CurrencyAmount revenue = 2;
+   */
+  revenue: CurrencyAmount[];
+
+  /**
+   * @generated from field: int64 new_subscribers = 3;
+   */
+  newSubscribers: bigint;
+
+  /**
+   * @generated from field: int64 active_subscribers = 4;
+   */
+  activeSubscribers: bigint;
+};
+
+/**
+ * Describes the message moth.admin.v1.SubscriptionTierBreakdown.
+ * Use `create(SubscriptionTierBreakdownSchema)` to create a new message.
+ */
+export const SubscriptionTierBreakdownSchema: GenMessage<SubscriptionTierBreakdown> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 13);
+
+/**
+ * SubscriptionStoreBreakdown splits the range's revenue by store, per currency.
+ *
+ * @generated from message moth.admin.v1.SubscriptionStoreBreakdown
+ */
+export type SubscriptionStoreBreakdown = Message<"moth.admin.v1.SubscriptionStoreBreakdown"> & {
+  /**
+   * @generated from field: repeated moth.admin.v1.CurrencyAmount apple = 1;
+   */
+  apple: CurrencyAmount[];
+
+  /**
+   * @generated from field: repeated moth.admin.v1.CurrencyAmount google = 2;
+   */
+  google: CurrencyAmount[];
+};
+
+/**
+ * Describes the message moth.admin.v1.SubscriptionStoreBreakdown.
+ * Use `create(SubscriptionStoreBreakdownSchema)` to create a new message.
+ */
+export const SubscriptionStoreBreakdownSchema: GenMessage<SubscriptionStoreBreakdown> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 14);
+
+/**
+ * @generated from message moth.admin.v1.GetSubscriptionStatsResponse
+ */
+export type GetSubscriptionStatsResponse = Message<"moth.admin.v1.GetSubscriptionStatsResponse"> & {
+  /**
+   * @generated from field: moth.admin.v1.SubscriptionTiles tiles = 1;
+   */
+  tiles?: SubscriptionTiles | undefined;
+
+  /**
+   * One entry per month in [from_period, to_period], oldest first, zero-filled.
+   *
+   * @generated from field: repeated moth.admin.v1.SubscriptionMonthlyStat series = 2;
+   */
+  series: SubscriptionMonthlyStat[];
+
+  /**
+   * Per-tier revenue/subscriber breakdown over the requested range.
+   *
+   * @generated from field: repeated moth.admin.v1.SubscriptionTierBreakdown tiers = 3;
+   */
+  tiers: SubscriptionTierBreakdown[];
+
+  /**
+   * Per-store revenue breakdown over the requested range.
+   *
+   * @generated from field: moth.admin.v1.SubscriptionStoreBreakdown stores = 4;
+   */
+  stores?: SubscriptionStoreBreakdown | undefined;
+};
+
+/**
+ * Describes the message moth.admin.v1.GetSubscriptionStatsResponse.
+ * Use `create(GetSubscriptionStatsResponseSchema)` to create a new message.
+ */
+export const GetSubscriptionStatsResponseSchema: GenMessage<GetSubscriptionStatsResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_analytics, 15);
+
+/**
  * @generated from message moth.admin.v1.RunRollupRequest
  */
 export type RunRollupRequest = Message<"moth.admin.v1.RunRollupRequest"> & {
@@ -386,7 +686,7 @@ export type RunRollupRequest = Message<"moth.admin.v1.RunRollupRequest"> & {
  * Use `create(RunRollupRequestSchema)` to create a new message.
  */
 export const RunRollupRequestSchema: GenMessage<RunRollupRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_analytics, 9);
+  messageDesc(file_moth_admin_v1_analytics, 16);
 
 /**
  * RunRollupResponse summarizes the completed run (also recorded server-side
@@ -430,7 +730,7 @@ export type RunRollupResponse = Message<"moth.admin.v1.RunRollupResponse"> & {
  * Use `create(RunRollupResponseSchema)` to create a new message.
  */
 export const RunRollupResponseSchema: GenMessage<RunRollupResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_analytics, 10);
+  messageDesc(file_moth_admin_v1_analytics, 17);
 
 /**
  * Granularity selects the time-series bucket size. Only daily buckets are
@@ -501,6 +801,22 @@ export const AnalyticsService: GenService<{
     methodKind: "unary";
     input: typeof RunRollupRequestSchema;
     output: typeof RunRollupResponseSchema;
+  },
+  /**
+   * GetSubscriptionStats returns the milestone-14 subscription revenue tiles,
+   * the per-month time series and the per-tier / per-store breakdowns for one
+   * project over [from_period, to_period] (inclusive, "YYYY-MM"). Like
+   * GetStats, every number comes from the pre-aggregated monthly rollup
+   * (subscription_monthly_stats / subscription_tier_stats) — this RPC never
+   * scans the raw subscription_events stream. Money is store-reported gross,
+   * reported per currency and never blended across currencies (no FX).
+   *
+   * @generated from rpc moth.admin.v1.AnalyticsService.GetSubscriptionStats
+   */
+  getSubscriptionStats: {
+    methodKind: "unary";
+    input: typeof GetSubscriptionStatsRequestSchema;
+    output: typeof GetSubscriptionStatsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_moth_admin_v1_analytics, 0);

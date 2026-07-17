@@ -199,9 +199,36 @@ func (h *Handler) applyNormalized(ctx context.Context, projectID, userID string,
 		return store.Subscription{}, err
 	}
 	if emitEvent && wasNew {
-		h.emitEvent(ctx, projectID, stored, product, subscriptionEventType(norm.Status))
+		price, currency := eventPrice(norm, product)
+		h.emitEvent(ctx, projectID, stored, price, currency, subscriptionEventType(norm.Status))
+	}
+	// Trial-to-paid conversion: an existing trialing subscription that the store
+	// now reports as active. This is what feeds the trial-to-paid dashboard —
+	// no store webhook maps to "converted", so moth derives it from the status
+	// transition. The status flip is persisted by UpsertSubscription above, so
+	// whichever path (SubmitPurchase, restore or webhook) observes the flip
+	// first emits exactly once; later observers see active→active and do not.
+	// The paid charge's revenue rides the accompanying renewal event; this
+	// event is a count only.
+	if !wasNew && existing.Status == store.SubscriptionStatusTrialing &&
+		norm.Status == store.SubscriptionStatusActive {
+		h.emitEvent(ctx, projectID, stored, 0, "", store.SubscriptionEventConverted)
 	}
 	return stored, nil
+}
+
+// eventPrice resolves the revenue amount + currency for an emitted event: the
+// store-reported transaction price when the store supplied one (the
+// storefront-localized amount the buyer actually paid), otherwise the moth
+// catalog price for the mapped product. Falling back to the catalog keeps a
+// receipt from an older SDK — or a store that omits price — from booking zero
+// revenue, while store-reported prices make per-currency revenue honest across
+// storefronts.
+func eventPrice(norm billing.NormalizedSubscription, product store.Product) (int64, string) {
+	if norm.PriceAmountMicros > 0 && norm.Currency != "" {
+		return norm.PriceAmountMicros, norm.Currency
+	}
+	return product.PriceAmountMicros, product.Currency
 }
 
 // matchProduct resolves a store SKU to a moth product for the given store. It
@@ -231,8 +258,9 @@ func subscriptionEventType(status string) string {
 }
 
 // emitEvent writes one revenue event (best effort; a failure is logged, never
-// surfaced). price/currency come from the mapped product when known.
-func (h *Handler) emitEvent(ctx context.Context, projectID string, sub store.Subscription, product store.Product, eventType string) {
+// surfaced). priceMicros/currency are store-reported when available, otherwise
+// the mapped catalog product's (see eventPrice); count-only events pass 0/"".
+func (h *Handler) emitEvent(ctx context.Context, projectID string, sub store.Subscription, priceMicros int64, currency, eventType string) {
 	e := store.SubscriptionEvent{
 		ID:                authrpc.NewID(),
 		ProjectID:         projectID,
@@ -240,8 +268,8 @@ func (h *Handler) emitEvent(ctx context.Context, projectID string, sub store.Sub
 		UserID:            sub.UserID,
 		ProductID:         sub.ProductID,
 		Store:             sub.Store,
-		PriceAmountMicros: product.PriceAmountMicros,
-		Currency:          product.Currency,
+		PriceAmountMicros: priceMicros,
+		Currency:          currency,
 		Environment:       sub.Environment,
 		CreatedAt:         h.now(),
 	}

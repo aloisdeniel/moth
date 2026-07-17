@@ -152,7 +152,14 @@ export function LineChart({
   const innerW = Math.max(0, width - pad.left - pad.right);
   const innerH = height - pad.top - pad.bottom;
   const x = (i: number) => pad.left + (n <= 1 ? innerW / 2 : (i * innerW) / (n - 1));
-  const y = (v: number) => pad.top + innerH - (v / yMax) * innerH;
+  // Clamp to the plot band so a net-negative point (e.g. a refund-heavy revenue
+  // month) sits on the baseline instead of drawing below the axis / off-canvas
+  // and breaking the area path and hover circle. The tooltip still shows the
+  // true (possibly negative) value.
+  const y = (v: number) => {
+    const raw = pad.top + innerH - (v / yMax) * innerH;
+    return Math.max(pad.top, Math.min(pad.top + innerH, raw));
+  };
 
   function onMove(e: React.MouseEvent<SVGSVGElement>) {
     if (n === 0 || innerW <= 0) return;
@@ -313,11 +320,17 @@ export function LineChart({
 // Identity is carried by position and label (fixed order per entity), so
 // the fills stay on the single chart hue — no categorical palette needed.
 export function BarBreakdown({ items }: { items: { label: string; value: number }[] }) {
-  const total = items.reduce((sum, it) => sum + it.value, 0);
+  // Share is of total magnitude (sum of absolute values), so a net-negative
+  // entry — a refund-heavy store/tier revenue — does not blow the track up:
+  // its share stays a sane percentage and the fill width is clamped to
+  // [0, 100] rather than going CSS-invalid negative or overflowing past 100%.
+  // For the all-non-negative auth breakdowns this is identical to a plain sum.
+  const total = items.reduce((sum, it) => sum + Math.abs(it.value), 0);
   return (
     <div className="bars">
       {items.map((it) => {
         const pct = total > 0 ? (it.value / total) * 100 : 0;
+        const width = Math.max(0, Math.min(100, pct));
         return (
           <div
             key={it.label}
@@ -326,7 +339,7 @@ export function BarBreakdown({ items }: { items: { label: string; value: number 
           >
             <span className="bars__label">{it.label}</span>
             <div className="bars__track">
-              <div className="bars__fill" style={{ width: `${pct}%` }} />
+              <div className="bars__fill" style={{ width: `${width}%` }} />
             </div>
             <span className="bars__value">
               {it.value} · {Math.round(pct)}%

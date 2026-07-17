@@ -82,6 +82,79 @@ func TestSubmitPurchaseAppleTrialEmitsTrialStarted(t *testing.T) {
 	assertEventCount(t, f, store.SubscriptionEventTrialStarted, 1)
 }
 
+// TestSubmitPurchaseAppleStoreReportedPrice guards finding 4: revenue must be
+// the store-reported transaction amount (storefront-localized), not moth's
+// single catalog list price. The catalog product is 4_990_000 USD; the Apple
+// transaction reports a UK buyer paying 8_990 milliunits GBP.
+func TestSubmitPurchaseAppleStoreReportedPrice(t *testing.T) {
+	f := newFixture(t)
+	txn := appleTxn("orig-gbp", "com.demo.monthly", f.now.Add(30*24*time.Hour), 0, 0)
+	txn["price"] = 8990 // milliunits => 8_990_000 micros
+	txn["currency"] = "GBP"
+	dbl := f.appleStatusDouble(1, txn)
+	f.setAppleCreds(dbl.URL)
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:   billingv1.Store_STORE_APPLE,
+		Receipt: &billingv1.SubmitPurchaseRequest_AppleJwsTransaction{AppleJwsTransaction: f.ca.signJWS(t, txn)},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := storeRawEventRows(f)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("want 1 event, got %+v", rows)
+	}
+	if rows[0].Type != store.SubscriptionEventPurchased ||
+		rows[0].PriceAmountMicros != 8_990_000 || rows[0].Currency != "GBP" {
+		t.Fatalf("event = %+v, want store-reported 8990000 GBP", rows[0])
+	}
+}
+
+// TestSubmitPurchaseAppleTrialConversion guards findings 5/10: a trialing
+// subscription that the store later reports active emits exactly one
+// subscription.converted event (and no second acquisition event), feeding the
+// trial-to-paid dashboard the production engine otherwise never populates.
+func TestSubmitPurchaseAppleTrialConversion(t *testing.T) {
+	f := newFixture(t)
+	// 1) Trial start: status code 1 + offerType!=0 => trialing.
+	trial := appleTxn("orig-conv", "com.demo.monthly", f.now.Add(7*24*time.Hour), 1, 0)
+	dbl := f.appleStatusDouble(1, trial)
+	f.setAppleCreds(dbl.URL)
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:   billingv1.Store_STORE_APPLE,
+		Receipt: &billingv1.SubmitPurchaseRequest_AppleJwsTransaction{AppleJwsTransaction: f.ca.signJWS(t, trial)},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	assertEventCount(t, f, store.SubscriptionEventTrialStarted, 1)
+
+	// 2) Same original transaction now active (offerType 0). The double must
+	// serve the active transaction so the authoritative re-read flips the sub.
+	paid := appleTxn("orig-conv", "com.demo.monthly", f.now.Add(30*24*time.Hour), 0, 0)
+	f.h.appleBaseURL = f.appleStatusDouble(1, paid).URL
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:   billingv1.Store_STORE_APPLE,
+		Receipt: &billingv1.SubmitPurchaseRequest_AppleJwsTransaction{AppleJwsTransaction: f.ca.signJWS(t, paid)},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	assertEventCount(t, f, store.SubscriptionEventConverted, 1)
+	// No spurious second acquisition event (still exactly one trial_started, no purchased).
+	assertEventCount(t, f, store.SubscriptionEventTrialStarted, 1)
+	assertEventCount(t, f, store.SubscriptionEventPurchased, 0)
+
+	// 3) A further active re-read (active -> active) must NOT re-emit converted.
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:   billingv1.Store_STORE_APPLE,
+		Receipt: &billingv1.SubmitPurchaseRequest_AppleJwsTransaction{AppleJwsTransaction: f.ca.signJWS(t, paid)},
+	})); err != nil {
+		t.Fatal(err)
+	}
+	assertEventCount(t, f, store.SubscriptionEventConverted, 1)
+}
+
 func TestSubmitPurchaseAppleWrongBundleRejected(t *testing.T) {
 	f := newFixture(t)
 	dbl := f.appleStatusDouble(1, appleTxn("orig-x", "com.demo.monthly", f.now.Add(time.Hour), 0, 0))

@@ -1,4 +1,4 @@
-import type { StatTiles } from "../gen/moth/admin/v1/analytics_pb";
+import type { StatTiles, SubscriptionTiles } from "../gen/moth/admin/v1/analytics_pb";
 
 // Shared thresholds for the "login failures elevated" ops signal (project
 // overview banner, analytics tab banner + tile, projects-list badge). The
@@ -19,5 +19,29 @@ export function failuresElevated(tiles: StatTiles | undefined): boolean {
     tiles !== undefined &&
     loginAttempts7d(tiles) >= FAILURE_MIN_ATTEMPTS &&
     tiles.loginSuccessRate7d < FAILURE_RATE_THRESHOLD
+  );
+}
+
+// Thresholds for the subscription "elevated churn" ops signal, mirroring the
+// login-failure banner. Churn needs a subscriber base to be a signal, not
+// noise: below this many active subscribers last month a bad ratio is
+// statistically meaningless.
+export const CHURN_MIN_ACTIVE = 20;
+export const CHURN_RATE_THRESHOLD = 0.25;
+
+// monthlyChurnRate is churned / previous-month active subscribers, 0..1.
+export function monthlyChurnRate(tiles: SubscriptionTiles | undefined): number {
+  if (!tiles) return 0;
+  const prev = Number(tiles.activeSubscribersPrevious);
+  return prev > 0 ? Number(tiles.churned) / prev : 0;
+}
+
+// churnElevated reports whether the elevated-churn / failed-renewal banner
+// should show: enough of a base to matter, and a churn rate over threshold.
+export function churnElevated(tiles: SubscriptionTiles | undefined): boolean {
+  return (
+    tiles !== undefined &&
+    Number(tiles.activeSubscribersPrevious) >= CHURN_MIN_ACTIVE &&
+    monthlyChurnRate(tiles) >= CHURN_RATE_THRESHOLD
   );
 }

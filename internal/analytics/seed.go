@@ -127,6 +127,156 @@ func Seed(ctx context.Context, st store.EventStore, p store.Project, o SeedOptio
 	return total, nil
 }
 
+// seedTier is one synthetic subscription product for the revenue seed. The
+// ids reference no products row (subscription_events.product_id is plain TEXT),
+// so the data is for dashboards and tests, not for entitlement derivation.
+type seedTier struct {
+	product  string
+	currency string
+	price    int64 // store-reported price in micros
+}
+
+var seedTiers = []seedTier{
+	{"seed-monthly", "USD", 9_990_000},     // $9.99
+	{"seed-yearly", "USD", 79_990_000},     // $79.99
+	{"seed-monthly-eur", "EUR", 9_990_000}, // €9.99
+}
+
+// seedSub is a live synthetic subscription the generator renews/refunds/churns
+// over time, so per-user active counts and renewal revenue stay coherent.
+type seedSub struct {
+	user  string
+	tier  seedTier
+	store string
+	env   string
+}
+
+// SeedSubscriptions inserts a deterministic synthetic subscription-event
+// history for one project: trials and direct purchases that renew month over
+// month, a slice of trials converting to paid, a low rate of cancellations,
+// expiries and refunds, spread across two stores, three tiers and two
+// currencies — plus a small share of sandbox events (excluded from production
+// dashboards). It writes raw events only; run a Rollup afterwards to
+// materialize the monthly stats. It returns how many events were inserted.
+//
+// The stream is internally consistent with the milestone-14 rollup's exact
+// event consumption (see internal/store/subscription_analytics.go), so tests
+// can cross-check the rollup against independent SQL over these rows.
+func SeedSubscriptions(ctx context.Context, st store.SubscriptionEventStore, p store.Project, o SeedOptions) (int, error) {
+	if o.Days <= 0 {
+		o.Days = 90
+	}
+	if o.Seed == 0 {
+		o.Seed = 1
+	}
+	if o.Now == nil {
+		o.Now = time.Now
+	}
+	// Offset the PCG seed from the auth seed so the two streams are
+	// independent yet each deterministic in o.Seed.
+	rng := rand.New(rand.NewPCG(o.Seed, o.Seed^0x5eed))
+	loc := p.Settings.RollupLocation()
+	now := o.Now().In(loc)
+
+	stores := []string{store.SubscriptionStoreApple, store.SubscriptionStoreGoogle}
+
+	var (
+		live    []seedSub
+		batch   []store.SubscriptionEvent
+		total   int
+		eventID int
+		userSeq int
+	)
+	emit := func(day time.Time, typ, userID string, s seedSub, price int64) {
+		eventID++
+		at := day.Add(time.Duration(rng.Int64N(int64(24 * time.Hour))))
+		batch = append(batch, store.SubscriptionEvent{
+			ID:                fmt.Sprintf("seed-sub-%s-%06d", p.ID, eventID),
+			ProjectID:         p.ID,
+			Type:              typ,
+			UserID:            userID,
+			ProductID:         s.tier.product,
+			Store:             s.store,
+			PriceAmountMicros: price,
+			Currency:          s.tier.currency,
+			Environment:       s.env,
+			CreatedAt:         at.UTC(),
+		})
+	}
+	newSub := func(day time.Time) seedSub {
+		userSeq++
+		env := store.SubscriptionEnvironmentProduction
+		if rng.Float64() < 0.08 { // a few sandbox subs, excluded from prod dashboards
+			env = store.SubscriptionEnvironmentSandbox
+		}
+		return seedSub{
+			user:  fmt.Sprintf("seed-sub-user-%d", userSeq),
+			tier:  seedTiers[rng.IntN(len(seedTiers))],
+			store: stores[rng.IntN(len(stores))],
+			env:   env,
+		}
+	}
+
+	for d := 0; d < o.Days; d++ {
+		age := o.Days - 1 - d
+		day := time.Date(now.Year(), now.Month(), now.Day()-1-age, 0, 0, 0, 0, loc)
+		growth := 1.0 + 2.0*float64(d)/float64(o.Days)
+
+		// New trials and direct purchases each day.
+		trials := int(float64(1+rng.IntN(2)) * growth)
+		for i := 0; i < trials; i++ {
+			s := newSub(day)
+			emit(day, store.SubscriptionEventTrialStarted, s.user, s, 0)
+			// Some trials convert to paid immediately in the seed's timeline.
+			if rng.Float64() < 0.5 {
+				emit(day, store.SubscriptionEventConverted, s.user, s, 0)
+				emit(day, store.SubscriptionEventRenewed, s.user, s, s.tier.price)
+				live = append(live, s)
+			}
+		}
+		purchases := int(float64(1+rng.IntN(3)) * growth)
+		for i := 0; i < purchases; i++ {
+			s := newSub(day)
+			emit(day, store.SubscriptionEventPurchased, s.user, s, s.tier.price)
+			live = append(live, s)
+		}
+
+		// Renewals, churn and refunds off the live pool.
+		if len(live) > 0 {
+			renewals := min(len(live), int(float64(2+rng.IntN(4))*growth))
+			for i := 0; i < renewals; i++ {
+				s := live[rng.IntN(len(live))]
+				emit(day, store.SubscriptionEventRenewed, s.user, s, s.tier.price)
+			}
+			// Refund: subtract a prior charge from the month it lands in.
+			if rng.Float64() < 0.15 {
+				s := live[rng.IntN(len(live))]
+				emit(day, store.SubscriptionEventRefunded, s.user, s, s.tier.price)
+			}
+			// Churn: expire or cancel one, removing it from the pool.
+			if rng.Float64() < 0.2 {
+				idx := rng.IntN(len(live))
+				s := live[idx]
+				typ := store.SubscriptionEventExpired
+				if rng.Float64() < 0.5 {
+					typ = store.SubscriptionEventCanceled // ignored by the rollup
+				}
+				emit(day, typ, s.user, s, 0)
+				live = append(live[:idx], live[idx+1:]...)
+			}
+		}
+
+		if len(batch) >= 500 || d == o.Days-1 {
+			if err := st.InsertSubscriptionEvents(ctx, batch); err != nil {
+				return total, fmt.Errorf("seed subscription events: %w", err)
+			}
+			total += len(batch)
+			batch = batch[:0]
+		}
+	}
+	return total, nil
+}
+
 // weighted is a tiny weighted picker for provider/platform distributions.
 type weighted []struct {
 	value  string

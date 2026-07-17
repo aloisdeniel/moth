@@ -45,3 +45,21 @@ export function dayAgo(n: number): string {
   d.setDate(d.getDate() - n);
   return localDay(d);
 }
+
+// monthKey renders a Date as "YYYY-MM" in the browser's timezone — the
+// client-side stand-in for the project's rollup timezone when composing
+// monthly analytics ranges.
+export function monthKey(d: Date): string {
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${d.getFullYear()}-${m}`;
+}
+
+// monthAgo returns the local "YYYY-MM" n months before the current month
+// (0 = this month). Day is pinned to the 1st so month arithmetic never
+// overflows (e.g. Mar 31 minus one month).
+export function monthAgo(n: number): string {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - n);
+  return monthKey(d);
+}

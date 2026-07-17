@@ -56,6 +56,12 @@ type JWSTransaction struct {
 	// RevocationDate is set when Apple revoked the purchase (refund, family
 	// removal). Non-zero => revoked.
 	RevocationDate int64 `json:"revocationDate"`
+	// Price is the store-reported price in milliunits (thousandths) of Currency,
+	// as the buyer's storefront charged it. Currency is the ISO-4217 code. Both
+	// are present on StoreKit 2 transactions since 2023; zero/empty on older
+	// receipts, in which case the caller falls back to the catalog price.
+	Price    int64  `json:"price"`
+	Currency string `json:"currency"`
 }
 
 // JWSRenewalInfo is the JWSRenewalInfoDecodedPayload subset moth reads from a
@@ -203,6 +209,13 @@ func normalizeAppleSubscription(txn *JWSTransaction, ri *JWSRenewalInfo, status 
 		sub.SubscriptionID = txn.SubscriptionGroupIdentifier
 		sub.CurrentPeriodEnd = appleMillisToTime(txn.ExpiresDate)
 		sub.Environment = normalizeAppleEnv(txn.Environment)
+		// Apple reports price in milliunits (thousandths); moth stores micros
+		// (millionths), so scale by 1000. The storefront currency comes straight
+		// from the transaction.
+		if txn.Price > 0 && txn.Currency != "" {
+			sub.PriceAmountMicros = txn.Price * 1000
+			sub.Currency = txn.Currency
+		}
 		raw, _ := json.Marshal(txn)
 		sub.RawState = raw
 	}

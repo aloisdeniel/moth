@@ -21,6 +21,14 @@ import (
 // dateFormat is the calendar-day key of daily_stats rows.
 const dateFormat = "2006-01-02"
 
+// monthFormat is the period key of subscription_monthly_stats rows.
+const monthFormat = "2006-01"
+
+// maxBackfillMonths bounds how far back a project's *first* subscription
+// rollup re-aggregates (the month analogue of maxBackfillDays), capping the
+// retention-derived backfill window.
+const maxBackfillMonths = 60
+
 // maxBackfillDays bounds how far back a project's *first* rollup
 // re-aggregates: at most its retention window (older days may already have
 // had their raw events pruned, so re-rolling them would overwrite good rows
@@ -36,6 +44,7 @@ type Store interface {
 	ListProjects(ctx context.Context) ([]store.Project, error)
 	DeleteEventsBefore(ctx context.Context, projectID string, cutoff time.Time) (int64, error)
 	store.StatsStore
+	store.SubscriptionStatsStore
 }
 
 // Rollup is the aggregate-and-prune job.
@@ -180,7 +189,91 @@ func (r *Rollup) rollupProject(ctx context.Context, p store.Project) (int, int64
 	if err != nil {
 		return days, 0, err
 	}
-	return days, pruned, nil
+
+	// Subscription revenue rollup runs alongside the auth rollup, in the same
+	// project timezone and with the same retention sweep. Its pruned events are
+	// folded into the run's EventsPruned total.
+	subPruned, err := r.rollupSubscriptions(ctx, p, loc, localNow, retention)
+	if err != nil {
+		return days, pruned, err
+	}
+	return days, pruned + subPruned, nil
+}
+
+// rollupSubscriptions materializes subscription_monthly_stats /
+// subscription_tier_stats for one project and prunes its expired raw
+// subscription_events. Unlike the daily auth rollup — which stops at yesterday
+// because a partial day's DAU is noise — it re-aggregates through the *current*
+// month so the "revenue this month" headline accrues live; re-rolling a month
+// is idempotent. Sandbox events are excluded, so the rollup holds production
+// figures only. It returns how many raw events were pruned.
+func (r *Rollup) rollupSubscriptions(ctx context.Context, p store.Project, loc *time.Location, localNow time.Time, retention int) (int64, error) {
+	current := localNow.Format(monthFormat)
+
+	// First rollup backfills at most the retention window (older months may
+	// already have had their raw events pruned); once a month is on record the
+	// job resumes from it, re-rolling it to catch cross-boundary flushes.
+	backfillMonths := retention/28 + 2
+	if backfillMonths > maxBackfillMonths {
+		backfillMonths = maxBackfillMonths
+	}
+	start := addMonths(current, -(backfillMonths - 1))
+	last, err := r.store.LatestSubscriptionStatsPeriod(ctx, p.ID)
+	if err != nil {
+		return 0, err
+	}
+	if last != "" {
+		// Resume from the newest recorded month, wherever it is (earlier than
+		// the backfill window after a long outage, later on a routine run).
+		start = last
+	}
+
+	for m := start; m <= current; m = addMonths(m, 1) {
+		if ctx.Err() != nil {
+			return 0, ctx.Err()
+		}
+		from, to, err := store.MonthWindow(m, loc)
+		if err != nil {
+			return 0, err
+		}
+		stats, tiers, periodActive, err := r.store.AggregateSubscription(ctx, p.ID, m, from, to, false)
+		if err != nil {
+			return 0, err
+		}
+		if err := r.store.UpsertSubscriptionStats(ctx, p.ID, m, stats, tiers, periodActive); err != nil {
+			return 0, err
+		}
+	}
+
+	// Retention prune, guarded so it never reaches into a month the next run
+	// still re-rolls: the resume point is the newest recorded month (the
+	// current month on a routine run), whose raw events must survive to be
+	// re-aggregated. Mirrors the daily prune's newest-day guard.
+	guard, err := r.store.LatestSubscriptionStatsPeriod(ctx, p.ID)
+	if err != nil {
+		return 0, err
+	}
+	if guard == "" {
+		guard = current
+	}
+	guardFrom, _, err := store.MonthWindow(guard, loc)
+	if err != nil {
+		return 0, err
+	}
+	cutoff := r.now().AddDate(0, 0, -retention)
+	if cutoff.After(guardFrom) {
+		cutoff = guardFrom
+	}
+	return r.store.DeleteSubscriptionEventsBefore(ctx, p.ID, cutoff)
+}
+
+// addMonths returns period ("YYYY-MM") shifted by n calendar months.
+func addMonths(period string, n int) string {
+	t, err := time.Parse(monthFormat, period)
+	if err != nil {
+		return period
+	}
+	return t.AddDate(0, n, 0).Format(monthFormat)
 }
 
 // How often the scheduled job fires, and the random extra delay spread on

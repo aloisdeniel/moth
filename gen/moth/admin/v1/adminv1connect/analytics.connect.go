@@ -42,6 +42,9 @@ const (
 	// AnalyticsServiceRunRollupProcedure is the fully-qualified name of the AnalyticsService's
 	// RunRollup RPC.
 	AnalyticsServiceRunRollupProcedure = "/moth.admin.v1.AnalyticsService/RunRollup"
+	// AnalyticsServiceGetSubscriptionStatsProcedure is the fully-qualified name of the
+	// AnalyticsService's GetSubscriptionStats RPC.
+	AnalyticsServiceGetSubscriptionStatsProcedure = "/moth.admin.v1.AnalyticsService/GetSubscriptionStats"
 )
 
 // AnalyticsServiceClient is a client for the moth.admin.v1.AnalyticsService service.
@@ -57,6 +60,14 @@ type AnalyticsServiceClient interface {
 	// project or the whole instance — and returns the run summary. The same
 	// job also runs nightly; re-rolling a day is idempotent.
 	RunRollup(context.Context, *connect.Request[v1.RunRollupRequest]) (*connect.Response[v1.RunRollupResponse], error)
+	// GetSubscriptionStats returns the milestone-14 subscription revenue tiles,
+	// the per-month time series and the per-tier / per-store breakdowns for one
+	// project over [from_period, to_period] (inclusive, "YYYY-MM"). Like
+	// GetStats, every number comes from the pre-aggregated monthly rollup
+	// (subscription_monthly_stats / subscription_tier_stats) — this RPC never
+	// scans the raw subscription_events stream. Money is store-reported gross,
+	// reported per currency and never blended across currencies (no FX).
+	GetSubscriptionStats(context.Context, *connect.Request[v1.GetSubscriptionStatsRequest]) (*connect.Response[v1.GetSubscriptionStatsResponse], error)
 }
 
 // NewAnalyticsServiceClient constructs a client for the moth.admin.v1.AnalyticsService service. By
@@ -88,14 +99,21 @@ func NewAnalyticsServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(analyticsServiceMethods.ByName("RunRollup")),
 			connect.WithClientOptions(opts...),
 		),
+		getSubscriptionStats: connect.NewClient[v1.GetSubscriptionStatsRequest, v1.GetSubscriptionStatsResponse](
+			httpClient,
+			baseURL+AnalyticsServiceGetSubscriptionStatsProcedure,
+			connect.WithSchema(analyticsServiceMethods.ByName("GetSubscriptionStats")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // analyticsServiceClient implements AnalyticsServiceClient.
 type analyticsServiceClient struct {
-	getStats         *connect.Client[v1.GetStatsRequest, v1.GetStatsResponse]
-	listRecentEvents *connect.Client[v1.ListRecentEventsRequest, v1.ListRecentEventsResponse]
-	runRollup        *connect.Client[v1.RunRollupRequest, v1.RunRollupResponse]
+	getStats             *connect.Client[v1.GetStatsRequest, v1.GetStatsResponse]
+	listRecentEvents     *connect.Client[v1.ListRecentEventsRequest, v1.ListRecentEventsResponse]
+	runRollup            *connect.Client[v1.RunRollupRequest, v1.RunRollupResponse]
+	getSubscriptionStats *connect.Client[v1.GetSubscriptionStatsRequest, v1.GetSubscriptionStatsResponse]
 }
 
 // GetStats calls moth.admin.v1.AnalyticsService.GetStats.
@@ -113,6 +131,11 @@ func (c *analyticsServiceClient) RunRollup(ctx context.Context, req *connect.Req
 	return c.runRollup.CallUnary(ctx, req)
 }
 
+// GetSubscriptionStats calls moth.admin.v1.AnalyticsService.GetSubscriptionStats.
+func (c *analyticsServiceClient) GetSubscriptionStats(ctx context.Context, req *connect.Request[v1.GetSubscriptionStatsRequest]) (*connect.Response[v1.GetSubscriptionStatsResponse], error) {
+	return c.getSubscriptionStats.CallUnary(ctx, req)
+}
+
 // AnalyticsServiceHandler is an implementation of the moth.admin.v1.AnalyticsService service.
 type AnalyticsServiceHandler interface {
 	// GetStats returns the stat tiles, the per-day time series and the
@@ -126,6 +149,14 @@ type AnalyticsServiceHandler interface {
 	// project or the whole instance — and returns the run summary. The same
 	// job also runs nightly; re-rolling a day is idempotent.
 	RunRollup(context.Context, *connect.Request[v1.RunRollupRequest]) (*connect.Response[v1.RunRollupResponse], error)
+	// GetSubscriptionStats returns the milestone-14 subscription revenue tiles,
+	// the per-month time series and the per-tier / per-store breakdowns for one
+	// project over [from_period, to_period] (inclusive, "YYYY-MM"). Like
+	// GetStats, every number comes from the pre-aggregated monthly rollup
+	// (subscription_monthly_stats / subscription_tier_stats) — this RPC never
+	// scans the raw subscription_events stream. Money is store-reported gross,
+	// reported per currency and never blended across currencies (no FX).
+	GetSubscriptionStats(context.Context, *connect.Request[v1.GetSubscriptionStatsRequest]) (*connect.Response[v1.GetSubscriptionStatsResponse], error)
 }
 
 // NewAnalyticsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -153,6 +184,12 @@ func NewAnalyticsServiceHandler(svc AnalyticsServiceHandler, opts ...connect.Han
 		connect.WithSchema(analyticsServiceMethods.ByName("RunRollup")),
 		connect.WithHandlerOptions(opts...),
 	)
+	analyticsServiceGetSubscriptionStatsHandler := connect.NewUnaryHandler(
+		AnalyticsServiceGetSubscriptionStatsProcedure,
+		svc.GetSubscriptionStats,
+		connect.WithSchema(analyticsServiceMethods.ByName("GetSubscriptionStats")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.admin.v1.AnalyticsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AnalyticsServiceGetStatsProcedure:
@@ -161,6 +198,8 @@ func NewAnalyticsServiceHandler(svc AnalyticsServiceHandler, opts ...connect.Han
 			analyticsServiceListRecentEventsHandler.ServeHTTP(w, r)
 		case AnalyticsServiceRunRollupProcedure:
 			analyticsServiceRunRollupHandler.ServeHTTP(w, r)
+		case AnalyticsServiceGetSubscriptionStatsProcedure:
+			analyticsServiceGetSubscriptionStatsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -180,4 +219,8 @@ func (UnimplementedAnalyticsServiceHandler) ListRecentEvents(context.Context, *c
 
 func (UnimplementedAnalyticsServiceHandler) RunRollup(context.Context, *connect.Request[v1.RunRollupRequest]) (*connect.Response[v1.RunRollupResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.AnalyticsService.RunRollup is not implemented"))
+}
+
+func (UnimplementedAnalyticsServiceHandler) GetSubscriptionStats(context.Context, *connect.Request[v1.GetSubscriptionStatsRequest]) (*connect.Response[v1.GetSubscriptionStatsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.AnalyticsService.GetSubscriptionStats is not implemented"))
 }

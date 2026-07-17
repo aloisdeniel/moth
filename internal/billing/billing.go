@@ -101,6 +101,17 @@ type NormalizedSubscription struct {
 	AutoRenew bool
 	// Environment is EnvSandbox or EnvProduction.
 	Environment string
+	// PriceAmountMicros is the store-reported transaction price in micros
+	// (millionths) of Currency, when the store supplies it (Apple StoreKit 2
+	// transactions carry price + currency; Google's subscriptionsv2 does not).
+	// Zero when the store did not report a price — the caller then falls back to
+	// the moth catalog price. This is the storefront-localized amount the buyer
+	// actually paid, so per-currency revenue reflects real charges rather than a
+	// single catalog list price.
+	PriceAmountMicros int64
+	// Currency is the ISO-4217 code of PriceAmountMicros, "" when the store
+	// reported none.
+	Currency string
 	// RawState is the verified store JSON (decoded transaction / purchase),
 	// persisted verbatim for audit and reconciliation.
 	RawState json.RawMessage

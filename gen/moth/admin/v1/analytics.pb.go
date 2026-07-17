@@ -728,6 +728,555 @@ func (x *ListRecentEventsResponse) GetEvents() []*Event {
 	return nil
 }
 
+type GetSubscriptionStatsRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// First month of the range, "YYYY-MM" in the project's rollup timezone.
+	FromPeriod string `protobuf:"bytes,2,opt,name=from_period,json=fromPeriod,proto3" json:"from_period,omitempty"`
+	// Last month of the range (inclusive), same format.
+	ToPeriod      string `protobuf:"bytes,3,opt,name=to_period,json=toPeriod,proto3" json:"to_period,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSubscriptionStatsRequest) Reset() {
+	*x = GetSubscriptionStatsRequest{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubscriptionStatsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubscriptionStatsRequest) ProtoMessage() {}
+
+func (x *GetSubscriptionStatsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubscriptionStatsRequest.ProtoReflect.Descriptor instead.
+func (*GetSubscriptionStatsRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *GetSubscriptionStatsRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *GetSubscriptionStatsRequest) GetFromPeriod() string {
+	if x != nil {
+		return x.FromPeriod
+	}
+	return ""
+}
+
+func (x *GetSubscriptionStatsRequest) GetToPeriod() string {
+	if x != nil {
+		return x.ToPeriod
+	}
+	return ""
+}
+
+// Money is always reported per currency — never blended. amount_micros is
+// store-reported gross (net of refunds), not net of store commission or tax.
+type CurrencyAmount struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ISO-4217 code; empty when the underlying events carried no currency.
+	Currency      string `protobuf:"bytes,1,opt,name=currency,proto3" json:"currency,omitempty"`
+	AmountMicros  int64  `protobuf:"varint,2,opt,name=amount_micros,json=amountMicros,proto3" json:"amount_micros,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CurrencyAmount) Reset() {
+	*x = CurrencyAmount{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CurrencyAmount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CurrencyAmount) ProtoMessage() {}
+
+func (x *CurrencyAmount) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CurrencyAmount.ProtoReflect.Descriptor instead.
+func (*CurrencyAmount) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *CurrencyAmount) GetCurrency() string {
+	if x != nil {
+		return x.Currency
+	}
+	return ""
+}
+
+func (x *CurrencyAmount) GetAmountMicros() int64 {
+	if x != nil {
+		return x.AmountMicros
+	}
+	return 0
+}
+
+// SubscriptionTiles is the headline block of the subscriptions section — the
+// current (latest rolled-up) month against the previous one.
+type SubscriptionTiles struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The latest rolled-up month ("YYYY-MM", empty when no data) these figures
+	// describe, and the month before it for the trend arrows.
+	LatestPeriod string `protobuf:"bytes,1,opt,name=latest_period,json=latestPeriod,proto3" json:"latest_period,omitempty"`
+	// Total revenue this month and last month, per currency (the headline).
+	RevenueThisMonth     []*CurrencyAmount `protobuf:"bytes,2,rep,name=revenue_this_month,json=revenueThisMonth,proto3" json:"revenue_this_month,omitempty"`
+	RevenuePreviousMonth []*CurrencyAmount `protobuf:"bytes,3,rep,name=revenue_previous_month,json=revenuePreviousMonth,proto3" json:"revenue_previous_month,omitempty"`
+	// Active subscribers this month and last: distinct users with an active
+	// event (purchased, renewed or trial_started), counted across all currencies
+	// as a single distinct-user total — never the sum of per-currency counts,
+	// which would double-count a user transacting in more than one currency.
+	ActiveSubscribers         int64 `protobuf:"varint,4,opt,name=active_subscribers,json=activeSubscribers,proto3" json:"active_subscribers,omitempty"`
+	ActiveSubscribersPrevious int64 `protobuf:"varint,5,opt,name=active_subscribers_previous,json=activeSubscribersPrevious,proto3" json:"active_subscribers_previous,omitempty"`
+	NewSubscribers            int64 `protobuf:"varint,6,opt,name=new_subscribers,json=newSubscribers,proto3" json:"new_subscribers,omitempty"`
+	Churned                   int64 `protobuf:"varint,7,opt,name=churned,proto3" json:"churned,omitempty"`
+	TrialsStarted             int64 `protobuf:"varint,8,opt,name=trials_started,json=trialsStarted,proto3" json:"trials_started,omitempty"`
+	TrialsConverted           int64 `protobuf:"varint,9,opt,name=trials_converted,json=trialsConverted,proto3" json:"trials_converted,omitempty"`
+	// trials_converted / trials_started over the latest month, 0..1. Zero when
+	// no trials started — check the raw counts before rendering.
+	TrialConversionRate float64 `protobuf:"fixed64,10,opt,name=trial_conversion_rate,json=trialConversionRate,proto3" json:"trial_conversion_rate,omitempty"`
+	unknownFields       protoimpl.UnknownFields
+	sizeCache           protoimpl.SizeCache
+}
+
+func (x *SubscriptionTiles) Reset() {
+	*x = SubscriptionTiles{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionTiles) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionTiles) ProtoMessage() {}
+
+func (x *SubscriptionTiles) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionTiles.ProtoReflect.Descriptor instead.
+func (*SubscriptionTiles) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *SubscriptionTiles) GetLatestPeriod() string {
+	if x != nil {
+		return x.LatestPeriod
+	}
+	return ""
+}
+
+func (x *SubscriptionTiles) GetRevenueThisMonth() []*CurrencyAmount {
+	if x != nil {
+		return x.RevenueThisMonth
+	}
+	return nil
+}
+
+func (x *SubscriptionTiles) GetRevenuePreviousMonth() []*CurrencyAmount {
+	if x != nil {
+		return x.RevenuePreviousMonth
+	}
+	return nil
+}
+
+func (x *SubscriptionTiles) GetActiveSubscribers() int64 {
+	if x != nil {
+		return x.ActiveSubscribers
+	}
+	return 0
+}
+
+func (x *SubscriptionTiles) GetActiveSubscribersPrevious() int64 {
+	if x != nil {
+		return x.ActiveSubscribersPrevious
+	}
+	return 0
+}
+
+func (x *SubscriptionTiles) GetNewSubscribers() int64 {
+	if x != nil {
+		return x.NewSubscribers
+	}
+	return 0
+}
+
+func (x *SubscriptionTiles) GetChurned() int64 {
+	if x != nil {
+		return x.Churned
+	}
+	return 0
+}
+
+func (x *SubscriptionTiles) GetTrialsStarted() int64 {
+	if x != nil {
+		return x.TrialsStarted
+	}
+	return 0
+}
+
+func (x *SubscriptionTiles) GetTrialsConverted() int64 {
+	if x != nil {
+		return x.TrialsConverted
+	}
+	return 0
+}
+
+func (x *SubscriptionTiles) GetTrialConversionRate() float64 {
+	if x != nil {
+		return x.TrialConversionRate
+	}
+	return 0
+}
+
+// SubscriptionMonthlyStat is one month of the time series. Revenue and the
+// per-store split are per currency; new/renewed/churned/trial counts are event
+// counts summed across currencies, while active_subscribers is a currency-
+// agnostic distinct-user count (not a per-currency sum). Months without data
+// are zero-filled so charts render contiguous ranges.
+type SubscriptionMonthlyStat struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// "YYYY-MM" in the project's rollup timezone.
+	Period string `protobuf:"bytes,1,opt,name=period,proto3" json:"period,omitempty"`
+	// Total revenue this month, per currency (net of refunds).
+	Revenue           []*CurrencyAmount `protobuf:"bytes,2,rep,name=revenue,proto3" json:"revenue,omitempty"`
+	ActiveSubscribers int64             `protobuf:"varint,3,opt,name=active_subscribers,json=activeSubscribers,proto3" json:"active_subscribers,omitempty"`
+	NewSubscribers    int64             `protobuf:"varint,4,opt,name=new_subscribers,json=newSubscribers,proto3" json:"new_subscribers,omitempty"`
+	Renewals          int64             `protobuf:"varint,5,opt,name=renewals,proto3" json:"renewals,omitempty"`
+	Churned           int64             `protobuf:"varint,6,opt,name=churned,proto3" json:"churned,omitempty"`
+	TrialsStarted     int64             `protobuf:"varint,7,opt,name=trials_started,json=trialsStarted,proto3" json:"trials_started,omitempty"`
+	TrialsConverted   int64             `protobuf:"varint,8,opt,name=trials_converted,json=trialsConverted,proto3" json:"trials_converted,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SubscriptionMonthlyStat) Reset() {
+	*x = SubscriptionMonthlyStat{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionMonthlyStat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionMonthlyStat) ProtoMessage() {}
+
+func (x *SubscriptionMonthlyStat) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionMonthlyStat.ProtoReflect.Descriptor instead.
+func (*SubscriptionMonthlyStat) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *SubscriptionMonthlyStat) GetPeriod() string {
+	if x != nil {
+		return x.Period
+	}
+	return ""
+}
+
+func (x *SubscriptionMonthlyStat) GetRevenue() []*CurrencyAmount {
+	if x != nil {
+		return x.Revenue
+	}
+	return nil
+}
+
+func (x *SubscriptionMonthlyStat) GetActiveSubscribers() int64 {
+	if x != nil {
+		return x.ActiveSubscribers
+	}
+	return 0
+}
+
+func (x *SubscriptionMonthlyStat) GetNewSubscribers() int64 {
+	if x != nil {
+		return x.NewSubscribers
+	}
+	return 0
+}
+
+func (x *SubscriptionMonthlyStat) GetRenewals() int64 {
+	if x != nil {
+		return x.Renewals
+	}
+	return 0
+}
+
+func (x *SubscriptionMonthlyStat) GetChurned() int64 {
+	if x != nil {
+		return x.Churned
+	}
+	return 0
+}
+
+func (x *SubscriptionMonthlyStat) GetTrialsStarted() int64 {
+	if x != nil {
+		return x.TrialsStarted
+	}
+	return 0
+}
+
+func (x *SubscriptionMonthlyStat) GetTrialsConverted() int64 {
+	if x != nil {
+		return x.TrialsConverted
+	}
+	return 0
+}
+
+// SubscriptionTierBreakdown is one product's share of the requested range.
+// Revenue (per currency) and new_subscribers sum over the whole range; because
+// active_subscribers is a non-additive distinct-user count, it is that
+// product's currency-agnostic distinct count for the latest month in the range
+// (matching the headline tile), not a sum across months.
+type SubscriptionTierBreakdown struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Empty for events with no mapped moth product.
+	ProductId         string            `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Revenue           []*CurrencyAmount `protobuf:"bytes,2,rep,name=revenue,proto3" json:"revenue,omitempty"`
+	NewSubscribers    int64             `protobuf:"varint,3,opt,name=new_subscribers,json=newSubscribers,proto3" json:"new_subscribers,omitempty"`
+	ActiveSubscribers int64             `protobuf:"varint,4,opt,name=active_subscribers,json=activeSubscribers,proto3" json:"active_subscribers,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *SubscriptionTierBreakdown) Reset() {
+	*x = SubscriptionTierBreakdown{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionTierBreakdown) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionTierBreakdown) ProtoMessage() {}
+
+func (x *SubscriptionTierBreakdown) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionTierBreakdown.ProtoReflect.Descriptor instead.
+func (*SubscriptionTierBreakdown) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *SubscriptionTierBreakdown) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *SubscriptionTierBreakdown) GetRevenue() []*CurrencyAmount {
+	if x != nil {
+		return x.Revenue
+	}
+	return nil
+}
+
+func (x *SubscriptionTierBreakdown) GetNewSubscribers() int64 {
+	if x != nil {
+		return x.NewSubscribers
+	}
+	return 0
+}
+
+func (x *SubscriptionTierBreakdown) GetActiveSubscribers() int64 {
+	if x != nil {
+		return x.ActiveSubscribers
+	}
+	return 0
+}
+
+// SubscriptionStoreBreakdown splits the range's revenue by store, per currency.
+type SubscriptionStoreBreakdown struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Apple         []*CurrencyAmount      `protobuf:"bytes,1,rep,name=apple,proto3" json:"apple,omitempty"`
+	Google        []*CurrencyAmount      `protobuf:"bytes,2,rep,name=google,proto3" json:"google,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SubscriptionStoreBreakdown) Reset() {
+	*x = SubscriptionStoreBreakdown{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SubscriptionStoreBreakdown) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscriptionStoreBreakdown) ProtoMessage() {}
+
+func (x *SubscriptionStoreBreakdown) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscriptionStoreBreakdown.ProtoReflect.Descriptor instead.
+func (*SubscriptionStoreBreakdown) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *SubscriptionStoreBreakdown) GetApple() []*CurrencyAmount {
+	if x != nil {
+		return x.Apple
+	}
+	return nil
+}
+
+func (x *SubscriptionStoreBreakdown) GetGoogle() []*CurrencyAmount {
+	if x != nil {
+		return x.Google
+	}
+	return nil
+}
+
+type GetSubscriptionStatsResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Tiles *SubscriptionTiles     `protobuf:"bytes,1,opt,name=tiles,proto3" json:"tiles,omitempty"`
+	// One entry per month in [from_period, to_period], oldest first, zero-filled.
+	Series []*SubscriptionMonthlyStat `protobuf:"bytes,2,rep,name=series,proto3" json:"series,omitempty"`
+	// Per-tier revenue/subscriber breakdown over the requested range.
+	Tiers []*SubscriptionTierBreakdown `protobuf:"bytes,3,rep,name=tiers,proto3" json:"tiers,omitempty"`
+	// Per-store revenue breakdown over the requested range.
+	Stores        *SubscriptionStoreBreakdown `protobuf:"bytes,4,opt,name=stores,proto3" json:"stores,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetSubscriptionStatsResponse) Reset() {
+	*x = GetSubscriptionStatsResponse{}
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetSubscriptionStatsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetSubscriptionStatsResponse) ProtoMessage() {}
+
+func (x *GetSubscriptionStatsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetSubscriptionStatsResponse.ProtoReflect.Descriptor instead.
+func (*GetSubscriptionStatsResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *GetSubscriptionStatsResponse) GetTiles() *SubscriptionTiles {
+	if x != nil {
+		return x.Tiles
+	}
+	return nil
+}
+
+func (x *GetSubscriptionStatsResponse) GetSeries() []*SubscriptionMonthlyStat {
+	if x != nil {
+		return x.Series
+	}
+	return nil
+}
+
+func (x *GetSubscriptionStatsResponse) GetTiers() []*SubscriptionTierBreakdown {
+	if x != nil {
+		return x.Tiers
+	}
+	return nil
+}
+
+func (x *GetSubscriptionStatsResponse) GetStores() *SubscriptionStoreBreakdown {
+	if x != nil {
+		return x.Stores
+	}
+	return nil
+}
+
 type RunRollupRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Project to roll up; empty rolls up every project.
@@ -738,7 +1287,7 @@ type RunRollupRequest struct {
 
 func (x *RunRollupRequest) Reset() {
 	*x = RunRollupRequest{}
-	mi := &file_moth_admin_v1_analytics_proto_msgTypes[9]
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -750,7 +1299,7 @@ func (x *RunRollupRequest) String() string {
 func (*RunRollupRequest) ProtoMessage() {}
 
 func (x *RunRollupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_analytics_proto_msgTypes[9]
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -763,7 +1312,7 @@ func (x *RunRollupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunRollupRequest.ProtoReflect.Descriptor instead.
 func (*RunRollupRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{9}
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *RunRollupRequest) GetProjectId() string {
@@ -790,7 +1339,7 @@ type RunRollupResponse struct {
 
 func (x *RunRollupResponse) Reset() {
 	*x = RunRollupResponse{}
-	mi := &file_moth_admin_v1_analytics_proto_msgTypes[10]
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -802,7 +1351,7 @@ func (x *RunRollupResponse) String() string {
 func (*RunRollupResponse) ProtoMessage() {}
 
 func (x *RunRollupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_analytics_proto_msgTypes[10]
+	mi := &file_moth_admin_v1_analytics_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -815,7 +1364,7 @@ func (x *RunRollupResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunRollupResponse.ProtoReflect.Descriptor instead.
 func (*RunRollupResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{10}
+	return file_moth_admin_v1_analytics_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *RunRollupResponse) GetRunId() string {
@@ -909,7 +1458,51 @@ const file_moth_admin_v1_analytics_proto_rawDesc = "" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x14\n" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\"H\n" +
 	"\x18ListRecentEventsResponse\x12,\n" +
-	"\x06events\x18\x01 \x03(\v2\x14.moth.admin.v1.EventR\x06events\"1\n" +
+	"\x06events\x18\x01 \x03(\v2\x14.moth.admin.v1.EventR\x06events\"z\n" +
+	"\x1bGetSubscriptionStatsRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1f\n" +
+	"\vfrom_period\x18\x02 \x01(\tR\n" +
+	"fromPeriod\x12\x1b\n" +
+	"\tto_period\x18\x03 \x01(\tR\btoPeriod\"Q\n" +
+	"\x0eCurrencyAmount\x12\x1a\n" +
+	"\bcurrency\x18\x01 \x01(\tR\bcurrency\x12#\n" +
+	"\ramount_micros\x18\x02 \x01(\x03R\famountMicros\"\x92\x04\n" +
+	"\x11SubscriptionTiles\x12#\n" +
+	"\rlatest_period\x18\x01 \x01(\tR\flatestPeriod\x12K\n" +
+	"\x12revenue_this_month\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x10revenueThisMonth\x12S\n" +
+	"\x16revenue_previous_month\x18\x03 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x14revenuePreviousMonth\x12-\n" +
+	"\x12active_subscribers\x18\x04 \x01(\x03R\x11activeSubscribers\x12>\n" +
+	"\x1bactive_subscribers_previous\x18\x05 \x01(\x03R\x19activeSubscribersPrevious\x12'\n" +
+	"\x0fnew_subscribers\x18\x06 \x01(\x03R\x0enewSubscribers\x12\x18\n" +
+	"\achurned\x18\a \x01(\x03R\achurned\x12%\n" +
+	"\x0etrials_started\x18\b \x01(\x03R\rtrialsStarted\x12)\n" +
+	"\x10trials_converted\x18\t \x01(\x03R\x0ftrialsConverted\x122\n" +
+	"\x15trial_conversion_rate\x18\n" +
+	" \x01(\x01R\x13trialConversionRate\"\xca\x02\n" +
+	"\x17SubscriptionMonthlyStat\x12\x16\n" +
+	"\x06period\x18\x01 \x01(\tR\x06period\x127\n" +
+	"\arevenue\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\arevenue\x12-\n" +
+	"\x12active_subscribers\x18\x03 \x01(\x03R\x11activeSubscribers\x12'\n" +
+	"\x0fnew_subscribers\x18\x04 \x01(\x03R\x0enewSubscribers\x12\x1a\n" +
+	"\brenewals\x18\x05 \x01(\x03R\brenewals\x12\x18\n" +
+	"\achurned\x18\x06 \x01(\x03R\achurned\x12%\n" +
+	"\x0etrials_started\x18\a \x01(\x03R\rtrialsStarted\x12)\n" +
+	"\x10trials_converted\x18\b \x01(\x03R\x0ftrialsConverted\"\xcb\x01\n" +
+	"\x19SubscriptionTierBreakdown\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x127\n" +
+	"\arevenue\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\arevenue\x12'\n" +
+	"\x0fnew_subscribers\x18\x03 \x01(\x03R\x0enewSubscribers\x12-\n" +
+	"\x12active_subscribers\x18\x04 \x01(\x03R\x11activeSubscribers\"\x88\x01\n" +
+	"\x1aSubscriptionStoreBreakdown\x123\n" +
+	"\x05apple\x18\x01 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x05apple\x125\n" +
+	"\x06google\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x06google\"\x99\x02\n" +
+	"\x1cGetSubscriptionStatsResponse\x126\n" +
+	"\x05tiles\x18\x01 \x01(\v2 .moth.admin.v1.SubscriptionTilesR\x05tiles\x12>\n" +
+	"\x06series\x18\x02 \x03(\v2&.moth.admin.v1.SubscriptionMonthlyStatR\x06series\x12>\n" +
+	"\x05tiers\x18\x03 \x03(\v2(.moth.admin.v1.SubscriptionTierBreakdownR\x05tiers\x12A\n" +
+	"\x06stores\x18\x04 \x01(\v2).moth.admin.v1.SubscriptionStoreBreakdownR\x06stores\"1\n" +
 	"\x10RunRollupRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\"\xee\x01\n" +
@@ -923,11 +1516,12 @@ const file_moth_admin_v1_analytics_proto_rawDesc = "" +
 	"\revents_pruned\x18\x05 \x01(\x03R\feventsPruned*?\n" +
 	"\vGranularity\x12\x1b\n" +
 	"\x17GRANULARITY_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fGRANULARITY_DAY\x10\x012\x94\x02\n" +
+	"\x0fGRANULARITY_DAY\x10\x012\x85\x03\n" +
 	"\x10AnalyticsService\x12K\n" +
 	"\bGetStats\x12\x1e.moth.admin.v1.GetStatsRequest\x1a\x1f.moth.admin.v1.GetStatsResponse\x12c\n" +
 	"\x10ListRecentEvents\x12&.moth.admin.v1.ListRecentEventsRequest\x1a'.moth.admin.v1.ListRecentEventsResponse\x12N\n" +
-	"\tRunRollup\x12\x1f.moth.admin.v1.RunRollupRequest\x1a .moth.admin.v1.RunRollupResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
+	"\tRunRollup\x12\x1f.moth.admin.v1.RunRollupRequest\x1a .moth.admin.v1.RunRollupResponse\x12o\n" +
+	"\x14GetSubscriptionStats\x12*.moth.admin.v1.GetSubscriptionStatsRequest\x1a+.moth.admin.v1.GetSubscriptionStatsResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
 
 var (
 	file_moth_admin_v1_analytics_proto_rawDescOnce sync.Once
@@ -942,21 +1536,28 @@ func file_moth_admin_v1_analytics_proto_rawDescGZIP() []byte {
 }
 
 var file_moth_admin_v1_analytics_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_moth_admin_v1_analytics_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_moth_admin_v1_analytics_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
 var file_moth_admin_v1_analytics_proto_goTypes = []any{
-	(Granularity)(0),                 // 0: moth.admin.v1.Granularity
-	(*GetStatsRequest)(nil),          // 1: moth.admin.v1.GetStatsRequest
-	(*StatTiles)(nil),                // 2: moth.admin.v1.StatTiles
-	(*DailyStat)(nil),                // 3: moth.admin.v1.DailyStat
-	(*ProviderBreakdown)(nil),        // 4: moth.admin.v1.ProviderBreakdown
-	(*PlatformBreakdown)(nil),        // 5: moth.admin.v1.PlatformBreakdown
-	(*GetStatsResponse)(nil),         // 6: moth.admin.v1.GetStatsResponse
-	(*Event)(nil),                    // 7: moth.admin.v1.Event
-	(*ListRecentEventsRequest)(nil),  // 8: moth.admin.v1.ListRecentEventsRequest
-	(*ListRecentEventsResponse)(nil), // 9: moth.admin.v1.ListRecentEventsResponse
-	(*RunRollupRequest)(nil),         // 10: moth.admin.v1.RunRollupRequest
-	(*RunRollupResponse)(nil),        // 11: moth.admin.v1.RunRollupResponse
-	(*timestamppb.Timestamp)(nil),    // 12: google.protobuf.Timestamp
+	(Granularity)(0),                     // 0: moth.admin.v1.Granularity
+	(*GetStatsRequest)(nil),              // 1: moth.admin.v1.GetStatsRequest
+	(*StatTiles)(nil),                    // 2: moth.admin.v1.StatTiles
+	(*DailyStat)(nil),                    // 3: moth.admin.v1.DailyStat
+	(*ProviderBreakdown)(nil),            // 4: moth.admin.v1.ProviderBreakdown
+	(*PlatformBreakdown)(nil),            // 5: moth.admin.v1.PlatformBreakdown
+	(*GetStatsResponse)(nil),             // 6: moth.admin.v1.GetStatsResponse
+	(*Event)(nil),                        // 7: moth.admin.v1.Event
+	(*ListRecentEventsRequest)(nil),      // 8: moth.admin.v1.ListRecentEventsRequest
+	(*ListRecentEventsResponse)(nil),     // 9: moth.admin.v1.ListRecentEventsResponse
+	(*GetSubscriptionStatsRequest)(nil),  // 10: moth.admin.v1.GetSubscriptionStatsRequest
+	(*CurrencyAmount)(nil),               // 11: moth.admin.v1.CurrencyAmount
+	(*SubscriptionTiles)(nil),            // 12: moth.admin.v1.SubscriptionTiles
+	(*SubscriptionMonthlyStat)(nil),      // 13: moth.admin.v1.SubscriptionMonthlyStat
+	(*SubscriptionTierBreakdown)(nil),    // 14: moth.admin.v1.SubscriptionTierBreakdown
+	(*SubscriptionStoreBreakdown)(nil),   // 15: moth.admin.v1.SubscriptionStoreBreakdown
+	(*GetSubscriptionStatsResponse)(nil), // 16: moth.admin.v1.GetSubscriptionStatsResponse
+	(*RunRollupRequest)(nil),             // 17: moth.admin.v1.RunRollupRequest
+	(*RunRollupResponse)(nil),            // 18: moth.admin.v1.RunRollupResponse
+	(*timestamppb.Timestamp)(nil),        // 19: google.protobuf.Timestamp
 }
 var file_moth_admin_v1_analytics_proto_depIdxs = []int32{
 	0,  // 0: moth.admin.v1.GetStatsRequest.granularity:type_name -> moth.admin.v1.Granularity
@@ -964,21 +1565,33 @@ var file_moth_admin_v1_analytics_proto_depIdxs = []int32{
 	3,  // 2: moth.admin.v1.GetStatsResponse.series:type_name -> moth.admin.v1.DailyStat
 	4,  // 3: moth.admin.v1.GetStatsResponse.providers:type_name -> moth.admin.v1.ProviderBreakdown
 	5,  // 4: moth.admin.v1.GetStatsResponse.platforms:type_name -> moth.admin.v1.PlatformBreakdown
-	12, // 5: moth.admin.v1.Event.create_time:type_name -> google.protobuf.Timestamp
+	19, // 5: moth.admin.v1.Event.create_time:type_name -> google.protobuf.Timestamp
 	7,  // 6: moth.admin.v1.ListRecentEventsResponse.events:type_name -> moth.admin.v1.Event
-	12, // 7: moth.admin.v1.RunRollupResponse.start_time:type_name -> google.protobuf.Timestamp
-	12, // 8: moth.admin.v1.RunRollupResponse.finish_time:type_name -> google.protobuf.Timestamp
-	1,  // 9: moth.admin.v1.AnalyticsService.GetStats:input_type -> moth.admin.v1.GetStatsRequest
-	8,  // 10: moth.admin.v1.AnalyticsService.ListRecentEvents:input_type -> moth.admin.v1.ListRecentEventsRequest
-	10, // 11: moth.admin.v1.AnalyticsService.RunRollup:input_type -> moth.admin.v1.RunRollupRequest
-	6,  // 12: moth.admin.v1.AnalyticsService.GetStats:output_type -> moth.admin.v1.GetStatsResponse
-	9,  // 13: moth.admin.v1.AnalyticsService.ListRecentEvents:output_type -> moth.admin.v1.ListRecentEventsResponse
-	11, // 14: moth.admin.v1.AnalyticsService.RunRollup:output_type -> moth.admin.v1.RunRollupResponse
-	12, // [12:15] is the sub-list for method output_type
-	9,  // [9:12] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	11, // 7: moth.admin.v1.SubscriptionTiles.revenue_this_month:type_name -> moth.admin.v1.CurrencyAmount
+	11, // 8: moth.admin.v1.SubscriptionTiles.revenue_previous_month:type_name -> moth.admin.v1.CurrencyAmount
+	11, // 9: moth.admin.v1.SubscriptionMonthlyStat.revenue:type_name -> moth.admin.v1.CurrencyAmount
+	11, // 10: moth.admin.v1.SubscriptionTierBreakdown.revenue:type_name -> moth.admin.v1.CurrencyAmount
+	11, // 11: moth.admin.v1.SubscriptionStoreBreakdown.apple:type_name -> moth.admin.v1.CurrencyAmount
+	11, // 12: moth.admin.v1.SubscriptionStoreBreakdown.google:type_name -> moth.admin.v1.CurrencyAmount
+	12, // 13: moth.admin.v1.GetSubscriptionStatsResponse.tiles:type_name -> moth.admin.v1.SubscriptionTiles
+	13, // 14: moth.admin.v1.GetSubscriptionStatsResponse.series:type_name -> moth.admin.v1.SubscriptionMonthlyStat
+	14, // 15: moth.admin.v1.GetSubscriptionStatsResponse.tiers:type_name -> moth.admin.v1.SubscriptionTierBreakdown
+	15, // 16: moth.admin.v1.GetSubscriptionStatsResponse.stores:type_name -> moth.admin.v1.SubscriptionStoreBreakdown
+	19, // 17: moth.admin.v1.RunRollupResponse.start_time:type_name -> google.protobuf.Timestamp
+	19, // 18: moth.admin.v1.RunRollupResponse.finish_time:type_name -> google.protobuf.Timestamp
+	1,  // 19: moth.admin.v1.AnalyticsService.GetStats:input_type -> moth.admin.v1.GetStatsRequest
+	8,  // 20: moth.admin.v1.AnalyticsService.ListRecentEvents:input_type -> moth.admin.v1.ListRecentEventsRequest
+	17, // 21: moth.admin.v1.AnalyticsService.RunRollup:input_type -> moth.admin.v1.RunRollupRequest
+	10, // 22: moth.admin.v1.AnalyticsService.GetSubscriptionStats:input_type -> moth.admin.v1.GetSubscriptionStatsRequest
+	6,  // 23: moth.admin.v1.AnalyticsService.GetStats:output_type -> moth.admin.v1.GetStatsResponse
+	9,  // 24: moth.admin.v1.AnalyticsService.ListRecentEvents:output_type -> moth.admin.v1.ListRecentEventsResponse
+	18, // 25: moth.admin.v1.AnalyticsService.RunRollup:output_type -> moth.admin.v1.RunRollupResponse
+	16, // 26: moth.admin.v1.AnalyticsService.GetSubscriptionStats:output_type -> moth.admin.v1.GetSubscriptionStatsResponse
+	23, // [23:27] is the sub-list for method output_type
+	19, // [19:23] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_analytics_proto_init() }
@@ -992,7 +1605,7 @@ func file_moth_admin_v1_analytics_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_admin_v1_analytics_proto_rawDesc), len(file_moth_admin_v1_analytics_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   18,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

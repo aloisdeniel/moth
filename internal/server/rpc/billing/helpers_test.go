@@ -165,6 +165,37 @@ func storeRawEvents(f *fixture) ([]string, error) {
 	return out, rows.Err()
 }
 
+// subEventRow is one raw subscription_events row for the emission tests.
+type subEventRow struct {
+	Type              string
+	PriceAmountMicros int64
+	Currency          string
+}
+
+// storeRawEventRows returns every subscription_events row's type/price/currency
+// in insertion order, for asserting store-reported revenue and conversion.
+func storeRawEventRows(f *fixture) ([]subEventRow, error) {
+	db, err := sql.Open("sqlite", "file:"+f.dbPath+"?_pragma=busy_timeout(5000)")
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+	rows, err := db.Query(`SELECT type, price_amount_micros, currency FROM subscription_events ORDER BY created_at, id`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []subEventRow
+	for rows.Next() {
+		var r subEventRow
+		if err := rows.Scan(&r.Type, &r.PriceAmountMicros, &r.Currency); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 // ctx returns a context scoped to the fixture project (as the pk_ interceptor
 // would set it) with the Bearer access token attached to the returned request
 // via authReq.
