@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from moth/storage/v1/storage.proto.
+// Generated from moth/projectconfig/v1/projectconfig.proto.
 
 // @dart = 3.3
 
@@ -41,8 +41,8 @@ class LegalLinks extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'LegalLinks',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'termsUrl')
     ..aOS(2, _omitFieldNames ? '' : 'privacyUrl')
@@ -121,8 +121,8 @@ class ThemeColors extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ThemeColors',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'primary')
     ..aOS(2, _omitFieldNames ? '' : 'onPrimary')
@@ -262,8 +262,8 @@ class ThemeColorOverrides extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ThemeColorOverrides',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'primary')
     ..aOS(2, _omitFieldNames ? '' : 'onPrimary')
@@ -391,8 +391,8 @@ class ThemeTypography extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ThemeTypography',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'fontFamily')
     ..aD(2, _omitFieldNames ? '' : 'scale')
@@ -457,8 +457,8 @@ class ThemeSpacing extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ThemeSpacing',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'unit')
     ..hasRequiredFields = false;
@@ -513,8 +513,8 @@ class ThemeShape extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ThemeShape',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'cornerRadius')
     ..hasRequiredFields = false;
@@ -571,8 +571,8 @@ class ThemeLogo extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'ThemeLogo',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'light')
     ..aOS(2, _omitFieldNames ? '' : 'dark')
@@ -653,8 +653,8 @@ class StoredTheme extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'StoredTheme',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'version')
     ..aOM<ThemeColors>(2, _omitFieldNames ? '' : 'colors',
@@ -821,8 +821,8 @@ class StoredPaywall extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'StoredPaywall',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..aI(1, _omitFieldNames ? '' : 'version')
     ..aOS(2, _omitFieldNames ? '' : 'headline')
@@ -949,14 +949,14 @@ class CopyLocaleMessages extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'CopyLocaleMessages',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..m<$core.String, $core.String>(1, _omitFieldNames ? '' : 'messages',
         entryClassName: 'CopyLocaleMessages.MessagesEntry',
         keyFieldType: $pb.PbFieldType.OS,
         valueFieldType: $pb.PbFieldType.OS,
-        packageName: const $pb.PackageName('moth.storage.v1'))
+        packageName: const $pb.PackageName('moth.projectconfig.v1'))
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1006,8 +1006,8 @@ class StoredCopy extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'StoredCopy',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..m<$core.String, CopyLocaleMessages>(1, _omitFieldNames ? '' : 'locales',
         entryClassName: 'StoredCopy.LocalesEntry',
@@ -1015,7 +1015,7 @@ class StoredCopy extends $pb.GeneratedMessage {
         valueFieldType: $pb.PbFieldType.OM,
         valueCreator: CopyLocaleMessages.create,
         valueDefaultOrMaker: CopyLocaleMessages.getDefault,
-        packageName: const $pb.PackageName('moth.storage.v1'))
+        packageName: const $pb.PackageName('moth.projectconfig.v1'))
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -1074,8 +1074,8 @@ class CacheEnvelope extends $pb.GeneratedMessage {
 
   static final $pb.BuilderInfo _i = $pb.BuilderInfo(
       _omitMessageNames ? '' : 'CacheEnvelope',
-      package:
-          const $pb.PackageName(_omitMessageNames ? '' : 'moth.storage.v1'),
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
       createEmptyInstance: create)
     ..a<$core.List<$core.int>>(
         1, _omitFieldNames ? '' : 'payload', $pb.PbFieldType.OY)

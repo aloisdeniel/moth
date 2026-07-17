@@ -2,9 +2,9 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        (unknown)
-// source: moth/storage/v1/storage.proto
+// source: moth/projectconfig/v1/projectconfig.proto
 
-// moth.storage.v1 holds the serialized-at-rest schemas: the per-project
+// moth.projectconfig.v1 holds the serialized-at-rest schemas: the per-project
 // configuration blobs the server stores in SQLite (theme, paywall, copy —
 // as protobuf-encoded BLOB columns) and the envelope the Flutter SDK uses
 // to persist its on-device config caches. One protocol everywhere: the
@@ -14,7 +14,7 @@
 // Evolution rules are the protobuf defaults: add fields, never renumber or
 // reuse tags. `buf breaking` guards this package like every other.
 
-package storagev1
+package projectconfigv1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -43,7 +43,7 @@ type LegalLinks struct {
 
 func (x *LegalLinks) Reset() {
 	*x = LegalLinks{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[0]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -55,7 +55,7 @@ func (x *LegalLinks) String() string {
 func (*LegalLinks) ProtoMessage() {}
 
 func (x *LegalLinks) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[0]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -68,7 +68,7 @@ func (x *LegalLinks) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use LegalLinks.ProtoReflect.Descriptor instead.
 func (*LegalLinks) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{0}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *LegalLinks) GetTermsUrl() string {
@@ -103,7 +103,7 @@ type ThemeColors struct {
 
 func (x *ThemeColors) Reset() {
 	*x = ThemeColors{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[1]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -115,7 +115,7 @@ func (x *ThemeColors) String() string {
 func (*ThemeColors) ProtoMessage() {}
 
 func (x *ThemeColors) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[1]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -128,7 +128,7 @@ func (x *ThemeColors) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeColors.ProtoReflect.Descriptor instead.
 func (*ThemeColors) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{1}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ThemeColors) GetPrimary() string {
@@ -205,7 +205,7 @@ type ThemeColorOverrides struct {
 
 func (x *ThemeColorOverrides) Reset() {
 	*x = ThemeColorOverrides{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[2]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -217,7 +217,7 @@ func (x *ThemeColorOverrides) String() string {
 func (*ThemeColorOverrides) ProtoMessage() {}
 
 func (x *ThemeColorOverrides) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[2]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -230,7 +230,7 @@ func (x *ThemeColorOverrides) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeColorOverrides.ProtoReflect.Descriptor instead.
 func (*ThemeColorOverrides) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{2}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ThemeColorOverrides) GetPrimary() string {
@@ -301,7 +301,7 @@ type ThemeTypography struct {
 
 func (x *ThemeTypography) Reset() {
 	*x = ThemeTypography{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[3]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -313,7 +313,7 @@ func (x *ThemeTypography) String() string {
 func (*ThemeTypography) ProtoMessage() {}
 
 func (x *ThemeTypography) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[3]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -326,7 +326,7 @@ func (x *ThemeTypography) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeTypography.ProtoReflect.Descriptor instead.
 func (*ThemeTypography) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{3}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ThemeTypography) GetFontFamily() string {
@@ -353,7 +353,7 @@ type ThemeSpacing struct {
 
 func (x *ThemeSpacing) Reset() {
 	*x = ThemeSpacing{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[4]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -365,7 +365,7 @@ func (x *ThemeSpacing) String() string {
 func (*ThemeSpacing) ProtoMessage() {}
 
 func (x *ThemeSpacing) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[4]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -378,7 +378,7 @@ func (x *ThemeSpacing) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeSpacing.ProtoReflect.Descriptor instead.
 func (*ThemeSpacing) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{4}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ThemeSpacing) GetUnit() int32 {
@@ -398,7 +398,7 @@ type ThemeShape struct {
 
 func (x *ThemeShape) Reset() {
 	*x = ThemeShape{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[5]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -410,7 +410,7 @@ func (x *ThemeShape) String() string {
 func (*ThemeShape) ProtoMessage() {}
 
 func (x *ThemeShape) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[5]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -423,7 +423,7 @@ func (x *ThemeShape) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeShape.ProtoReflect.Descriptor instead.
 func (*ThemeShape) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{5}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ThemeShape) GetCornerRadius() int32 {
@@ -445,7 +445,7 @@ type ThemeLogo struct {
 
 func (x *ThemeLogo) Reset() {
 	*x = ThemeLogo{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[6]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -457,7 +457,7 @@ func (x *ThemeLogo) String() string {
 func (*ThemeLogo) ProtoMessage() {}
 
 func (x *ThemeLogo) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[6]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -470,7 +470,7 @@ func (x *ThemeLogo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeLogo.ProtoReflect.Descriptor instead.
 func (*ThemeLogo) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{6}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ThemeLogo) GetLight() string {
@@ -510,7 +510,7 @@ type StoredTheme struct {
 
 func (x *StoredTheme) Reset() {
 	*x = StoredTheme{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[7]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -522,7 +522,7 @@ func (x *StoredTheme) String() string {
 func (*StoredTheme) ProtoMessage() {}
 
 func (x *StoredTheme) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[7]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -535,7 +535,7 @@ func (x *StoredTheme) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredTheme.ProtoReflect.Descriptor instead.
 func (*StoredTheme) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{7}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *StoredTheme) GetVersion() int32 {
@@ -618,7 +618,7 @@ type StoredPaywall struct {
 
 func (x *StoredPaywall) Reset() {
 	*x = StoredPaywall{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[8]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -630,7 +630,7 @@ func (x *StoredPaywall) String() string {
 func (*StoredPaywall) ProtoMessage() {}
 
 func (x *StoredPaywall) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[8]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -643,7 +643,7 @@ func (x *StoredPaywall) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredPaywall.ProtoReflect.Descriptor instead.
 func (*StoredPaywall) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{8}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StoredPaywall) GetVersion() int32 {
@@ -713,7 +713,7 @@ type CopyLocaleMessages struct {
 
 func (x *CopyLocaleMessages) Reset() {
 	*x = CopyLocaleMessages{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[9]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -725,7 +725,7 @@ func (x *CopyLocaleMessages) String() string {
 func (*CopyLocaleMessages) ProtoMessage() {}
 
 func (x *CopyLocaleMessages) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[9]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -738,7 +738,7 @@ func (x *CopyLocaleMessages) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CopyLocaleMessages.ProtoReflect.Descriptor instead.
 func (*CopyLocaleMessages) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{9}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CopyLocaleMessages) GetMessages() map[string]string {
@@ -761,7 +761,7 @@ type StoredCopy struct {
 
 func (x *StoredCopy) Reset() {
 	*x = StoredCopy{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[10]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -773,7 +773,7 @@ func (x *StoredCopy) String() string {
 func (*StoredCopy) ProtoMessage() {}
 
 func (x *StoredCopy) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[10]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -786,7 +786,7 @@ func (x *StoredCopy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredCopy.ProtoReflect.Descriptor instead.
 func (*StoredCopy) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{10}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *StoredCopy) GetLocales() map[string]*CopyLocaleMessages {
@@ -822,7 +822,7 @@ type CacheEnvelope struct {
 
 func (x *CacheEnvelope) Reset() {
 	*x = CacheEnvelope{}
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[11]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -834,7 +834,7 @@ func (x *CacheEnvelope) String() string {
 func (*CacheEnvelope) ProtoMessage() {}
 
 func (x *CacheEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_storage_v1_storage_proto_msgTypes[11]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -847,7 +847,7 @@ func (x *CacheEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CacheEnvelope.ProtoReflect.Descriptor instead.
 func (*CacheEnvelope) Descriptor() ([]byte, []int) {
-	return file_moth_storage_v1_storage_proto_rawDescGZIP(), []int{11}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *CacheEnvelope) GetPayload() []byte {
@@ -878,11 +878,11 @@ func (x *CacheEnvelope) GetFetchedAtUnixMs() int64 {
 	return 0
 }
 
-var File_moth_storage_v1_storage_proto protoreflect.FileDescriptor
+var File_moth_projectconfig_v1_projectconfig_proto protoreflect.FileDescriptor
 
-const file_moth_storage_v1_storage_proto_rawDesc = "" +
+const file_moth_projectconfig_v1_projectconfig_proto_rawDesc = "" +
 	"\n" +
-	"\x1dmoth/storage/v1/storage.proto\x12\x0fmoth.storage.v1\"J\n" +
+	")moth/projectconfig/v1/projectconfig.proto\x12\x15moth.projectconfig.v1\"J\n" +
 	"\n" +
 	"LegalLinks\x12\x1b\n" +
 	"\tterms_url\x18\x01 \x01(\tR\btermsUrl\x12\x1f\n" +
@@ -925,19 +925,19 @@ const file_moth_storage_v1_storage_proto_rawDesc = "" +
 	"\rcorner_radius\x18\x01 \x01(\x05R\fcornerRadius\"5\n" +
 	"\tThemeLogo\x12\x14\n" +
 	"\x05light\x18\x01 \x01(\tR\x05light\x12\x12\n" +
-	"\x04dark\x18\x02 \x01(\tR\x04dark\"\xb5\x03\n" +
+	"\x04dark\x18\x02 \x01(\tR\x04dark\"\xdf\x03\n" +
 	"\vStoredTheme\x12\x18\n" +
-	"\aversion\x18\x01 \x01(\x05R\aversion\x124\n" +
-	"\x06colors\x18\x02 \x01(\v2\x1c.moth.storage.v1.ThemeColorsR\x06colors\x12E\n" +
-	"\vdark_colors\x18\x03 \x01(\v2$.moth.storage.v1.ThemeColorOverridesR\n" +
-	"darkColors\x12@\n" +
+	"\aversion\x18\x01 \x01(\x05R\aversion\x12:\n" +
+	"\x06colors\x18\x02 \x01(\v2\".moth.projectconfig.v1.ThemeColorsR\x06colors\x12K\n" +
+	"\vdark_colors\x18\x03 \x01(\v2*.moth.projectconfig.v1.ThemeColorOverridesR\n" +
+	"darkColors\x12F\n" +
 	"\n" +
-	"typography\x18\x04 \x01(\v2 .moth.storage.v1.ThemeTypographyR\n" +
-	"typography\x127\n" +
-	"\aspacing\x18\x05 \x01(\v2\x1d.moth.storage.v1.ThemeSpacingR\aspacing\x121\n" +
-	"\x05shape\x18\x06 \x01(\v2\x1b.moth.storage.v1.ThemeShapeR\x05shape\x12.\n" +
-	"\x04logo\x18\a \x01(\v2\x1a.moth.storage.v1.ThemeLogoR\x04logo\x121\n" +
-	"\x05legal\x18\b \x01(\v2\x1b.moth.storage.v1.LegalLinksR\x05legal\"\x9b\x02\n" +
+	"typography\x18\x04 \x01(\v2&.moth.projectconfig.v1.ThemeTypographyR\n" +
+	"typography\x12=\n" +
+	"\aspacing\x18\x05 \x01(\v2#.moth.projectconfig.v1.ThemeSpacingR\aspacing\x127\n" +
+	"\x05shape\x18\x06 \x01(\v2!.moth.projectconfig.v1.ThemeShapeR\x05shape\x124\n" +
+	"\x04logo\x18\a \x01(\v2 .moth.projectconfig.v1.ThemeLogoR\x04logo\x127\n" +
+	"\x05legal\x18\b \x01(\v2!.moth.projectconfig.v1.LegalLinksR\x05legal\"\xa1\x02\n" +
 	"\rStoredPaywall\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\x05R\aversion\x12\x1a\n" +
 	"\bheadline\x18\x02 \x01(\tR\bheadline\x12\x1a\n" +
@@ -945,66 +945,66 @@ const file_moth_storage_v1_storage_proto_rawDesc = "" +
 	"\bbenefits\x18\x04 \x03(\tR\bbenefits\x12\x1a\n" +
 	"\boffering\x18\x05 \x01(\tR\boffering\x125\n" +
 	"\x16highlighted_identifier\x18\x06 \x01(\tR\x15highlightedIdentifier\x12\x16\n" +
-	"\x06layout\x18\a \x01(\tR\x06layout\x121\n" +
-	"\x05legal\x18\b \x01(\v2\x1b.moth.storage.v1.LegalLinksR\x05legal\"\xa0\x01\n" +
-	"\x12CopyLocaleMessages\x12M\n" +
-	"\bmessages\x18\x01 \x03(\v21.moth.storage.v1.CopyLocaleMessages.MessagesEntryR\bmessages\x1a;\n" +
+	"\x06layout\x18\a \x01(\tR\x06layout\x127\n" +
+	"\x05legal\x18\b \x01(\v2!.moth.projectconfig.v1.LegalLinksR\x05legal\"\xa6\x01\n" +
+	"\x12CopyLocaleMessages\x12S\n" +
+	"\bmessages\x18\x01 \x03(\v27.moth.projectconfig.v1.CopyLocaleMessages.MessagesEntryR\bmessages\x1a;\n" +
 	"\rMessagesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb1\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbd\x01\n" +
 	"\n" +
-	"StoredCopy\x12B\n" +
-	"\alocales\x18\x01 \x03(\v2(.moth.storage.v1.StoredCopy.LocalesEntryR\alocales\x1a_\n" +
+	"StoredCopy\x12H\n" +
+	"\alocales\x18\x01 \x03(\v2..moth.projectconfig.v1.StoredCopy.LocalesEntryR\alocales\x1ae\n" +
 	"\fLocalesEntry\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x129\n" +
-	"\x05value\x18\x02 \x01(\v2#.moth.storage.v1.CopyLocaleMessagesR\x05value:\x028\x01\"\x8a\x01\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12?\n" +
+	"\x05value\x18\x02 \x01(\v2).moth.projectconfig.v1.CopyLocaleMessagesR\x05value:\x028\x01\"\x8a\x01\n" +
 	"\rCacheEnvelope\x12\x18\n" +
 	"\apayload\x18\x01 \x01(\fR\apayload\x12\x1a\n" +
 	"\brevision\x18\x02 \x01(\tR\brevision\x12\x16\n" +
 	"\x06locale\x18\x03 \x01(\tR\x06locale\x12+\n" +
-	"\x12fetched_at_unix_ms\x18\x04 \x01(\x03R\x0ffetchedAtUnixMsB;Z9github.com/aloisdeniel/moth/gen/moth/storage/v1;storagev1b\x06proto3"
+	"\x12fetched_at_unix_ms\x18\x04 \x01(\x03R\x0ffetchedAtUnixMsBGZEgithub.com/aloisdeniel/moth/gen/moth/projectconfig/v1;projectconfigv1b\x06proto3"
 
 var (
-	file_moth_storage_v1_storage_proto_rawDescOnce sync.Once
-	file_moth_storage_v1_storage_proto_rawDescData []byte
+	file_moth_projectconfig_v1_projectconfig_proto_rawDescOnce sync.Once
+	file_moth_projectconfig_v1_projectconfig_proto_rawDescData []byte
 )
 
-func file_moth_storage_v1_storage_proto_rawDescGZIP() []byte {
-	file_moth_storage_v1_storage_proto_rawDescOnce.Do(func() {
-		file_moth_storage_v1_storage_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_moth_storage_v1_storage_proto_rawDesc), len(file_moth_storage_v1_storage_proto_rawDesc)))
+func file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP() []byte {
+	file_moth_projectconfig_v1_projectconfig_proto_rawDescOnce.Do(func() {
+		file_moth_projectconfig_v1_projectconfig_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_moth_projectconfig_v1_projectconfig_proto_rawDesc), len(file_moth_projectconfig_v1_projectconfig_proto_rawDesc)))
 	})
-	return file_moth_storage_v1_storage_proto_rawDescData
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescData
 }
 
-var file_moth_storage_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
-var file_moth_storage_v1_storage_proto_goTypes = []any{
-	(*LegalLinks)(nil),          // 0: moth.storage.v1.LegalLinks
-	(*ThemeColors)(nil),         // 1: moth.storage.v1.ThemeColors
-	(*ThemeColorOverrides)(nil), // 2: moth.storage.v1.ThemeColorOverrides
-	(*ThemeTypography)(nil),     // 3: moth.storage.v1.ThemeTypography
-	(*ThemeSpacing)(nil),        // 4: moth.storage.v1.ThemeSpacing
-	(*ThemeShape)(nil),          // 5: moth.storage.v1.ThemeShape
-	(*ThemeLogo)(nil),           // 6: moth.storage.v1.ThemeLogo
-	(*StoredTheme)(nil),         // 7: moth.storage.v1.StoredTheme
-	(*StoredPaywall)(nil),       // 8: moth.storage.v1.StoredPaywall
-	(*CopyLocaleMessages)(nil),  // 9: moth.storage.v1.CopyLocaleMessages
-	(*StoredCopy)(nil),          // 10: moth.storage.v1.StoredCopy
-	(*CacheEnvelope)(nil),       // 11: moth.storage.v1.CacheEnvelope
-	nil,                         // 12: moth.storage.v1.CopyLocaleMessages.MessagesEntry
-	nil,                         // 13: moth.storage.v1.StoredCopy.LocalesEntry
+var file_moth_projectconfig_v1_projectconfig_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_moth_projectconfig_v1_projectconfig_proto_goTypes = []any{
+	(*LegalLinks)(nil),          // 0: moth.projectconfig.v1.LegalLinks
+	(*ThemeColors)(nil),         // 1: moth.projectconfig.v1.ThemeColors
+	(*ThemeColorOverrides)(nil), // 2: moth.projectconfig.v1.ThemeColorOverrides
+	(*ThemeTypography)(nil),     // 3: moth.projectconfig.v1.ThemeTypography
+	(*ThemeSpacing)(nil),        // 4: moth.projectconfig.v1.ThemeSpacing
+	(*ThemeShape)(nil),          // 5: moth.projectconfig.v1.ThemeShape
+	(*ThemeLogo)(nil),           // 6: moth.projectconfig.v1.ThemeLogo
+	(*StoredTheme)(nil),         // 7: moth.projectconfig.v1.StoredTheme
+	(*StoredPaywall)(nil),       // 8: moth.projectconfig.v1.StoredPaywall
+	(*CopyLocaleMessages)(nil),  // 9: moth.projectconfig.v1.CopyLocaleMessages
+	(*StoredCopy)(nil),          // 10: moth.projectconfig.v1.StoredCopy
+	(*CacheEnvelope)(nil),       // 11: moth.projectconfig.v1.CacheEnvelope
+	nil,                         // 12: moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry
+	nil,                         // 13: moth.projectconfig.v1.StoredCopy.LocalesEntry
 }
-var file_moth_storage_v1_storage_proto_depIdxs = []int32{
-	1,  // 0: moth.storage.v1.StoredTheme.colors:type_name -> moth.storage.v1.ThemeColors
-	2,  // 1: moth.storage.v1.StoredTheme.dark_colors:type_name -> moth.storage.v1.ThemeColorOverrides
-	3,  // 2: moth.storage.v1.StoredTheme.typography:type_name -> moth.storage.v1.ThemeTypography
-	4,  // 3: moth.storage.v1.StoredTheme.spacing:type_name -> moth.storage.v1.ThemeSpacing
-	5,  // 4: moth.storage.v1.StoredTheme.shape:type_name -> moth.storage.v1.ThemeShape
-	6,  // 5: moth.storage.v1.StoredTheme.logo:type_name -> moth.storage.v1.ThemeLogo
-	0,  // 6: moth.storage.v1.StoredTheme.legal:type_name -> moth.storage.v1.LegalLinks
-	0,  // 7: moth.storage.v1.StoredPaywall.legal:type_name -> moth.storage.v1.LegalLinks
-	12, // 8: moth.storage.v1.CopyLocaleMessages.messages:type_name -> moth.storage.v1.CopyLocaleMessages.MessagesEntry
-	13, // 9: moth.storage.v1.StoredCopy.locales:type_name -> moth.storage.v1.StoredCopy.LocalesEntry
-	9,  // 10: moth.storage.v1.StoredCopy.LocalesEntry.value:type_name -> moth.storage.v1.CopyLocaleMessages
+var file_moth_projectconfig_v1_projectconfig_proto_depIdxs = []int32{
+	1,  // 0: moth.projectconfig.v1.StoredTheme.colors:type_name -> moth.projectconfig.v1.ThemeColors
+	2,  // 1: moth.projectconfig.v1.StoredTheme.dark_colors:type_name -> moth.projectconfig.v1.ThemeColorOverrides
+	3,  // 2: moth.projectconfig.v1.StoredTheme.typography:type_name -> moth.projectconfig.v1.ThemeTypography
+	4,  // 3: moth.projectconfig.v1.StoredTheme.spacing:type_name -> moth.projectconfig.v1.ThemeSpacing
+	5,  // 4: moth.projectconfig.v1.StoredTheme.shape:type_name -> moth.projectconfig.v1.ThemeShape
+	6,  // 5: moth.projectconfig.v1.StoredTheme.logo:type_name -> moth.projectconfig.v1.ThemeLogo
+	0,  // 6: moth.projectconfig.v1.StoredTheme.legal:type_name -> moth.projectconfig.v1.LegalLinks
+	0,  // 7: moth.projectconfig.v1.StoredPaywall.legal:type_name -> moth.projectconfig.v1.LegalLinks
+	12, // 8: moth.projectconfig.v1.CopyLocaleMessages.messages:type_name -> moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry
+	13, // 9: moth.projectconfig.v1.StoredCopy.locales:type_name -> moth.projectconfig.v1.StoredCopy.LocalesEntry
+	9,  // 10: moth.projectconfig.v1.StoredCopy.LocalesEntry.value:type_name -> moth.projectconfig.v1.CopyLocaleMessages
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -1012,26 +1012,26 @@ var file_moth_storage_v1_storage_proto_depIdxs = []int32{
 	0,  // [0:11] is the sub-list for field type_name
 }
 
-func init() { file_moth_storage_v1_storage_proto_init() }
-func file_moth_storage_v1_storage_proto_init() {
-	if File_moth_storage_v1_storage_proto != nil {
+func init() { file_moth_projectconfig_v1_projectconfig_proto_init() }
+func file_moth_projectconfig_v1_projectconfig_proto_init() {
+	if File_moth_projectconfig_v1_projectconfig_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_storage_v1_storage_proto_rawDesc), len(file_moth_storage_v1_storage_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_projectconfig_v1_projectconfig_proto_rawDesc), len(file_moth_projectconfig_v1_projectconfig_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_moth_storage_v1_storage_proto_goTypes,
-		DependencyIndexes: file_moth_storage_v1_storage_proto_depIdxs,
-		MessageInfos:      file_moth_storage_v1_storage_proto_msgTypes,
+		GoTypes:           file_moth_projectconfig_v1_projectconfig_proto_goTypes,
+		DependencyIndexes: file_moth_projectconfig_v1_projectconfig_proto_depIdxs,
+		MessageInfos:      file_moth_projectconfig_v1_projectconfig_proto_msgTypes,
 	}.Build()
-	File_moth_storage_v1_storage_proto = out.File
-	file_moth_storage_v1_storage_proto_goTypes = nil
-	file_moth_storage_v1_storage_proto_depIdxs = nil
+	File_moth_projectconfig_v1_projectconfig_proto = out.File
+	file_moth_projectconfig_v1_projectconfig_proto_goTypes = nil
+	file_moth_projectconfig_v1_projectconfig_proto_depIdxs = nil
 }

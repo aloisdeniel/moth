@@ -10,7 +10,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 )
 
 // CopyRevisionKeep is how many revisions of a project's copy overrides are
@@ -30,7 +30,7 @@ const copySaveAttempts = 5
 
 // CopyOverrides is a project's copy customization: BCP-47 locale tag →
 // message key → override string. It is the full override document stored as
-// a moth.storage.v1.StoredCopy protobuf message in projects.copy_pb. An
+// a moth.projectconfig.v1.StoredCopy protobuf message in projects.copy_pb. An
 // empty map (or an absent document) means the
 // project renders the bundled catalog defaults everywhere; overrides are
 // additive on top of the catalog. The store treats the message keys and
@@ -49,7 +49,7 @@ type CopyValidator interface {
 }
 
 // CopyRevision is one saved version of a project's copy overrides. Copy is the
-// raw override protobuf document (moth.storage.v1.StoredCopy, a CopyOverrides
+// raw override protobuf document (moth.projectconfig.v1.StoredCopy, a CopyOverrides
 // map); the low-level primitives treat it opaquely, exactly like
 // ThemeRevision/PaywallRevision.
 type CopyRevision struct {
@@ -60,14 +60,14 @@ type CopyRevision struct {
 }
 
 // parseCopyOverrides decodes a stored override document
-// (moth.storage.v1.StoredCopy); empty bytes (a never-customized or reset
+// (moth.projectconfig.v1.StoredCopy); empty bytes (a never-customized or reset
 // project) decode to an empty, non-nil map.
 func parseCopyOverrides(raw []byte) (CopyOverrides, error) {
 	o := CopyOverrides{}
 	if len(raw) == 0 {
 		return o, nil
 	}
-	var msg storagev1.StoredCopy
+	var msg projectconfigv1.StoredCopy
 	if err := proto.Unmarshal(raw, &msg); err != nil {
 		return nil, fmt.Errorf("parse copy overrides: %w", err)
 	}
@@ -82,12 +82,12 @@ func parseCopyOverrides(raw []byte) (CopyOverrides, error) {
 }
 
 // encodeCopyOverrides serializes overrides for storage as a
-// moth.storage.v1.StoredCopy message, dropping empty locales and empty values
+// moth.projectconfig.v1.StoredCopy message, dropping empty locales and empty values
 // so the document only ever holds meaningful overrides. It returns nil when
 // nothing is left, so an emptied document reads back as the bundled default —
 // the same empty == default convention themes/paywalls use.
 func encodeCopyOverrides(o CopyOverrides) ([]byte, error) {
-	msg := &storagev1.StoredCopy{Locales: map[string]*storagev1.CopyLocaleMessages{}}
+	msg := &projectconfigv1.StoredCopy{Locales: map[string]*projectconfigv1.CopyLocaleMessages{}}
 	for locale, msgs := range o {
 		kept := map[string]string{}
 		for k, v := range msgs {
@@ -96,7 +96,7 @@ func encodeCopyOverrides(o CopyOverrides) ([]byte, error) {
 			}
 		}
 		if len(kept) > 0 {
-			msg.Locales[locale] = &storagev1.CopyLocaleMessages{Messages: kept}
+			msg.Locales[locale] = &projectconfigv1.CopyLocaleMessages{Messages: kept}
 		}
 	}
 	if len(msg.Locales) == 0 {

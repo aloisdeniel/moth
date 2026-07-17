@@ -7,7 +7,7 @@ import (
 
 // This file exists ONLY for the one-time JSON→protobuf storage backfill
 // (store.backfillProtoConfigs, migration 0019): it freezes the legacy JSON
-// document shape themes were stored in before moth.storage.v1. Live code
+// document shape themes were stored in before moth.projectconfig.v1. Live code
 // paths must never use it — Encode/Parse are the storage codec. Do not
 // evolve these structs; the legacy shape is immutable by definition.
 

@@ -19,7 +19,7 @@ import (
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/theme"
@@ -456,9 +456,9 @@ func TestUnparseableStoredTheme(t *testing.T) {
 
 	// Simulate a database last written by a future moth: a schema-v2
 	// document this binary cannot parse, installed as the current theme.
-	future, err := proto.Marshal(&storagev1.StoredTheme{
+	future, err := proto.Marshal(&projectconfigv1.StoredTheme{
 		Version: 2,
-		Colors:  &storagev1.ThemeColors{Primary: "#123456"},
+		Colors:  &projectconfigv1.ThemeColors{Primary: "#123456"},
 	})
 	if err != nil {
 		t.Fatal(err)

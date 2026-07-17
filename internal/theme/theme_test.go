@@ -7,7 +7,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 )
 
 func TestDefaultValidates(t *testing.T) {
@@ -77,7 +77,7 @@ func TestParseLegacyJSONPlanExample(t *testing.T) {
 }
 
 func TestParseRejectsVersions(t *testing.T) {
-	future, err := proto.Marshal(&storagev1.StoredTheme{Version: 2})
+	future, err := proto.Marshal(&projectconfigv1.StoredTheme{Version: 2})
 	if err != nil {
 		t.Fatal(err)
 	}

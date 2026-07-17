@@ -7,7 +7,7 @@
 // present, which tier to highlight, the layout variant and the legal links.
 //
 // Like a theme, a config is a small versioned document stored per project
-// with a revision id (as a moth.storage.v1.StoredPaywall protobuf message),
+// with a revision id (as a moth.projectconfig.v1.StoredPaywall protobuf message),
 // delivered to clients through the public billing API and cached client-side
 // by revision (stale-while-revalidate).
 package paywall
@@ -20,7 +20,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 )
 
 // SchemaVersion is stamped on every encoded paywall document. Parse rejects
@@ -99,7 +99,7 @@ func Default() Config {
 }
 
 // Encode serializes the config as its canonical storage document (a
-// moth.storage.v1.StoredPaywall protobuf message), stamping the current
+// moth.projectconfig.v1.StoredPaywall protobuf message), stamping the current
 // schema version. An encoded document is never empty: empty stored bytes
 // keep meaning "the built-in default paywall".
 func Encode(c Config) ([]byte, error) {
@@ -111,12 +111,12 @@ func Encode(c Config) ([]byte, error) {
 	return raw, nil
 }
 
-// Parse decodes a stored paywall document (moth.storage.v1.StoredPaywall).
+// Parse decodes a stored paywall document (moth.projectconfig.v1.StoredPaywall).
 // It rejects documents from a different schema version — including empty
 // input, which callers treat as "default paywall" before parsing; it does
 // not validate values (Validate does).
 func Parse(raw []byte) (Config, error) {
-	var msg storagev1.StoredPaywall
+	var msg projectconfigv1.StoredPaywall
 	if err := proto.Unmarshal(raw, &msg); err != nil {
 		return Config{}, fmt.Errorf("parse paywall: %w", err)
 	}
@@ -127,8 +127,8 @@ func Parse(raw []byte) (Config, error) {
 }
 
 // ToProto converts the domain config into its storage message.
-func ToProto(c Config) *storagev1.StoredPaywall {
-	return &storagev1.StoredPaywall{
+func ToProto(c Config) *projectconfigv1.StoredPaywall {
+	return &projectconfigv1.StoredPaywall{
 		Version:               int32(c.Version),
 		Headline:              c.Headline,
 		Subtitle:              c.Subtitle,
@@ -136,13 +136,13 @@ func ToProto(c Config) *storagev1.StoredPaywall {
 		Offering:              c.Offering,
 		HighlightedIdentifier: c.HighlightedIdentifier,
 		Layout:                c.Layout,
-		Legal:                 &storagev1.LegalLinks{TermsUrl: c.Legal.TermsURL, PrivacyUrl: c.Legal.PrivacyURL},
+		Legal:                 &projectconfigv1.LegalLinks{TermsUrl: c.Legal.TermsURL, PrivacyUrl: c.Legal.PrivacyURL},
 	}
 }
 
 // FromProto converts a storage message into the domain config (a nil legal
 // sub-message becomes empty links).
-func FromProto(msg *storagev1.StoredPaywall) Config {
+func FromProto(msg *projectconfigv1.StoredPaywall) Config {
 	c := Config{
 		Version:               int(msg.GetVersion()),
 		Headline:              msg.GetHeadline(),

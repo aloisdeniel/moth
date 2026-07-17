@@ -11,7 +11,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 	"github.com/aloisdeniel/moth/internal/fonts"
 )
 
@@ -21,7 +21,7 @@ import (
 const SchemaVersion = 1
 
 // Theme is one project's complete design system. It is persisted as a
-// moth.storage.v1.StoredTheme protobuf document (see Encode/Parse).
+// moth.projectconfig.v1.StoredTheme protobuf document (see Encode/Parse).
 type Theme struct {
 	// Version is the schema version of the document (SchemaVersion).
 	Version int
@@ -150,7 +150,7 @@ func Default() Theme {
 }
 
 // Encode serializes the theme as its canonical storage document (a
-// moth.storage.v1.StoredTheme protobuf message), stamping the current schema
+// moth.projectconfig.v1.StoredTheme protobuf message), stamping the current schema
 // version. An encoded document is never empty: empty stored bytes keep
 // meaning "the built-in default theme".
 func Encode(t Theme) ([]byte, error) {
@@ -162,12 +162,12 @@ func Encode(t Theme) ([]byte, error) {
 	return raw, nil
 }
 
-// Parse decodes a stored theme document (moth.storage.v1.StoredTheme). It
+// Parse decodes a stored theme document (moth.projectconfig.v1.StoredTheme). It
 // rejects documents from a different schema version — including empty input,
 // which callers treat as "default theme" before parsing; it does not
 // validate token values (Validate does).
 func Parse(raw []byte) (Theme, error) {
-	var msg storagev1.StoredTheme
+	var msg projectconfigv1.StoredTheme
 	if err := proto.Unmarshal(raw, &msg); err != nil {
 		return Theme{}, fmt.Errorf("parse theme: %w", err)
 	}
@@ -178,10 +178,10 @@ func Parse(raw []byte) (Theme, error) {
 }
 
 // ToProto converts the domain theme into its storage message.
-func ToProto(t Theme) *storagev1.StoredTheme {
-	msg := &storagev1.StoredTheme{
+func ToProto(t Theme) *projectconfigv1.StoredTheme {
+	msg := &projectconfigv1.StoredTheme{
 		Version: int32(t.Version),
-		Colors: &storagev1.ThemeColors{
+		Colors: &projectconfigv1.ThemeColors{
 			Primary:      t.Colors.Primary,
 			OnPrimary:    t.Colors.OnPrimary,
 			Background:   t.Colors.Background,
@@ -191,17 +191,17 @@ func ToProto(t Theme) *storagev1.StoredTheme {
 			Error:        t.Colors.Error,
 			OnError:      t.Colors.OnError,
 		},
-		Typography: &storagev1.ThemeTypography{
+		Typography: &projectconfigv1.ThemeTypography{
 			FontFamily: t.Typography.FontFamily,
 			Scale:      t.Typography.Scale,
 		},
-		Spacing: &storagev1.ThemeSpacing{Unit: int32(t.Spacing.Unit)},
-		Shape:   &storagev1.ThemeShape{CornerRadius: int32(t.Shape.CornerRadius)},
-		Logo:    &storagev1.ThemeLogo{Light: t.Logo.Light, Dark: t.Logo.Dark},
-		Legal:   &storagev1.LegalLinks{TermsUrl: t.Legal.TermsURL, PrivacyUrl: t.Legal.PrivacyURL},
+		Spacing: &projectconfigv1.ThemeSpacing{Unit: int32(t.Spacing.Unit)},
+		Shape:   &projectconfigv1.ThemeShape{CornerRadius: int32(t.Shape.CornerRadius)},
+		Logo:    &projectconfigv1.ThemeLogo{Light: t.Logo.Light, Dark: t.Logo.Dark},
+		Legal:   &projectconfigv1.LegalLinks{TermsUrl: t.Legal.TermsURL, PrivacyUrl: t.Legal.PrivacyURL},
 	}
 	if t.DarkColors != nil {
-		msg.DarkColors = &storagev1.ThemeColorOverrides{
+		msg.DarkColors = &projectconfigv1.ThemeColorOverrides{
 			Primary:      t.DarkColors.Primary,
 			OnPrimary:    t.DarkColors.OnPrimary,
 			Background:   t.DarkColors.Background,
@@ -218,7 +218,7 @@ func ToProto(t Theme) *storagev1.StoredTheme {
 // FromProto converts a storage message into the domain theme. Nil
 // sub-messages become zero values; an absent dark_colors stays nil so the
 // dark palette derives fully from the light one.
-func FromProto(msg *storagev1.StoredTheme) Theme {
+func FromProto(msg *projectconfigv1.StoredTheme) Theme {
 	t := Theme{Version: int(msg.GetVersion())}
 	if c := msg.GetColors(); c != nil {
 		t.Colors = Colors{

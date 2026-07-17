@@ -25,7 +25,7 @@ func parseLegacyCopyJSON(raw []byte) (CopyOverrides, error) {
 // with migration 0019: for every row whose *_pb BLOB column is still empty
 // while the legacy TEXT column holds a JSON document, it parses the legacy
 // JSON (with the frozen legacy parsers), re-encodes it as the
-// moth.storage.v1 storage message and writes the BLOB, clearing the TEXT
+// moth.projectconfig.v1 storage message and writes the BLOB, clearing the TEXT
 // column in the same statement. It runs on every startup right after
 // migrations apply and is idempotent: once converted (or on a fresh
 // database) no row matches and the whole pass is a no-op.

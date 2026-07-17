@@ -13,7 +13,7 @@ import (
 const ThemeRevisionKeep = 10
 
 // ThemeRevision is one saved version of a project's design-system theme.
-// Theme is the raw versioned protobuf document (moth.storage.v1.StoredTheme)
+// Theme is the raw versioned protobuf document (moth.projectconfig.v1.StoredTheme)
 // produced by internal/theme; the store never interprets it.
 type ThemeRevision struct {
 	ID        string

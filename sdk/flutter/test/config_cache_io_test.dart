@@ -1,5 +1,5 @@
 // Tests for the file-backed config caches' protobuf format: each cache file
-// is a moth.storage.v1.CacheEnvelope whose payload is the raw wire message
+// is a moth.projectconfig.v1.CacheEnvelope whose payload is the raw wire message
 // exactly as the server delivered it (moth.auth.v1.Theme /
 // moth.billing.v1.Paywall / moth.auth.v1.Copy), and any legacy-JSON or
 // corrupt file is a cache miss — deleted best-effort, never a crash.
@@ -13,7 +13,8 @@ import 'package:moth_auth/moth_auth.dart';
 import 'package:moth_auth/src/copy_cache_io.dart';
 import 'package:moth_auth/src/gen/moth/auth/v1/config.pb.dart' as authpb;
 import 'package:moth_auth/src/gen/moth/billing/v1/billing.pb.dart' as billpb;
-import 'package:moth_auth/src/gen/moth/storage/v1/storage.pb.dart' as storagepb;
+import 'package:moth_auth/src/gen/moth/projectconfig/v1/projectconfig.pb.dart'
+    as storagepb;
 import 'package:moth_auth/src/paywall_cache_io.dart';
 import 'package:moth_auth/src/theme_cache_io.dart';
 

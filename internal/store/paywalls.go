@@ -14,7 +14,7 @@ import (
 const PaywallRevisionKeep = 10
 
 // PaywallRevision is one saved version of a project's paywall config. Paywall
-// is the raw versioned protobuf document (moth.storage.v1.StoredPaywall)
+// is the raw versioned protobuf document (moth.projectconfig.v1.StoredPaywall)
 // produced by internal/paywall; the store never interprets it.
 type PaywallRevision struct {
 	ID        string

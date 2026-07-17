@@ -21,7 +21,7 @@ class MothCachedTheme {
 /// files, so a launch renders the project's branding immediately
 /// (stale-while-revalidate) and fonts are not re-downloaded.
 ///
-/// The file cache stores a `moth.storage.v1.CacheEnvelope` protobuf whose
+/// The file cache stores a `moth.projectconfig.v1.CacheEnvelope` protobuf whose
 /// payload is the raw `moth.auth.v1.Theme` wire message exactly as the
 /// server delivered it, stamped with the fetch time that drives the
 /// download-once TTL. The default is a file cache under the app's support

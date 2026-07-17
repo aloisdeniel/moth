@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-// moth.storage.v1 holds the serialized-at-rest schemas: the per-project
+// moth.projectconfig.v1 holds the serialized-at-rest schemas: the per-project
 // configuration blobs the server stores in SQLite (theme, paywall, copy —
 // as protobuf-encoded BLOB columns) and the envelope the Flutter SDK uses
 // to persist its on-device config caches. One protocol everywhere: the
@@ -9,9 +9,9 @@ syntax = "proto3";
 //
 // Evolution rules are the protobuf defaults: add fields, never renumber or
 // reuse tags. `buf breaking` guards this package like every other.
-package moth.storage.v1;
+package moth.projectconfig.v1;
 
-option go_package = "github.com/aloisdeniel/moth/gen/moth/storage/v1;storagev1";
+option go_package = "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1;projectconfigv1";
 
 // LegalLinks are the optional legal URLs rendered near signup and on the
 // paywall footer.

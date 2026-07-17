@@ -7,7 +7,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'gen/moth/auth/v1/config.pb.dart' as pb;
-import 'gen/moth/storage/v1/storage.pb.dart' as storagepb;
+import 'gen/moth/projectconfig/v1/projectconfig.pb.dart' as storagepb;
 import 'theme.dart';
 import 'theme_cache.dart';
 
@@ -15,7 +15,7 @@ MothThemeCache createThemeCache(String publishableKey) =>
     MothFileThemeCache(publishableKey: publishableKey);
 
 /// File-backed [MothThemeCache] under the application support directory:
-/// `<support>/moth/<key-hash>/theme.pb` — a `moth.storage.v1.CacheEnvelope`
+/// `<support>/moth/<key-hash>/theme.pb` — a `moth.projectconfig.v1.CacheEnvelope`
 /// wrapping the raw `moth.auth.v1.Theme` wire message — plus one
 /// `font_<url-hash>` file per downloaded font. Nothing here is secret — the
 /// theme is public project configuration — so plain files (not secure

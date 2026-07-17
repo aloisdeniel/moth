@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from moth/storage/v1/storage.proto.
+// Generated from moth/projectconfig/v1/projectconfig.proto.
 
 // @dart = 3.3
 

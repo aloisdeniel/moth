@@ -9,7 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'copy.dart';
 import 'copy_cache.dart';
 import 'gen/moth/auth/v1/config.pb.dart' as pb;
-import 'gen/moth/storage/v1/storage.pb.dart' as storagepb;
+import 'gen/moth/projectconfig/v1/projectconfig.pb.dart' as storagepb;
 import 'locale.dart';
 
 MothCopyCache createCopyCache(String publishableKey) =>
@@ -17,7 +17,7 @@ MothCopyCache createCopyCache(String publishableKey) =>
 
 /// File-backed [MothCopyCache] under the application support directory:
 /// `<support>/moth/<key-hash>/copy_<locale-hash>.pb`, one file per locale —
-/// each a `moth.storage.v1.CacheEnvelope` wrapping the raw
+/// each a `moth.projectconfig.v1.CacheEnvelope` wrapping the raw
 /// `moth.auth.v1.Copy` wire message, with the envelope's `locale` set to the
 /// negotiated tag. The copy is not secret (the server re-delivers it), so
 /// plain files — not secure storage — are the right place.

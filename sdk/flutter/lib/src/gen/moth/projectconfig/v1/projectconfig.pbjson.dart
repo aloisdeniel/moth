@@ -1,6 +1,6 @@
 // This is a generated file - do not edit.
 //
-// Generated from moth/storage/v1/storage.proto.
+// Generated from moth/projectconfig/v1/projectconfig.proto.
 
 // @dart = 3.3
 
@@ -136,7 +136,7 @@ const StoredTheme$json = {
       '3': 2,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.ThemeColors',
+      '6': '.moth.projectconfig.v1.ThemeColors',
       '10': 'colors'
     },
     {
@@ -144,7 +144,7 @@ const StoredTheme$json = {
       '3': 3,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.ThemeColorOverrides',
+      '6': '.moth.projectconfig.v1.ThemeColorOverrides',
       '10': 'darkColors'
     },
     {
@@ -152,7 +152,7 @@ const StoredTheme$json = {
       '3': 4,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.ThemeTypography',
+      '6': '.moth.projectconfig.v1.ThemeTypography',
       '10': 'typography'
     },
     {
@@ -160,7 +160,7 @@ const StoredTheme$json = {
       '3': 5,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.ThemeSpacing',
+      '6': '.moth.projectconfig.v1.ThemeSpacing',
       '10': 'spacing'
     },
     {
@@ -168,7 +168,7 @@ const StoredTheme$json = {
       '3': 6,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.ThemeShape',
+      '6': '.moth.projectconfig.v1.ThemeShape',
       '10': 'shape'
     },
     {
@@ -176,7 +176,7 @@ const StoredTheme$json = {
       '3': 7,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.ThemeLogo',
+      '6': '.moth.projectconfig.v1.ThemeLogo',
       '10': 'logo'
     },
     {
@@ -184,7 +184,7 @@ const StoredTheme$json = {
       '3': 8,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.LegalLinks',
+      '6': '.moth.projectconfig.v1.LegalLinks',
       '10': 'legal'
     },
   ],
@@ -192,14 +192,15 @@ const StoredTheme$json = {
 
 /// Descriptor for `StoredTheme`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List storedThemeDescriptor = $convert.base64Decode(
-    'CgtTdG9yZWRUaGVtZRIYCgd2ZXJzaW9uGAEgASgFUgd2ZXJzaW9uEjQKBmNvbG9ycxgCIAEoCz'
-    'IcLm1vdGguc3RvcmFnZS52MS5UaGVtZUNvbG9yc1IGY29sb3JzEkUKC2RhcmtfY29sb3JzGAMg'
-    'ASgLMiQubW90aC5zdG9yYWdlLnYxLlRoZW1lQ29sb3JPdmVycmlkZXNSCmRhcmtDb2xvcnMSQA'
-    'oKdHlwb2dyYXBoeRgEIAEoCzIgLm1vdGguc3RvcmFnZS52MS5UaGVtZVR5cG9ncmFwaHlSCnR5'
-    'cG9ncmFwaHkSNwoHc3BhY2luZxgFIAEoCzIdLm1vdGguc3RvcmFnZS52MS5UaGVtZVNwYWNpbm'
-    'dSB3NwYWNpbmcSMQoFc2hhcGUYBiABKAsyGy5tb3RoLnN0b3JhZ2UudjEuVGhlbWVTaGFwZVIF'
-    'c2hhcGUSLgoEbG9nbxgHIAEoCzIaLm1vdGguc3RvcmFnZS52MS5UaGVtZUxvZ29SBGxvZ28SMQ'
-    'oFbGVnYWwYCCABKAsyGy5tb3RoLnN0b3JhZ2UudjEuTGVnYWxMaW5rc1IFbGVnYWw=');
+    'CgtTdG9yZWRUaGVtZRIYCgd2ZXJzaW9uGAEgASgFUgd2ZXJzaW9uEjoKBmNvbG9ycxgCIAEoCz'
+    'IiLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9yc1IGY29sb3JzEksKC2RhcmtfY29s'
+    'b3JzGAMgASgLMioubW90aC5wcm9qZWN0Y29uZmlnLnYxLlRoZW1lQ29sb3JPdmVycmlkZXNSCm'
+    'RhcmtDb2xvcnMSRgoKdHlwb2dyYXBoeRgEIAEoCzImLm1vdGgucHJvamVjdGNvbmZpZy52MS5U'
+    'aGVtZVR5cG9ncmFwaHlSCnR5cG9ncmFwaHkSPQoHc3BhY2luZxgFIAEoCzIjLm1vdGgucHJvam'
+    'VjdGNvbmZpZy52MS5UaGVtZVNwYWNpbmdSB3NwYWNpbmcSNwoFc2hhcGUYBiABKAsyIS5tb3Ro'
+    'LnByb2plY3Rjb25maWcudjEuVGhlbWVTaGFwZVIFc2hhcGUSNAoEbG9nbxgHIAEoCzIgLm1vdG'
+    'gucHJvamVjdGNvbmZpZy52MS5UaGVtZUxvZ29SBGxvZ28SNwoFbGVnYWwYCCABKAsyIS5tb3Ro'
+    'LnByb2plY3Rjb25maWcudjEuTGVnYWxMaW5rc1IFbGVnYWw=');
 
 @$core.Deprecated('Use storedPaywallDescriptor instead')
 const StoredPaywall$json = {
@@ -223,7 +224,7 @@ const StoredPaywall$json = {
       '3': 8,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.LegalLinks',
+      '6': '.moth.projectconfig.v1.LegalLinks',
       '10': 'legal'
     },
   ],
@@ -235,8 +236,8 @@ final $typed_data.Uint8List storedPaywallDescriptor = $convert.base64Decode(
     'ABKAlSCGhlYWRsaW5lEhoKCHN1YnRpdGxlGAMgASgJUghzdWJ0aXRsZRIaCghiZW5lZml0cxgE'
     'IAMoCVIIYmVuZWZpdHMSGgoIb2ZmZXJpbmcYBSABKAlSCG9mZmVyaW5nEjUKFmhpZ2hsaWdodG'
     'VkX2lkZW50aWZpZXIYBiABKAlSFWhpZ2hsaWdodGVkSWRlbnRpZmllchIWCgZsYXlvdXQYByAB'
-    'KAlSBmxheW91dBIxCgVsZWdhbBgIIAEoCzIbLm1vdGguc3RvcmFnZS52MS5MZWdhbExpbmtzUg'
-    'VsZWdhbA==');
+    'KAlSBmxheW91dBI3CgVsZWdhbBgIIAEoCzIhLm1vdGgucHJvamVjdGNvbmZpZy52MS5MZWdhbE'
+    'xpbmtzUgVsZWdhbA==');
 
 @$core.Deprecated('Use copyLocaleMessagesDescriptor instead')
 const CopyLocaleMessages$json = {
@@ -247,7 +248,7 @@ const CopyLocaleMessages$json = {
       '3': 1,
       '4': 3,
       '5': 11,
-      '6': '.moth.storage.v1.CopyLocaleMessages.MessagesEntry',
+      '6': '.moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry',
       '10': 'messages'
     },
   ],
@@ -266,9 +267,10 @@ const CopyLocaleMessages_MessagesEntry$json = {
 
 /// Descriptor for `CopyLocaleMessages`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List copyLocaleMessagesDescriptor = $convert.base64Decode(
-    'ChJDb3B5TG9jYWxlTWVzc2FnZXMSTQoIbWVzc2FnZXMYASADKAsyMS5tb3RoLnN0b3JhZ2Uudj'
-    'EuQ29weUxvY2FsZU1lc3NhZ2VzLk1lc3NhZ2VzRW50cnlSCG1lc3NhZ2VzGjsKDU1lc3NhZ2Vz'
-    'RW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ==');
+    'ChJDb3B5TG9jYWxlTWVzc2FnZXMSUwoIbWVzc2FnZXMYASADKAsyNy5tb3RoLnByb2plY3Rjb2'
+    '5maWcudjEuQ29weUxvY2FsZU1lc3NhZ2VzLk1lc3NhZ2VzRW50cnlSCG1lc3NhZ2VzGjsKDU1l'
+    'c3NhZ2VzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ'
+    '==');
 
 @$core.Deprecated('Use storedCopyDescriptor instead')
 const StoredCopy$json = {
@@ -279,7 +281,7 @@ const StoredCopy$json = {
       '3': 1,
       '4': 3,
       '5': 11,
-      '6': '.moth.storage.v1.StoredCopy.LocalesEntry',
+      '6': '.moth.projectconfig.v1.StoredCopy.LocalesEntry',
       '10': 'locales'
     },
   ],
@@ -296,7 +298,7 @@ const StoredCopy_LocalesEntry$json = {
       '3': 2,
       '4': 1,
       '5': 11,
-      '6': '.moth.storage.v1.CopyLocaleMessages',
+      '6': '.moth.projectconfig.v1.CopyLocaleMessages',
       '10': 'value'
     },
   ],
@@ -305,10 +307,10 @@ const StoredCopy_LocalesEntry$json = {
 
 /// Descriptor for `StoredCopy`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List storedCopyDescriptor = $convert.base64Decode(
-    'CgpTdG9yZWRDb3B5EkIKB2xvY2FsZXMYASADKAsyKC5tb3RoLnN0b3JhZ2UudjEuU3RvcmVkQ2'
-    '9weS5Mb2NhbGVzRW50cnlSB2xvY2FsZXMaXwoMTG9jYWxlc0VudHJ5EhAKA2tleRgBIAEoCVID'
-    'a2V5EjkKBXZhbHVlGAIgASgLMiMubW90aC5zdG9yYWdlLnYxLkNvcHlMb2NhbGVNZXNzYWdlc1'
-    'IFdmFsdWU6AjgB');
+    'CgpTdG9yZWRDb3B5EkgKB2xvY2FsZXMYASADKAsyLi5tb3RoLnByb2plY3Rjb25maWcudjEuU3'
+    'RvcmVkQ29weS5Mb2NhbGVzRW50cnlSB2xvY2FsZXMaZQoMTG9jYWxlc0VudHJ5EhAKA2tleRgB'
+    'IAEoCVIDa2V5Ej8KBXZhbHVlGAIgASgLMikubW90aC5wcm9qZWN0Y29uZmlnLnYxLkNvcHlMb2'
+    'NhbGVNZXNzYWdlc1IFdmFsdWU6AjgB');
 
 @$core.Deprecated('Use cacheEnvelopeDescriptor instead')
 const CacheEnvelope$json = {

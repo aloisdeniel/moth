@@ -6,7 +6,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 )
 
 func TestDefaultValidates(t *testing.T) {
@@ -36,7 +36,7 @@ func TestEncodeParseRoundTrip(t *testing.T) {
 }
 
 func TestParseRejectsWrongVersion(t *testing.T) {
-	future, err := proto.Marshal(&storagev1.StoredPaywall{Version: 99, Headline: "x", Layout: "tiles"})
+	future, err := proto.Marshal(&projectconfigv1.StoredPaywall{Version: 99, Headline: "x", Layout: "tiles"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -29,7 +29,7 @@ class MothCachedCopy {
 /// the shared language makes the cache round-trip so an offline relaunch on a
 /// region-tagged device still renders the project's cached copy.
 ///
-/// The file cache stores a `moth.storage.v1.CacheEnvelope` protobuf whose
+/// The file cache stores a `moth.projectconfig.v1.CacheEnvelope` protobuf whose
 /// payload is the raw `moth.auth.v1.Copy` wire message exactly as the server
 /// delivered it, with the envelope's `locale` set to the negotiated tag and
 /// the fetch time that drives the download-once TTL. The copy is not secret

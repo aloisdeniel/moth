@@ -1,5 +1,5 @@
 -- Per-project config storage moves from JSON TEXT to protobuf BLOBs
--- (moth.storage.v1: StoredTheme / StoredPaywall / StoredCopy). The new *_pb
+-- (moth.projectconfig.v1: StoredTheme / StoredPaywall / StoredCopy). The new *_pb
 -- columns hold the proto-encoded document; X'' (empty) keeps the existing
 -- convention: built-in defaults, nothing customized.
 --

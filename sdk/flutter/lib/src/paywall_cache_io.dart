@@ -6,7 +6,7 @@ import 'package:fixnum/fixnum.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'gen/moth/billing/v1/billing.pb.dart' as pb;
-import 'gen/moth/storage/v1/storage.pb.dart' as storagepb;
+import 'gen/moth/projectconfig/v1/projectconfig.pb.dart' as storagepb;
 import 'offering.dart';
 import 'paywall_cache.dart';
 
@@ -14,7 +14,7 @@ MothPaywallCache createPaywallCache(String publishableKey) =>
     MothFilePaywallCache(publishableKey: publishableKey);
 
 /// File-backed [MothPaywallCache] under the application support directory:
-/// `<support>/moth/<key-hash>/paywall.pb` — a `moth.storage.v1.CacheEnvelope`
+/// `<support>/moth/<key-hash>/paywall.pb` — a `moth.projectconfig.v1.CacheEnvelope`
 /// wrapping the raw `moth.billing.v1.Paywall` wire message. The paywall
 /// config is not secret (the server re-delivers it), so plain files — not
 /// secure storage — are the right place.

@@ -13,7 +13,7 @@ import (
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
-	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
+	projectconfigv1 "github.com/aloisdeniel/moth/gen/moth/projectconfig/v1"
 	"github.com/aloisdeniel/moth/internal/i18n"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
@@ -255,12 +255,12 @@ func (h *CopyHandler) ListLocales(ctx context.Context, req *connect.Request[admi
 }
 
 // revisionLocales extracts the locale tags a stored revision document
-// (moth.storage.v1.StoredCopy) carries, sorted, for a compact history label.
+// (moth.projectconfig.v1.StoredCopy) carries, sorted, for a compact history label.
 func revisionLocales(raw []byte) []string {
 	if len(raw) == 0 {
 		return nil
 	}
-	var doc storagev1.StoredCopy
+	var doc projectconfigv1.StoredCopy
 	if err := proto.Unmarshal(raw, &doc); err != nil {
 		return nil
 	}

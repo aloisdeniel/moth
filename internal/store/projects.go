@@ -18,7 +18,7 @@ type Project struct {
 	SecretKeyHash  string
 	Settings       ProjectSettings
 	// Theme is the raw design-system protobuf document
-	// (moth.storage.v1.StoredTheme, see internal/theme); empty means the
+	// (moth.projectconfig.v1.StoredTheme, see internal/theme); empty means the
 	// built-in default theme. Written through SetProjectTheme, never
 	// UpdateProject.
 	Theme []byte
@@ -26,7 +26,7 @@ type Project struct {
 	// Theme is empty).
 	ThemeRevisionID string
 	// Paywall is the raw paywall-config protobuf document
-	// (moth.storage.v1.StoredPaywall, see internal/paywall); empty means the
+	// (moth.projectconfig.v1.StoredPaywall, see internal/paywall); empty means the
 	// built-in default paywall. Written through SetProjectPaywall, never
 	// UpdateProject.
 	Paywall []byte
@@ -34,7 +34,7 @@ type Project struct {
 	// Paywall is empty).
 	PaywallRevisionID string
 	// Copy is the raw copy-override protobuf document
-	// (moth.storage.v1.StoredCopy, a locale → key → string map, see
+	// (moth.projectconfig.v1.StoredCopy, a locale → key → string map, see
 	// CopyOverrides); empty means the project renders the bundled catalog
 	// defaults. Written through SetProjectCopy / the copy mutators, never
 	// UpdateProject.
