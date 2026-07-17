@@ -15,6 +15,9 @@ The package is **project-agnostic** — endpoint and publishable key are
 passed at runtime. The project's **Setup** tab in the admin console
 renders every snippet below with your real values already filled in.
 
+The web counterpart is [`@moth/react`](../react/) — same core/UI split,
+same themed screens, served from the instance's npm registry.
+
 There are two ways to use it: the **widget layer** (`MothApp` /
 `MothScope` / `MothLoginScreen`) for a batteries-included flow, and the
 **client core** (`MothClient`) for full control or non-widget code. The

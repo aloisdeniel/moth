@@ -54,8 +54,22 @@ const compareRows = [
     ],
   },
   {
+    label: 'Web subscriptions (Stripe)',
+    cells: [
+      'Built in: hosted Checkout',
+      'Pair with Stripe yourself',
+      'Not offered',
+      'Not offered',
+    ],
+  },
+  {
     label: 'Paywall + revenue analytics',
-    cells: ['Themed paywall, revenue/mo', 'Separate products', 'Not offered', 'Not offered'],
+    cells: [
+      'Themed paywall, revenue/mo',
+      'Separate products',
+      'Not offered',
+      'Not offered',
+    ],
   },
   { group: "What moth doesn't do (v1)" },
   {
@@ -91,6 +105,20 @@ const stepWrap = `runApp(MothApp(
   child: MyApp(),
 ));`;
 
+const stepNpmrc = `@moth:registry=https://auth.example.com/npm
+# then: npm install @moth/react`;
+
+const stepProvider = `createRoot(document.getElementById('root')!).render(
+  <MothProvider
+    config={{
+      endpoint: 'https://auth.example.com',
+      publishableKey: 'pk_bird_c81f2a9d4e',
+    }}
+  >
+    <App />
+  </MothProvider>,
+)`;
+
 const tabBrew = `brew install moth
 moth serve --data-dir ./data`;
 
@@ -112,17 +140,17 @@ ReadWritePaths=/var/lib/moth`;
 ---
 
 <Base
-  title="moth — authentication for all your mobile apps"
-  description="One small self-hosted binary. Every app you ship gets its own users, keys, and branded login — just add a project."
+  title="moth — authentication for all your apps"
+  description="One small self-hosted binary. Every app you ship — mobile or web — gets its own users, keys, branded login and subscriptions. Just add a project."
 >
   {/* 1 · Hero */}
   <section class="hero">
     <div class="container">
       <p class="overline">Open-source authentication server</p>
-      <h1>Authentication for <em>all</em> your mobile apps. One small binary.</h1>
+      <h1>Authentication for <em>all</em> your apps. One small binary.</h1>
       <p class="subline">
-        Run one server. Every app you ship gets its own users, keys, branded
-        login — and its own subscriptions — just add a project.
+        Run one server. Every app you ship — mobile or web — gets its own
+        users, keys, branded login and subscriptions. Just add a project.
       </p>
 
       <div class="hero-grid">
@@ -156,10 +184,11 @@ ReadWritePaths=/var/lib/moth`;
   <section class="section section-subtle" id="how-it-works">
     <div class="container">
       <p class="overline">How it works</p>
-      <h2>Zero to a logged-in Flutter app in three steps.</h2>
+      <h2>Zero to a logged-in app in three steps.</h2>
       <p class="lead">
         No SDK keys to provision in a console, no backend to stand up. Run the
-        binary, create a project, point your app at it.
+        binary, create a project, point your app at it — Flutter on mobile,
+        React on the web.
       </p>
       <div class="steps">
         <div class="step">
@@ -181,11 +210,25 @@ ReadWritePaths=/var/lib/moth`;
         <div class="step">
           <h3>Add the SDK</h3>
           <p>
-            The <code>moth_auth</code> package is served from your instance.
-            Wrap your app in <code>MothApp</code> and you have a login screen.
+            Both SDKs are served from your instance — pub for Flutter, npm for
+            React. Wrap your app and you have a themed login screen.
           </p>
-          <CodeBlock code={stepPubspec} label="pubspec.yaml" />
-          <CodeBlock code={stepWrap} label="lib/main.dart" />
+          <Tabs
+            name="sdk"
+            tabs={[
+              { id: 'flutter', label: 'Flutter' },
+              { id: 'react', label: 'React' },
+            ]}
+          >
+            <div slot="flutter">
+              <CodeBlock code={stepPubspec} label="pubspec.yaml" />
+              <CodeBlock code={stepWrap} label="lib/main.dart" />
+            </div>
+            <div slot="react">
+              <CodeBlock code={stepNpmrc} label=".npmrc" />
+              <CodeBlock code={stepProvider} label="src/main.tsx" />
+            </div>
+          </Tabs>
         </div>
       </div>
     </div>
@@ -253,9 +296,10 @@ ReadWritePaths=/var/lib/moth`;
           An embedded web app for projects, users, API keys, analytics, setup
           instructions, and login theming. Ships inside the binary.
         </FeatureTile>
-        <FeatureTile title="Flutter SDK">
+        <FeatureTile title="Flutter & React SDKs">
           <code>moth_auth</code> is served from the binary's own pub repository,
-          so the SDK version always matches the server. Nothing hits pub.dev.
+          <code>@moth/react</code> from its npm registry — the SDK version
+          always matches the server. Nothing hits pub.dev or npmjs.
         </FeatureTile>
         <FeatureTile title="Admin CLI & agents">
           The same binary drives any instance: scriptable project and user
@@ -266,19 +310,21 @@ ReadWritePaths=/var/lib/moth`;
           token minted for one app can never validate for another.
         </FeatureTile>
         <FeatureTile title="Subscriptions & entitlements">
-          App Store and Google Play receipts validated server-side — no billing
+          App Store, Google Play, and Stripe validated server-side — no billing
           SaaS. Subscription state becomes entitlements like <code>pro</code>,
           with promos and grace periods; a free tier is always built in.
         </FeatureTile>
-        <FeatureTile title="Themed paywall">
+        <FeatureTile title="Themed paywall, mobile & web">
           <code>MothPaywallScreen</code> renders your tiers with your branding —
           copy, layout, and highlighted tier configured per language from the
-          admin, exactly like the login screen.
+          admin. One paywall config drives Flutter and React alike; on the web
+          it sells through Stripe-hosted Checkout, so moth never touches a card.
         </FeatureTile>
         <FeatureTile title="Revenue per month">
           Store-reported revenue, active subscribers, churn, and trial
           conversion land on the same analytics tab — per project, per
-          currency, in your own database.
+          currency, with Apple, Google, and web side by side, in your own
+          database.
         </FeatureTile>
       </div>
     </div>

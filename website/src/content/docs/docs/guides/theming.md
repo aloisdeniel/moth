@@ -61,7 +61,9 @@ stay plain-HTTP downloads with cache headers; fonts are registered via
 
 Net effect: **change the primary color in the admin and every install
 picks it up on next launch, without an app release.** Hosted pages and
-emails reflect it immediately.
+emails reflect it immediately. The [React SDK](../../react/) consumes the
+same tokens the same way, rendered as CSS custom properties scoped to the
+moth screens — one theme drives mobile, web, pages, and emails.
 
 ## Escape hatches in the SDK
 

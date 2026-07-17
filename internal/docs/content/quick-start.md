@@ -1,7 +1,10 @@
 # Quick start
 
 The ten-minute path: run the binary, create a project in the admin, add
-`moth_auth` to your Flutter app, wrap it in one widget, sign in.
+`moth_auth` to your Flutter app, wrap it in one widget, sign in. (Building
+for the web instead? The same three steps with npm and `@moth/react` — the
+snippets below have direct equivalents in the
+[React SDK reference](../react/), and the Setup tab renders both.)
 
 Every snippet below is also rendered — with your project's real values
 already filled in — on the project's **Setup** tab in the admin console.
@@ -168,3 +171,7 @@ contract and online introspection.
 - [Theme the login screen](../guides/theming/) to match your app's brand.
 - [Deploy it for real](../installation/) — systemd, reverse proxy, TLS.
 - [Flutter SDK reference](../sdk/) — everything beyond the built-in flow.
+- [React SDK reference](../react/) — the same developer experience for the
+  web, served from your instance's npm registry.
+- [Sell subscriptions](../guides/monetization/) — App Store, Google Play,
+  and Stripe on the web, one entitlement model.
