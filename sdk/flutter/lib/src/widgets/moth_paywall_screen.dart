@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../client.dart';
+import '../copy.dart';
 import '../customer_info.dart';
 import '../exceptions.dart';
 import '../offering.dart';
@@ -11,6 +12,7 @@ import '../paywall_cache.dart';
 import '../purchase.dart';
 import '../theme.dart';
 import 'billing_adapter.dart';
+import 'moth_copy_scope.dart';
 import 'moth_logo.dart';
 import 'moth_scope.dart';
 import 'moth_theme_scope.dart';
@@ -45,6 +47,7 @@ class MothPaywallScreen extends StatefulWidget {
     this.config,
     this.paywallCache,
     this.theme,
+    this.copy,
     this.onPurchased,
     this.onClose,
   });
@@ -67,6 +70,11 @@ class MothPaywallScreen extends StatefulWidget {
 
   /// Theme override: wins over the enclosing [MothThemeScope] / server theme.
   final MothTheme? theme;
+
+  /// Localized copy override: wins over the enclosing [MothCopyScope] (from
+  /// [MothApp]) and the copy delivered with the config fetch. Falls back to
+  /// the bundled floor for the current locale otherwise.
+  final MothCopy? copy;
 
   /// Called after a successful purchase. When gated by
   /// `MothApp(requiresEntitlement:)` the swap to the child happens
@@ -103,11 +111,17 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
   MothOffering? _offering;
   Map<String, MothStoreProduct> _storeProducts = const {};
   MothTheme? _serverTheme;
+  MothCopy? _serverCopy;
   bool _loading = true;
   bool _failed = false;
   String? _selectedId;
   bool _busy = false;
   String? _message;
+
+  /// The copy resolved on the last build, so async action handlers (purchase /
+  /// restore outcomes, which run outside build) map their toasts to the same
+  /// localized wording on screen.
+  MothCopy _resolvedCopy = MothCopy.bundled(const Locale('en'));
 
   MothClient get client => _client!;
 
@@ -189,11 +203,21 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
       // Fetch the project theme only as a standalone fallback: under MothApp
       // (or any MothThemeScope) the theme is already provided.
       MothTheme? serverTheme;
+      MothCopy? serverCopy;
       if (needsThemeFetch) {
         try {
-          serverTheme = (await client.getProjectConfig()).theme;
+          final projectConfig = await client.getProjectConfig();
+          serverTheme = projectConfig.theme;
+          final update = projectConfig.copy;
+          if (update != null && update.messages != null) {
+            serverCopy = MothCopy(
+              locale: update.locale,
+              revisionId: update.revisionId,
+              messages: update.messages!,
+            );
+          }
         } on MothException {
-          // Non-fatal: the fallback theme still renders.
+          // Non-fatal: the fallback theme/copy still renders.
         }
       }
       if (!mounted) return;
@@ -202,6 +226,7 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         _offering = offering;
         _storeProducts = storeProducts;
         _serverTheme = serverTheme;
+        _serverCopy = serverCopy;
         _selectedId = _defaultSelection(paywall, offering);
         _loading = false;
       });
@@ -262,15 +287,10 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         widget.onPurchased?.call();
       case MothPurchasePending():
         setState(
-          () => _message =
-              'Your purchase is pending approval. It will unlock once '
-              'confirmed.',
+          () => _message = _resolvedCopy.value('paywall.purchase_pending'),
         );
       case MothPurchaseAlreadyOwned():
-        setState(
-          () => _message =
-              'You already own this subscription — tap Restore to re-link it.',
-        );
+        setState(() => _message = _resolvedCopy.value('paywall.already_owned'));
       case MothPurchaseCancelled():
         break;
       case MothPurchaseError(:final message):
@@ -298,8 +318,8 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
       setState(() {
         _busy = false;
         _message = info.activeEntitlements.isEmpty
-            ? 'No previous purchases were found to restore.'
-            : 'Your purchases were restored.';
+            ? _resolvedCopy.value('paywall.restore_none')
+            : _resolvedCopy.value('paywall.restore_done');
       });
     } on MothException catch (err) {
       if (mounted) {
@@ -312,7 +332,10 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _message = 'Could not restore purchases: $err';
+          _message = _resolvedCopy.value(
+            'paywall.restore_failed',
+            vars: {'error': '$err'},
+          );
         });
       }
     }
@@ -335,18 +358,34 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         MothThemeScope.maybeOf(context) ??
         _serverTheme ??
         MothTheme.fallback();
+    final copy =
+        widget.copy ??
+        MothCopyScope.maybeOf(context) ??
+        _serverCopy ??
+        MothCopy.bundled(client.currentLocale);
+    _resolvedCopy = copy;
     final brightness =
         MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
     return MothThemeScope(
       theme: moth,
-      child: Theme(
-        data: moth.toThemeData(brightness),
-        child: Builder(builder: (context) => _buildScreen(context, moth)),
+      child: MothCopyScope(
+        copy: copy,
+        child: Theme(
+          data: moth.toThemeData(brightness),
+          child: Builder(
+            builder: (context) => _buildScreen(context, moth, copy),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildScreen(BuildContext context, MothTheme moth) {
+  /// Resolves [key] from [copy], filling `{app}` from [MothConfig.appName]
+  /// (only present in the bundled floor — server copy is already interpolated).
+  String _t(MothCopy copy, String key) =>
+      copy.value(key, vars: {'app': client.config.appName ?? ''});
+
+  Widget _buildScreen(BuildContext context, MothTheme moth, MothCopy copy) {
     final theme = Theme.of(context);
     final Widget content;
     if (_loading) {
@@ -355,9 +394,9 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         child: const Center(child: CircularProgressIndicator()),
       );
     } else if (_failed) {
-      content = _buildError(theme, moth);
+      content = _buildError(theme, moth, copy);
     } else {
-      content = _buildContent(theme, moth);
+      content = _buildContent(theme, moth, copy);
     }
     return Scaffold(
       body: SafeArea(
@@ -374,9 +413,18 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
     );
   }
 
-  Widget _buildContent(ThemeData theme, MothTheme moth) {
+  Widget _buildContent(ThemeData theme, MothTheme moth, MothCopy copy) {
     final paywall = _paywall!;
     final offering = _offering!;
+    // The server delivers the paywall headline/subtitle already localized; the
+    // bundled `paywall.title`/`paywall.subtitle` are the floor when the config
+    // has not arrived (offline first launch, no cache).
+    final headline = paywall.headline.isNotEmpty
+        ? paywall.headline
+        : _t(copy, 'paywall.title');
+    final subtitle = paywall.subtitle.isNotEmpty
+        ? paywall.subtitle
+        : _t(copy, 'paywall.subtitle');
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -390,20 +438,16 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
               onPressed: widget.onClose,
             ),
           ),
-        MothPaywallHeader(
-          headline: paywall.headline,
-          subtitle: paywall.subtitle,
-          theme: moth,
-        ),
+        MothPaywallHeader(headline: headline, subtitle: subtitle, theme: moth),
         if (paywall.benefits.isNotEmpty) ...[
           SizedBox(height: moth.space(3)),
           ..._buildBenefits(theme, moth, paywall.benefits),
         ],
         SizedBox(height: moth.space(3)),
         if (offering.isEmpty)
-          _buildEmpty(theme, moth)
+          _buildEmpty(theme, moth, copy)
         else ...[
-          ..._buildTiers(theme, moth, paywall, offering),
+          ..._buildTiers(theme, moth, copy, paywall, offering),
           SizedBox(height: moth.space(1)),
           if (_message != null) _buildBanner(theme, moth, _message!),
           MothPurchaseButton(
@@ -411,15 +455,16 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
             product: offering.productById(_selectedId ?? ''),
             busy: _busy,
             onPressed: _busy ? null : _purchase,
+            label: _t(copy, 'paywall.cta'),
             theme: moth,
           ),
           TextButton(
             key: MothPaywallScreen.restoreKey,
             onPressed: _busy ? null : _restore,
-            child: const Text('Restore purchases'),
+            child: Text(_t(copy, 'paywall.restore')),
           ),
         ],
-        ..._buildFooter(theme, moth, paywall),
+        ..._buildFooter(theme, moth, copy, paywall),
       ],
     );
   }
@@ -431,12 +476,13 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
   List<Widget> _buildTiers(
     ThemeData theme,
     MothTheme moth,
+    MothCopy copy,
     MothPaywall paywall,
     MothOffering offering,
   ) {
     if (paywall.layout == MothPaywallLayout.compact &&
         offering.products.length > 1) {
-      return _buildCompactTiers(theme, moth, offering);
+      return _buildCompactTiers(theme, moth, copy, offering);
     }
     return [
       for (final product in offering.products)
@@ -459,6 +505,7 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
   List<Widget> _buildCompactTiers(
     ThemeData theme,
     MothTheme moth,
+    MothCopy copy,
     MothOffering offering,
   ) {
     final selectedId = _selectedId ?? offering.products.first.identifier;
@@ -473,7 +520,7 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
             for (final product in offering.products)
               ButtonSegment<String>(
                 value: product.identifier,
-                label: Text(_compactSegmentLabel(product)),
+                label: Text(_compactSegmentLabel(product, copy)),
               ),
           ],
           selected: {selected.identifier},
@@ -517,7 +564,7 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
     ];
   }
 
-  Widget _buildEmpty(ThemeData theme, MothTheme moth) {
+  Widget _buildEmpty(ThemeData theme, MothTheme moth, MothCopy copy) {
     return Column(
       key: MothPaywallScreen.emptyStateKey,
       children: [
@@ -528,13 +575,13 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         ),
         SizedBox(height: moth.space(2)),
         Text(
-          'Nothing to purchase yet',
+          _t(copy, 'paywall.empty_title'),
           textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge,
         ),
         SizedBox(height: moth.space(1)),
         Text(
-          'There are no subscriptions available right now. Check back later.',
+          _t(copy, 'paywall.empty_body'),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
@@ -544,13 +591,13 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         TextButton(
           key: MothPaywallScreen.restoreKey,
           onPressed: _busy ? null : _restore,
-          child: const Text('Restore purchases'),
+          child: Text(_t(copy, 'paywall.restore')),
         ),
       ],
     );
   }
 
-  Widget _buildError(ThemeData theme, MothTheme moth) {
+  Widget _buildError(ThemeData theme, MothTheme moth, MothCopy copy) {
     return Column(
       key: MothPaywallScreen.errorStateKey,
       mainAxisSize: MainAxisSize.min,
@@ -562,19 +609,18 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
         ),
         SizedBox(height: moth.space(2)),
         Text(
-          'Cannot reach the store',
+          _t(copy, 'paywall.error_title'),
           textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge,
         ),
         SizedBox(height: moth.space(1)),
         Text(
-          'Subscription options could not be loaded. Check your connection '
-          'and try again.',
+          _t(copy, 'paywall.error_body'),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium,
         ),
         SizedBox(height: moth.space(3)),
-        FilledButton(onPressed: _load, child: const Text('Try again')),
+        FilledButton(onPressed: _load, child: Text(_t(copy, 'paywall.retry'))),
       ],
     );
   }
@@ -600,6 +646,7 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
   List<Widget> _buildFooter(
     ThemeData theme,
     MothTheme moth,
+    MothCopy copy,
     MothPaywall paywall,
   ) {
     final scope = MothScope.maybeOf(context);
@@ -610,13 +657,13 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
       if (paywall.termsUrl != null)
         (
           const Key('moth-paywall-terms'),
-          'Terms of Service',
+          _t(copy, 'paywall.terms_link'),
           paywall.termsUrl!,
         ),
       if (paywall.privacyUrl != null)
         (
           const Key('moth-paywall-privacy'),
-          'Privacy Policy',
+          _t(copy, 'paywall.privacy_link'),
           paywall.privacyUrl!,
         ),
     ];
@@ -638,7 +685,7 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
                 ? _googleManageUrl
                 : _appleManageUrl,
           ),
-          child: const Text('Manage subscription'),
+          child: Text(_t(copy, 'paywall.manage_subscription')),
         ),
       Wrap(
         alignment: WrapAlignment.center,
@@ -738,6 +785,7 @@ class MothTierCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final moth = theme ?? MothThemeScope.of(context);
+    final copy = MothCopyScope.of(context);
     final data = Theme.of(context);
     final scheme = data.colorScheme;
     final highlighted = product.highlighted;
@@ -786,7 +834,7 @@ class MothTierCard extends StatelessWidget {
                         ),
                         SizedBox(width: moth.space(1)),
                         Text(
-                          _priceLabel(product, storeProduct),
+                          _priceLabel(product, copy, storeProduct),
                           textAlign: TextAlign.end,
                           style: data.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w600,
@@ -802,14 +850,14 @@ class MothTierCard extends StatelessWidget {
                         children: [
                           if (highlighted)
                             _Badge(
-                              label: 'Most popular',
+                              label: copy.value('paywall.most_popular'),
                               background: scheme.primary,
                               foreground: scheme.onPrimary,
                               moth: moth,
                             ),
                           if (product.hasTrial)
                             _Badge(
-                              label: _trialLabel(product.trialPeriod),
+                              label: _trialLabel(product.trialPeriod, copy),
                               background: scheme.secondaryContainer,
                               foreground: scheme.onSecondaryContainer,
                               moth: moth,
@@ -828,8 +876,9 @@ class MothTierCard extends StatelessWidget {
   }
 }
 
-/// The primary purchase button, labelled from the selected [product] (e.g.
-/// "Start free trial" / "Subscribe"). Styled from [MothTheme].
+/// The primary purchase button. Its label defaults to the localized
+/// `paywall.cta` from the enclosing [MothCopyScope]; pass [label] to override
+/// (e.g. a trial-aware label). Styled from [MothTheme].
 class MothPurchaseButton extends StatelessWidget {
   const MothPurchaseButton({
     super.key,
@@ -844,7 +893,7 @@ class MothPurchaseButton extends StatelessWidget {
   final bool busy;
   final VoidCallback? onPressed;
 
-  /// Label override; defaults to a trial-aware label from [product].
+  /// Label override; defaults to the localized `paywall.cta`.
   final String? label;
 
   /// Theme override; defaults to the enclosing [MothThemeScope].
@@ -853,9 +902,9 @@ class MothPurchaseButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final moth = theme ?? MothThemeScope.of(context);
-    final text =
-        label ??
-        (product?.hasTrial ?? false ? 'Start free trial' : 'Subscribe');
+    // The catalog CTA (`paywall.cta`) is the localized floor; an explicit
+    // [label] overrides it (e.g. a trial-aware label from a custom paywall).
+    final text = label ?? MothCopyScope.of(context).value('paywall.cta');
     return FilledButton(
       onPressed: busy ? null : onPressed,
       child: busy
@@ -907,7 +956,11 @@ class _Badge extends StatelessWidget {
 /// `$9.99 / month`). Prefers the native store's localized, formatted price
 /// ([MothStoreProduct.price]) — the amount actually charged — and falls back
 /// to the catalog micros + currency when no store product is available.
-String _priceLabel(MothOfferingProduct product, [MothStoreProduct? store]) {
+String _priceLabel(
+  MothOfferingProduct product,
+  MothCopy copy, [
+  MothStoreProduct? store,
+]) {
   final String price;
   if (store != null && store.price.isNotEmpty) {
     price = store.price;
@@ -923,14 +976,14 @@ String _priceLabel(MothOfferingProduct product, [MothStoreProduct? store]) {
         ? '$formatted ${product.currency}'.trim()
         : '$symbol$formatted';
   }
-  final period = _periodSuffix(product.billingPeriod);
+  final period = _periodSuffix(product.billingPeriod, copy);
   return period.isEmpty ? price : '$price / $period';
 }
 
-/// A short label for a compact-layout period toggle: the capitalized period
-/// (e.g. `Month`, `Year`) when known, otherwise the tier's display name.
-String _compactSegmentLabel(MothOfferingProduct product) {
-  final period = _periodSuffix(product.billingPeriod);
+/// A short label for a compact-layout period toggle: the capitalized localized
+/// period (e.g. `Month`, `Year`) when known, otherwise the tier's display name.
+String _compactSegmentLabel(MothOfferingProduct product, MothCopy copy) {
+  final period = _periodSuffix(product.billingPeriod, copy);
   if (period.isNotEmpty) {
     return period[0].toUpperCase() + period.substring(1);
   }
@@ -945,21 +998,24 @@ String _currencySymbol(String currency) => switch (currency.toUpperCase()) {
   _ => '',
 };
 
-/// Maps an ISO-8601 recurrence (e.g. `P1M`, `P1Y`, `P1W`) to a short suffix.
-String _periodSuffix(String period) => switch (period.toUpperCase()) {
-  'P1W' => 'week',
-  'P1M' => 'month',
-  'P3M' => 'quarter',
-  'P6M' => '6 months',
-  'P1Y' => 'year',
-  _ => '',
-};
+/// Maps an ISO-8601 recurrence (e.g. `P1M`, `P1Y`, `P1W`) to a short,
+/// localized period suffix; empty for an unknown recurrence.
+String _periodSuffix(String period, MothCopy copy) =>
+    switch (period.toUpperCase()) {
+      'P1W' => copy.value('paywall.period_week'),
+      'P1M' => copy.value('paywall.period_month'),
+      'P3M' => copy.value('paywall.period_quarter'),
+      'P6M' => copy.value('paywall.period_6_month'),
+      'P1Y' => copy.value('paywall.period_year'),
+      _ => '',
+    };
 
-/// Human-readable trial badge (e.g. `P1W` → `1-week free trial`).
-String _trialLabel(String period) => switch (period.toUpperCase()) {
-  'P3D' => '3-day free trial',
-  'P1W' || 'P7D' => '1-week free trial',
-  'P2W' || 'P14D' => '2-week free trial',
-  'P1M' => '1-month free trial',
-  _ => 'Free trial',
-};
+/// Human-readable, localized trial badge (e.g. `P1W` → `1-week free trial`).
+String _trialLabel(String period, MothCopy copy) =>
+    switch (period.toUpperCase()) {
+      'P3D' => copy.value('paywall.trial_3_day'),
+      'P1W' || 'P7D' => copy.value('paywall.trial_1_week'),
+      'P2W' || 'P14D' => copy.value('paywall.trial_2_week'),
+      'P1M' => copy.value('paywall.trial_1_month'),
+      _ => copy.value('paywall.trial_generic'),
+    };

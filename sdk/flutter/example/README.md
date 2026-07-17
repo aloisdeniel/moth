@@ -35,6 +35,19 @@ also reads the subscription state and gates a "premium feature" behind the
    verification", password policy and providers in the project settings —
    the login screen adapts via the project's public config.
 
+## Localization
+
+Tap the **language pill** in the top-right corner to cycle the moth screens
+through Device → English → Français → Deutsch → 日本語. The login screen (and
+the paywall behind "Premium feature") re-render in the chosen language on the
+fly: the project's admin-customized copy for that locale when the running
+instance has it, the SDK's bundled translations otherwise — including offline
+and before the config loads. Under the hood the switcher sets
+`MothConfig(locale:)`; leaving it on **Device** follows the OS language. Edit a
+project's copy for, say, `de` in the admin (milestone 15) and it appears here on
+the next launch — no app rebuild. `appName: 'moth example'` fills the `{app}`
+placeholder in the bundled fallback strings.
+
 ## The sample backend
 
 "Call my backend" expects the tiny JWT-verifying API from

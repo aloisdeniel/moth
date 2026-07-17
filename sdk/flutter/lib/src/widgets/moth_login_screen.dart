@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../client.dart';
+import '../copy.dart';
 import '../exceptions.dart';
 import '../nonce.dart';
 import '../project_config.dart';
 import '../theme.dart';
 import 'friendly_errors.dart';
+import 'moth_copy_scope.dart';
 import 'moth_email_form.dart';
 import 'moth_logo.dart';
 import 'moth_provider_buttons.dart';
@@ -40,6 +42,7 @@ class MothLoginScreen extends StatefulWidget {
     this.adapter,
     this.title,
     this.theme,
+    this.copy,
   });
 
   /// Client override for standalone use; defaults to the enclosing
@@ -50,11 +53,17 @@ class MothLoginScreen extends StatefulWidget {
   /// passed to [MothApp].
   final MothOAuthAdapter? adapter;
 
-  /// Headline above the form. Defaults to `'Welcome'`.
+  /// Headline above the form. Defaults to the localized `sign_in.title` /
+  /// `sign_up.title` for the current mode.
   final String? title;
 
   /// Theme override: wins over the server-delivered project theme.
   final MothTheme? theme;
+
+  /// Localized copy override: wins over the enclosing [MothCopyScope] (from
+  /// [MothApp]) and the copy delivered with the config fetch. Standalone use
+  /// falls back to that fetched copy, then the bundled floor.
+  final MothCopy? copy;
 
   // Stable keys so app (and SDK) widget tests can target the flow.
   static const emailFieldKey = MothEmailForm.emailFieldKey;
@@ -93,11 +102,19 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
   /// Theme delivered with the config fetch — the standalone fallback when
   /// neither [MothLoginScreen.theme] nor a [MothThemeScope] provides one.
   MothTheme? _serverTheme;
+
+  /// Copy delivered with the config fetch — the standalone fallback when
+  /// neither [MothLoginScreen.copy] nor a [MothCopyScope] provides one.
+  MothCopy? _serverCopy;
   bool _configFailed = false;
   _Mode _mode = _Mode.signIn;
   bool _busy = false;
   String? _error;
   String? _info;
+
+  /// The copy resolved on the last build, so async action handlers (which run
+  /// outside build) map errors to the same localized wording on screen.
+  MothCopy _resolvedCopy = MothCopy.bundled(const Locale('en'));
 
   MothClient get client => _client!;
 
@@ -133,6 +150,14 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
         setState(() {
           _config = config;
           _serverTheme = config.theme;
+          final update = config.copy;
+          if (update != null && update.messages != null) {
+            _serverCopy = MothCopy(
+              locale: update.locale,
+              revisionId: update.revisionId,
+              messages: update.messages!,
+            );
+          }
         });
       }
     } on MothException {
@@ -167,9 +192,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           // Verification (or approval) required before the first sign-in.
           setState(() {
             _mode = _Mode.signIn;
-            _info =
-                'Account created — check your inbox to verify your email '
-                'address, then sign in.';
+            _info = _resolvedCopy.value('sign_up.verify_sent');
           });
           _password.clear();
         }
@@ -178,7 +201,11 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
         // On success MothApp swaps this screen out; nothing more to do.
       }
     } on MothException catch (err) {
-      if (mounted) setState(() => _error = friendlyMothErrorMessage(err));
+      if (mounted) {
+        setState(
+          () => _error = friendlyMothErrorMessage(err, copy: _resolvedCopy),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -195,7 +222,11 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
       await client.requestPasswordReset(_email.text.trim());
       if (mounted) setState(() => _mode = _Mode.resetSent);
     } on MothException catch (err) {
-      if (mounted) setState(() => _error = friendlyMothErrorMessage(err));
+      if (mounted) {
+        setState(
+          () => _error = friendlyMothErrorMessage(err, copy: _resolvedCopy),
+        );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -246,7 +277,11 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           );
       }
     } on MothException catch (err) {
-      if (mounted) setState(() => _error = friendlyMothErrorMessage(err));
+      if (mounted) {
+        setState(
+          () => _error = friendlyMothErrorMessage(err, copy: _resolvedCopy),
+        );
+      }
     } on Exception catch (err) {
       // Adapter/platform failure (missing URL scheme, entitlement, ...).
       if (mounted) setState(() => _error = 'Sign-in with $name failed: $err');
@@ -269,8 +304,10 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
 
   String? _validateEmail(String? value) {
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Enter your email address';
-    if (!_emailPattern.hasMatch(email)) return 'Enter a valid email address';
+    if (email.isEmpty) return _resolvedCopy.value('sign_in.email_required');
+    if (!_emailPattern.hasMatch(email)) {
+      return _resolvedCopy.value('sign_in.email_invalid');
+    }
     return null;
   }
 
@@ -283,32 +320,48 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
         MothThemeScope.maybeOf(context) ??
         _serverTheme ??
         MothTheme.fallback();
+    final copy =
+        widget.copy ??
+        MothCopyScope.maybeOf(context) ??
+        _serverCopy ??
+        MothCopy.bundled(client.currentLocale);
+    _resolvedCopy = copy;
     final brightness =
         MediaQuery.maybePlatformBrightnessOf(context) ?? Brightness.light;
-    // The screen carries its own Theme so the project's design system
-    // applies wherever it is placed — under MothApp's themed shell, the
-    // developer's differently-themed app, or standalone.
+    // The screen carries its own Theme and copy scope so the project's design
+    // system and localized wording apply wherever it is placed — under
+    // MothApp's shell, the developer's differently-themed app, or standalone.
     return MothThemeScope(
       theme: moth,
-      child: Theme(
-        data: moth.toThemeData(brightness),
-        child: Builder(builder: (context) => _buildScreen(context, moth)),
+      child: MothCopyScope(
+        copy: copy,
+        child: Theme(
+          data: moth.toThemeData(brightness),
+          child: Builder(
+            builder: (context) => _buildScreen(context, moth, copy),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildScreen(BuildContext context, MothTheme moth) {
+  /// Resolves [key] from [copy], filling `{app}` from [MothConfig.appName]
+  /// (only present in the bundled floor — server copy is already interpolated).
+  String _t(MothCopy copy, String key) =>
+      copy.value(key, vars: {'app': client.config.appName ?? ''});
+
+  Widget _buildScreen(BuildContext context, MothTheme moth, MothCopy copy) {
     final theme = Theme.of(context);
     final Widget content;
     if (_configFailed) {
-      content = _buildConfigError(theme, moth);
+      content = _buildConfigError(theme, moth, copy);
     } else if (_config == null) {
       content = Padding(
         padding: EdgeInsets.all(moth.space(4)),
         child: const Center(child: CircularProgressIndicator()),
       );
     } else {
-      content = _buildFlow(theme, moth, _config!);
+      content = _buildFlow(theme, moth, copy, _config!);
     }
     return Scaffold(
       body: SafeArea(
@@ -325,11 +378,21 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
     );
   }
 
-  Widget _buildFlow(ThemeData theme, MothTheme moth, MothProjectConfig config) {
+  Widget _buildFlow(
+    ThemeData theme,
+    MothTheme moth,
+    MothCopy copy,
+    MothProjectConfig config,
+  ) {
+    final title = switch (_mode) {
+      _Mode.signIn => _t(copy, 'sign_in.title'),
+      _Mode.signUp => _t(copy, 'sign_up.title'),
+      _Mode.resetRequest || _Mode.resetSent => _t(copy, 'password_reset.title'),
+    };
     final subtitle = switch (_mode) {
-      _Mode.signIn => 'Sign in to continue',
-      _Mode.signUp => 'Create your account',
-      _Mode.resetRequest => 'Reset your password',
+      _Mode.signIn => _t(copy, 'sign_in.subtitle'),
+      _Mode.signUp => _t(copy, 'sign_up.subtitle'),
+      _Mode.resetRequest => _t(copy, 'password_reset.subtitle'),
       _Mode.resetSent => null,
     };
     final hasLogo = moth.logoLightUrl != null || moth.logoDarkUrl != null;
@@ -342,7 +405,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           SizedBox(height: moth.space(3)),
         ],
         Text(
-          widget.title ?? 'Welcome',
+          widget.title ?? title,
           textAlign: TextAlign.center,
           style: theme.textTheme.headlineMedium,
         ),
@@ -375,11 +438,11 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           ),
         ...switch (_mode) {
           _Mode.signIn ||
-          _Mode.signUp => _buildEmailPasswordForm(theme, moth, config),
-          _Mode.resetRequest => _buildResetRequest(moth),
-          _Mode.resetSent => _buildResetSent(theme, moth),
+          _Mode.signUp => _buildEmailPasswordForm(theme, moth, copy, config),
+          _Mode.resetRequest => _buildResetRequest(moth, copy),
+          _Mode.resetSent => _buildResetSent(theme, moth, copy),
         },
-        ..._buildLegalFooter(theme, moth),
+        ..._buildLegalFooter(theme, moth, copy),
       ],
     );
   }
@@ -387,6 +450,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
   List<Widget> _buildEmailPasswordForm(
     ThemeData theme,
     MothTheme moth,
+    MothCopy copy,
     MothProjectConfig config,
   ) {
     final signUp = _mode == _Mode.signUp;
@@ -405,7 +469,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           child: TextButton(
             key: MothLoginScreen.forgotPasswordKey,
             onPressed: _busy ? null : () => _switchMode(_Mode.resetRequest),
-            child: const Text('Forgot password?'),
+            child: Text(_t(copy, 'sign_in.forgot_password')),
           ),
         ),
       if (config.signUpOpen)
@@ -414,7 +478,9 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           children: [
             Flexible(
               child: Text(
-                signUp ? 'Already have an account?' : 'No account yet?',
+                signUp
+                    ? _t(copy, 'sign_up.have_account')
+                    : _t(copy, 'sign_in.no_account'),
                 style: theme.textTheme.bodyMedium,
               ),
             ),
@@ -423,7 +489,11 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
               onPressed: _busy
                   ? null
                   : () => _switchMode(signUp ? _Mode.signIn : _Mode.signUp),
-              child: Text(signUp ? 'Sign in' : 'Sign up'),
+              child: Text(
+                signUp
+                    ? _t(copy, 'sign_up.switch_to_sign_in')
+                    : _t(copy, 'sign_in.switch_to_sign_up'),
+              ),
             ),
           ],
         ),
@@ -435,7 +505,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
     ];
   }
 
-  List<Widget> _buildResetRequest(MothTheme moth) {
+  List<Widget> _buildResetRequest(MothTheme moth, MothCopy copy) {
     return [
       Form(
         key: _resetFormKey,
@@ -447,7 +517,9 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           autofillHints: const [AutofillHints.email],
           textInputAction: TextInputAction.done,
           onFieldSubmitted: (_) => _sendReset(),
-          decoration: const InputDecoration(labelText: 'Email'),
+          decoration: InputDecoration(
+            labelText: _t(copy, 'password_reset.email_label'),
+          ),
           validator: _validateEmail,
         ),
       ),
@@ -460,17 +532,17 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
                 dimension: moth.space(2.25),
                 child: const CircularProgressIndicator(strokeWidth: 2),
               )
-            : const Text('Send reset link'),
+            : Text(_t(copy, 'password_reset.submit')),
       ),
       TextButton(
         key: MothLoginScreen.backToSignInKey,
         onPressed: _busy ? null : () => _switchMode(_Mode.signIn),
-        child: const Text('Back to sign in'),
+        child: Text(_t(copy, 'password_reset.back_to_sign_in')),
       ),
     ];
   }
 
-  List<Widget> _buildResetSent(ThemeData theme, MothTheme moth) {
+  List<Widget> _buildResetSent(ThemeData theme, MothTheme moth, MothCopy copy) {
     return [
       Icon(
         Icons.mark_email_read_outlined,
@@ -479,14 +551,13 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
       ),
       SizedBox(height: moth.space(2)),
       Text(
-        'Check your email',
+        _t(copy, 'password_reset.sent_title'),
         textAlign: TextAlign.center,
         style: theme.textTheme.titleLarge,
       ),
       SizedBox(height: moth.space(1)),
       Text(
-        'If an account exists for ${_email.text.trim()}, a password-reset '
-        'link is on its way.',
+        copy.value('password_reset.sent', vars: {'email': _email.text.trim()}),
         textAlign: TextAlign.center,
         style: theme.textTheme.bodyMedium,
       ),
@@ -494,17 +565,29 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
       TextButton(
         key: MothLoginScreen.backToSignInKey,
         onPressed: () => _switchMode(_Mode.signIn),
-        child: const Text('Back to sign in'),
+        child: Text(_t(copy, 'password_reset.back_to_sign_in')),
       ),
     ];
   }
 
-  List<Widget> _buildLegalFooter(ThemeData theme, MothTheme moth) {
+  List<Widget> _buildLegalFooter(
+    ThemeData theme,
+    MothTheme moth,
+    MothCopy copy,
+  ) {
     final links = [
       if (moth.termsUrl != null)
-        (MothLoginScreen.termsLinkKey, 'Terms of Service', moth.termsUrl!),
+        (
+          MothLoginScreen.termsLinkKey,
+          _t(copy, 'sign_in.terms_link'),
+          moth.termsUrl!,
+        ),
       if (moth.privacyUrl != null)
-        (MothLoginScreen.privacyLinkKey, 'Privacy Policy', moth.privacyUrl!),
+        (
+          MothLoginScreen.privacyLinkKey,
+          _t(copy, 'sign_in.privacy_link'),
+          moth.privacyUrl!,
+        ),
     ];
     if (links.isEmpty) return const [];
     final linkStyle = TextButton.styleFrom(
@@ -533,7 +616,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
     ];
   }
 
-  Widget _buildConfigError(ThemeData theme, MothTheme moth) {
+  Widget _buildConfigError(ThemeData theme, MothTheme moth, MothCopy copy) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -544,14 +627,13 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
         ),
         SizedBox(height: moth.space(2)),
         Text(
-          'Cannot reach the server',
+          _t(copy, 'sign_in.config_error_title'),
           textAlign: TextAlign.center,
           style: theme.textTheme.titleLarge,
         ),
         SizedBox(height: moth.space(1)),
         Text(
-          'Sign-in options could not be loaded. Check your connection and '
-          'try again.',
+          _t(copy, 'sign_in.config_error_body'),
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium,
         ),
@@ -559,7 +641,7 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
         FilledButton(
           key: MothLoginScreen.retryConfigKey,
           onPressed: _retryConfig,
-          child: const Text('Try again'),
+          child: Text(_t(copy, 'sign_in.retry')),
         ),
       ],
     );

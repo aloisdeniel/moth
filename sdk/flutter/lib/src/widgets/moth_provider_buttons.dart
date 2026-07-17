@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../client.dart';
 import '../project_config.dart';
+import 'moth_copy_scope.dart';
 import 'moth_theme_scope.dart';
 
 /// The themed social sign-in buttons used by [MothLoginScreen], exposed so
@@ -40,6 +41,7 @@ class MothProviderButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final moth = MothThemeScope.of(context);
+    final copy = MothCopyScope.of(context);
     final theme = Theme.of(context);
     final buttons = [
       if (config.google.enabled)
@@ -47,14 +49,14 @@ class MothProviderButtons extends StatelessWidget {
           key: googleButtonKey,
           onPressed: busy ? null : () => onSelected(MothOAuthProvider.google),
           icon: const Icon(Icons.g_mobiledata),
-          label: const Text('Continue with Google'),
+          label: Text(copy.value('sign_in.continue_with_google')),
         ),
       if (config.apple.enabled)
         OutlinedButton.icon(
           key: appleButtonKey,
           onPressed: busy ? null : () => onSelected(MothOAuthProvider.apple),
           icon: const Icon(Icons.apple),
-          label: const Text('Continue with Apple'),
+          label: Text(copy.value('sign_in.continue_with_apple')),
         ),
     ];
     if (buttons.isEmpty) return const SizedBox.shrink();
@@ -68,7 +70,10 @@ class MothProviderButtons extends StatelessWidget {
               const Expanded(child: Divider()),
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: moth.space(1.5)),
-                child: Text('or', style: theme.textTheme.bodySmall),
+                child: Text(
+                  copy.value('sign_in.divider_or'),
+                  style: theme.textTheme.bodySmall,
+                ),
               ),
               const Expanded(child: Divider()),
             ],

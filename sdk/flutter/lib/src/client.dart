@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:ui';
 
 import 'package:grpc/service_api.dart' as grpc;
 
@@ -8,6 +9,7 @@ import 'channel/channel_stub.dart'
     if (dart.library.io) 'channel/channel_io.dart'
     if (dart.library.js_interop) 'channel/channel_web.dart';
 import 'config.dart';
+import 'copy.dart';
 import 'customer_info.dart';
 import 'errors.dart';
 import 'exceptions.dart';
@@ -15,6 +17,7 @@ import 'gen/moth/auth/v1/auth.pbgrpc.dart' as pb;
 import 'gen/moth/auth/v1/config.pbgrpc.dart' as pbconfig;
 import 'gen/moth/billing/v1/billing.pbgrpc.dart' as pbbilling;
 import 'jwt.dart';
+import 'locale.dart';
 import 'offering.dart';
 import 'platform/platform_stub.dart'
     if (dart.library.io) 'platform/platform_io.dart'
@@ -124,6 +127,11 @@ class MothClient {
 
   /// The current auth state ([MothAuthLoading] until [restore] completes).
   MothAuthState get currentState => _state;
+
+  /// The locale the SDK negotiates copy for: [MothConfig.locale] when the app
+  /// pinned one, otherwise the live device locale. Sent as `x-moth-language`
+  /// on every call and used by [MothCopyController].
+  Locale get currentLocale => config.locale ?? mothDeviceLocale();
 
   /// The signed-in user, or null.
   MothUser? get currentUser => switch (_state) {
@@ -480,9 +488,13 @@ class MothClient {
   /// copy).
   Future<MothProjectConfig> getProjectConfig({
     String knownThemeRevision = '',
+    String knownCopyRevision = '',
   }) => _run(() async {
     final resp = await _projectConfig.getProjectConfig(
-      pbconfig.GetProjectConfigRequest(knownThemeRevision: knownThemeRevision),
+      pbconfig.GetProjectConfigRequest(
+        knownThemeRevision: knownThemeRevision,
+        knownCopyRevision: knownCopyRevision,
+      ),
     );
     String? blank(String s) => s.isEmpty ? null : s;
     return MothProjectConfig(
@@ -496,8 +508,20 @@ class MothClient {
       passwordMinLength: resp.passwordMinLength,
       signUpOpen: resp.signUpOpen,
       theme: resp.hasTheme() ? MothTheme.fromProto(resp.theme) : null,
+      copy: resp.hasCopy() ? _copyUpdate(resp.copy) : null,
     );
   });
+
+  // The Copy caching contract mirrors the theme: the negotiated locale and
+  // revision are always present; `messages` is omitted (empty) when the
+  // client's knownCopyRevision still matched, meaning "keep the cached copy".
+  MothCopyUpdate _copyUpdate(pbconfig.Copy copy) => MothCopyUpdate(
+    locale: mothLocaleFromTag(copy.locale),
+    revisionId: copy.copyRevision,
+    messages: copy.messages.isEmpty
+        ? null
+        : Map<String, String>.of(copy.messages),
+  );
 
   // --------------------------------------------------------------- billing
 
@@ -592,6 +616,7 @@ class MothClient {
     metadata['x-moth-key'] = config.publishableKey;
     metadata['x-moth-platform'] = currentPlatform();
     metadata['x-moth-sdk-version'] = mothSdkVersion;
+    metadata['x-moth-language'] = mothLanguageTag(currentLocale);
     final session = _session;
     if (session != null) {
       metadata['authorization'] = 'Bearer ${session.accessToken}';

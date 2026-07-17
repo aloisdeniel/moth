@@ -5,14 +5,19 @@ import 'package:flutter/material.dart';
 import '../auth_state.dart';
 import '../client.dart';
 import '../config.dart';
+import '../copy.dart';
+import '../copy_cache.dart';
+import '../copy_controller.dart';
 import '../customer_info.dart';
 import '../entitlement_cache.dart';
+import '../i18n/localizations.dart';
 import '../subscription_controller.dart';
 import '../theme.dart';
 import '../theme_cache.dart';
 import '../theme_controller.dart';
 import '../token_store.dart';
 import 'billing_adapter.dart';
+import 'moth_copy_scope.dart';
 import 'moth_login_screen.dart';
 import 'moth_paywall_screen.dart';
 import 'moth_scope.dart';
@@ -66,6 +71,7 @@ class MothApp extends StatefulWidget {
     this.billingAdapter,
     this.theme,
     this.themeCache,
+    this.copyCache,
     this.loading,
     this.signedOut,
     this.requiresEntitlement,
@@ -125,6 +131,10 @@ class MothApp extends StatefulWidget {
   /// file cache; useful for tests).
   final MothThemeCache? themeCache;
 
+  /// Persistence override for the server-delivered localized copy (defaults to
+  /// a file cache; useful for tests).
+  final MothCopyCache? copyCache;
+
   /// Shown while the session restore is in flight.
   final Widget? loading;
 
@@ -151,7 +161,7 @@ class MothApp extends StatefulWidget {
   State<MothApp> createState() => _MothAppState();
 }
 
-class _MothAppState extends State<MothApp> {
+class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
   late final MothClient _client;
   late final bool _ownsClient;
   late MothAuthState _state;
@@ -159,6 +169,7 @@ class _MothAppState extends State<MothApp> {
   StreamSubscription<MothAuthState>? _subscription;
   MothSubscriptionController? _subs;
   MothThemeController? _theme;
+  MothCopyController? _copy;
 
   @override
   void initState() {
@@ -200,10 +211,31 @@ class _MothAppState extends State<MothApp> {
       _theme = controller;
       unawaited(controller.start());
     }
+    if (widget.requireAuth) {
+      // Localized copy for the moth-owned screens: same stale-while-revalidate
+      // discipline as the theme, keyed by (locale, revision). A device-language
+      // change triggers a refetch via didChangeLocales below.
+      final copy = MothCopyController(client: _client, cache: widget.copyCache);
+      copy.addListener(_onCopyChanged);
+      _copy = copy;
+      WidgetsBinding.instance.addObserver(this);
+      unawaited(copy.start());
+    }
   }
 
   void _onThemeChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _onCopyChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    // The device language changed: reload the new locale's cached floor and
+    // refetch its copy. MothCopyController diffs the locale itself.
+    unawaited(_copy?.refresh());
   }
 
   void _onCustomerInfoChanged() {
@@ -212,9 +244,11 @@ class _MothAppState extends State<MothApp> {
 
   @override
   void dispose() {
+    if (_copy != null) WidgetsBinding.instance.removeObserver(this);
     _subscription?.cancel();
     _subs?.dispose();
     _theme?.dispose();
+    _copy?.dispose();
     if (_ownsClient) unawaited(_client.dispose());
     super.dispose();
   }
@@ -252,18 +286,27 @@ class _MothAppState extends State<MothApp> {
       body = widget.child;
     }
     if (ownSurface) {
-      // moth-owned screens render with the project theme; the app's own
-      // subtree (child) is deliberately left alone.
+      // moth-owned screens render with the project theme and the negotiated
+      // localized copy; the app's own subtree (child) is deliberately left
+      // alone.
       final mothTheme = widget.theme ?? _theme?.value ?? MothTheme.fallback();
-      body = _MothThemedSurface(theme: mothTheme, child: body);
+      final mothCopy = _copy?.value ?? MothCopy.bundled(_client.currentLocale);
+      body = MothCopyScope(
+        copy: mothCopy,
+        child: _MothThemedSurface(theme: mothTheme, child: body),
+      );
       // When MothApp is the root of the tree (above the app's
       // MaterialApp), its own surfaces need an app shell for
-      // Directionality, Material theming, overlays etc.
+      // Directionality, Material theming, overlays, and the localization
+      // delegates so MaterialLocalizations resolve in the device language.
       if (Directionality.maybeOf(context) == null) {
         body = MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: mothTheme.toThemeData(Brightness.light),
           darkTheme: mothTheme.toThemeData(Brightness.dark),
+          locale: _client.config.locale,
+          localizationsDelegates: mothLocalizationsDelegates,
+          supportedLocales: mothSupportedLocales,
           home: body,
         );
       }

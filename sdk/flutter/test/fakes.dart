@@ -3,6 +3,7 @@
 // details) without a Go binary.
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:fixnum/fixnum.dart';
 import 'package:grpc/grpc.dart';
@@ -320,14 +321,22 @@ class FakeConfigService extends ConfigServiceBase {
     lastMetadata = Map.of(call.clientMetadata ?? const {});
     lastRequest = request;
     calls++;
+    // Snapshot the response at request time (before the gate), so a test that
+    // holds one call gated and mutates `response` for a second, concurrent call
+    // still serves each call the value it was configured with when it arrived.
+    final resp = response.deepCopy();
     final gate = this.gate;
     if (gate != null) await gate.future;
     // The theme caching contract: a matching known revision omits the
     // theme body, exactly like internal/server/rpc/auth/config.go.
-    final resp = response.deepCopy();
     if (resp.hasTheme() &&
         request.knownThemeRevision == resp.theme.revisionId) {
       resp.clearTheme();
+    }
+    // The copy caching contract: a matching known revision keeps the locale +
+    // revision but omits the messages body, exactly like the server.
+    if (resp.hasCopy() && request.knownCopyRevision == resp.copy.copyRevision) {
+      resp.copy.messages.clear();
     }
     return resp;
   }
@@ -529,10 +538,14 @@ MothClient newClient(
   FakeMoth moth, {
   TokenStore? store,
   Duration skew = const Duration(seconds: 30),
+  Locale? locale,
+  String? appName,
 }) => MothClient(
   MothConfig(
     endpoint: Uri.parse('http://localhost:${moth.port}'),
     publishableKey: 'pk_test',
+    locale: locale,
+    appName: appName,
   ),
   tokenStore: store ?? InMemoryTokenStore(),
   refreshSkew: skew,

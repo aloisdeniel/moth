@@ -1,4 +1,5 @@
-// Golden tests for MothLoginScreen: 3 reference themes x light/dark.
+// Golden tests for MothLoginScreen: 3 reference themes in English + the
+// default theme in French, each × light/dark.
 //
 // Tagged `golden` and excluded from the default `flutter test` run and CI:
 // rasterization differs across platforms/engine builds, so the committed
@@ -73,7 +74,15 @@ void main() {
   late FakeMoth moth;
   late MothClient client;
 
-  for (final MapEntry(key: name, value: theme) in referenceThemes.entries) {
+  // (image-stem, theme, device locale). English covers all three themes; the
+  // "other language" (French) covers the default theme, per the milestone.
+  final cases = <(String, MothTheme, Locale)>[
+    for (final MapEntry(key: name, value: theme) in referenceThemes.entries)
+      (name, theme, const Locale('en')),
+    ('default_fr', referenceThemes['default']!, const Locale('fr')),
+  ];
+
+  for (final (name, theme, locale) in cases) {
     for (final brightness in Brightness.values) {
       final mode = brightness == Brightness.dark ? 'dark' : 'light';
       testWidgets('MothLoginScreen $name $mode', (tester) async {
@@ -91,15 +100,22 @@ void main() {
           passwordMinLength: 8,
           signUpOpen: true,
         );
-        client = newClient(moth);
+        // The device locale drives the bundled copy; appName fills {app}.
+        client = newClient(moth, locale: locale, appName: 'Aurora');
 
         await tester.pumpWidget(
           MaterialApp(
             debugShowCheckedModeBanner: false,
+            localizationsDelegates: mothLocalizationsDelegates,
+            supportedLocales: mothSupportedLocales,
+            locale: locale,
             home: MothLoginScreen(client: client, theme: theme),
           ),
         );
-        await pumpUntilFound(tester, find.text('Welcome'));
+        await pumpUntilFound(
+          tester,
+          find.byKey(MothLoginScreen.submitButtonKey),
+        );
         await tester.pump();
 
         await expectLater(

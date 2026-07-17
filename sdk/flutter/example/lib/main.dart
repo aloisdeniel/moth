@@ -56,6 +56,28 @@ class _ExampleAppState extends State<ExampleApp> {
   // lifetime, so own it here rather than rebuilding it every frame.
   final _billingAdapter = ExampleBillingAdapter();
 
+  /// The language shown on the moth screens. `null` follows the device; the
+  /// switcher below overrides it via [MothConfig.locale] so you can see the
+  /// login and paywall screens re-localize live — the project's custom copy
+  /// from a running instance when it has it, the SDK's bundled translations
+  /// otherwise (and offline).
+  Locale? _localeOverride;
+
+  /// null = follow the device, then a short tour of the bundled locales.
+  static const _localeCycle = <Locale?>[
+    null,
+    Locale('en'),
+    Locale('fr'),
+    Locale('de'),
+    Locale('ja'),
+  ];
+
+  void _cycleLocale() {
+    final next =
+        (_localeCycle.indexOf(_localeOverride) + 1) % _localeCycle.length;
+    setState(() => _localeOverride = _localeCycle[next]);
+  }
+
   @override
   void dispose() {
     _billingAdapter.dispose();
@@ -65,19 +87,90 @@ class _ExampleAppState extends State<ExampleApp> {
   @override
   Widget build(BuildContext context) {
     if (mothPublishableKey.isEmpty) return const _MissingKeyScreen();
-    return MothApp(
-      config: MothConfig(
-        endpoint: resolveLocalhost(Uri.parse(mothEndpoint)),
-        publishableKey: mothPublishableKey,
+    // A MaterialApp at the root supplies the moth localization delegates (so
+    // MaterialLocalizations resolve for every bundled language) and lets the
+    // language switcher overlay float above whatever MothApp shows.
+    return MaterialApp(
+      title: 'moth example',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(colorSchemeSeed: Colors.indigo),
+      locale: _localeOverride,
+      localizationsDelegates: mothLocalizationsDelegates,
+      supportedLocales: mothSupportedLocales,
+      builder: (context, child) => Stack(
+        children: [
+          ?child,
+          _LanguageSwitcher(locale: _localeOverride, onPressed: _cycleLocale),
+        ],
       ),
-      oauthAdapter: ExampleOAuthAdapter(),
-      // Runs native store purchases for MothScope.purchase and the paywall.
-      billingAdapter: _billingAdapter,
-      // Signed out -> the SDK's default MothLoginScreen; signed in -> child.
-      child: MaterialApp(
-        title: 'moth example',
-        theme: ThemeData(colorSchemeSeed: Colors.indigo),
-        home: const HomeScreen(),
+      home: MothApp(
+        // Re-keyed on the locale so a switch rebuilds the client with the new
+        // language; the moth screens then re-fetch and re-render localized.
+        key: ValueKey(_localeOverride),
+        config: MothConfig(
+          endpoint: resolveLocalhost(Uri.parse(mothEndpoint)),
+          publishableKey: mothPublishableKey,
+          locale: _localeOverride,
+          // Fills the {app} placeholder in the bundled copy (offline / before
+          // the config loads); the server interpolates its own project name.
+          appName: 'moth example',
+        ),
+        oauthAdapter: ExampleOAuthAdapter(),
+        // Runs native store purchases for MothScope.purchase and the paywall.
+        billingAdapter: _billingAdapter,
+        // Signed out -> the SDK's default MothLoginScreen; signed in -> child.
+        child: const HomeScreen(),
+      ),
+    );
+  }
+}
+
+/// A floating pill that cycles the moth screens through the bundled languages,
+/// so the demo shows the login and paywall re-localizing on the fly.
+class _LanguageSwitcher extends StatelessWidget {
+  const _LanguageSwitcher({required this.locale, required this.onPressed});
+
+  final Locale? locale;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = switch (locale?.languageCode) {
+      null => 'Device',
+      'en' => 'English',
+      'fr' => 'Français',
+      'de' => 'Deutsch',
+      'ja' => '日本語',
+      final code => code,
+    };
+    return SafeArea(
+      child: Align(
+        alignment: Alignment.topRight,
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Material(
+            color: Colors.black.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(999),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(999),
+              onTap: onPressed,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.language, size: 18, color: Colors.white),
+                    const SizedBox(width: 6),
+                    Text(label, style: const TextStyle(color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

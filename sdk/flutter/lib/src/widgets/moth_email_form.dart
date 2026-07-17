@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../copy.dart';
+import 'moth_copy_scope.dart';
 import 'moth_theme_scope.dart';
 
 /// Which action the form submits.
@@ -60,6 +62,10 @@ class _MothEmailFormState extends State<MothEmailForm> {
   TextEditingController? _ownEmail;
   TextEditingController? _ownPassword;
 
+  /// The copy resolved on the last build, so the field validators (which run
+  /// outside build, on submit) produce localized messages.
+  MothCopy _copy = MothCopy.bundled(const Locale('en'));
+
   TextEditingController get _email =>
       widget.emailController ?? (_ownEmail ??= TextEditingController());
   TextEditingController get _password =>
@@ -79,17 +85,22 @@ class _MothEmailFormState extends State<MothEmailForm> {
 
   String? _validateEmail(String? value) {
     final email = value?.trim() ?? '';
-    if (email.isEmpty) return 'Enter your email address';
-    if (!_emailPattern.hasMatch(email)) return 'Enter a valid email address';
+    if (email.isEmpty) return _copy.value('sign_in.email_required');
+    if (!_emailPattern.hasMatch(email)) {
+      return _copy.value('sign_in.email_invalid');
+    }
     return null;
   }
 
   String? _validatePassword(String? value) {
     final password = value ?? '';
-    if (password.isEmpty) return 'Enter your password';
+    if (password.isEmpty) return _copy.value('sign_in.password_required');
     if (widget.mode == MothEmailFormMode.signUp &&
         password.length < widget.passwordMinLength) {
-      return 'Use at least ${widget.passwordMinLength} characters';
+      return _copy.value(
+        'sign_up.password_too_short',
+        vars: {'count': '${widget.passwordMinLength}'},
+      );
     }
     return null;
   }
@@ -97,7 +108,10 @@ class _MothEmailFormState extends State<MothEmailForm> {
   @override
   Widget build(BuildContext context) {
     final moth = MothThemeScope.of(context);
+    final copy = MothCopyScope.of(context);
+    _copy = copy;
     final signUp = widget.mode == MothEmailFormMode.signUp;
+    final screen = signUp ? 'sign_up' : 'sign_in';
     return Form(
       key: _formKey,
       child: Column(
@@ -110,7 +124,9 @@ class _MothEmailFormState extends State<MothEmailForm> {
             keyboardType: TextInputType.emailAddress,
             autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(labelText: 'Email'),
+            decoration: InputDecoration(
+              labelText: copy.value('$screen.email_label'),
+            ),
             validator: _validateEmail,
           ),
           SizedBox(height: moth.space(1.5)),
@@ -124,7 +140,9 @@ class _MothEmailFormState extends State<MothEmailForm> {
             ],
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => _submit(),
-            decoration: const InputDecoration(labelText: 'Password'),
+            decoration: InputDecoration(
+              labelText: copy.value('$screen.password_label'),
+            ),
             validator: _validatePassword,
           ),
           SizedBox(height: moth.space(2.5)),
@@ -136,7 +154,7 @@ class _MothEmailFormState extends State<MothEmailForm> {
                     dimension: moth.space(2.25),
                     child: const CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(signUp ? 'Create account' : 'Sign in'),
+                : Text(copy.value('$screen.submit')),
           ),
         ],
       ),

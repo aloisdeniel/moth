@@ -92,3 +92,58 @@ await moth.signInWithOAuth(
 
 `getProjectConfig()` tells you which providers the project enables and the
 Google client IDs to initialize them with.
+
+## Localization
+
+The built-in screens (`MothLoginScreen` sign-in and sign-up, `MothPaywallScreen`)
+speak the user's language. The SDK resolves the device locale
+(`PlatformDispatcher.locale`), sends it as the `x-moth-language` header on every
+call, and renders the copy the server negotiates back for that locale — the
+project's admin-customized wording when the instance has it, else moth's bundled
+translations. Pin a fixed language (ignoring the device) with
+`MothConfig(locale: Locale('fr'))`.
+
+Copy resolves **server override → bundled → English**: the SDK bundles the same
+curated locale set as the server (`en`, `fr`, `de`, `es`, `pt`, `it`, `ja`), so
+the screens render fully localized **before** the config arrives and **offline** —
+the bundle is the floor, the project's copy the ceiling. A locale neither side has
+falls back to English. The delivered copy is cached on device with
+stale-while-revalidate keyed by `(locale, revision)` (the same discipline as the
+theme and paywall caches), so a launch shows the right language instantly and an
+operator's copy edit in the admin lands on the next background refresh — no app
+release. Changing the device language refetches automatically.
+
+Bundled copy interpolates an `{app}` placeholder from `MothConfig(appName: ...)`
+(the server fills its own project name into the copy it delivers):
+
+```dart
+MothApp(
+  config: MothConfig(
+    endpoint: Uri.parse('https://auth.example.com'),
+    publishableKey: 'pk_...',
+    appName: 'Aurora',        // fills {app} in the bundled fallback strings
+    // locale: Locale('fr'),  // optional: pin a language, else follow device
+  ),
+  child: const MyApp(),
+);
+```
+
+`MothApp` installs the moth localization delegates on the shell it wraps its own
+screens in, so a drop-in `MothApp` gets correct `MaterialLocalizations` for every
+bundled language with no extra setup. An app with its own `MaterialApp` that wants
+the same coverage spreads them in alongside its own:
+
+```dart
+MaterialApp(
+  localizationsDelegates: const [
+    ...mothLocalizationsDelegates,
+    // your app's own delegates…
+  ],
+  supportedLocales: mothSupportedLocales,
+);
+```
+
+The composable pieces read the resolved copy from an ambient `MothCopyScope`
+(inserted by `MothApp` and by each screen); wrap a custom screen built from
+`MothEmailForm` / `MothPurchaseButton` in one to localize them too. Read a single
+string yourself with `MothCopyScope.of(context).value('sign_in.title')`.

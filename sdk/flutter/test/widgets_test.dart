@@ -53,18 +53,18 @@ void main() {
 
       // Empty store -> signed out -> default MothLoginScreen.
       store.gate.complete();
-      await pumpUntilFound(tester, find.text('Welcome'));
+      await pumpUntilFound(tester, find.byKey(MothLoginScreen.submitButtonKey));
       expect(find.text('app-home'), findsNothing);
 
       // Signing in swaps to the app.
       await signInClient(tester);
       expect(find.text('app-home'), findsOneWidget);
-      expect(find.text('Welcome'), findsNothing);
+      expect(find.byType(MothLoginScreen), findsNothing);
 
       // Sign out through MothScope: back to the login screen.
       final scope = MothScope.of(tester.element(find.text('app-home')));
       await settle(tester, scope.signOut());
-      await pumpUntilFound(tester, find.text('Welcome'));
+      await pumpUntilFound(tester, find.byKey(MothLoginScreen.submitButtonKey));
       expect(find.text('app-home'), findsNothing);
 
       await stop(tester);
@@ -136,7 +136,7 @@ void main() {
           home: MothLoginScreen(client: client, adapter: adapter),
         ),
       );
-      await pumpUntilFound(tester, find.text('Welcome'));
+      await pumpUntilFound(tester, find.byKey(MothLoginScreen.submitButtonKey));
     }
 
     testWidgets('validates email and password per project config', (
@@ -162,7 +162,8 @@ void main() {
       // fake config).
       await tester.tap(find.byKey(MothLoginScreen.toggleModeKey));
       await tester.pump();
-      expect(find.text('Create account'), findsOneWidget);
+      // The sign-up title and submit button both read 'Create account'.
+      expect(find.text('Create account'), findsWidgets);
       await tester.enterText(
         find.byKey(MothLoginScreen.emailFieldKey),
         'jane@example.com',
@@ -236,7 +237,7 @@ void main() {
 
       await tester.tap(find.byKey(MothLoginScreen.forgotPasswordKey));
       await tester.pump();
-      expect(find.text('Reset your password'), findsOneWidget);
+      expect(find.text('Reset password'), findsOneWidget);
 
       await tester.enterText(
         find.byKey(MothLoginScreen.emailFieldKey),
@@ -354,7 +355,7 @@ void main() {
       // and MothApp falls back to the login screen.
       await tester.tap(find.byKey(mothDeleteConfirmButtonKey));
       await pumpUntil(tester, () => client.currentState is MothSignedOut);
-      await pumpUntilFound(tester, find.text('Welcome'));
+      await pumpUntilFound(tester, find.byKey(MothLoginScreen.submitButtonKey));
       expect(find.text('Delete account?'), findsNothing);
 
       await stop(tester);

@@ -1,3 +1,4 @@
+import 'copy.dart';
 import 'theme.dart';
 
 /// A project's public, non-secret configuration
@@ -10,6 +11,7 @@ class MothProjectConfig {
     required this.passwordMinLength,
     required this.signUpOpen,
     this.theme,
+    this.copy,
   });
 
   final MothGoogleConfig google;
@@ -25,6 +27,12 @@ class MothProjectConfig {
   /// `knownThemeRevision` passed to `getProjectConfig` is still current
   /// (keep the cached theme) — or when the server predates themes.
   final MothTheme? theme;
+
+  /// The localized copy for the negotiated locale (locale + revision always
+  /// present, `messages` present only when the `knownCopyRevision` differed),
+  /// or null when the server predates localized copy. Consumed by
+  /// [MothCopyController].
+  final MothCopyUpdate? copy;
 }
 
 /// Public part of the project's Sign in with Google configuration. Client
