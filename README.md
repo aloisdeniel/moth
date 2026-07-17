@@ -20,10 +20,16 @@ moth is a single Go binary that gives your mobile apps sign-up, sign-in,
 email verification, password reset, and Sign in with Google/Apple — backed by
 per-project ES256 JWTs any standard library can verify offline.
 
+It also monetizes them: App Store and Google Play subscription receipts are
+validated **server-side** (no billing SaaS), distilled into **entitlements**
+like `pro` your app gates on, sold through a **themed paywall** configured
+from the admin, and reported as revenue per month on the analytics tab. A
+free tier is always built in, so paid subscriptions stay optional.
+
 Every app you ship is a **project**: a sealed tenant with its own users, its
 own signing keypair, its own provider credentials, its own login branding,
-its own analytics. Adding app #10 costs what app #1 did — one project created
-in the admin, zero new infrastructure.
+its own subscription tiers, its own analytics. Adding app #10 costs what
+app #1 did — one project created in the admin, zero new infrastructure.
 
 Everything ships **inside the binary**: the SQLite database, the admin web
 console, the hosted email pages, the fonts, the `moth_auth` Flutter SDK

@@ -49,6 +49,7 @@ var nav = []NavEntry{
 	{Slug: "guides/google", Title: "Sign in with Google"},
 	{Slug: "guides/apple", Title: "Sign in with Apple"},
 	{Slug: "guides/theming", Title: "Theming the login screen"},
+	{Slug: "guides/monetization", Title: "Subscriptions & paywall"},
 	{Slug: "guides/analytics", Title: "Analytics"},
 	{Slug: "guides/backups", Title: "Backups"},
 	{Slug: "guides/migration", Title: "Migration import & export"},

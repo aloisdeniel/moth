@@ -93,6 +93,37 @@ await moth.signInWithOAuth(
 `getProjectConfig()` tells you which providers the project enables and the
 Google client IDs to initialize them with.
 
+## Subscriptions & paywall
+
+Native billing stays out of this package's dependencies: your app supplies a
+`MothBillingAdapter` (the example wires one built on `in_app_purchase`), and
+moth handles everything after the native purchase — the receipt is validated
+server-side against the store and comes back as **entitlements**. Every user
+always has a valid state; never-paid users are simply on the free tier.
+
+```dart
+MothApp(
+  config: MothConfig(endpoint: ..., publishableKey: 'pk_...'),
+  billingAdapter: MyBillingAdapter(),
+  requiresEntitlement: 'pro',            // free users see the paywall
+  paywall: const MothPaywallScreen(),
+  child: const MyApp(),
+);
+
+// Imperative access from anywhere below MothApp:
+final scope = MothScope.of(context);
+scope.hasEntitlement('pro');             // instant, cached on device
+await scope.purchase(product);           // MothPurchaseResult: purchased/pending/…
+await scope.restorePurchases();          // new device or reinstall
+```
+
+`MothPaywallScreen` renders the project's offering with its theme; copy,
+layout, benefit bullets, and the highlighted tier are configured — per
+language — in the admin's Design → Paywall editor. Building blocks
+(`MothPaywallHeader`, `MothTierCard`, `MothPurchaseButton`) are exported for
+custom paywalls. Your backend can verify entitlements server-side via
+`moth.server.v1.EntitlementService/GetUserEntitlements` with the secret key.
+
 ## Localization
 
 The built-in screens (`MothLoginScreen` sign-in and sign-up, `MothPaywallScreen`)

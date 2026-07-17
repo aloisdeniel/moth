@@ -155,6 +155,21 @@ moth setup google --project ${project.slug}
 moth setup apple --project ${project.slug}
 moth doctor --project ${project.slug}`;
 
+  const paywallDart = `MothApp(
+  config: MothConfig(
+    endpoint: Uri.parse('${base}'),
+    publishableKey: '${project.publishableKey}',
+  ),
+  // Your adapter over in_app_purchase runs the native store purchase;
+  // moth validates the receipt server-side and derives entitlements.
+  billingAdapter: MyBillingAdapter(),
+  requiresEntitlement: 'pro', // free users see the paywall
+  paywall: const MothPaywallScreen(),
+  child: const MyApp(),
+);`;
+
+  const cliBilling = `moth setup billing --project ${project.slug}`;
+
   return (
     <div className="stack-32" style={{ maxWidth: 720 }}>
       <section className="stack-12">
@@ -242,6 +257,33 @@ moth doctor --project ${project.slug}`;
           <span className="inline-code">moth login</span> asks for it.
         </p>
         <CodeBlock code={cliSetup} />
+      </section>
+
+      <section className="stack-12">
+        <h2>6 · Monetize (optional)</h2>
+        <p className="caption">
+          Sell subscriptions without a billing SaaS: define an entitlement
+          (e.g. <span className="inline-code">pro</span>) and your tiers under
+          the <span className="body-strong">Monetization</span> tab, connect
+          the store credentials there (or run the one-command setup below),
+          and push the catalog to App Store Connect and Google Play. Paywall
+          copy and layout live under{" "}
+          <span className="body-strong">Design → Paywall</span>, per language.
+          A free tier is always built in — apps without paid tiers keep
+          working unchanged.
+        </p>
+        <CodeBlock code={cliBilling} />
+        <p className="caption">
+          In the app, gate content behind the entitlement — free users see the
+          themed paywall; receipts are validated server-side and your backend
+          can double-check with{" "}
+          <span className="inline-code">
+            moth.server.v1.EntitlementService/GetUserEntitlements
+          </span>
+          .
+        </p>
+        <p className="caption body-strong">lib/main.dart</p>
+        <CodeBlock code={paywallDart} />
       </section>
     </div>
   );

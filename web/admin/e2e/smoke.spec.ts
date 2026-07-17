@@ -81,7 +81,10 @@ test("setup instructions render real values", async ({ page }) => {
   await page.getByRole("tab", { name: "Setup" }).click();
 
   await expect(page.getByText("hosted: http://127.0.0.1:8990/pub")).toBeVisible();
-  await expect(page.getByText(/publishableKey: 'pk_[A-Za-z0-9_-]+'/)).toBeVisible();
+  // The pk_ snippet renders twice: the MothApp wrap (step 2) and the
+  // monetization gate (step 6).
+  await expect(page.getByText(/publishableKey: 'pk_[A-Za-z0-9_-]+'/).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "6 · Monetize (optional)" })).toBeVisible();
   await expect(
     page.getByText("http://127.0.0.1:8990/p/birdwatch/.well-known/jwks.json").first(),
   ).toBeVisible();
