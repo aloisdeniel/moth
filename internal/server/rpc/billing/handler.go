@@ -38,8 +38,14 @@ type Store interface {
 	store.SubscriptionGrantStore
 	store.StoreNotificationStore
 	store.BillingCredentialStore
+	store.StripeCustomerStore
 	store.SubscriptionEventStore
 	store.CopyStore
+	// UserStore backs webhook user attribution: a Stripe checkout event names a
+	// moth user id that must exist in the project before a subscription row is
+	// created for it (RPC paths authenticate the user via the auth handler
+	// instead).
+	store.UserStore
 }
 
 var _ billingv1connect.BillingServiceHandler = (*Handler)(nil)
@@ -61,6 +67,7 @@ type Handler struct {
 	appleRoots      *x509.CertPool
 	googleBaseURL   string
 	googleTokenURL  string
+	stripeBaseURL   string
 }
 
 // Options configures the billing handler.
@@ -79,6 +86,7 @@ type Options struct {
 	AppleRoots      *x509.CertPool
 	GoogleBaseURL   string
 	GoogleTokenURL  string
+	StripeBaseURL   string
 }
 
 // New builds the billing handler.
@@ -104,6 +112,7 @@ func New(o Options) *Handler {
 		appleRoots:      o.AppleRoots,
 		googleBaseURL:   o.GoogleBaseURL,
 		googleTokenURL:  o.GoogleTokenURL,
+		stripeBaseURL:   o.StripeBaseURL,
 	}
 }
 
@@ -163,6 +172,26 @@ func (h *Handler) googleClient(cred store.BillingCredentials) (*billing.GoogleCl
 		PackageName: cred.GooglePackageName,
 		Tokens:      tokens,
 		HTTPC:       h.httpc,
+	}, nil
+}
+
+// stripeClient builds a Stripe REST API client from the project's decrypted
+// secret key. Returns errNotConfigured when Stripe billing is not set up —
+// checked on field presence, not row presence, so a project with only Apple or
+// Google credentials still gets BILLING_NOT_CONFIGURED from the checkout RPCs.
+func (h *Handler) stripeClient(cred store.BillingCredentials) (*billing.StripeClient, error) {
+	if len(cred.StripeSecretKeyEnc) == 0 {
+		return nil, errNotConfigured
+	}
+	key, err := h.master.Decrypt(cred.StripeSecretKeyEnc)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt stripe secret key: %w", err)
+	}
+	return &billing.StripeClient{
+		BaseURL:   h.stripeBaseURL,
+		SecretKey: string(key),
+		HTTPC:     h.httpc,
+		Now:       h.now,
 	}, nil
 }
 
@@ -246,6 +275,8 @@ func mapStoreToProto(s string) billingv1.Store {
 		return billingv1.Store_STORE_APPLE
 	case store.SubscriptionStoreGoogle:
 		return billingv1.Store_STORE_GOOGLE
+	case store.SubscriptionStoreStripe:
+		return billingv1.Store_STORE_STRIPE
 	default:
 		return billingv1.Store_STORE_UNSPECIFIED
 	}

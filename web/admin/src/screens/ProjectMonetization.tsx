@@ -16,6 +16,7 @@ import {
   BillingCredentialsService,
   type AppleBillingConfig,
   type GoogleBillingConfig,
+  type StripeBillingConfig,
 } from "../gen/moth/admin/v1/billing_credentials_pb";
 import {
   EntitlementService,
@@ -403,6 +404,7 @@ function ProductDialog({
   const [displayName, setDisplayName] = useState(product?.displayName ?? "");
   const [appleId, setAppleId] = useState(product?.appleProductId ?? "");
   const [googleId, setGoogleId] = useState(product?.googleProductId ?? "");
+  const [stripePriceId, setStripePriceId] = useState(product?.stripePriceId ?? "");
   const [billingPeriod, setBillingPeriod] = useState(product?.billingPeriod ?? "");
   const [price, setPrice] = useState(
     product && product.priceAmountMicros !== 0n
@@ -437,6 +439,10 @@ function ProductDialog({
       displayName: displayName.trim(),
       appleProductId: appleId.trim(),
       googleProductId: googleId.trim(),
+      stripePriceId: stripePriceId.trim(),
+      // Written back by Stripe catalog provisioning; pass it through so an
+      // edit in this dialog never clears the recorded link.
+      stripeProductId: product?.stripeProductId ?? "",
       billingPeriod: billingPeriod.trim(),
       priceAmountMicros: micros,
       currency: currency.trim().toUpperCase(),
@@ -511,6 +517,23 @@ function ProductDialog({
             </Field>
           </div>
         </div>
+
+        <Field
+          label="Stripe price id"
+          help={
+            product?.stripeProductId
+              ? `Linked to Stripe product ${product.stripeProductId}. A price edit creates a new Stripe price and re-points the tier — existing subscribers keep the old one.`
+              : "Web (Stripe) price; blank if mobile-only. Push to Stripe creates the product + price and fills this in."
+          }
+        >
+          <input
+            className="input input--mono"
+            value={stripePriceId}
+            onChange={(e) => setStripePriceId(e.target.value)}
+            placeholder="price_1P2j3KAbCdEfGhIj"
+            spellCheck={false}
+          />
+        </Field>
 
         <div className="row-16" style={{ alignItems: "flex-start" }}>
           <div style={{ flex: 1 }}>
@@ -798,6 +821,44 @@ function syncStatusMeta(s: ProductSyncStatus): { label: string; tone: Tone } {
   }
 }
 
+// storeApiName names the store-side API a card talks to; storeLabel stays the
+// short store name used everywhere else.
+function storeApiName(store: Store): string {
+  switch (store) {
+    case Store.APPLE:
+      return "App Store Connect";
+    case Store.GOOGLE:
+      return "Google Play";
+    case Store.STRIPE:
+      return "Stripe";
+    default:
+      return storeLabel(store);
+  }
+}
+
+// The wired/unwired wording for each store's server-to-server notifications.
+function notificationsWiredLabel(store: Store): string {
+  switch (store) {
+    case Store.APPLE:
+      return "Server-notification URL registered";
+    case Store.GOOGLE:
+      return "RTDN Pub/Sub topic wired";
+    case Store.STRIPE:
+      return "Webhook endpoint registered";
+    default:
+      return "Renewal notifications wired";
+  }
+}
+
+function notificationsUnwiredLabel(store: Store): string {
+  switch (store) {
+    case Store.STRIPE:
+      return "Webhook endpoint not registered";
+    default:
+      return "Renewal notifications not wired";
+  }
+}
+
 function StoreConnectionCard({ project }: { project: Project }) {
   const status = useQuery(MonetizationService.method.getStoreCatalogStatus, {
     projectId: project.id,
@@ -822,6 +883,7 @@ function StoreConnectionCard({ project }: { project: Project }) {
         <>
           <StoreStatusCard project={project} store={Store.APPLE} status={byStore(Store.APPLE)} />
           <StoreStatusCard project={project} store={Store.GOOGLE} status={byStore(Store.GOOGLE)} />
+          <StoreStatusCard project={project} store={Store.STRIPE} status={byStore(Store.STRIPE)} />
         </>
       )}
     </div>
@@ -839,7 +901,7 @@ function StoreStatusCard({
 }) {
   const [pushing, setPushing] = useState(false);
   const label = storeLabel(store);
-  const apiName = store === Store.APPLE ? "App Store Connect" : "Google Play";
+  const apiName = storeApiName(store);
   const creds = status?.credentialsPresent ?? false;
   const notif = status?.notificationsWired ?? false;
 
@@ -847,7 +909,7 @@ function StoreStatusCard({
     <section className="card card--pad stack-16">
       <div className="page__header">
         <h4 className="card__title">
-          {label} — {apiName}
+          {label === apiName ? label : `${label} — ${apiName}`}
         </h4>
         {creds ? (
           <Badge tone="success">Connected</Badge>
@@ -861,11 +923,7 @@ function StoreStatusCard({
           {creds ? "API credentials configured" : "API credentials not configured"}
         </Status>
         <Status tone={notif ? "success" : "warning"}>
-          {notif
-            ? store === Store.APPLE
-              ? "Server-notification URL registered"
-              : "RTDN Pub/Sub topic wired"
-            : "Renewal notifications not wired"}
+          {notif ? notificationsWiredLabel(store) : notificationsUnwiredLabel(store)}
         </Status>
       </div>
 
@@ -964,7 +1022,9 @@ function PushDialog({
               <p className="caption">
                 {result.inSync
                   ? `${label}'s catalog already matches moth — nothing to push.`
-                  : "Review the plan, then push. moth changes only what drifted."}
+                  : store === Store.STRIPE
+                    ? "Review the plan, then push. moth changes only what drifted; a price change creates a new Stripe price and re-points the tier — existing subscribers keep their old price."
+                    : "Review the plan, then push. moth changes only what drifted."}
               </p>
             )}
 
@@ -972,8 +1032,9 @@ function PushDialog({
               <div className="empty">
                 <p className="body-strong">Nothing to reconcile</p>
                 <p className="caption">
-                  No products are mapped to {label}. Set a {label} product id on a
-                  tier above first.
+                  {store === Store.STRIPE
+                    ? "No products to push. Add a tier above first — pushing creates the Stripe product + price and fills the price id in."
+                    : `No products are mapped to ${label}. Set a ${label} product id on a tier above first.`}
                 </p>
               </div>
             )}
@@ -1096,6 +1157,7 @@ function BillingCredentialsCard({ project }: { project: Project }) {
       project={project}
       apple={creds.data.apple}
       google={creds.data.google}
+      stripe={creds.data.stripe}
       base={base}
     />
   );
@@ -1105,11 +1167,13 @@ function BillingCredentialsForm({
   project,
   apple,
   google,
+  stripe,
   base,
 }: {
   project: Project;
   apple?: AppleBillingConfig;
   google?: GoogleBillingConfig;
+  stripe?: StripeBillingConfig;
   base: string;
 }) {
   // Apple
@@ -1122,6 +1186,9 @@ function BillingCredentialsForm({
   const [serviceAccountJson, setServiceAccountJson] = useState("");
   const [packageName, setPackageName] = useState(google?.packageName ?? "");
   const [pubsubTopic, setPubsubTopic] = useState(google?.pubsubTopic ?? "");
+  // Stripe (both write-only; empty keeps the stored value)
+  const [stripeSecretKey, setStripeSecretKey] = useState("");
+  const [stripeWebhookSecret, setStripeWebhookSecret] = useState("");
 
   const [saved, setSaved] = useState(false);
   const update = useMutation(BillingCredentialsService.method.updateBillingCredentials, {
@@ -1129,6 +1196,8 @@ function BillingCredentialsForm({
       invalidate(BillingCredentialsService.method.getBillingCredentials);
       setIapKeyP8("");
       setServiceAccountJson("");
+      setStripeSecretKey("");
+      setStripeWebhookSecret("");
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
@@ -1150,6 +1219,13 @@ function BillingCredentialsForm({
         packageName: packageName.trim(),
         pubsubTopic: pubsubTopic.trim(),
         rtdnSecret: "",
+      },
+      stripe: {
+        secretKey: stripeSecretKey.trim(),
+        webhookSecret: stripeWebhookSecret.trim(),
+        // Written by `moth setup billing` after it creates the endpoint;
+        // empty keeps the stored one.
+        webhookEndpointId: "",
       },
     });
   }
@@ -1337,6 +1413,75 @@ function BillingCredentialsForm({
             notification body.
           </p>
           {base && <KeyWell value={`${base}/billing/google/rtdn/${project.slug}`} />}
+        </div>
+      </section>
+
+      <section className="card card--pad stack-16">
+        <div className="page__header">
+          <h3 className="card__title">Stripe</h3>
+          {stripe?.hasSecretKey ? <Badge tone="success">Key stored</Badge> : <Badge>No key</Badge>}
+        </div>
+        <p className="caption">
+          moth creates Checkout and Billing Portal sessions and reads
+          subscriptions with a Stripe <strong>secret key</strong> — a{" "}
+          <a
+            href="https://dashboard.stripe.com/apikeys"
+            target="_blank"
+            rel="noreferrer"
+          >
+            restricted key
+          </a>{" "}
+          is recommended. Webhook events are verified against the signing
+          secret, then re-read from the Stripe API — moth never trusts the
+          event body.
+        </p>
+
+        <Field
+          label="Secret key"
+          help={
+            stripe?.hasSecretKey
+              ? "A key is stored (encrypted). Leave blank to keep it; paste a new one to replace it."
+              : "Paste a restricted (rk_live_…) or secret (sk_live_…) key. Stored encrypted, never shown again."
+          }
+        >
+          <input
+            className="input input--mono"
+            value={stripeSecretKey}
+            onChange={(e) => setStripeSecretKey(e.target.value)}
+            placeholder={stripe?.hasSecretKey ? "Key stored (encrypted)" : "rk_live_…"}
+            spellCheck={false}
+          />
+        </Field>
+        <Field
+          label="Webhook signing secret"
+          help={
+            stripe?.hasWebhookSecret
+              ? "A signing secret is stored (encrypted). Leave blank to keep it; paste a new one to replace it."
+              : "Filled automatically when `moth setup billing` creates the webhook endpoint; paste the whsec_… value yourself if you add the endpoint by hand."
+          }
+        >
+          <input
+            className="input input--mono"
+            value={stripeWebhookSecret}
+            onChange={(e) => setStripeWebhookSecret(e.target.value)}
+            placeholder={
+              stripe?.hasWebhookSecret ? "Signing secret stored (encrypted)" : "whsec_…"
+            }
+            spellCheck={false}
+          />
+        </Field>
+        <div className="stack-8">
+          <span className="field__label">Stripe webhook URL</span>
+          <p className="caption">
+            <span className="inline-code">moth setup billing</span> creates
+            this endpoint via the Stripe API and stores the signing secret for
+            you. To wire it by hand instead, add an endpoint with this URL in
+            the Stripe dashboard (events:{" "}
+            <span className="inline-code">checkout.session.completed</span>,{" "}
+            <span className="inline-code">customer.subscription.*</span>) and
+            paste its signing secret above.
+          </p>
+          {base && <KeyWell value={`${base}/billing/stripe/webhook/${project.slug}`} />}
         </div>
       </section>
 

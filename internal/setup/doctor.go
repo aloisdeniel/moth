@@ -55,11 +55,16 @@ type Doctor struct {
 	// GoogleServiceAccountPath optionally points at the Play Developer API
 	// service-account JSON so the billing check can probe the Play API.
 	GoogleServiceAccountPath string
-	// AppleServerAPIBase, GoogleAPIBase and GoogleTokenURL are test overrides for
-	// the billing store probes.
+	// StripeSecretKey optionally supplies the project's Stripe secret key so
+	// the billing check can probe the Stripe API (moth stores the key
+	// encrypted and never returns it, like the other store secrets).
+	StripeSecretKey string
+	// AppleServerAPIBase, GoogleAPIBase, GoogleTokenURL and StripeAPIBase are
+	// test overrides for the billing store probes.
 	AppleServerAPIBase string
 	GoogleAPIBase      string
 	GoogleTokenURL     string
+	StripeAPIBase      string
 }
 
 func (d *Doctor) defaults() {
@@ -380,10 +385,11 @@ func (d *Doctor) checkBilling(ctx context.Context, rep *Report, projectID string
 		rep.Fail(name, "GetBillingCredentials: "+err.Error(), "")
 		return
 	}
-	a, g := resp.Msg.Apple, resp.Msg.Google
+	a, g, sc := resp.Msg.Apple, resp.Msg.Google, resp.Msg.Stripe
 	appleConfigured := a.GetBundleId() != "" || a.GetHasIapKey()
 	googleConfigured := g.GetPackageName() != "" || g.GetHasServiceAccount()
-	if !appleConfigured && !googleConfigured {
+	stripeConfigured := sc.GetHasSecretKey() || d.StripeSecretKey != ""
+	if !appleConfigured && !googleConfigured && !stripeConfigured {
 		rep.Skip(name, "no store billing credentials configured (subscriptions not set up)")
 		return
 	}
@@ -392,6 +398,9 @@ func (d *Doctor) checkBilling(ctx context.Context, rep *Report, projectID string
 	}
 	if googleConfigured {
 		d.checkGoogleBilling(ctx, rep, projectID, g)
+	}
+	if stripeConfigured {
+		d.checkStripeBilling(ctx, rep, sc)
 	}
 	d.checkCatalogMapping(ctx, rep, projectID, appleConfigured, googleConfigured)
 }
@@ -543,6 +552,57 @@ func (d *Doctor) checkGoogleCatalogLive(ctx context.Context, rep *Report, projec
 		rep.Skip(name, "no products carry a Google SKU")
 	default:
 		rep.Pass(name, fmt.Sprintf("%d product(s) present in Google Play", checked))
+	}
+}
+
+// checkStripeBilling reports on the project's Stripe configuration — key and
+// webhook-secret presence, moth's webhook route — and, when the operator
+// supplies the secret key in hand (moth never returns the stored one), a live
+// reachability probe against the Stripe API. Mirrors checkAppleBilling's
+// in-hand-credential pattern.
+func (d *Doctor) checkStripeBilling(ctx context.Context, rep *Report, sc *adminv1.StripeBillingConfig) {
+	const name = "project: Stripe billing credentials"
+	if !sc.GetHasSecretKey() {
+		rep.Fail(name, "no secret key stored",
+			"run `moth setup billing --project "+d.Slug+" --stripe-secret-key <key>`")
+	} else {
+		rep.Pass(name, "configured (secret key stored)")
+	}
+	if !sc.GetHasWebhookSecret() {
+		rep.Warn("project: Stripe webhook secret", "no webhook signing secret stored — Stripe events cannot be verified",
+			"re-run `moth setup billing` with --stripe-secret-key to create the endpoint and store the secret")
+	} else {
+		detail := "stored"
+		if sc.GetWebhookEndpointId() != "" {
+			detail = "stored (endpoint " + sc.GetWebhookEndpointId() + ")"
+		}
+		rep.Pass("project: Stripe webhook secret", detail)
+	}
+	d.checkWebhookReachable(ctx, rep, "project: Stripe webhook endpoint", "/billing/stripe/webhook/"+d.Slug)
+
+	const probeName = "project: Stripe API reachable"
+	if d.StripeSecretKey == "" {
+		rep.Warn(probeName, "moth stores the secret key encrypted and never returns it, so a remote doctor cannot probe the Stripe API",
+			"re-run with --stripe-secret-key <key> to verify the key")
+		return
+	}
+	rep.add(stripeAPIProbe(ctx, probeName, d.HTTPC, d.StripeAPIBase, d.StripeSecretKey))
+}
+
+// stripeAPIProbe reads a bogus price id against the Stripe API: a 404
+// (billing.ErrNotFound) proves the key authenticated and the API is reachable,
+// while an auth error proves the key is wrong. Shared semantics with
+// appleServerAPIProbe / googlePlayAPIProbe.
+func stripeAPIProbe(ctx context.Context, name string, httpc billing.Doer, base, secretKey string) Check {
+	client := &billing.StripeClient{BaseURL: base, SecretKey: secretKey, HTTPC: httpc}
+	_, err := client.GetPrice(ctx, "price_moth_doctor_probe")
+	switch {
+	case err == nil, errors.Is(err, billing.ErrNotFound):
+		return Check{Name: name, Status: StatusPass, Detail: "authenticated; price read reached the API"}
+	default:
+		return Check{Name: name, Status: StatusFail,
+			Detail:      "Stripe rejected the request: " + err.Error(),
+			Remediation: "check the secret key (sk_/rk_) is valid and has read access to Prices"}
 	}
 }
 

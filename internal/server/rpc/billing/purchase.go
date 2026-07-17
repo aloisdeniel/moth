@@ -36,6 +36,11 @@ func (h *Handler) SubmitPurchase(ctx context.Context, req *connect.Request[billi
 		norm, err = h.validateApple(ctx, cred, req.Msg.GetAppleJwsTransaction())
 	case billingv1.Store_STORE_GOOGLE:
 		norm, err = h.validateGoogle(ctx, cred, req.Msg.GetGooglePurchaseToken(), req.Msg.GetGoogleSubscriptionId())
+	case billingv1.Store_STORE_STRIPE:
+		// Web purchases have no client-side receipt: they go through
+		// CreateCheckoutSession and land via the Stripe webhook.
+		return nil, authrpc.NewError(connect.CodeInvalidArgument, authrpc.ReasonInvalidReceipt,
+			"stripe purchases go through CreateCheckoutSession, not receipt submission")
 	default:
 		return nil, authrpc.NewError(connect.CodeInvalidArgument, authrpc.ReasonInvalidReceipt, "unknown or unspecified store")
 	}
@@ -84,6 +89,11 @@ func (h *Handler) RestorePurchases(ctx context.Context, req *connect.Request[bil
 			norm, err = h.validateApple(ctx, cred, receipt)
 		case billingv1.Store_STORE_GOOGLE:
 			norm, err = h.validateGoogle(ctx, cred, receipt, "")
+		case billingv1.Store_STORE_STRIPE:
+			// Stripe subscriptions are server-side state: there is nothing
+			// client-held to restore (webhooks + reconciliation keep them fresh).
+			return nil, authrpc.NewError(connect.CodeInvalidArgument, authrpc.ReasonInvalidReceipt,
+				"stripe subscriptions are restored server-side, not from receipts")
 		default:
 			return nil, authrpc.NewError(connect.CodeInvalidArgument, authrpc.ReasonInvalidReceipt, "unknown or unspecified store")
 		}
@@ -170,6 +180,33 @@ func (h *Handler) applyNormalized(ctx context.Context, projectID, userID string,
 		return store.Subscription{}, err
 	}
 
+	// Stripe prices are immutable: a catalog price change mints a NEW
+	// stripe_price_id and re-points the tier, while existing subscribers keep
+	// renewing on the OLD price id. A price-id miss must therefore never strip
+	// a paying user's product link (and with it their entitlements). Two
+	// fallbacks, in order: match the Stripe PRODUCT id ("prod_...", which
+	// survives re-points) carried in the raw subscription state; then keep the
+	// existing row's product link untouched and price from that product.
+	if productID == "" && norm.Store == store.SubscriptionStoreStripe {
+		if spid := stripeRawProductID(norm.RawState); spid != "" {
+			for _, p := range products {
+				if p.StripeProductID == spid {
+					productID, product = p.ID, p
+					break
+				}
+			}
+		}
+	}
+	if productID == "" && !wasNew && existing.ProductID != "" {
+		productID = existing.ProductID
+		for _, p := range products {
+			if p.ID == productID {
+				product = p
+				break
+			}
+		}
+	}
+
 	now := h.now()
 	sub := store.Subscription{
 		ID:                 authrpc.NewID(),
@@ -194,11 +231,16 @@ func (h *Handler) applyNormalized(ctx context.Context, projectID, userID string,
 		sub.ID = existing.ID
 		sub.CreatedAt = existing.CreatedAt
 	}
-	stored, err := h.store.UpsertSubscription(ctx, sub)
+	stored, inserted, err := h.store.UpsertSubscription(ctx, sub)
 	if err != nil {
 		return store.Subscription{}, err
 	}
-	if emitEvent && wasNew {
+	// The acquisition event is keyed on the atomic insert outcome, never the
+	// pre-read above: two racing deliveries (Stripe's checkout.session.completed
+	// and customer.subscription.created carry different event ids, so both pass
+	// webhook dedupe) can both observe "not found", but exactly one performs the
+	// insert — and only that one books purchased/trial_started.
+	if emitEvent && inserted {
 		price, currency := eventPrice(norm, product)
 		h.emitEvent(ctx, projectID, stored, price, currency, subscriptionEventType(norm.Status))
 	}
@@ -242,6 +284,9 @@ func matchProduct(products []store.Product, storeName, sku string) (string, stor
 			return p.ID, p
 		}
 		if storeName == store.SubscriptionStoreGoogle && p.GoogleProductID == sku {
+			return p.ID, p
+		}
+		if storeName == store.SubscriptionStoreStripe && p.StripePriceID == sku {
 			return p.ID, p
 		}
 	}

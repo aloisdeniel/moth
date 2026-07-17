@@ -63,6 +63,12 @@ func (h *Handler) reconcileOne(ctx context.Context, sub store.Subscription, cred
 			return err
 		}
 		norm, _, err = client.GetSubscriptionV2(ctx, sub.StoreTransactionID)
+	case store.SubscriptionStoreStripe:
+		var client *billing.StripeClient
+		if client, err = h.stripeClient(cred); err != nil {
+			return err
+		}
+		norm, _, err = client.GetSubscription(ctx, sub.StoreTransactionID)
 	default:
 		return nil
 	}

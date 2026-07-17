@@ -51,8 +51,14 @@ type Product struct {
 	EntitlementIds []string               `protobuf:"bytes,14,rep,name=entitlement_ids,json=entitlementIds,proto3" json:"entitlement_ids,omitempty"`
 	CreateTime     *timestamppb.Timestamp `protobuf:"bytes,15,opt,name=create_time,json=createTime,proto3" json:"create_time,omitempty"`
 	UpdateTime     *timestamppb.Timestamp `protobuf:"bytes,16,opt,name=update_time,json=updateTime,proto3" json:"update_time,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Stripe recurring Price id ("price_..."); empty when the tier does not sell
+	// on the web. Provisioning ("create in Stripe") writes it back; a price edit
+	// creates a new Price and re-points this field (Stripe prices are immutable).
+	StripePriceId string `protobuf:"bytes,17,opt,name=stripe_price_id,json=stripePriceId,proto3" json:"stripe_price_id,omitempty"`
+	// The linked Stripe Product id ("prod_..."), written back by provisioning.
+	StripeProductId string `protobuf:"bytes,18,opt,name=stripe_product_id,json=stripeProductId,proto3" json:"stripe_product_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *Product) Reset() {
@@ -195,6 +201,20 @@ func (x *Product) GetUpdateTime() *timestamppb.Timestamp {
 		return x.UpdateTime
 	}
 	return nil
+}
+
+func (x *Product) GetStripePriceId() string {
+	if x != nil {
+		return x.StripePriceId
+	}
+	return ""
+}
+
+func (x *Product) GetStripeProductId() string {
+	if x != nil {
+		return x.StripeProductId
+	}
+	return ""
 }
 
 type ListProductsRequest struct {
@@ -675,7 +695,7 @@ var File_moth_admin_v1_product_proto protoreflect.FileDescriptor
 
 const file_moth_admin_v1_product_proto_rawDesc = "" +
 	"\n" +
-	"\x1bmoth/admin/v1/product.proto\x12\rmoth.admin.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x84\x05\n" +
+	"\x1bmoth/admin/v1/product.proto\x12\rmoth.admin.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd8\x05\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1e\n" +
 	"\n" +
@@ -698,7 +718,9 @@ const file_moth_admin_v1_product_proto_rawDesc = "" +
 	"\vcreate_time\x18\x0f \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"createTime\x12;\n" +
 	"\vupdate_time\x18\x10 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"updateTime\"4\n" +
+	"updateTime\x12&\n" +
+	"\x0fstripe_price_id\x18\x11 \x01(\tR\rstripePriceId\x12*\n" +
+	"\x11stripe_product_id\x18\x12 \x01(\tR\x0fstripeProductId\"4\n" +
 	"\x13ListProductsRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\"J\n" +

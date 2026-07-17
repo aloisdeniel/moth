@@ -36,6 +36,7 @@ func defaultDoer() Doer { return &http.Client{Timeout: 15 * time.Second} }
 const (
 	StoreApple  = "apple"
 	StoreGoogle = "google"
+	StoreStripe = "stripe"
 )
 
 // Environment distinguishes sandbox/test receipts from live ones. Stored so a

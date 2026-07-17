@@ -513,7 +513,7 @@ func TestSubmitPurchaseTransfersSubscriptionToCaller(t *testing.T) {
 		t.Fatal(err)
 	}
 	end := f.now.Add(30 * 24 * time.Hour)
-	if _, err := f.st.UpsertSubscription(ctx, store.Subscription{
+	if _, _, err := f.st.UpsertSubscription(ctx, store.Subscription{
 		ID: authrpc.NewID(), ProjectID: f.project.ID, UserID: userA.ID, Store: store.SubscriptionStoreApple,
 		ProductID: f.prodID, StoreTransactionID: "orig-shared", Status: store.SubscriptionStatusActive,
 		CurrentPeriodEnd: &end, Environment: store.SubscriptionEnvironmentProduction,
@@ -555,7 +555,7 @@ func TestReconcileRereadsLapsedSubscription(t *testing.T) {
 	f := newFixture(t)
 	// Store an active subscription whose period already ended (a missed webhook).
 	end := f.now.Add(-time.Hour)
-	if _, err := f.st.UpsertSubscription(context.Background(), store.Subscription{
+	if _, _, err := f.st.UpsertSubscription(context.Background(), store.Subscription{
 		ID: authrpc.NewID(), ProjectID: f.project.ID, UserID: f.user.ID,
 		Store: store.SubscriptionStoreGoogle, ProductID: f.prodID, StoreTransactionID: "ptok-r",
 		SubscriptionID: "monthly", Status: store.SubscriptionStatusActive, CurrentPeriodEnd: &end,

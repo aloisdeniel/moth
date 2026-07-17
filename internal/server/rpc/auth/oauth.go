@@ -231,10 +231,10 @@ func (h *Handler) UnlinkIdentity(ctx context.Context, req *connect.Request[authv
 
 // OAuthStart begins the web-redirect fallback flow: it validates that the
 // provider is configured for web sign-in and that redirectURI targets a
-// registered scheme (open-redirect protection), persists a hashed
-// single-use state and returns the provider consent URL to send the
-// browser to. The returned state embeds the project slug so the
-// provider-console callback URL can stay project-agnostic.
+// registered custom scheme or web origin (open-redirect protection),
+// persists a hashed single-use state and returns the provider consent URL
+// to send the browser to. The returned state embeds the project slug so
+// the provider-console callback URL can stay project-agnostic.
 func (h *Handler) OAuthStart(ctx context.Context, project store.Project, provider, redirectURI string) (string, error) {
 	if provider != store.IdentityProviderGoogle && provider != store.IdentityProviderApple {
 		return "", connect.NewError(connect.CodeInvalidArgument,
@@ -244,7 +244,8 @@ func (h *Handler) OAuthStart(ctx context.Context, project store.Project, provide
 		return "", err
 	}
 	if redirectURI != "" {
-		if err := checkRedirectURI(redirectURI, project.Settings.RedirectSchemes); err != nil {
+		if err := checkRedirectURI(redirectURI, project.Settings.RedirectSchemes,
+			project.Settings.RedirectOrigins); err != nil {
 			return "", err
 		}
 	}
@@ -648,19 +649,47 @@ func (h *Handler) checkWebProvider(ctx context.Context, project store.Project, p
 }
 
 // checkRedirectURI enforces that the callback only ever redirects to a
-// scheme the project registered (open-redirect protection).
-func checkRedirectURI(redirectURI string, schemes []string) error {
+// destination the project registered (open-redirect protection): custom
+// app schemes match on the scheme alone (mobile deep links — the OS, not
+// DNS, decides who receives them), while http(s) URIs must match a
+// registered web origin exactly.
+//
+// The http(s) rule: the URI's origin — lowercase scheme+host, port-
+// sensitive except that a scheme's default port (http:80, https:443) is
+// stripped before comparing — must equal a registered origin. Subdomains
+// or other ports of a registered origin do not match. The URI may carry
+// any path (the SPA's return route) and query (the callback appends the
+// one-time code with & when a query is already present); a fragment is
+// refused because everything appended after "#" would land in the
+// fragment instead of the query, and userinfo is refused because it has
+// no place in a redirect target.
+func checkRedirectURI(redirectURI string, schemes, origins []string) error {
 	invalid := newError(connect.CodeInvalidArgument, ReasonInvalidRedirect,
-		"redirect does not target a scheme registered for this project")
+		"redirect does not target a scheme or origin registered for this project")
 	u, err := url.Parse(redirectURI)
 	if err != nil || u.Scheme == "" {
 		return invalid
 	}
-	// Scheme-only matching cannot constrain the host, so http(s) redirects
-	// would be open redirects leaking the one-time code to any site; they
-	// are refused even if a settings row somehow registered them (the
-	// admin API rejects them at write time too).
 	if strings.EqualFold(u.Scheme, "http") || strings.EqualFold(u.Scheme, "https") {
+		// strings.Contains rather than u.Fragment: an empty fragment
+		// ("https://app/cb#") parses to Fragment == "" but still swallows
+		// anything appended after it.
+		if u.User != nil || strings.Contains(redirectURI, "#") {
+			return invalid
+		}
+		got := originKey(u.Scheme, u.Host)
+		for _, o := range origins {
+			// Registered origins are canonicalized at write time, but a
+			// stored row is re-canonicalized anyway so matching never
+			// depends on how the settings were written.
+			ou, err := url.Parse(o)
+			if err != nil || ou.Host == "" {
+				continue
+			}
+			if got == originKey(ou.Scheme, ou.Host) {
+				return nil
+			}
+		}
 		return invalid
 	}
 	for _, s := range schemes {
@@ -669,6 +698,56 @@ func checkRedirectURI(redirectURI string, schemes []string) error {
 		}
 	}
 	return invalid
+}
+
+// originKey is the canonical form origins are compared in: lowercase
+// scheme://host with the scheme's default port stripped, so
+// "https://App.example.com:443" and "https://app.example.com" are the
+// same origin while any other explicit port is significant.
+func originKey(scheme, host string) string {
+	scheme = strings.ToLower(scheme)
+	host = strings.ToLower(host)
+	switch scheme {
+	case "http":
+		host = strings.TrimSuffix(host, ":80")
+	case "https":
+		host = strings.TrimSuffix(host, ":443")
+	}
+	return scheme + "://" + host
+}
+
+// NormalizeRedirectOrigin validates and canonicalizes a web redirect
+// origin for storage (the admin API calls it at write time): an absolute
+// http(s) URL that is a bare origin — non-empty host, optional port, no
+// path (a lone trailing slash is stripped), query, fragment or userinfo.
+// http is accepted only for loopback hosts (localhost, 127.0.0.1, ::1),
+// for local development; everything else must be https. The canonical
+// form is originKey's: lowercase scheme+host, default port stripped.
+func NormalizeRedirectOrigin(origin string) (string, error) {
+	origin = strings.TrimSpace(origin)
+	u, err := url.Parse(origin)
+	if err != nil {
+		return "", fmt.Errorf("invalid redirect origin %q: %v", origin, err)
+	}
+	scheme := strings.ToLower(u.Scheme)
+	if scheme != "http" && scheme != "https" {
+		return "", fmt.Errorf("invalid redirect origin %q: must be an https:// URL (custom app schemes belong in redirect_schemes)", origin)
+	}
+	if u.Hostname() == "" {
+		return "", fmt.Errorf("invalid redirect origin %q: missing host", origin)
+	}
+	if u.User != nil || (u.Path != "" && u.Path != "/") || u.RawQuery != "" ||
+		u.ForceQuery || strings.Contains(origin, "#") {
+		return "", fmt.Errorf("invalid redirect origin %q: must be a bare origin (scheme://host[:port]) without path, query or fragment", origin)
+	}
+	if scheme == "http" {
+		switch strings.ToLower(u.Hostname()) {
+		case "localhost", "127.0.0.1", "::1":
+		default:
+			return "", fmt.Errorf("invalid redirect origin %q: http is allowed only for localhost; use https", origin)
+		}
+	}
+	return originKey(scheme, u.Host), nil
 }
 
 // providerEnabled reports whether a provider's toggle is on for the

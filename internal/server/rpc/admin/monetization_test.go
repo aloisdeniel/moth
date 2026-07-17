@@ -108,8 +108,8 @@ func TestGetStoreCatalogStatusNoCredentials(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(resp.Msg.Stores) != 2 {
-		t.Fatalf("expected 2 stores, got %d", len(resp.Msg.Stores))
+	if len(resp.Msg.Stores) != 3 {
+		t.Fatalf("expected 3 stores (apple, google, stripe), got %d", len(resp.Msg.Stores))
 	}
 	for _, s := range resp.Msg.Stores {
 		if s.CredentialsPresent || s.NotificationsWired {

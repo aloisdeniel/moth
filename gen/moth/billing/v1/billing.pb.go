@@ -86,6 +86,7 @@ const (
 	Store_STORE_UNSPECIFIED Store = 0
 	Store_STORE_APPLE       Store = 1
 	Store_STORE_GOOGLE      Store = 2
+	Store_STORE_STRIPE      Store = 3
 )
 
 // Enum value maps for Store.
@@ -94,11 +95,13 @@ var (
 		0: "STORE_UNSPECIFIED",
 		1: "STORE_APPLE",
 		2: "STORE_GOOGLE",
+		3: "STORE_STRIPE",
 	}
 	Store_value = map[string]int32{
 		"STORE_UNSPECIFIED": 0,
 		"STORE_APPLE":       1,
 		"STORE_GOOGLE":      2,
+		"STORE_STRIPE":      3,
 	}
 )
 
@@ -346,7 +349,10 @@ type OfferingProduct struct {
 	SortOrder    int32    `protobuf:"varint,12,opt,name=sort_order,json=sortOrder,proto3" json:"sort_order,omitempty"`
 	// Whether this tier is the paywall's highlighted "most popular" tier (from
 	// the paywall config's highlighted_product_identifier).
-	Highlighted   bool `protobuf:"varint,13,opt,name=highlighted,proto3" json:"highlighted,omitempty"`
+	Highlighted bool `protobuf:"varint,13,opt,name=highlighted,proto3" json:"highlighted,omitempty"`
+	// Stripe recurring Price id ("price_..."); empty when the tier does not sell
+	// on the web (the React paywall marks such tiers unavailable).
+	StripePriceId string `protobuf:"bytes,14,opt,name=stripe_price_id,json=stripePriceId,proto3" json:"stripe_price_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -470,6 +476,13 @@ func (x *OfferingProduct) GetHighlighted() bool {
 		return x.Highlighted
 	}
 	return false
+}
+
+func (x *OfferingProduct) GetStripePriceId() string {
+	if x != nil {
+		return x.StripePriceId
+	}
+	return ""
 }
 
 // Paywall is the public, render-ready paywall configuration. Copy and layout
@@ -1433,6 +1446,205 @@ func (x *RestorePurchasesResponse) GetCustomerInfo() *CustomerInfo {
 	return nil
 }
 
+type CreateCheckoutSessionRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The moth product identifier to subscribe to (its own catalog id, not the
+	// Stripe price id). The tier must carry a stripe_price_id.
+	ProductIdentifier string `protobuf:"bytes,1,opt,name=product_identifier,json=productIdentifier,proto3" json:"product_identifier,omitempty"`
+	// Where Stripe redirects the browser after a completed checkout.
+	SuccessUrl string `protobuf:"bytes,2,opt,name=success_url,json=successUrl,proto3" json:"success_url,omitempty"`
+	// Where Stripe redirects the browser when the user backs out.
+	CancelUrl     string `protobuf:"bytes,3,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateCheckoutSessionRequest) Reset() {
+	*x = CreateCheckoutSessionRequest{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateCheckoutSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateCheckoutSessionRequest) ProtoMessage() {}
+
+func (x *CreateCheckoutSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateCheckoutSessionRequest.ProtoReflect.Descriptor instead.
+func (*CreateCheckoutSessionRequest) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *CreateCheckoutSessionRequest) GetProductIdentifier() string {
+	if x != nil {
+		return x.ProductIdentifier
+	}
+	return ""
+}
+
+func (x *CreateCheckoutSessionRequest) GetSuccessUrl() string {
+	if x != nil {
+		return x.SuccessUrl
+	}
+	return ""
+}
+
+func (x *CreateCheckoutSessionRequest) GetCancelUrl() string {
+	if x != nil {
+		return x.CancelUrl
+	}
+	return ""
+}
+
+type CreateCheckoutSessionResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The Stripe-hosted Checkout URL to redirect the browser to.
+	Url           string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateCheckoutSessionResponse) Reset() {
+	*x = CreateCheckoutSessionResponse{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[18]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateCheckoutSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateCheckoutSessionResponse) ProtoMessage() {}
+
+func (x *CreateCheckoutSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[18]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateCheckoutSessionResponse.ProtoReflect.Descriptor instead.
+func (*CreateCheckoutSessionResponse) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *CreateCheckoutSessionResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+type CreateBillingPortalSessionRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Where Stripe redirects the browser when the user leaves the portal.
+	ReturnUrl     string `protobuf:"bytes,1,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBillingPortalSessionRequest) Reset() {
+	*x = CreateBillingPortalSessionRequest{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[19]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBillingPortalSessionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBillingPortalSessionRequest) ProtoMessage() {}
+
+func (x *CreateBillingPortalSessionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[19]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBillingPortalSessionRequest.ProtoReflect.Descriptor instead.
+func (*CreateBillingPortalSessionRequest) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *CreateBillingPortalSessionRequest) GetReturnUrl() string {
+	if x != nil {
+		return x.ReturnUrl
+	}
+	return ""
+}
+
+type CreateBillingPortalSessionResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The Stripe-hosted Billing Portal URL to redirect the browser to.
+	Url           string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBillingPortalSessionResponse) Reset() {
+	*x = CreateBillingPortalSessionResponse{}
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[20]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBillingPortalSessionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBillingPortalSessionResponse) ProtoMessage() {}
+
+func (x *CreateBillingPortalSessionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_billing_v1_billing_proto_msgTypes[20]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBillingPortalSessionResponse.ProtoReflect.Descriptor instead.
+func (*CreateBillingPortalSessionResponse) Descriptor() ([]byte, []int) {
+	return file_moth_billing_v1_billing_proto_rawDescGZIP(), []int{20}
+}
+
+func (x *CreateBillingPortalSessionResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
 var File_moth_billing_v1_billing_proto protoreflect.FileDescriptor
 
 const file_moth_billing_v1_billing_proto_rawDesc = "" +
@@ -1444,7 +1656,7 @@ const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"identifier\x12\x1d\n" +
 	"\n" +
 	"is_default\x18\x02 \x01(\bR\tisDefault\x12<\n" +
-	"\bproducts\x18\x03 \x03(\v2 .moth.billing.v1.OfferingProductR\bproducts\"\x83\x04\n" +
+	"\bproducts\x18\x03 \x03(\v2 .moth.billing.v1.OfferingProductR\bproducts\"\xab\x04\n" +
 	"\x0fOfferingProduct\x12\x1e\n" +
 	"\n" +
 	"identifier\x18\x01 \x01(\tR\n" +
@@ -1462,7 +1674,8 @@ const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"\fentitlements\x18\v \x03(\tR\fentitlements\x12\x1d\n" +
 	"\n" +
 	"sort_order\x18\f \x01(\x05R\tsortOrder\x12 \n" +
-	"\vhighlighted\x18\r \x01(\bR\vhighlighted\"\xd6\x02\n" +
+	"\vhighlighted\x18\r \x01(\bR\vhighlighted\x12&\n" +
+	"\x0fstripe_price_id\x18\x0e \x01(\tR\rstripePriceId\"\xd6\x02\n" +
 	"\aPaywall\x12\x1f\n" +
 	"\vrevision_id\x18\x01 \x01(\tR\n" +
 	"revisionId\x12\x1a\n" +
@@ -1528,16 +1741,30 @@ const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"\x05store\x18\x01 \x01(\x0e2\x16.moth.billing.v1.StoreR\x05store\x12\x1a\n" +
 	"\breceipts\x18\x02 \x03(\tR\breceipts\"^\n" +
 	"\x18RestorePurchasesResponse\x12B\n" +
-	"\rcustomer_info\x18\x01 \x01(\v2\x1d.moth.billing.v1.CustomerInfoR\fcustomerInfo*~\n" +
+	"\rcustomer_info\x18\x01 \x01(\v2\x1d.moth.billing.v1.CustomerInfoR\fcustomerInfo\"\x8d\x01\n" +
+	"\x1cCreateCheckoutSessionRequest\x12-\n" +
+	"\x12product_identifier\x18\x01 \x01(\tR\x11productIdentifier\x12\x1f\n" +
+	"\vsuccess_url\x18\x02 \x01(\tR\n" +
+	"successUrl\x12\x1d\n" +
+	"\n" +
+	"cancel_url\x18\x03 \x01(\tR\tcancelUrl\"1\n" +
+	"\x1dCreateCheckoutSessionResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\"B\n" +
+	"!CreateBillingPortalSessionRequest\x12\x1d\n" +
+	"\n" +
+	"return_url\x18\x01 \x01(\tR\treturnUrl\"6\n" +
+	"\"CreateBillingPortalSessionResponse\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url*~\n" +
 	"\rPaywallLayout\x12\x1e\n" +
 	"\x1aPAYWALL_LAYOUT_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14PAYWALL_LAYOUT_TILES\x10\x01\x12\x17\n" +
 	"\x13PAYWALL_LAYOUT_LIST\x10\x02\x12\x1a\n" +
-	"\x16PAYWALL_LAYOUT_COMPACT\x10\x03*A\n" +
+	"\x16PAYWALL_LAYOUT_COMPACT\x10\x03*S\n" +
 	"\x05Store\x12\x15\n" +
 	"\x11STORE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSTORE_APPLE\x10\x01\x12\x10\n" +
-	"\fSTORE_GOOGLE\x10\x02*\xb0\x02\n" +
+	"\fSTORE_GOOGLE\x10\x02\x12\x10\n" +
+	"\fSTORE_STRIPE\x10\x03*\xb0\x02\n" +
 	"\x12SubscriptionStatus\x12#\n" +
 	"\x1fSUBSCRIPTION_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSUBSCRIPTION_STATUS_ACTIVE\x10\x01\x12 \n" +
@@ -1551,14 +1778,16 @@ const file_moth_billing_v1_billing_proto_rawDesc = "" +
 	"\x1eENTITLEMENT_SOURCE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18ENTITLEMENT_SOURCE_STORE\x10\x01\x12\x1c\n" +
 	"\x18ENTITLEMENT_SOURCE_GRANT\x10\x02\x12\x1b\n" +
-	"\x17ENTITLEMENT_SOURCE_NONE\x10\x032\xf6\x03\n" +
+	"\x17ENTITLEMENT_SOURCE_NONE\x10\x032\xf6\x05\n" +
 	"\x0eBillingService\x12d\n" +
 	"\x0fGetCustomerInfo\x12'.moth.billing.v1.GetCustomerInfoRequest\x1a(.moth.billing.v1.GetCustomerInfoResponse\x12a\n" +
 	"\x0eSubmitPurchase\x12&.moth.billing.v1.SubmitPurchaseRequest\x1a'.moth.billing.v1.SubmitPurchaseResponse\x12g\n" +
 	"\x10RestorePurchases\x12(.moth.billing.v1.RestorePurchasesRequest\x1a).moth.billing.v1.RestorePurchasesResponse\x12[\n" +
 	"\fGetOfferings\x12$.moth.billing.v1.GetOfferingsRequest\x1a%.moth.billing.v1.GetOfferingsResponse\x12U\n" +
 	"\n" +
-	"GetPaywall\x12\".moth.billing.v1.GetPaywallRequest\x1a#.moth.billing.v1.GetPaywallResponseB;Z9github.com/aloisdeniel/moth/gen/moth/billing/v1;billingv1b\x06proto3"
+	"GetPaywall\x12\".moth.billing.v1.GetPaywallRequest\x1a#.moth.billing.v1.GetPaywallResponse\x12v\n" +
+	"\x15CreateCheckoutSession\x12-.moth.billing.v1.CreateCheckoutSessionRequest\x1a..moth.billing.v1.CreateCheckoutSessionResponse\x12\x85\x01\n" +
+	"\x1aCreateBillingPortalSession\x122.moth.billing.v1.CreateBillingPortalSessionRequest\x1a3.moth.billing.v1.CreateBillingPortalSessionResponseB;Z9github.com/aloisdeniel/moth/gen/moth/billing/v1;billingv1b\x06proto3"
 
 var (
 	file_moth_billing_v1_billing_proto_rawDescOnce sync.Once
@@ -1573,46 +1802,50 @@ func file_moth_billing_v1_billing_proto_rawDescGZIP() []byte {
 }
 
 var file_moth_billing_v1_billing_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_moth_billing_v1_billing_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_moth_billing_v1_billing_proto_msgTypes = make([]protoimpl.MessageInfo, 22)
 var file_moth_billing_v1_billing_proto_goTypes = []any{
-	(PaywallLayout)(0),               // 0: moth.billing.v1.PaywallLayout
-	(Store)(0),                       // 1: moth.billing.v1.Store
-	(SubscriptionStatus)(0),          // 2: moth.billing.v1.SubscriptionStatus
-	(EntitlementSource)(0),           // 3: moth.billing.v1.EntitlementSource
-	(*Offering)(nil),                 // 4: moth.billing.v1.Offering
-	(*OfferingProduct)(nil),          // 5: moth.billing.v1.OfferingProduct
-	(*Paywall)(nil),                  // 6: moth.billing.v1.Paywall
-	(*GetOfferingsRequest)(nil),      // 7: moth.billing.v1.GetOfferingsRequest
-	(*GetOfferingsResponse)(nil),     // 8: moth.billing.v1.GetOfferingsResponse
-	(*Copy)(nil),                     // 9: moth.billing.v1.Copy
-	(*GetPaywallRequest)(nil),        // 10: moth.billing.v1.GetPaywallRequest
-	(*GetPaywallResponse)(nil),       // 11: moth.billing.v1.GetPaywallResponse
-	(*CustomerInfo)(nil),             // 12: moth.billing.v1.CustomerInfo
-	(*Entitlement)(nil),              // 13: moth.billing.v1.Entitlement
-	(*ActiveSubscription)(nil),       // 14: moth.billing.v1.ActiveSubscription
-	(*GetCustomerInfoRequest)(nil),   // 15: moth.billing.v1.GetCustomerInfoRequest
-	(*GetCustomerInfoResponse)(nil),  // 16: moth.billing.v1.GetCustomerInfoResponse
-	(*SubmitPurchaseRequest)(nil),    // 17: moth.billing.v1.SubmitPurchaseRequest
-	(*SubmitPurchaseResponse)(nil),   // 18: moth.billing.v1.SubmitPurchaseResponse
-	(*RestorePurchasesRequest)(nil),  // 19: moth.billing.v1.RestorePurchasesRequest
-	(*RestorePurchasesResponse)(nil), // 20: moth.billing.v1.RestorePurchasesResponse
-	nil,                              // 21: moth.billing.v1.Copy.MessagesEntry
-	(*timestamppb.Timestamp)(nil),    // 22: google.protobuf.Timestamp
+	(PaywallLayout)(0),                         // 0: moth.billing.v1.PaywallLayout
+	(Store)(0),                                 // 1: moth.billing.v1.Store
+	(SubscriptionStatus)(0),                    // 2: moth.billing.v1.SubscriptionStatus
+	(EntitlementSource)(0),                     // 3: moth.billing.v1.EntitlementSource
+	(*Offering)(nil),                           // 4: moth.billing.v1.Offering
+	(*OfferingProduct)(nil),                    // 5: moth.billing.v1.OfferingProduct
+	(*Paywall)(nil),                            // 6: moth.billing.v1.Paywall
+	(*GetOfferingsRequest)(nil),                // 7: moth.billing.v1.GetOfferingsRequest
+	(*GetOfferingsResponse)(nil),               // 8: moth.billing.v1.GetOfferingsResponse
+	(*Copy)(nil),                               // 9: moth.billing.v1.Copy
+	(*GetPaywallRequest)(nil),                  // 10: moth.billing.v1.GetPaywallRequest
+	(*GetPaywallResponse)(nil),                 // 11: moth.billing.v1.GetPaywallResponse
+	(*CustomerInfo)(nil),                       // 12: moth.billing.v1.CustomerInfo
+	(*Entitlement)(nil),                        // 13: moth.billing.v1.Entitlement
+	(*ActiveSubscription)(nil),                 // 14: moth.billing.v1.ActiveSubscription
+	(*GetCustomerInfoRequest)(nil),             // 15: moth.billing.v1.GetCustomerInfoRequest
+	(*GetCustomerInfoResponse)(nil),            // 16: moth.billing.v1.GetCustomerInfoResponse
+	(*SubmitPurchaseRequest)(nil),              // 17: moth.billing.v1.SubmitPurchaseRequest
+	(*SubmitPurchaseResponse)(nil),             // 18: moth.billing.v1.SubmitPurchaseResponse
+	(*RestorePurchasesRequest)(nil),            // 19: moth.billing.v1.RestorePurchasesRequest
+	(*RestorePurchasesResponse)(nil),           // 20: moth.billing.v1.RestorePurchasesResponse
+	(*CreateCheckoutSessionRequest)(nil),       // 21: moth.billing.v1.CreateCheckoutSessionRequest
+	(*CreateCheckoutSessionResponse)(nil),      // 22: moth.billing.v1.CreateCheckoutSessionResponse
+	(*CreateBillingPortalSessionRequest)(nil),  // 23: moth.billing.v1.CreateBillingPortalSessionRequest
+	(*CreateBillingPortalSessionResponse)(nil), // 24: moth.billing.v1.CreateBillingPortalSessionResponse
+	nil,                           // 25: moth.billing.v1.Copy.MessagesEntry
+	(*timestamppb.Timestamp)(nil), // 26: google.protobuf.Timestamp
 }
 var file_moth_billing_v1_billing_proto_depIdxs = []int32{
 	5,  // 0: moth.billing.v1.Offering.products:type_name -> moth.billing.v1.OfferingProduct
 	0,  // 1: moth.billing.v1.Paywall.layout:type_name -> moth.billing.v1.PaywallLayout
 	4,  // 2: moth.billing.v1.GetOfferingsResponse.offering:type_name -> moth.billing.v1.Offering
-	21, // 3: moth.billing.v1.Copy.messages:type_name -> moth.billing.v1.Copy.MessagesEntry
+	25, // 3: moth.billing.v1.Copy.messages:type_name -> moth.billing.v1.Copy.MessagesEntry
 	6,  // 4: moth.billing.v1.GetPaywallResponse.paywall:type_name -> moth.billing.v1.Paywall
 	9,  // 5: moth.billing.v1.GetPaywallResponse.copy:type_name -> moth.billing.v1.Copy
 	13, // 6: moth.billing.v1.CustomerInfo.active_entitlements:type_name -> moth.billing.v1.Entitlement
 	14, // 7: moth.billing.v1.CustomerInfo.subscriptions:type_name -> moth.billing.v1.ActiveSubscription
-	22, // 8: moth.billing.v1.Entitlement.expire_time:type_name -> google.protobuf.Timestamp
+	26, // 8: moth.billing.v1.Entitlement.expire_time:type_name -> google.protobuf.Timestamp
 	3,  // 9: moth.billing.v1.Entitlement.source:type_name -> moth.billing.v1.EntitlementSource
 	1,  // 10: moth.billing.v1.ActiveSubscription.store:type_name -> moth.billing.v1.Store
 	2,  // 11: moth.billing.v1.ActiveSubscription.status:type_name -> moth.billing.v1.SubscriptionStatus
-	22, // 12: moth.billing.v1.ActiveSubscription.current_period_end:type_name -> google.protobuf.Timestamp
+	26, // 12: moth.billing.v1.ActiveSubscription.current_period_end:type_name -> google.protobuf.Timestamp
 	12, // 13: moth.billing.v1.GetCustomerInfoResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
 	1,  // 14: moth.billing.v1.SubmitPurchaseRequest.store:type_name -> moth.billing.v1.Store
 	12, // 15: moth.billing.v1.SubmitPurchaseResponse.customer_info:type_name -> moth.billing.v1.CustomerInfo
@@ -1623,13 +1856,17 @@ var file_moth_billing_v1_billing_proto_depIdxs = []int32{
 	19, // 20: moth.billing.v1.BillingService.RestorePurchases:input_type -> moth.billing.v1.RestorePurchasesRequest
 	7,  // 21: moth.billing.v1.BillingService.GetOfferings:input_type -> moth.billing.v1.GetOfferingsRequest
 	10, // 22: moth.billing.v1.BillingService.GetPaywall:input_type -> moth.billing.v1.GetPaywallRequest
-	16, // 23: moth.billing.v1.BillingService.GetCustomerInfo:output_type -> moth.billing.v1.GetCustomerInfoResponse
-	18, // 24: moth.billing.v1.BillingService.SubmitPurchase:output_type -> moth.billing.v1.SubmitPurchaseResponse
-	20, // 25: moth.billing.v1.BillingService.RestorePurchases:output_type -> moth.billing.v1.RestorePurchasesResponse
-	8,  // 26: moth.billing.v1.BillingService.GetOfferings:output_type -> moth.billing.v1.GetOfferingsResponse
-	11, // 27: moth.billing.v1.BillingService.GetPaywall:output_type -> moth.billing.v1.GetPaywallResponse
-	23, // [23:28] is the sub-list for method output_type
-	18, // [18:23] is the sub-list for method input_type
+	21, // 23: moth.billing.v1.BillingService.CreateCheckoutSession:input_type -> moth.billing.v1.CreateCheckoutSessionRequest
+	23, // 24: moth.billing.v1.BillingService.CreateBillingPortalSession:input_type -> moth.billing.v1.CreateBillingPortalSessionRequest
+	16, // 25: moth.billing.v1.BillingService.GetCustomerInfo:output_type -> moth.billing.v1.GetCustomerInfoResponse
+	18, // 26: moth.billing.v1.BillingService.SubmitPurchase:output_type -> moth.billing.v1.SubmitPurchaseResponse
+	20, // 27: moth.billing.v1.BillingService.RestorePurchases:output_type -> moth.billing.v1.RestorePurchasesResponse
+	8,  // 28: moth.billing.v1.BillingService.GetOfferings:output_type -> moth.billing.v1.GetOfferingsResponse
+	11, // 29: moth.billing.v1.BillingService.GetPaywall:output_type -> moth.billing.v1.GetPaywallResponse
+	22, // 30: moth.billing.v1.BillingService.CreateCheckoutSession:output_type -> moth.billing.v1.CreateCheckoutSessionResponse
+	24, // 31: moth.billing.v1.BillingService.CreateBillingPortalSession:output_type -> moth.billing.v1.CreateBillingPortalSessionResponse
+	25, // [25:32] is the sub-list for method output_type
+	18, // [18:25] is the sub-list for method input_type
 	18, // [18:18] is the sub-list for extension type_name
 	18, // [18:18] is the sub-list for extension extendee
 	0,  // [0:18] is the sub-list for field type_name
@@ -1650,7 +1887,7 @@ func file_moth_billing_v1_billing_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_billing_v1_billing_proto_rawDesc), len(file_moth_billing_v1_billing_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   18,
+			NumMessages:   22,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

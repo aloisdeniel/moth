@@ -81,17 +81,22 @@ func newSetupBillingCmd(opts *clientOpts) *cobra.Command {
 		Use:   "billing",
 		Short: "Configure store subscriptions for a project (credentials, catalog push, notifications, verify)",
 		Long: `Configures a project's store monetization end to end: it stores the
-Apple App Store Server API and Google Play Developer API credentials into
-moth's encrypted billing config, pushes moth's product catalog into App
-Store Connect and Google Play (automated where the store APIs allow it,
-guided with exact values where they don't), wires the notification
-endpoints, and verifies each store is reachable and authenticated.
+Apple App Store Server API, Google Play Developer API and Stripe
+credentials into moth's encrypted billing config, pushes moth's product
+catalog into App Store Connect, Google Play and Stripe (automated where
+the store APIs allow it, guided with exact values where they don't),
+wires the notification/webhook endpoints, and verifies each store is
+reachable and authenticated.
 
 The App Store Connect API key (--asc-*) drives the Apple catalog push and
 is used in-process only, never stored. The In-App-Purchase key (--apple-
 iap-*) and the Google service account are stored encrypted for the
-milestone-11 billing engine. Idempotent: re-running diffs the current
-store state and changes only what is needed.`,
+milestone-11 billing engine. The Stripe secret key (--stripe-secret-key,
+a restricted key is recommended) is stored encrypted AND drives the
+Stripe leg in-process: it provisions a Product + recurring Price per
+tier (writing the ids back onto moth's products), creates the webhook
+endpoint via the API and stores the returned signing secret. Idempotent:
+re-running diffs the current store state and changes only what is needed.`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			client, baseURL, err := opts.dialURL()
@@ -128,6 +133,16 @@ store state and changes only what is needed.`,
 					}
 					s.ASC = asc
 				}
+			}
+			// Stripe requested without a key on the command line: prompt for
+			// it (AskSecret keeps it out of scrollback); empty keeps the
+			// stored key and degrades the push to a warning.
+			if s.Stripe && s.StripeSecretKey == "" {
+				key, err := s.Prompt.AskSecret("Stripe secret key (sk_/rk_; empty keeps the stored one)")
+				if err != nil {
+					return err
+				}
+				s.StripeSecretKey = key
 			}
 			if s.GooglePackageName != "" && saPath != "" {
 				raw, err := os.ReadFile(saPath)
@@ -180,6 +195,10 @@ store state and changes only what is needed.`,
 	cmd.Flags().StringVar(&s.GoogleRTDNSecret, "google-rtdn-secret", "", "RTDN push webhook shared secret (stored encrypted)")
 	cmd.Flags().StringVar(&pubsubSAPath, "google-pubsub-service-account", "", "path to a pubsub-scoped SA JSON to create the RTDN topic/subscription (else guided)")
 	cmd.Flags().StringVar(&cloudProject, "google-cloud-project", "", "GCP project the RTDN topic lives in (with --google-pubsub-service-account)")
+	// Stripe.
+	cmd.Flags().BoolVar(&s.Stripe, "stripe", false, "enable Stripe (prompts for the secret key when --stripe-secret-key is omitted)")
+	cmd.Flags().StringVar(&s.StripeSecretKey, "stripe-secret-key", "",
+		"Stripe restricted/secret key (sk_/rk_; stored encrypted, also drives the catalog push + webhook creation; prefer omitting it: the command prompts without echo)")
 	cmd.Flags().BoolVar(&noConfirm, "yes", false, "push to the live stores without the confirmation prompt")
 	_ = cmd.MarkFlagRequired("project") // flag is registered just above
 	return cmd

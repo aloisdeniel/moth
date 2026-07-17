@@ -28,6 +28,7 @@ enum Store {
   STORE_UNSPECIFIED = 0;
   STORE_APPLE = 1;
   STORE_GOOGLE = 2;
+  STORE_STRIPE = 3;
 }
 
 // SubscriptionStatus mirrors the store's renewal state.

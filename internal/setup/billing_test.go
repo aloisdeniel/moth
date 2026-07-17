@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -21,34 +22,57 @@ import (
 	"github.com/aloisdeniel/moth/internal/billing"
 )
 
-// fakeProducts serves a fixed product catalog to BillingSetup / Doctor.
+// fakeProducts serves a fixed product catalog to BillingSetup / Doctor and
+// records product updates (the Stripe id write-back).
 type fakeProducts struct {
 	adminv1connect.ProductServiceClient
 	products []*adminv1.Product
+	updates  []*adminv1.UpdateProductRequest
 }
 
 func (f *fakeProducts) ListProducts(context.Context, *connect.Request[adminv1.ListProductsRequest]) (*connect.Response[adminv1.ListProductsResponse], error) {
 	return connect.NewResponse(&adminv1.ListProductsResponse{Products: f.products}), nil
 }
 
+func (f *fakeProducts) UpdateProduct(_ context.Context, req *connect.Request[adminv1.UpdateProductRequest]) (*connect.Response[adminv1.UpdateProductResponse], error) {
+	f.updates = append(f.updates, req.Msg)
+	for i, p := range f.products {
+		if p.GetId() == req.Msg.Id {
+			f.products[i] = req.Msg.Product
+			return connect.NewResponse(&adminv1.UpdateProductResponse{Product: req.Msg.Product}), nil
+		}
+	}
+	return nil, connect.NewError(connect.CodeNotFound, errors.New("product not found"))
+}
+
 // fakeBillingCreds records credential writes and answers reads from an
 // in-memory config so a re-read reports accurate has_* flags.
+//
+// It mirrors the real UpdateBillingCredentials semantics exactly: the handler
+// seeds from the stored row and merges, so a nil store section keeps that
+// store's configuration untouched (a Stripe-only update never wipes Apple /
+// Google), a present section overwrites its non-secret fields, and empty
+// secrets / notification URL / endpoint id keep the stored values (write-only).
 type fakeBillingCreds struct {
 	adminv1connect.BillingCredentialsServiceClient
 	apple   *adminv1.AppleBillingConfig
 	google  *adminv1.GoogleBillingConfig
+	stripe  *adminv1.StripeBillingConfig
 	updates int
 }
 
 func (f *fakeBillingCreds) GetBillingCredentials(context.Context, *connect.Request[adminv1.GetBillingCredentialsRequest]) (*connect.Response[adminv1.GetBillingCredentialsResponse], error) {
-	a, g := f.apple, f.google
+	a, g, sc := f.apple, f.google, f.stripe
 	if a == nil {
 		a = &adminv1.AppleBillingConfig{}
 	}
 	if g == nil {
 		g = &adminv1.GoogleBillingConfig{}
 	}
-	return connect.NewResponse(&adminv1.GetBillingCredentialsResponse{Apple: a, Google: g}), nil
+	if sc == nil {
+		sc = &adminv1.StripeBillingConfig{}
+	}
+	return connect.NewResponse(&adminv1.GetBillingCredentialsResponse{Apple: a, Google: g, Stripe: sc}), nil
 }
 
 func (f *fakeBillingCreds) UpdateBillingCredentials(_ context.Context, req *connect.Request[adminv1.UpdateBillingCredentialsRequest]) (*connect.Response[adminv1.UpdateBillingCredentialsResponse], error) {
@@ -75,12 +99,35 @@ func (f *fakeBillingCreds) UpdateBillingCredentials(_ context.Context, req *conn
 		}
 	}
 	if g := req.Msg.Google; g != nil {
+		// Empty secrets keep the stored ones (write-only), like the server.
+		prev := f.google
+		if prev == nil {
+			prev = &adminv1.GoogleBillingConfig{}
+		}
 		f.google = &adminv1.GoogleBillingConfig{
 			PackageName: g.PackageName, PubsubTopic: g.PubsubTopic,
-			HasServiceAccount: g.ServiceAccountJson != "", HasRtdnSecret: g.RtdnSecret != "",
+			HasServiceAccount: g.ServiceAccountJson != "" || prev.HasServiceAccount,
+			HasRtdnSecret:     g.RtdnSecret != "" || prev.HasRtdnSecret,
 		}
 	}
-	return connect.NewResponse(&adminv1.UpdateBillingCredentialsResponse{Apple: f.apple, Google: f.google}), nil
+	if sc := req.Msg.Stripe; sc != nil {
+		// Mirror the server's write-only/keep-stored semantics: empty secrets
+		// and endpoint id keep the stored values.
+		prev := f.stripe
+		if prev == nil {
+			prev = &adminv1.StripeBillingConfig{}
+		}
+		endpointID := sc.WebhookEndpointId
+		if endpointID == "" {
+			endpointID = prev.WebhookEndpointId
+		}
+		f.stripe = &adminv1.StripeBillingConfig{
+			HasSecretKey:      sc.SecretKey != "" || prev.HasSecretKey,
+			HasWebhookSecret:  sc.WebhookSecret != "" || prev.HasWebhookSecret,
+			WebhookEndpointId: endpointID,
+		}
+	}
+	return connect.NewResponse(&adminv1.UpdateBillingCredentialsResponse{Apple: f.apple, Google: f.google, Stripe: f.stripe}), nil
 }
 
 // appleServerAPIDouble stands in for the App Store Server API: it answers 404

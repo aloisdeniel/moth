@@ -21,10 +21,12 @@ email verification, password reset, and Sign in with Google/Apple — backed by
 per-project ES256 JWTs any standard library can verify offline.
 
 It also monetizes them: App Store and Google Play subscription receipts are
-validated **server-side** (no billing SaaS), distilled into **entitlements**
-like `pro` your app gates on, sold through a **themed paywall** configured
-from the admin, and reported as revenue per month on the analytics tab. A
-free tier is always built in, so paid subscriptions stay optional.
+validated **server-side** (no billing SaaS), the same tiers sell **on the
+web** through Stripe-hosted Checkout, and everything is distilled into
+**entitlements** like `pro` your app gates on, sold through a **themed
+paywall** configured from the admin, and reported as revenue per month on
+the analytics tab. A free tier is always built in, so paid subscriptions
+stay optional.
 
 Every app you ship is a **project**: a sealed tenant with its own users, its
 own signing keypair, its own provider credentials, its own login branding,
@@ -33,7 +35,8 @@ app #1 did — one project created in the admin, zero new infrastructure.
 
 Everything ships **inside the binary**: the SQLite database, the admin web
 console, the hosted email pages, the fonts, the `moth_auth` Flutter SDK
-(served from the instance's own pub repository), the CLI, and the
+(served from the instance's own pub repository), the `@moth/react` React
+SDK (served from the instance's own npm registry), the CLI, and the
 documentation you're reading (served at `/docs`, version-matched to the
 binary). `moth serve` and you're running.
 
@@ -63,6 +66,9 @@ make build            # → bin/moth
 #    (dart pub speaks to the instance you just started.)
 dart pub add moth_auth \
   --hosted-url http://localhost:8080/pub
+#    React app instead? The instance serves an npm registry too:
+#      echo '@moth:registry=http://localhost:8080/npm' >> .npmrc
+#      npm install @moth/react
 
 # 4. Point the client at your instance + project and sign a user in.
 ```

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -250,6 +251,8 @@ func productProto(p store.Product) *adminv1.Product {
 		DisplayName:            p.DisplayName,
 		AppleProductId:         p.AppleProductID,
 		GoogleProductId:        p.GoogleProductID,
+		StripePriceId:          p.StripePriceID,
+		StripeProductId:        p.StripeProductID,
 		BillingPeriod:          p.BillingPeriod,
 		PriceAmountMicros:      p.PriceAmountMicros,
 		Currency:               p.Currency,
@@ -271,6 +274,8 @@ func productFromProto(projectID string, p *adminv1.Product) store.Product {
 		DisplayName:            p.DisplayName,
 		AppleProductID:         p.AppleProductId,
 		GoogleProductID:        p.GoogleProductId,
+		StripePriceID:          p.StripePriceId,
+		StripeProductID:        p.StripeProductId,
 		BillingPeriod:          p.BillingPeriod,
 		PriceAmountMicros:      p.PriceAmountMicros,
 		Currency:               p.Currency,
@@ -431,6 +436,8 @@ func adminStoreProto(s string) adminv1.Store {
 		return adminv1.Store_STORE_APPLE
 	case store.SubscriptionStoreGoogle:
 		return adminv1.Store_STORE_GOOGLE
+	case store.SubscriptionStoreStripe:
+		return adminv1.Store_STORE_STRIPE
 	default:
 		return adminv1.Store_STORE_UNSPECIFIED
 	}
@@ -469,6 +476,7 @@ func (h *BillingHandler) GetBillingCredentials(ctx context.Context, req *connect
 		return connect.NewResponse(&adminv1.GetBillingCredentialsResponse{
 			Apple:  &adminv1.AppleBillingConfig{},
 			Google: &adminv1.GoogleBillingConfig{},
+			Stripe: &adminv1.StripeBillingConfig{},
 		}), nil
 	}
 	if err != nil {
@@ -477,6 +485,7 @@ func (h *BillingHandler) GetBillingCredentials(ctx context.Context, req *connect
 	return connect.NewResponse(&adminv1.GetBillingCredentialsResponse{
 		Apple:  appleConfigProto(cred),
 		Google: googleConfigProto(cred),
+		Stripe: stripeConfigProto(cred),
 	}), nil
 }
 
@@ -484,9 +493,20 @@ func (h *BillingHandler) UpdateBillingCredentials(ctx context.Context, req *conn
 	if err := h.requireProject(ctx, req.Msg.ProjectId); err != nil {
 		return nil, err
 	}
-	cred := store.BillingCredentials{ProjectID: req.Msg.ProjectId}
+	// Seed from the stored row (if any) and merge here: the store upsert writes
+	// full rows (every non-secret column), so a partial request — say a
+	// Stripe-only update from `moth setup billing --stripe-secret-key` — must
+	// not blank the Apple/Google configuration it does not mention. A store's
+	// field-group is only overwritten when its message is present.
+	cred, err := h.store.GetBillingCredentials(ctx, req.Msg.ProjectId)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
 	now := h.now()
-	cred.CreatedAt = now
+	if errors.Is(err, store.ErrNotFound) {
+		cred = store.BillingCredentials{CreatedAt: now}
+	}
+	cred.ProjectID = req.Msg.ProjectId
 	cred.UpdatedAt = now
 
 	if a := req.Msg.Apple; a != nil {
@@ -496,7 +516,9 @@ func (h *BillingHandler) UpdateBillingCredentials(ctx context.Context, req *conn
 		cred.AppleAppAppleID = a.AppAppleId
 		// "" keeps the stored notification URL (write-only-ish: only the CLI
 		// records it, after a successful App Store Server Notification register).
-		cred.AppleNotificationURL = a.NotificationUrl
+		if a.NotificationUrl != "" {
+			cred.AppleNotificationURL = a.NotificationUrl
+		}
 		if a.IapKeyP8 != "" {
 			// Validate the .p8 parses before storing it encrypted.
 			if _, err := billing.ParseP8([]byte(a.IapKeyP8)); err != nil {
@@ -539,6 +561,36 @@ func (h *BillingHandler) UpdateBillingCredentials(ctx context.Context, req *conn
 			cred.GoogleRTDNSecretEnc = enc
 		}
 	}
+	if sc := req.Msg.Stripe; sc != nil {
+		// "" keeps the stored endpoint id (only recorded after a successful
+		// webhook registration, mirroring AppleNotificationURL).
+		if sc.WebhookEndpointId != "" {
+			cred.StripeWebhookEndpointID = sc.WebhookEndpointId
+		}
+		if sc.SecretKey != "" {
+			// Sanity-check the key shape before storing it encrypted (the
+			// stripe analogue of ParseP8/ParseServiceAccount validation).
+			if err := validateStripeSecretKey(sc.SecretKey); err != nil {
+				return nil, connect.NewError(connect.CodeInvalidArgument, err)
+			}
+			enc, err := h.master.Encrypt([]byte(sc.SecretKey))
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, err)
+			}
+			cred.StripeSecretKeyEnc = enc
+		}
+		if sc.WebhookSecret != "" {
+			if !strings.HasPrefix(sc.WebhookSecret, "whsec_") {
+				return nil, connect.NewError(connect.CodeInvalidArgument,
+					errors.New(`stripe webhook secret: must start with "whsec_"`))
+			}
+			enc, err := h.master.Encrypt([]byte(sc.WebhookSecret))
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, err)
+			}
+			cred.StripeWebhookSecretEnc = enc
+		}
+	}
 	if err := h.store.UpsertBillingCredentials(ctx, cred); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
@@ -552,7 +604,20 @@ func (h *BillingHandler) UpdateBillingCredentials(ctx context.Context, req *conn
 	return connect.NewResponse(&adminv1.UpdateBillingCredentialsResponse{
 		Apple:  appleConfigProto(stored),
 		Google: googleConfigProto(stored),
+		Stripe: stripeConfigProto(stored),
 	}), nil
+}
+
+// validateStripeSecretKey sanity-checks a Stripe API key shape: a standard
+// secret key (sk_) or a restricted key (rk_ — recommended, plan/17), in test
+// or live mode. Publishable keys (pk_) cannot call the server-side APIs.
+func validateStripeSecretKey(key string) error {
+	for _, prefix := range []string{"sk_test_", "sk_live_", "rk_test_", "rk_live_"} {
+		if strings.HasPrefix(key, prefix) && len(key) > len(prefix) {
+			return nil
+		}
+	}
+	return errors.New(`stripe secret key: must start with "sk_test_", "sk_live_", "rk_test_" or "rk_live_"`)
 }
 
 func appleConfigProto(c store.BillingCredentials) *adminv1.AppleBillingConfig {
@@ -573,5 +638,13 @@ func googleConfigProto(c store.BillingCredentials) *adminv1.GoogleBillingConfig 
 		PackageName:       c.GooglePackageName,
 		PubsubTopic:       c.GooglePubsubTopic,
 		HasRtdnSecret:     len(c.GoogleRTDNSecretEnc) > 0,
+	}
+}
+
+func stripeConfigProto(c store.BillingCredentials) *adminv1.StripeBillingConfig {
+	return &adminv1.StripeBillingConfig{
+		HasSecretKey:      len(c.StripeSecretKeyEnc) > 0,
+		HasWebhookSecret:  len(c.StripeWebhookSecretEnc) > 0,
+		WebhookEndpointId: c.StripeWebhookEndpointID,
 	}
 }

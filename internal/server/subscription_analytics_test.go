@@ -45,7 +45,7 @@ func TestSubscriptionStatsAndExport(t *testing.T) {
 
 	const prod = store.SubscriptionEnvironmentProduction
 	const sand = store.SubscriptionEnvironmentSandbox
-	apple, google := store.SubscriptionStoreApple, store.SubscriptionStoreGoogle
+	apple, google, stripe := store.SubscriptionStoreApple, store.SubscriptionStoreGoogle, store.SubscriptionStoreStripe
 
 	april := time.Date(2026, 4, 10, 0, 0, 0, 0, time.UTC)
 	may := time.Date(2026, 5, 10, 0, 0, 0, 0, time.UTC)
@@ -61,6 +61,8 @@ func TestSubscriptionStatsAndExport(t *testing.T) {
 		{Type: store.SubscriptionEventPurchased, UserID: "u6", ProductID: "monthly", Store: apple, Currency: "USD", Environment: sand, PriceAmountMicros: 1_000_000},
 		// Hostile store-reported currency — must be neutralized in the CSV.
 		{Type: store.SubscriptionEventPurchased, UserID: "u7", ProductID: "monthly", Store: apple, Currency: "=CMD()", Environment: prod, PriceAmountMicros: 2_000_000},
+		// Stripe (web) purchase — the third store leg of the breakdown.
+		{Type: store.SubscriptionEventPurchased, UserID: "u8", ProductID: "monthly", Store: stripe, Currency: "USD", Environment: prod, PriceAmountMicros: 4_000_000},
 	})
 
 	analytics := e.analytics()
@@ -94,8 +96,23 @@ func TestSubscriptionStatsAndExport(t *testing.T) {
 	for _, a := range mayS.Revenue {
 		mayByCur[a.Currency] = a.AmountMicros
 	}
-	if mayByCur["EUR"] != 5_000_000 || mayByCur["=CMD()"] != 2_000_000 || len(mayS.Revenue) != 2 {
+	if mayByCur["EUR"] != 5_000_000 || mayByCur["USD"] != 4_000_000 ||
+		mayByCur["=CMD()"] != 2_000_000 || len(mayS.Revenue) != 3 {
 		t.Fatalf("May per-currency revenue (sandbox must be excluded): %+v", mayS.Revenue)
+	}
+	// Per-store breakdown over the range. Apple USD nets to zero (purchase minus
+	// refund) so only the hostile currency survives; google spans two
+	// currencies; stripe is the new third leg.
+	if s := msg.Stores.Apple; len(s) != 1 || s[0].Currency != "=CMD()" || s[0].AmountMicros != 2_000_000 {
+		t.Fatalf("apple store breakdown: %+v", s)
+	}
+	if s := msg.Stores.Google; len(s) != 2 ||
+		s[0].Currency != "EUR" || s[0].AmountMicros != 5_000_000 ||
+		s[1].Currency != "USD" || s[1].AmountMicros != 9_990_000 {
+		t.Fatalf("google store breakdown: %+v", s)
+	}
+	if s := msg.Stores.Stripe; len(s) != 1 || s[0].Currency != "USD" || s[0].AmountMicros != 4_000_000 {
+		t.Fatalf("stripe store breakdown: %+v", s)
 	}
 	// Tiles headline the latest rolled month (May, the current month).
 	if msg.Tiles.LatestPeriod != "2026-05" {
@@ -116,15 +133,23 @@ func TestSubscriptionStatsAndExport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if records[0][0] != "period" || records[0][1] != "currency" || records[0][2] != "revenue_micros" {
+	if records[0][0] != "period" || records[0][1] != "currency" || records[0][2] != "revenue_micros" ||
+		records[0][len(records[0])-1] != "store_stripe_revenue_micros" {
 		t.Fatalf("csv header: %v", records[0])
 	}
-	var sawAprilUSD, sawHostile, sawSandbox bool
+	var sawAprilUSD, sawMayUSD, sawHostile, sawSandbox bool
 	for _, row := range records[1:] {
 		if row[0] == "2026-04" && row[1] == "USD" {
 			sawAprilUSD = true
 			if row[2] != "9990000" {
 				t.Fatalf("April USD revenue cell = %q, want 9990000", row[2])
+			}
+		}
+		// May USD revenue is stripe-only — the per-store cells must agree.
+		if row[0] == "2026-05" && row[1] == "USD" {
+			sawMayUSD = true
+			if row[2] != "4000000" || row[9] != "0" || row[10] != "0" || row[11] != "4000000" {
+				t.Fatalf("May USD row (stripe revenue): %v", row)
 			}
 		}
 		if strings.Contains(row[1], "CMD") {
@@ -139,6 +164,9 @@ func TestSubscriptionStatsAndExport(t *testing.T) {
 	}
 	if !sawAprilUSD {
 		t.Fatal("April USD row missing from CSV")
+	}
+	if !sawMayUSD {
+		t.Fatal("May USD (stripe) row missing from CSV")
 	}
 	if !sawHostile {
 		t.Fatal("hostile currency row missing from CSV")

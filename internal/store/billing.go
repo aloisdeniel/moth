@@ -12,6 +12,7 @@ import (
 const (
 	SubscriptionStoreApple  = "apple"
 	SubscriptionStoreGoogle = "google"
+	SubscriptionStoreStripe = "stripe"
 )
 
 // Subscription environments (the `environment` column).
@@ -67,12 +68,17 @@ type Entitlement struct {
 // product grants while active (the product_entitlements join), loaded by the
 // read methods and written by Create/UpdateProduct.
 type Product struct {
-	ID                     string
-	ProjectID              string
-	Identifier             string
-	DisplayName            string
-	AppleProductID         string
-	GoogleProductID        string
+	ID              string
+	ProjectID       string
+	Identifier      string
+	DisplayName     string
+	AppleProductID  string
+	GoogleProductID string
+	// StripePriceID is the Stripe recurring Price ("price_...") this tier sells
+	// under; StripeProductID is the linked Stripe Product ("prod_..."), written
+	// back by provisioning. Both empty when the tier does not ship on Stripe.
+	StripePriceID          string
+	StripeProductID        string
 	BillingPeriod          string
 	PriceAmountMicros      int64
 	Currency               string
@@ -150,8 +156,27 @@ type BillingCredentials struct {
 	GooglePackageName       string
 	GooglePubsubTopic       string
 	GoogleRTDNSecretEnc     []byte
+	// Stripe restricted secret key and webhook signing secret, encrypted like
+	// the other *Enc secrets (nil keeps, empty clears, non-empty replaces).
+	StripeSecretKeyEnc     []byte
+	StripeWebhookSecretEnc []byte
+	// StripeWebhookEndpointID is the Stripe webhook endpoint ("we_...") moth
+	// created via the API; "" means none. On upsert, "" keeps the stored value
+	// (the CLI writes it only after a successful registration), mirroring
+	// AppleNotificationURL.
+	StripeWebhookEndpointID string
 	CreatedAt               time.Time
 	UpdatedAt               time.Time
+}
+
+// StripeCustomer maps one (project, user) to its Stripe customer, created
+// lazily on first checkout so every moth user has at most one Stripe customer
+// per project.
+type StripeCustomer struct {
+	ProjectID        string
+	UserID           string
+	StripeCustomerID string
+	CreatedAt        time.Time
 }
 
 // SubscriptionEvent is one row of the revenue event stream (milestone 14).
@@ -273,11 +298,13 @@ func (s *Store) CreateProduct(ctx context.Context, p Product) error {
 	defer tx.Rollback()
 	if _, err := tx.ExecContext(ctx,
 		`INSERT INTO products (id, project_id, identifier, display_name, apple_product_id,
-		        google_product_id, billing_period, price_amount_micros, currency, trial_period,
-		        intro_price_amount_micros, intro_period, offering, sort_order, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		        google_product_id, stripe_price_id, stripe_product_id, billing_period,
+		        price_amount_micros, currency, trial_period, intro_price_amount_micros, intro_period,
+		        offering, sort_order, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		p.ID, p.ProjectID, p.Identifier, p.DisplayName, nullString(p.AppleProductID),
-		nullString(p.GoogleProductID), p.BillingPeriod, p.PriceAmountMicros, p.Currency, p.TrialPeriod,
+		nullString(p.GoogleProductID), nullString(p.StripePriceID), nullString(p.StripeProductID),
+		p.BillingPeriod, p.PriceAmountMicros, p.Currency, p.TrialPeriod,
 		p.IntroPriceAmountMicros, p.IntroPeriod, p.Offering, p.SortOrder,
 		formatTime(p.CreatedAt), formatTime(p.UpdatedAt)); err != nil {
 		if ce := conflictErr(err); errors.Is(ce, ErrConflict) {
@@ -304,11 +331,13 @@ func (s *Store) UpdateProduct(ctx context.Context, p Product) error {
 	defer tx.Rollback()
 	res, err := tx.ExecContext(ctx,
 		`UPDATE products SET identifier = ?, display_name = ?, apple_product_id = ?,
-		        google_product_id = ?, billing_period = ?, price_amount_micros = ?, currency = ?,
+		        google_product_id = ?, stripe_price_id = ?, stripe_product_id = ?,
+		        billing_period = ?, price_amount_micros = ?, currency = ?,
 		        trial_period = ?, intro_price_amount_micros = ?, intro_period = ?, offering = ?,
 		        sort_order = ?, updated_at = ?
 		  WHERE project_id = ? AND id = ?`,
 		p.Identifier, p.DisplayName, nullString(p.AppleProductID), nullString(p.GoogleProductID),
+		nullString(p.StripePriceID), nullString(p.StripeProductID),
 		p.BillingPeriod, p.PriceAmountMicros, p.Currency, p.TrialPeriod, p.IntroPriceAmountMicros,
 		p.IntroPeriod, p.Offering, p.SortOrder, formatTime(p.UpdatedAt), p.ProjectID, p.ID)
 	if err != nil {
@@ -415,7 +444,8 @@ func (s *Store) productEntitlementIDs(ctx context.Context, productID string) ([]
 }
 
 const selectProduct = `SELECT id, project_id, identifier, display_name,
-	COALESCE(apple_product_id, ''), COALESCE(google_product_id, ''), billing_period,
+	COALESCE(apple_product_id, ''), COALESCE(google_product_id, ''),
+	COALESCE(stripe_price_id, ''), COALESCE(stripe_product_id, ''), billing_period,
 	price_amount_micros, currency, trial_period, intro_price_amount_micros, intro_period,
 	offering, sort_order, created_at, updated_at FROM products`
 
@@ -423,7 +453,8 @@ func scanProduct(row rowScanner) (Product, error) {
 	var p Product
 	var createdAt, updatedAt string
 	if err := row.Scan(&p.ID, &p.ProjectID, &p.Identifier, &p.DisplayName, &p.AppleProductID,
-		&p.GoogleProductID, &p.BillingPeriod, &p.PriceAmountMicros, &p.Currency, &p.TrialPeriod,
+		&p.GoogleProductID, &p.StripePriceID, &p.StripeProductID, &p.BillingPeriod,
+		&p.PriceAmountMicros, &p.Currency, &p.TrialPeriod,
 		&p.IntroPriceAmountMicros, &p.IntroPeriod, &p.Offering, &p.SortOrder, &createdAt, &updatedAt); err != nil {
 		return Product{}, err
 	}
@@ -441,32 +472,65 @@ func scanProduct(row rowScanner) (Product, error) {
 
 // UpsertSubscription inserts or updates the subscription keyed on its store
 // identity (project_id, store, store_transaction_id) and returns the stored
-// row. The caller's ID and CreatedAt are used only on first insert; on a
-// conflict the existing id/created_at are preserved and the mutable fields are
-// overwritten from the fresh store read.
-func (s *Store) UpsertSubscription(ctx context.Context, sub Subscription) (Subscription, error) {
-	_, err := s.db.ExecContext(ctx,
+// row plus whether this call performed the insert. The caller's ID and
+// CreatedAt are used only on first insert; on a conflict the existing
+// id/created_at are preserved and the mutable fields are overwritten from the
+// fresh store read.
+//
+// The inserted flag is derived atomically (INSERT OR IGNORE rows-affected
+// inside one transaction), never from a separate pre-read: two concurrent
+// upserts of the same identity — e.g. Stripe's checkout.session.completed and
+// customer.subscription.created delivered in parallel under different event
+// ids — report inserted=true exactly once, which is what keeps acquisition
+// revenue events from double-emitting.
+func (s *Store) UpsertSubscription(ctx context.Context, sub Subscription) (Subscription, bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return Subscription{}, false, fmt.Errorf("upsert subscription: %w", err)
+	}
+	defer tx.Rollback()
+	res, err := tx.ExecContext(ctx,
 		`INSERT INTO subscriptions (id, project_id, user_id, store, product_id, store_transaction_id,
 		        subscription_id, status, current_period_end, auto_renew, environment, raw_state,
 		        created_at, updated_at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		 ON CONFLICT (project_id, store, store_transaction_id) DO UPDATE SET
-		        user_id = excluded.user_id,
-		        product_id = excluded.product_id,
-		        subscription_id = excluded.subscription_id,
-		        status = excluded.status,
-		        current_period_end = excluded.current_period_end,
-		        auto_renew = excluded.auto_renew,
-		        environment = excluded.environment,
-		        raw_state = excluded.raw_state,
-		        updated_at = excluded.updated_at`,
+		 ON CONFLICT (project_id, store, store_transaction_id) DO NOTHING`,
 		sub.ID, sub.ProjectID, sub.UserID, sub.Store, nullString(sub.ProductID), sub.StoreTransactionID,
 		sub.SubscriptionID, sub.Status, formatNullTime(sub.CurrentPeriodEnd), sub.AutoRenew,
 		sub.Environment, sub.RawState, formatTime(sub.CreatedAt), formatTime(sub.UpdatedAt))
 	if err != nil {
-		return Subscription{}, fmt.Errorf("upsert subscription: %w", err)
+		return Subscription{}, false, fmt.Errorf("upsert subscription: %w", err)
 	}
-	return s.GetSubscriptionByStoreID(ctx, sub.ProjectID, sub.Store, sub.StoreTransactionID)
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return Subscription{}, false, fmt.Errorf("upsert subscription: %w", err)
+	}
+	inserted := affected > 0
+	if !inserted {
+		// The row already exists: overwrite the mutable fields, preserving the
+		// stored id/created_at (same column semantics as the previous
+		// ON CONFLICT DO UPDATE upsert).
+		if _, err := tx.ExecContext(ctx,
+			`UPDATE subscriptions SET user_id = ?, product_id = ?, subscription_id = ?, status = ?,
+			        current_period_end = ?, auto_renew = ?, environment = ?, raw_state = ?, updated_at = ?
+			  WHERE project_id = ? AND store = ? AND store_transaction_id = ?`,
+			sub.UserID, nullString(sub.ProductID), sub.SubscriptionID, sub.Status,
+			formatNullTime(sub.CurrentPeriodEnd), sub.AutoRenew, sub.Environment, sub.RawState,
+			formatTime(sub.UpdatedAt), sub.ProjectID, sub.Store, sub.StoreTransactionID); err != nil {
+			return Subscription{}, false, fmt.Errorf("upsert subscription: %w", err)
+		}
+	}
+	row := tx.QueryRowContext(ctx,
+		selectSubscription+` WHERE project_id = ? AND store = ? AND store_transaction_id = ?`,
+		sub.ProjectID, sub.Store, sub.StoreTransactionID)
+	stored, err := scanSubscriptionRow(row)
+	if err != nil {
+		return Subscription{}, false, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Subscription{}, false, fmt.Errorf("upsert subscription: %w", err)
+	}
+	return stored, inserted, nil
 }
 
 func (s *Store) GetSubscription(ctx context.Context, projectID, id string) (Subscription, error) {
@@ -733,8 +797,9 @@ func (s *Store) UpsertBillingCredentials(ctx context.Context, c BillingCredentia
 		`INSERT INTO billing_credentials (project_id, apple_iap_key_id, apple_iap_issuer_id,
 		        apple_iap_key_enc, apple_bundle_id, apple_app_apple_id, apple_notification_secret_enc,
 		        apple_notification_url, google_service_account_enc, google_package_name, google_pubsub_topic,
-		        google_rtdn_secret_enc, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		        google_rtdn_secret_enc, stripe_secret_key_enc, stripe_webhook_secret_enc,
+		        stripe_webhook_endpoint_id, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON CONFLICT (project_id) DO UPDATE SET
 		        apple_iap_key_id = excluded.apple_iap_key_id,
 		        apple_iap_issuer_id = excluded.apple_iap_issuer_id,
@@ -747,10 +812,14 @@ func (s *Store) UpsertBillingCredentials(ctx context.Context, c BillingCredentia
 		        google_package_name = excluded.google_package_name,
 		        google_pubsub_topic = excluded.google_pubsub_topic,
 		        google_rtdn_secret_enc = COALESCE(excluded.google_rtdn_secret_enc, billing_credentials.google_rtdn_secret_enc),
+		        stripe_secret_key_enc = COALESCE(excluded.stripe_secret_key_enc, billing_credentials.stripe_secret_key_enc),
+		        stripe_webhook_secret_enc = COALESCE(excluded.stripe_webhook_secret_enc, billing_credentials.stripe_webhook_secret_enc),
+		        stripe_webhook_endpoint_id = CASE WHEN excluded.stripe_webhook_endpoint_id = '' THEN billing_credentials.stripe_webhook_endpoint_id ELSE excluded.stripe_webhook_endpoint_id END,
 		        updated_at = excluded.updated_at`,
 		c.ProjectID, c.AppleIAPKeyID, c.AppleIAPIssuerID, nullBytes(c.AppleIAPKeyEnc), c.AppleBundleID,
 		c.AppleAppAppleID, nullBytes(c.AppleNotificationSecretEnc), c.AppleNotificationURL, nullBytes(c.GoogleServiceAccountEnc),
 		c.GooglePackageName, c.GooglePubsubTopic, nullBytes(c.GoogleRTDNSecretEnc),
+		nullBytes(c.StripeSecretKeyEnc), nullBytes(c.StripeWebhookSecretEnc), c.StripeWebhookEndpointID,
 		formatTime(c.CreatedAt), formatTime(c.UpdatedAt))
 	if err != nil {
 		return fmt.Errorf("upsert billing credentials: %w", err)
@@ -766,11 +835,13 @@ func (s *Store) GetBillingCredentials(ctx context.Context, projectID string) (Bi
 	err := s.db.QueryRowContext(ctx,
 		`SELECT project_id, apple_iap_key_id, apple_iap_issuer_id, apple_iap_key_enc, apple_bundle_id,
 		        apple_app_apple_id, apple_notification_secret_enc, apple_notification_url, google_service_account_enc,
-		        google_package_name, google_pubsub_topic, google_rtdn_secret_enc, created_at, updated_at
+		        google_package_name, google_pubsub_topic, google_rtdn_secret_enc, stripe_secret_key_enc,
+		        stripe_webhook_secret_enc, stripe_webhook_endpoint_id, created_at, updated_at
 		   FROM billing_credentials WHERE project_id = ?`, projectID).Scan(
 		&c.ProjectID, &c.AppleIAPKeyID, &c.AppleIAPIssuerID, &c.AppleIAPKeyEnc, &c.AppleBundleID,
 		&c.AppleAppAppleID, &c.AppleNotificationSecretEnc, &c.AppleNotificationURL, &c.GoogleServiceAccountEnc,
-		&c.GooglePackageName, &c.GooglePubsubTopic, &c.GoogleRTDNSecretEnc, &createdAt, &updatedAt)
+		&c.GooglePackageName, &c.GooglePubsubTopic, &c.GoogleRTDNSecretEnc, &c.StripeSecretKeyEnc,
+		&c.StripeWebhookSecretEnc, &c.StripeWebhookEndpointID, &createdAt, &updatedAt)
 	if errors.Is(err, sql.ErrNoRows) {
 		return BillingCredentials{}, ErrNotFound
 	}
@@ -782,6 +853,78 @@ func (s *Store) GetBillingCredentials(ctx context.Context, projectID string) (Bi
 	}
 	if c.UpdatedAt, err = parseTime(updatedAt); err != nil {
 		return BillingCredentials{}, fmt.Errorf("parse billing credentials updated_at: %w", err)
+	}
+	return c, nil
+}
+
+// --- Stripe customers -----------------------------------------------------
+
+// GetStripeCustomer returns the (project, user) → Stripe customer mapping, or
+// ErrNotFound when the user has no Stripe customer yet (the first-checkout
+// signal to create one).
+func (s *Store) GetStripeCustomer(ctx context.Context, projectID, userID string) (StripeCustomer, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT project_id, user_id, stripe_customer_id, created_at
+		   FROM stripe_customers WHERE project_id = ? AND user_id = ?`, projectID, userID)
+	return scanStripeCustomer(row)
+}
+
+// GetStripeCustomerByStripeID resolves a Stripe customer id back to the moth
+// user — webhook attribution. ErrNotFound when the customer is unknown (or
+// belongs to another project).
+func (s *Store) GetStripeCustomerByStripeID(ctx context.Context, projectID, stripeCustomerID string) (StripeCustomer, error) {
+	row := s.db.QueryRowContext(ctx,
+		`SELECT project_id, user_id, stripe_customer_id, created_at
+		   FROM stripe_customers WHERE project_id = ? AND stripe_customer_id = ?`,
+		projectID, stripeCustomerID)
+	return scanStripeCustomer(row)
+}
+
+// CreateStripeCustomer records the (project, user) → Stripe customer mapping;
+// a second insert for the same user is ErrConflict (one Stripe customer per
+// user per project).
+func (s *Store) CreateStripeCustomer(ctx context.Context, c StripeCustomer) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO stripe_customers (project_id, user_id, stripe_customer_id, created_at)
+		 VALUES (?, ?, ?, ?)`,
+		c.ProjectID, c.UserID, c.StripeCustomerID, formatTime(c.CreatedAt))
+	if err != nil {
+		if ce := conflictErr(err); errors.Is(ce, ErrConflict) {
+			return ce
+		}
+		return fmt.Errorf("create stripe customer: %w", err)
+	}
+	return nil
+}
+
+// UpdateStripeCustomer overwrites the (project, user) mapping's Stripe
+// customer id in place — the stale-mapping self-heal: a stored cus_... id that
+// Stripe no longer recognizes (swapped test/live keys, dashboard deletion) is
+// replaced by a freshly created customer. Updating an absent mapping returns
+// ErrNotFound.
+func (s *Store) UpdateStripeCustomer(ctx context.Context, c StripeCustomer) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE stripe_customers SET stripe_customer_id = ?
+		  WHERE project_id = ? AND user_id = ?`,
+		c.StripeCustomerID, c.ProjectID, c.UserID)
+	if err != nil {
+		return fmt.Errorf("update stripe customer: %w", err)
+	}
+	return requireRow(res)
+}
+
+func scanStripeCustomer(row rowScanner) (StripeCustomer, error) {
+	var c StripeCustomer
+	var createdAt string
+	if err := row.Scan(&c.ProjectID, &c.UserID, &c.StripeCustomerID, &createdAt); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return StripeCustomer{}, ErrNotFound
+		}
+		return StripeCustomer{}, err
+	}
+	var err error
+	if c.CreatedAt, err = parseTime(createdAt); err != nil {
+		return StripeCustomer{}, fmt.Errorf("parse stripe customer created_at: %w", err)
 	}
 	return c, nil
 }

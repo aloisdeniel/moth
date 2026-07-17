@@ -300,8 +300,12 @@ type ProductStore interface {
 // returns rows and active grants; entitlement derivation lives above it.
 type SubscriptionStore interface {
 	// UpsertSubscription inserts or updates by store identity (project_id,
-	// store, store_transaction_id) and returns the stored row.
-	UpsertSubscription(ctx context.Context, sub Subscription) (Subscription, error)
+	// store, store_transaction_id) and returns the stored row plus whether
+	// this call performed the insert. The flag is derived atomically inside
+	// the upsert (not from a pre-read), so concurrent upserts of one identity
+	// report inserted=true exactly once — the guard acquisition-event emission
+	// keys on.
+	UpsertSubscription(ctx context.Context, sub Subscription) (Subscription, bool, error)
 	GetSubscription(ctx context.Context, projectID, id string) (Subscription, error)
 	GetSubscriptionByStoreID(ctx context.Context, projectID, store, storeTransactionID string) (Subscription, error)
 	ListUserSubscriptions(ctx context.Context, projectID, userID string) ([]Subscription, error)
@@ -341,6 +345,22 @@ type StoreNotificationStore interface {
 type BillingCredentialStore interface {
 	UpsertBillingCredentials(ctx context.Context, c BillingCredentials) error
 	GetBillingCredentials(ctx context.Context, projectID string) (BillingCredentials, error)
+}
+
+// StripeCustomerStore persists the lazy (project, user) → Stripe customer
+// mapping (milestone 17): at most one Stripe customer per user per project,
+// created at first checkout.
+type StripeCustomerStore interface {
+	// GetStripeCustomer returns the user's Stripe customer mapping, or
+	// ErrNotFound when none exists yet.
+	GetStripeCustomer(ctx context.Context, projectID, userID string) (StripeCustomer, error)
+	// GetStripeCustomerByStripeID resolves a Stripe customer id back to the
+	// moth user (webhook attribution), or ErrNotFound.
+	GetStripeCustomerByStripeID(ctx context.Context, projectID, stripeCustomerID string) (StripeCustomer, error)
+	CreateStripeCustomer(ctx context.Context, c StripeCustomer) error
+	// UpdateStripeCustomer overwrites an existing mapping's Stripe customer id
+	// (stale-mapping self-heal), or ErrNotFound when none exists.
+	UpdateStripeCustomer(ctx context.Context, c StripeCustomer) error
 }
 
 // SubscriptionEventStore records the raw revenue event stream (milestone 14
@@ -397,6 +417,7 @@ var (
 	_ SubscriptionGrantStore   = (*Store)(nil)
 	_ StoreNotificationStore   = (*Store)(nil)
 	_ BillingCredentialStore   = (*Store)(nil)
+	_ StripeCustomerStore      = (*Store)(nil)
 	_ SubscriptionEventStore   = (*Store)(nil)
 	_ ProductStoreSyncStore    = (*Store)(nil)
 )

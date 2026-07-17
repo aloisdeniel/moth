@@ -19,6 +19,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -894,6 +895,105 @@ func TestOAuthRedirectFlowGoogle(t *testing.T) {
 	}
 }
 
+// TestOAuthRedirectFlowWebOrigin drives the web-redirect flow the browser
+// SDK uses: the redirect URI is an https URL on a registered web origin,
+// and the callback 302s the browser back to the SPA's return route with
+// the one-time code appended — which ExchangeOAuthCode then trades for
+// tokens.
+func TestOAuthRedirectFlowWebOrigin(t *testing.T) {
+	pd := newProviderDoubles(t)
+	e := newTestEnv(t, "tok", withProviderDoubles(pd))
+	e.setup(t, "tok")
+	ctx := context.Background()
+	p, _ := e.createProject(t, "SPA App")
+	e.updateSettings(t, p, func(s *adminv1.ProjectSettings) {
+		s.Google.Enabled = true
+		s.Google.WebClientId = googleWebClient
+		s.Google.WebClientSecret = "web-secret-1"
+		s.RedirectOrigins = []string{"https://app.example.com"}
+	})
+	auth := e.authClient(p.PublishableKey)
+	hc := noRedirectClient()
+
+	start := func(redirect string) *http.Response {
+		t.Helper()
+		resp, err := hc.Get(e.url + "/oauth/google/start?project=" + p.Slug +
+			"&redirect=" + url.QueryEscape(redirect))
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp
+	}
+
+	// Only the exact registered origin is accepted: other hosts,
+	// subdomains, other ports, http downgrades and fragments all stay
+	// refused (open-redirect protection).
+	for _, bad := range []string{
+		"https://evil.example.com/cb",
+		"https://sub.app.example.com/cb",
+		"https://app.example.com:8080/cb",
+		"http://app.example.com/cb",
+		"https://app.example.com/cb#frag",
+	} {
+		if resp := start(bad); resp.StatusCode != http.StatusBadRequest {
+			t.Fatalf("%s: want 400, got %d", bad, resp.StatusCode)
+		}
+	}
+
+	// The redirect URI may carry the SPA's return route (path + query);
+	// a default port normalizes onto the registered origin.
+	resp := start("https://app.example.com:443/auth/callback?next=/dashboard")
+	if resp.StatusCode != http.StatusFound {
+		t.Fatalf("start: want 302, got %d", resp.StatusCode)
+	}
+	consent, err := url.Parse(resp.Header.Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	state, nonce := consent.Query().Get("state"), consent.Query().Get("nonce")
+	if state == "" || nonce == "" {
+		t.Fatalf("consent url misses state/nonce: %s", consent)
+	}
+
+	// Provider consent happened; the callback 302s straight back to the
+	// SPA with the one-time code appended to the existing query.
+	pd.setExchange(pd.idTokenFor(t, "google", "sub-spa", "spa@example.com", googleWebClient, nonce, nil), "")
+	cb, err := hc.Get(e.url + "/oauth/google/callback?code=provider-code&state=" + url.QueryEscape(state))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cb.Body.Close()
+	if cb.StatusCode != http.StatusFound {
+		t.Fatalf("callback: want 302, got %d", cb.StatusCode)
+	}
+	loc, err := url.Parse(cb.Header.Get("Location"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if loc.Scheme != "https" || loc.Host != "app.example.com:443" || loc.Path != "/auth/callback" {
+		t.Fatalf("callback location: %q", cb.Header.Get("Location"))
+	}
+	if loc.Query().Get("next") != "/dashboard" {
+		t.Fatalf("callback location lost the SPA's query: %s", loc)
+	}
+	appCode := loc.Query().Get("code")
+	if appCode == "" {
+		t.Fatalf("callback location misses code: %s", loc)
+	}
+
+	// The SPA trades the code for tokens — exactly once.
+	ex, err := auth.ExchangeOAuthCode(ctx, connect.NewRequest(&authv1.ExchangeOAuthCodeRequest{Code: appCode}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ex.Msg.User.Email != "spa@example.com" || ex.Msg.Tokens.GetAccessToken() == "" {
+		t.Fatalf("exchange: %+v", ex.Msg)
+	}
+	_, err = auth.ExchangeOAuthCode(ctx, connect.NewRequest(&authv1.ExchangeOAuthCodeRequest{Code: appCode}))
+	wantReason(t, err, connect.CodeUnauthenticated, authrpc.ReasonInvalidOAuthCode)
+}
+
 func TestOAuthRedirectFlowApple(t *testing.T) {
 	pd := newProviderDoubles(t)
 	e := newTestEnv(t, "tok", withProviderDoubles(pd))
@@ -1094,6 +1194,47 @@ func TestAdminProviderConfig(t *testing.T) {
 		if connect.CodeOf(err) != connect.CodeInvalidArgument {
 			t.Fatalf("%s redirect scheme: %v", scheme, err)
 		}
+	}
+
+	// Redirect origins must be bare http(s) origins: no custom schemes,
+	// path, query, fragment or userinfo, and http only for localhost.
+	for _, origin := range []string{
+		"myapp://auth",
+		"app.example.com",
+		"https://",
+		"https://app.example.com/auth",
+		"https://app.example.com?x=1",
+		"https://app.example.com#frag",
+		"https://user@app.example.com",
+		"http://app.example.com",
+	} {
+		settings = got.Msg.Project.Settings
+		settings.RedirectSchemes = nil // leftover from the schemes loop above
+		settings.RedirectOrigins = []string{origin}
+		_, err = e.projects.UpdateProject(ctx, connect.NewRequest(&adminv1.UpdateProjectRequest{
+			Id: p.Id, Name: p.Name, Settings: settings}))
+		if connect.CodeOf(err) != connect.CodeInvalidArgument {
+			t.Fatalf("redirect origin %q: %v", origin, err)
+		}
+	}
+	// Valid origins are stored canonicalized: lowercase scheme+host,
+	// default port and trailing slash stripped.
+	settings = got.Msg.Project.Settings
+	settings.RedirectSchemes = nil
+	settings.RedirectOrigins = []string{
+		"HTTPS://App.Example.COM:443/", "https://app.example.com:8443", "http://localhost:5173"}
+	if _, err = e.projects.UpdateProject(ctx, connect.NewRequest(&adminv1.UpdateProjectRequest{
+		Id: p.Id, Name: p.Name, Settings: settings})); err != nil {
+		t.Fatalf("valid redirect origins: %v", err)
+	}
+	got, err = e.projects.GetProject(ctx, connect.NewRequest(&adminv1.GetProjectRequest{Id: p.Id}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantOrigins := []string{"https://app.example.com", "https://app.example.com:8443", "http://localhost:5173"}
+	if !slices.Equal(got.Msg.Project.Settings.RedirectOrigins, wantOrigins) {
+		t.Fatalf("stored redirect origins: %v, want %v",
+			got.Msg.Project.Settings.RedirectOrigins, wantOrigins)
 	}
 
 	// SendPasswordReset refuses social-only users.

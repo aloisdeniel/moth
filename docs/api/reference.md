@@ -39,10 +39,13 @@
     - [AdminAccountService](#moth-admin-v1-AdminAccountService)
   
 - [moth/admin/v1/analytics.proto](#moth_admin_v1_analytics-proto)
+    - [CurrencyAmount](#moth-admin-v1-CurrencyAmount)
     - [DailyStat](#moth-admin-v1-DailyStat)
     - [Event](#moth-admin-v1-Event)
     - [GetStatsRequest](#moth-admin-v1-GetStatsRequest)
     - [GetStatsResponse](#moth-admin-v1-GetStatsResponse)
+    - [GetSubscriptionStatsRequest](#moth-admin-v1-GetSubscriptionStatsRequest)
+    - [GetSubscriptionStatsResponse](#moth-admin-v1-GetSubscriptionStatsResponse)
     - [ListRecentEventsRequest](#moth-admin-v1-ListRecentEventsRequest)
     - [ListRecentEventsResponse](#moth-admin-v1-ListRecentEventsResponse)
     - [PlatformBreakdown](#moth-admin-v1-PlatformBreakdown)
@@ -50,6 +53,10 @@
     - [RunRollupRequest](#moth-admin-v1-RunRollupRequest)
     - [RunRollupResponse](#moth-admin-v1-RunRollupResponse)
     - [StatTiles](#moth-admin-v1-StatTiles)
+    - [SubscriptionMonthlyStat](#moth-admin-v1-SubscriptionMonthlyStat)
+    - [SubscriptionStoreBreakdown](#moth-admin-v1-SubscriptionStoreBreakdown)
+    - [SubscriptionTierBreakdown](#moth-admin-v1-SubscriptionTierBreakdown)
+    - [SubscriptionTiles](#moth-admin-v1-SubscriptionTiles)
   
     - [Granularity](#moth-admin-v1-Granularity)
   
@@ -61,6 +68,125 @@
     - [ListAuditLogResponse](#moth-admin-v1-ListAuditLogResponse)
   
     - [AuditService](#moth-admin-v1-AuditService)
+  
+- [moth/admin/v1/billing_credentials.proto](#moth_admin_v1_billing_credentials-proto)
+    - [AppleBillingConfig](#moth-admin-v1-AppleBillingConfig)
+    - [GetBillingCredentialsRequest](#moth-admin-v1-GetBillingCredentialsRequest)
+    - [GetBillingCredentialsResponse](#moth-admin-v1-GetBillingCredentialsResponse)
+    - [GoogleBillingConfig](#moth-admin-v1-GoogleBillingConfig)
+    - [StripeBillingConfig](#moth-admin-v1-StripeBillingConfig)
+    - [UpdateBillingCredentialsRequest](#moth-admin-v1-UpdateBillingCredentialsRequest)
+    - [UpdateBillingCredentialsResponse](#moth-admin-v1-UpdateBillingCredentialsResponse)
+  
+    - [BillingCredentialsService](#moth-admin-v1-BillingCredentialsService)
+  
+- [moth/admin/v1/copy.proto](#moth_admin_v1_copy-proto)
+    - [CopyKey](#moth-admin-v1-CopyKey)
+    - [CopyRevision](#moth-admin-v1-CopyRevision)
+    - [GetProjectCopyRequest](#moth-admin-v1-GetProjectCopyRequest)
+    - [GetProjectCopyResponse](#moth-admin-v1-GetProjectCopyResponse)
+    - [ListCopyRevisionsRequest](#moth-admin-v1-ListCopyRevisionsRequest)
+    - [ListCopyRevisionsResponse](#moth-admin-v1-ListCopyRevisionsResponse)
+    - [ListLocalesRequest](#moth-admin-v1-ListLocalesRequest)
+    - [ListLocalesResponse](#moth-admin-v1-ListLocalesResponse)
+    - [Locale](#moth-admin-v1-Locale)
+    - [ResetCopyRequest](#moth-admin-v1-ResetCopyRequest)
+    - [ResetCopyResponse](#moth-admin-v1-ResetCopyResponse)
+    - [RestoreCopyRevisionRequest](#moth-admin-v1-RestoreCopyRevisionRequest)
+    - [RestoreCopyRevisionResponse](#moth-admin-v1-RestoreCopyRevisionResponse)
+    - [UpdateProjectCopyRequest](#moth-admin-v1-UpdateProjectCopyRequest)
+    - [UpdateProjectCopyRequest.ValuesEntry](#moth-admin-v1-UpdateProjectCopyRequest-ValuesEntry)
+    - [UpdateProjectCopyResponse](#moth-admin-v1-UpdateProjectCopyResponse)
+  
+    - [CopyScreen](#moth-admin-v1-CopyScreen)
+  
+    - [CopyService](#moth-admin-v1-CopyService)
+  
+- [moth/admin/v1/entitlement.proto](#moth_admin_v1_entitlement-proto)
+    - [CreateEntitlementRequest](#moth-admin-v1-CreateEntitlementRequest)
+    - [CreateEntitlementResponse](#moth-admin-v1-CreateEntitlementResponse)
+    - [DeleteEntitlementRequest](#moth-admin-v1-DeleteEntitlementRequest)
+    - [DeleteEntitlementResponse](#moth-admin-v1-DeleteEntitlementResponse)
+    - [Entitlement](#moth-admin-v1-Entitlement)
+    - [ListEntitlementsRequest](#moth-admin-v1-ListEntitlementsRequest)
+    - [ListEntitlementsResponse](#moth-admin-v1-ListEntitlementsResponse)
+    - [UpdateEntitlementRequest](#moth-admin-v1-UpdateEntitlementRequest)
+    - [UpdateEntitlementResponse](#moth-admin-v1-UpdateEntitlementResponse)
+  
+    - [EntitlementService](#moth-admin-v1-EntitlementService)
+  
+- [moth/admin/v1/product.proto](#moth_admin_v1_product-proto)
+    - [CreateProductRequest](#moth-admin-v1-CreateProductRequest)
+    - [CreateProductResponse](#moth-admin-v1-CreateProductResponse)
+    - [DeleteProductRequest](#moth-admin-v1-DeleteProductRequest)
+    - [DeleteProductResponse](#moth-admin-v1-DeleteProductResponse)
+    - [GetProductRequest](#moth-admin-v1-GetProductRequest)
+    - [GetProductResponse](#moth-admin-v1-GetProductResponse)
+    - [ListProductsRequest](#moth-admin-v1-ListProductsRequest)
+    - [ListProductsResponse](#moth-admin-v1-ListProductsResponse)
+    - [Product](#moth-admin-v1-Product)
+    - [UpdateProductRequest](#moth-admin-v1-UpdateProductRequest)
+    - [UpdateProductResponse](#moth-admin-v1-UpdateProductResponse)
+  
+    - [ProductService](#moth-admin-v1-ProductService)
+  
+- [moth/admin/v1/subscription.proto](#moth_admin_v1_subscription-proto)
+    - [GetUserSubscriptionRequest](#moth-admin-v1-GetUserSubscriptionRequest)
+    - [GetUserSubscriptionResponse](#moth-admin-v1-GetUserSubscriptionResponse)
+    - [Grant](#moth-admin-v1-Grant)
+    - [GrantEntitlementRequest](#moth-admin-v1-GrantEntitlementRequest)
+    - [GrantEntitlementResponse](#moth-admin-v1-GrantEntitlementResponse)
+    - [ListUserSubscriptionsRequest](#moth-admin-v1-ListUserSubscriptionsRequest)
+    - [ListUserSubscriptionsResponse](#moth-admin-v1-ListUserSubscriptionsResponse)
+    - [RevokeGrantRequest](#moth-admin-v1-RevokeGrantRequest)
+    - [RevokeGrantResponse](#moth-admin-v1-RevokeGrantResponse)
+    - [Subscription](#moth-admin-v1-Subscription)
+  
+    - [Store](#moth-admin-v1-Store)
+    - [SubscriptionStatus](#moth-admin-v1-SubscriptionStatus)
+  
+    - [SubscriptionService](#moth-admin-v1-SubscriptionService)
+  
+- [moth/admin/v1/monetization.proto](#moth_admin_v1_monetization-proto)
+    - [GetOfferingRequest](#moth-admin-v1-GetOfferingRequest)
+    - [GetOfferingResponse](#moth-admin-v1-GetOfferingResponse)
+    - [GetStoreCatalogStatusRequest](#moth-admin-v1-GetStoreCatalogStatusRequest)
+    - [GetStoreCatalogStatusResponse](#moth-admin-v1-GetStoreCatalogStatusResponse)
+    - [GuidedStep](#moth-admin-v1-GuidedStep)
+    - [GuidedValue](#moth-admin-v1-GuidedValue)
+    - [Offering](#moth-admin-v1-Offering)
+    - [ProductSyncItem](#moth-admin-v1-ProductSyncItem)
+    - [ProductSyncState](#moth-admin-v1-ProductSyncState)
+    - [ReorderOfferingRequest](#moth-admin-v1-ReorderOfferingRequest)
+    - [ReorderOfferingResponse](#moth-admin-v1-ReorderOfferingResponse)
+    - [StoreCatalogStatus](#moth-admin-v1-StoreCatalogStatus)
+    - [SyncFieldChange](#moth-admin-v1-SyncFieldChange)
+    - [SyncStoreCatalogRequest](#moth-admin-v1-SyncStoreCatalogRequest)
+    - [SyncStoreCatalogResponse](#moth-admin-v1-SyncStoreCatalogResponse)
+  
+    - [ProductSyncStatus](#moth-admin-v1-ProductSyncStatus)
+    - [SyncAction](#moth-admin-v1-SyncAction)
+  
+    - [MonetizationService](#moth-admin-v1-MonetizationService)
+  
+- [moth/admin/v1/paywall.proto](#moth_admin_v1_paywall-proto)
+    - [GetPaywallConfigRequest](#moth-admin-v1-GetPaywallConfigRequest)
+    - [GetPaywallConfigResponse](#moth-admin-v1-GetPaywallConfigResponse)
+    - [ListPaywallRevisionsRequest](#moth-admin-v1-ListPaywallRevisionsRequest)
+    - [ListPaywallRevisionsResponse](#moth-admin-v1-ListPaywallRevisionsResponse)
+    - [PaywallConfig](#moth-admin-v1-PaywallConfig)
+    - [PaywallLegal](#moth-admin-v1-PaywallLegal)
+    - [PaywallRevision](#moth-admin-v1-PaywallRevision)
+    - [ResetPaywallRequest](#moth-admin-v1-ResetPaywallRequest)
+    - [ResetPaywallResponse](#moth-admin-v1-ResetPaywallResponse)
+    - [RestorePaywallRevisionRequest](#moth-admin-v1-RestorePaywallRevisionRequest)
+    - [RestorePaywallRevisionResponse](#moth-admin-v1-RestorePaywallRevisionResponse)
+    - [UpdatePaywallConfigRequest](#moth-admin-v1-UpdatePaywallConfigRequest)
+    - [UpdatePaywallConfigResponse](#moth-admin-v1-UpdatePaywallConfigResponse)
+  
+    - [PaywallLayout](#moth-admin-v1-PaywallLayout)
+  
+    - [PaywallService](#moth-admin-v1-PaywallService)
   
 - [moth/admin/v1/theme.proto](#moth_admin_v1_theme-proto)
     - [DeleteLogoRequest](#moth-admin-v1-DeleteLogoRequest)
@@ -97,6 +223,7 @@
     - [CreateProjectResponse](#moth-admin-v1-CreateProjectResponse)
     - [DeleteProjectRequest](#moth-admin-v1-DeleteProjectRequest)
     - [DeleteProjectResponse](#moth-admin-v1-DeleteProjectResponse)
+    - [EntitlementSpec](#moth-admin-v1-EntitlementSpec)
     - [ExportProjectRequest](#moth-admin-v1-ExportProjectRequest)
     - [ExportProjectResponse](#moth-admin-v1-ExportProjectResponse)
     - [ExportedIdentity](#moth-admin-v1-ExportedIdentity)
@@ -111,6 +238,8 @@
     - [ImportedUser](#moth-admin-v1-ImportedUser)
     - [ListProjectsRequest](#moth-admin-v1-ListProjectsRequest)
     - [ListProjectsResponse](#moth-admin-v1-ListProjectsResponse)
+    - [MonetizationSpec](#moth-admin-v1-MonetizationSpec)
+    - [ProductSpec](#moth-admin-v1-ProductSpec)
     - [Project](#moth-admin-v1-Project)
     - [ProjectSettings](#moth-admin-v1-ProjectSettings)
     - [ProjectSpec](#moth-admin-v1-ProjectSpec)
@@ -208,6 +337,8 @@
   
 - [moth/auth/v1/config.proto](#moth_auth_v1_config-proto)
     - [AppleConfig](#moth-auth-v1-AppleConfig)
+    - [Copy](#moth-auth-v1-Copy)
+    - [Copy.MessagesEntry](#moth-auth-v1-Copy-MessagesEntry)
     - [GetProjectConfigRequest](#moth-auth-v1-GetProjectConfigRequest)
     - [GetProjectConfigResponse](#moth-auth-v1-GetProjectConfigResponse)
     - [GoogleConfig](#moth-auth-v1-GoogleConfig)
@@ -215,6 +346,60 @@
     - [ThemeColors](#moth-auth-v1-ThemeColors)
   
     - [ConfigService](#moth-auth-v1-ConfigService)
+  
+- [moth/billing/v1/billing.proto](#moth_billing_v1_billing-proto)
+    - [ActiveSubscription](#moth-billing-v1-ActiveSubscription)
+    - [Copy](#moth-billing-v1-Copy)
+    - [Copy.MessagesEntry](#moth-billing-v1-Copy-MessagesEntry)
+    - [CreateBillingPortalSessionRequest](#moth-billing-v1-CreateBillingPortalSessionRequest)
+    - [CreateBillingPortalSessionResponse](#moth-billing-v1-CreateBillingPortalSessionResponse)
+    - [CreateCheckoutSessionRequest](#moth-billing-v1-CreateCheckoutSessionRequest)
+    - [CreateCheckoutSessionResponse](#moth-billing-v1-CreateCheckoutSessionResponse)
+    - [CustomerInfo](#moth-billing-v1-CustomerInfo)
+    - [Entitlement](#moth-billing-v1-Entitlement)
+    - [GetCustomerInfoRequest](#moth-billing-v1-GetCustomerInfoRequest)
+    - [GetCustomerInfoResponse](#moth-billing-v1-GetCustomerInfoResponse)
+    - [GetOfferingsRequest](#moth-billing-v1-GetOfferingsRequest)
+    - [GetOfferingsResponse](#moth-billing-v1-GetOfferingsResponse)
+    - [GetPaywallRequest](#moth-billing-v1-GetPaywallRequest)
+    - [GetPaywallResponse](#moth-billing-v1-GetPaywallResponse)
+    - [Offering](#moth-billing-v1-Offering)
+    - [OfferingProduct](#moth-billing-v1-OfferingProduct)
+    - [Paywall](#moth-billing-v1-Paywall)
+    - [RestorePurchasesRequest](#moth-billing-v1-RestorePurchasesRequest)
+    - [RestorePurchasesResponse](#moth-billing-v1-RestorePurchasesResponse)
+    - [SubmitPurchaseRequest](#moth-billing-v1-SubmitPurchaseRequest)
+    - [SubmitPurchaseResponse](#moth-billing-v1-SubmitPurchaseResponse)
+  
+    - [EntitlementSource](#moth-billing-v1-EntitlementSource)
+    - [PaywallLayout](#moth-billing-v1-PaywallLayout)
+    - [Store](#moth-billing-v1-Store)
+    - [SubscriptionStatus](#moth-billing-v1-SubscriptionStatus)
+  
+    - [BillingService](#moth-billing-v1-BillingService)
+  
+- [moth/projectconfig/v1/projectconfig.proto](#moth_projectconfig_v1_projectconfig-proto)
+    - [CacheEnvelope](#moth-projectconfig-v1-CacheEnvelope)
+    - [CopyLocaleMessages](#moth-projectconfig-v1-CopyLocaleMessages)
+    - [CopyLocaleMessages.MessagesEntry](#moth-projectconfig-v1-CopyLocaleMessages-MessagesEntry)
+    - [LegalLinks](#moth-projectconfig-v1-LegalLinks)
+    - [StoredCopy](#moth-projectconfig-v1-StoredCopy)
+    - [StoredCopy.LocalesEntry](#moth-projectconfig-v1-StoredCopy-LocalesEntry)
+    - [StoredPaywall](#moth-projectconfig-v1-StoredPaywall)
+    - [StoredTheme](#moth-projectconfig-v1-StoredTheme)
+    - [ThemeColorOverrides](#moth-projectconfig-v1-ThemeColorOverrides)
+    - [ThemeColors](#moth-projectconfig-v1-ThemeColors)
+    - [ThemeLogo](#moth-projectconfig-v1-ThemeLogo)
+    - [ThemeShape](#moth-projectconfig-v1-ThemeShape)
+    - [ThemeSpacing](#moth-projectconfig-v1-ThemeSpacing)
+    - [ThemeTypography](#moth-projectconfig-v1-ThemeTypography)
+  
+- [moth/server/v1/entitlement.proto](#moth_server_v1_entitlement-proto)
+    - [Entitlement](#moth-server-v1-Entitlement)
+    - [GetUserEntitlementsRequest](#moth-server-v1-GetUserEntitlementsRequest)
+    - [GetUserEntitlementsResponse](#moth-server-v1-GetUserEntitlementsResponse)
+  
+    - [EntitlementService](#moth-server-v1-EntitlementService)
   
 - [moth/server/v1/token.proto](#moth_server_v1_token-proto)
     - [IntrospectTokenRequest](#moth-server-v1-IntrospectTokenRequest)
@@ -701,6 +886,23 @@ except AcceptAdminInvite require an authenticated admin session.
 
 
 
+<a name="moth-admin-v1-CurrencyAmount"></a>
+
+### CurrencyAmount
+Money is always reported per currency — never blended. amount_micros is
+store-reported gross (net of refunds), not net of store commission or tax.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| currency | [string](#string) |  | ISO-4217 code; empty when the underlying events carried no currency. |
+| amount_micros | [int64](#int64) |  |  |
+
+
+
+
+
+
 <a name="moth-admin-v1-DailyStat"></a>
 
 ### DailyStat
@@ -773,6 +975,41 @@ metadata payload, no IP, no device ids.
 | series | [DailyStat](#moth-admin-v1-DailyStat) | repeated | One entry per day in [from_date, to_date], oldest first, zero-filled. |
 | providers | [ProviderBreakdown](#moth-admin-v1-ProviderBreakdown) |  | Totals over the requested range. |
 | platforms | [PlatformBreakdown](#moth-admin-v1-PlatformBreakdown) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetSubscriptionStatsRequest"></a>
+
+### GetSubscriptionStatsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| from_period | [string](#string) |  | First month of the range, &#34;YYYY-MM&#34; in the project&#39;s rollup timezone. |
+| to_period | [string](#string) |  | Last month of the range (inclusive), same format. |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetSubscriptionStatsResponse"></a>
+
+### GetSubscriptionStatsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tiles | [SubscriptionTiles](#moth-admin-v1-SubscriptionTiles) |  |  |
+| series | [SubscriptionMonthlyStat](#moth-admin-v1-SubscriptionMonthlyStat) | repeated | One entry per month in [from_period, to_period], oldest first, zero-filled. |
+| tiers | [SubscriptionTierBreakdown](#moth-admin-v1-SubscriptionTierBreakdown) | repeated | Per-tier revenue/subscriber breakdown over the requested range. |
+| stores | [SubscriptionStoreBreakdown](#moth-admin-v1-SubscriptionStoreBreakdown) |  | Per-store revenue breakdown over the requested range. |
 
 
 
@@ -904,6 +1141,96 @@ figures cover the last 7 rolled-up days.
 
 
 
+
+<a name="moth-admin-v1-SubscriptionMonthlyStat"></a>
+
+### SubscriptionMonthlyStat
+SubscriptionMonthlyStat is one month of the time series. Revenue and the
+per-store split are per currency; new/renewed/churned/trial counts are event
+counts summed across currencies, while active_subscribers is a currency-
+agnostic distinct-user count (not a per-currency sum). Months without data
+are zero-filled so charts render contiguous ranges.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| period | [string](#string) |  | &#34;YYYY-MM&#34; in the project&#39;s rollup timezone. |
+| revenue | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated | Total revenue this month, per currency (net of refunds). |
+| active_subscribers | [int64](#int64) |  |  |
+| new_subscribers | [int64](#int64) |  |  |
+| renewals | [int64](#int64) |  |  |
+| churned | [int64](#int64) |  |  |
+| trials_started | [int64](#int64) |  |  |
+| trials_converted | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-SubscriptionStoreBreakdown"></a>
+
+### SubscriptionStoreBreakdown
+SubscriptionStoreBreakdown splits the range&#39;s revenue by store, per currency.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| apple | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated |  |
+| google | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated |  |
+| stripe | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-SubscriptionTierBreakdown"></a>
+
+### SubscriptionTierBreakdown
+SubscriptionTierBreakdown is one product&#39;s share of the requested range.
+Revenue (per currency) and new_subscribers sum over the whole range; because
+active_subscribers is a non-additive distinct-user count, it is that
+product&#39;s currency-agnostic distinct count for the latest month in the range
+(matching the headline tile), not a sum across months.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product_id | [string](#string) |  | Empty for events with no mapped moth product. |
+| revenue | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated |  |
+| new_subscribers | [int64](#int64) |  |  |
+| active_subscribers | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-SubscriptionTiles"></a>
+
+### SubscriptionTiles
+SubscriptionTiles is the headline block of the subscriptions section — the
+current (latest rolled-up) month against the previous one.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| latest_period | [string](#string) |  | The latest rolled-up month (&#34;YYYY-MM&#34;, empty when no data) these figures describe, and the month before it for the trend arrows. |
+| revenue_this_month | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated | Total revenue this month and last month, per currency (the headline). |
+| revenue_previous_month | [CurrencyAmount](#moth-admin-v1-CurrencyAmount) | repeated |  |
+| active_subscribers | [int64](#int64) |  | Active subscribers this month and last: distinct users with an active event (purchased, renewed or trial_started), counted across all currencies as a single distinct-user total — never the sum of per-currency counts, which would double-count a user transacting in more than one currency. |
+| active_subscribers_previous | [int64](#int64) |  |  |
+| new_subscribers | [int64](#int64) |  |  |
+| churned | [int64](#int64) |  |  |
+| trials_started | [int64](#int64) |  |  |
+| trials_converted | [int64](#int64) |  |  |
+| trial_conversion_rate | [double](#double) |  | trials_converted / trials_started over the latest month, 0..1. Zero when no trials started — check the raw counts before rendering. |
+
+
+
+
+
  
 
 
@@ -939,6 +1266,7 @@ authenticated admin session.
 | GetStats | [GetStatsRequest](#moth-admin-v1-GetStatsRequest) | [GetStatsResponse](#moth-admin-v1-GetStatsResponse) | GetStats returns the stat tiles, the per-day time series and the provider/platform breakdowns for one project over [from_date, to_date] (inclusive). |
 | ListRecentEvents | [ListRecentEventsRequest](#moth-admin-v1-ListRecentEventsRequest) | [ListRecentEventsResponse](#moth-admin-v1-ListRecentEventsResponse) | ListRecentEvents returns the project&#39;s newest raw events for the activity feed, newest first. |
 | RunRollup | [RunRollupRequest](#moth-admin-v1-RunRollupRequest) | [RunRollupResponse](#moth-admin-v1-RunRollupResponse) | RunRollup triggers the aggregate-and-prune job immediately — for one project or the whole instance — and returns the run summary. The same job also runs nightly; re-rolling a day is idempotent. |
+| GetSubscriptionStats | [GetSubscriptionStatsRequest](#moth-admin-v1-GetSubscriptionStatsRequest) | [GetSubscriptionStatsResponse](#moth-admin-v1-GetSubscriptionStatsResponse) | GetSubscriptionStats returns the milestone-14 subscription revenue tiles, the per-month time series and the per-tier / per-store breakdowns for one project over [from_period, to_period] (inclusive, &#34;YYYY-MM&#34;). Like GetStats, every number comes from the pre-aggregated monthly rollup (subscription_monthly_stats / subscription_tier_stats) — this RPC never scans the raw subscription_events stream. Money is store-reported gross, reported per currency and never blended across currencies (no FX). |
 
  
 
@@ -1035,6 +1363,1754 @@ stream and download it directly.
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | ListAuditLog | [ListAuditLogRequest](#moth-admin-v1-ListAuditLogRequest) | [ListAuditLogResponse](#moth-admin-v1-ListAuditLogResponse) | ListAuditLog returns audit entries newest-first, narrowed by the optional filters and paged with page_size / page_token. |
+
+ 
+
+
+
+<a name="moth_admin_v1_billing_credentials-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/billing_credentials.proto
+
+
+
+<a name="moth-admin-v1-AppleBillingConfig"></a>
+
+### AppleBillingConfig
+AppleBillingConfig is a project&#39;s App Store Server API configuration.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| iap_key_id | [string](#string) |  | In-App-Purchase key id (from App Store Connect). |
+| iap_issuer_id | [string](#string) |  | Issuer id of the In-App-Purchase key. |
+| iap_key_p8 | [string](#string) |  | Contents of the `.p8` In-App-Purchase private key. Write-only: accepted on update, never returned; empty keeps the stored one. Stored encrypted. |
+| has_iap_key | [bool](#bool) |  | Output only: whether a `.p8` key is stored. |
+| bundle_id | [string](#string) |  | App bundle id (the `aud`/`bid` of signed transactions). |
+| app_apple_id | [string](#string) |  | The app&#39;s Apple id (numeric App Store id). |
+| notification_secret | [string](#string) |  | Shared secret authenticating the App Store Server Notifications webhook. Write-only; empty keeps the stored one. Stored encrypted. |
+| has_notification_secret | [bool](#bool) |  | Output only: whether a notification secret is stored. |
+| notification_url | [string](#string) |  | The App Store Server Notification URL moth has registered for the app. Apple exposes no read for it, so moth persists what it registered to keep `moth setup billing` idempotent (re-register only on a change). Set by the CLI after a successful registration; empty on update keeps the stored one. |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetBillingCredentialsRequest"></a>
+
+### GetBillingCredentialsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetBillingCredentialsResponse"></a>
+
+### GetBillingCredentialsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| apple | [AppleBillingConfig](#moth-admin-v1-AppleBillingConfig) |  |  |
+| google | [GoogleBillingConfig](#moth-admin-v1-GoogleBillingConfig) |  |  |
+| stripe | [StripeBillingConfig](#moth-admin-v1-StripeBillingConfig) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GoogleBillingConfig"></a>
+
+### GoogleBillingConfig
+GoogleBillingConfig is a project&#39;s Google Play Developer API configuration.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| service_account_json | [string](#string) |  | Service-account JSON with Play Developer API access. Write-only: accepted on update, never returned; empty keeps the stored one. Stored encrypted. |
+| has_service_account | [bool](#bool) |  | Output only: whether a service account is stored. |
+| package_name | [string](#string) |  | App package name. |
+| pubsub_topic | [string](#string) |  | Cloud Pub/Sub topic RTDN messages are published to. |
+| rtdn_secret | [string](#string) |  | Shared secret authenticating the RTDN Pub/Sub push webhook. Write-only; empty keeps the stored one. Stored encrypted. |
+| has_rtdn_secret | [bool](#bool) |  | Output only: whether an RTDN secret is stored. |
+
+
+
+
+
+
+<a name="moth-admin-v1-StripeBillingConfig"></a>
+
+### StripeBillingConfig
+StripeBillingConfig is a project&#39;s Stripe API configuration (milestone 17).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| secret_key | [string](#string) |  | Stripe secret key (a restricted key is recommended). Write-only: accepted on update, never returned; empty keeps the stored one. Stored encrypted. |
+| has_secret_key | [bool](#bool) |  | Output only: whether a secret key is stored. |
+| webhook_secret | [string](#string) |  | Webhook signing secret (&#34;whsec_...&#34;) authenticating the Stripe-Signature header. Write-only; empty keeps the stored one. Stored encrypted. |
+| has_webhook_secret | [bool](#bool) |  | Output only: whether a webhook secret is stored. |
+| webhook_endpoint_id | [string](#string) |  | The Stripe webhook endpoint (&#34;we_...&#34;) moth created via the API, persisted to keep `moth setup billing` idempotent (mirroring the Apple notification_url). Set by the CLI after a successful registration; empty on update keeps the stored one. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateBillingCredentialsRequest"></a>
+
+### UpdateBillingCredentialsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| apple | [AppleBillingConfig](#moth-admin-v1-AppleBillingConfig) |  |  |
+| google | [GoogleBillingConfig](#moth-admin-v1-GoogleBillingConfig) |  |  |
+| stripe | [StripeBillingConfig](#moth-admin-v1-StripeBillingConfig) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateBillingCredentialsResponse"></a>
+
+### UpdateBillingCredentialsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| apple | [AppleBillingConfig](#moth-admin-v1-AppleBillingConfig) |  |  |
+| google | [GoogleBillingConfig](#moth-admin-v1-GoogleBillingConfig) |  |  |
+| stripe | [StripeBillingConfig](#moth-admin-v1-StripeBillingConfig) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-BillingCredentialsService"></a>
+
+### BillingCredentialsService
+BillingCredentialsService edits a project&#39;s store API credentials — the
+Apple App Store Server API In-App-Purchase key and the Google Play Developer
+API service account, plus the webhook shared secrets. Secrets are write-only
+(accepted on update, never returned; reads report presence via has_*
+indicators) and stored encrypted at rest, like every other moth secret. All
+RPCs require an authenticated admin session.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetBillingCredentials | [GetBillingCredentialsRequest](#moth-admin-v1-GetBillingCredentialsRequest) | [GetBillingCredentialsResponse](#moth-admin-v1-GetBillingCredentialsResponse) | GetBillingCredentials returns the non-secret fields and has_* presence indicators for the stored secrets. |
+| UpdateBillingCredentials | [UpdateBillingCredentialsRequest](#moth-admin-v1-UpdateBillingCredentialsRequest) | [UpdateBillingCredentialsResponse](#moth-admin-v1-UpdateBillingCredentialsResponse) | UpdateBillingCredentials writes the credentials. For each secret field, an empty value keeps the stored one; reads never echo secrets back. |
+
+ 
+
+
+
+<a name="moth_admin_v1_copy-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/copy.proto
+
+
+
+<a name="moth-admin-v1-CopyKey"></a>
+
+### CopyKey
+CopyKey is one catalog entry as the editor needs it: the key, its bundled
+default for the requested locale, its override value (empty when the project
+has none), and the validation contract (required placeholders &#43; length cap)
+the editor should enforce client-side before saving.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  | Stable dotted catalog key, e.g. &#34;sign_in.title&#34;. |
+| screen | [CopyScreen](#moth-admin-v1-CopyScreen) |  |  |
+| default_value | [string](#string) |  | The bundled default string for the requested locale (the hint shown under an empty override, and what a reset restores). |
+| override_value | [string](#string) |  | The project&#39;s current override for this (locale, key); empty when none — the screen renders default_value. |
+| placeholders | [string](#string) | repeated | Interpolation placeholders that must appear in any override of this key (e.g. &#34;app_name&#34;, &#34;expiry&#34;); a save missing one is rejected. |
+| max_length | [int32](#int32) |  | Maximum length an override of this key may have; 0 means no explicit cap. |
+
+
+
+
+
+
+<a name="moth-admin-v1-CopyRevision"></a>
+
+### CopyRevision
+CopyRevision is one saved version of a project&#39;s copy overrides.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revision_id | [string](#string) |  |  |
+| create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| locales | [string](#string) | repeated | The locales this revision carried overrides for (for a compact history label); the full document is restored by RestoreCopyRevision. |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetProjectCopyRequest"></a>
+
+### GetProjectCopyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| locale | [string](#string) |  | BCP-47 tag to edit (e.g. &#34;fr&#34;). Empty defaults to the project&#39;s default locale. |
+| screen | [CopyScreen](#moth-admin-v1-CopyScreen) |  | Restrict the returned keys to one screen; UNSPECIFIED returns every screen&#39;s keys. |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetProjectCopyResponse"></a>
+
+### GetProjectCopyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| keys | [CopyKey](#moth-admin-v1-CopyKey) | repeated | Every catalog key for the requested screen(s), with the bundled default for the locale and the project&#39;s current override. |
+| locale | [string](#string) |  | The locale these keys resolve for (the request&#39;s locale, or the project default when the request left it empty). |
+| revision_id | [string](#string) |  | The project&#39;s current copy revision; empty when it renders the fully bundled default. |
+| is_default | [bool](#bool) |  | True when the project has no copy overrides at all. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListCopyRevisionsRequest"></a>
+
+### ListCopyRevisionsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| limit | [int32](#int32) |  | Maximum revisions to return; 0 (or anything above what the server keeps) returns all kept revisions. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListCopyRevisionsResponse"></a>
+
+### ListCopyRevisionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revisions | [CopyRevision](#moth-admin-v1-CopyRevision) | repeated | Newest first. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListLocalesRequest"></a>
+
+### ListLocalesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListLocalesResponse"></a>
+
+### ListLocalesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| locales | [Locale](#moth-admin-v1-Locale) | repeated | The union of moth&#39;s bundled locales and the project&#39;s customized locales, with the project default flagged. |
+| default_locale | [string](#string) |  | The project&#39;s default locale tag. |
+
+
+
+
+
+
+<a name="moth-admin-v1-Locale"></a>
+
+### Locale
+Locale describes one language the editor can select.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| tag | [string](#string) |  | BCP-47 tag, e.g. &#34;fr&#34; or &#34;pt-BR&#34;. |
+| display_name | [string](#string) |  | Human-readable name for the selector, e.g. &#34;French&#34;. |
+| bundled | [bool](#bool) |  | True when moth ships a bundled translation for this locale. |
+| customized | [bool](#bool) |  | True when the project has overrides for this locale. |
+| is_default | [bool](#bool) |  | True when this is the project&#39;s default locale. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ResetCopyRequest"></a>
+
+### ResetCopyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| locale | [string](#string) |  | BCP-47 tag to reset; required. |
+| key | [string](#string) |  | The single key to reset; empty resets the whole locale to bundled defaults. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ResetCopyResponse"></a>
+
+### ResetCopyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revision_id | [string](#string) |  | The id of the new revision the reset created; empty when the reset left the project with no overrides (reverted to the fully bundled default). |
+
+
+
+
+
+
+<a name="moth-admin-v1-RestoreCopyRevisionRequest"></a>
+
+### RestoreCopyRevisionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| revision_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-RestoreCopyRevisionResponse"></a>
+
+### RestoreCopyRevisionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revision_id | [string](#string) |  | The id of the new revision created by the restore; empty when the restored document had no overrides. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateProjectCopyRequest"></a>
+
+### UpdateProjectCopyRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| locale | [string](#string) |  | BCP-47 tag to write; required. |
+| values | [UpdateProjectCopyRequest.ValuesEntry](#moth-admin-v1-UpdateProjectCopyRequest-ValuesEntry) | repeated | Full replacement of this locale&#39;s overrides: key → override string. Keys must exist in the catalog and each value is placeholder/length validated; a key omitted here (or set empty) reverts to the bundled default. Clearing every value reverts the whole locale to defaults. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateProjectCopyRequest-ValuesEntry"></a>
+
+### UpdateProjectCopyRequest.ValuesEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateProjectCopyResponse"></a>
+
+### UpdateProjectCopyResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revision_id | [string](#string) |  | The id of the revision this save created; empty when the update left the project with no overrides (reverted to the fully bundled default). |
+
+
+
+
+
+ 
+
+
+<a name="moth-admin-v1-CopyScreen"></a>
+
+### CopyScreen
+CopyScreen is one SDK/hosted-page surface the catalog groups keys under.
+COPY_SCREEN_UNSPECIFIED selects every screen (used to request the whole
+editable surface at once).
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| COPY_SCREEN_UNSPECIFIED | 0 |  |
+| COPY_SCREEN_SIGN_IN | 1 |  |
+| COPY_SCREEN_SIGN_UP | 2 |  |
+| COPY_SCREEN_PASSWORD_RESET | 3 |  |
+| COPY_SCREEN_VERIFY_EMAIL | 4 |  |
+| COPY_SCREEN_PAYWALL | 5 |  |
+
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-CopyService"></a>
+
+### CopyService
+CopyService manages a project&#39;s localization copy: the per-locale overrides
+on top of moth&#39;s bundled message catalog (internal/i18n). The catalog is a
+small, closed, curated key set per screen — sign_in.*, sign_up.*,
+password_reset.*, verify_email.*, paywall.* — with a bundled default in
+every bundled locale, so a project that customizes nothing is still fully
+localized. Overrides are validated server-side (key must exist, required
+placeholders present, length bounded) so any accepted copy still renders a
+sensible screen. Every save creates a revision (the last 10 are kept for
+undo). All RPCs require an authenticated admin session. Mirrors
+ThemeService (design tokens) — copy keyed by screen × locale instead of by
+color.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetProjectCopy | [GetProjectCopyRequest](#moth-admin-v1-GetProjectCopyRequest) | [GetProjectCopyResponse](#moth-admin-v1-GetProjectCopyResponse) | GetProjectCopy returns the editable copy for one locale: every catalog key (optionally filtered to one screen) with its bundled default for that locale plus the project&#39;s current override, so the editor can render the whole editable surface and a reset-to-default hint per key. |
+| UpdateProjectCopy | [UpdateProjectCopyRequest](#moth-admin-v1-UpdateProjectCopyRequest) | [UpdateProjectCopyResponse](#moth-admin-v1-UpdateProjectCopyResponse) | UpdateProjectCopy replaces one locale&#39;s overrides with the supplied key → value map (validated against the catalog) and returns the new revision. Keys omitted (or set empty) fall back to the bundled default. |
+| ListCopyRevisions | [ListCopyRevisionsRequest](#moth-admin-v1-ListCopyRevisionsRequest) | [ListCopyRevisionsResponse](#moth-admin-v1-ListCopyRevisionsResponse) | ListCopyRevisions returns the saved revisions, newest first (at most the 10 the server keeps). |
+| RestoreCopyRevision | [RestoreCopyRevisionRequest](#moth-admin-v1-RestoreCopyRevisionRequest) | [RestoreCopyRevisionResponse](#moth-admin-v1-RestoreCopyRevisionResponse) | RestoreCopyRevision re-installs an old revision&#39;s whole override document as a new revision (history only ever moves forward). |
+| ResetCopy | [ResetCopyRequest](#moth-admin-v1-ResetCopyRequest) | [ResetCopyResponse](#moth-admin-v1-ResetCopyResponse) | ResetCopy reverts one key (key set) or a whole locale (key empty) to the bundled default by removing the override(s), as a new revision. Removing the last override reverts the project to the fully bundled default. |
+| ListLocales | [ListLocalesRequest](#moth-admin-v1-ListLocalesRequest) | [ListLocalesResponse](#moth-admin-v1-ListLocalesResponse) | ListLocales returns the project&#39;s available locales (its default plus any it has customized) and moth&#39;s bundled locales, so the editor can offer a language selector with an &#34;add language&#34; action. |
+
+ 
+
+
+
+<a name="moth_admin_v1_entitlement-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/entitlement.proto
+
+
+
+<a name="moth-admin-v1-CreateEntitlementRequest"></a>
+
+### CreateEntitlementRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| identifier | [string](#string) |  |  |
+| display_name | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-CreateEntitlementResponse"></a>
+
+### CreateEntitlementResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entitlement | [Entitlement](#moth-admin-v1-Entitlement) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-DeleteEntitlementRequest"></a>
+
+### DeleteEntitlementRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-DeleteEntitlementResponse"></a>
+
+### DeleteEntitlementResponse
+
+
+
+
+
+
+
+<a name="moth-admin-v1-Entitlement"></a>
+
+### Entitlement
+Entitlement is one named capability of a project.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| identifier | [string](#string) |  | Stable identifier the app checks (e.g. &#34;pro&#34;); unique within the project. |
+| display_name | [string](#string) |  |  |
+| create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListEntitlementsRequest"></a>
+
+### ListEntitlementsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListEntitlementsResponse"></a>
+
+### ListEntitlementsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entitlements | [Entitlement](#moth-admin-v1-Entitlement) | repeated |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateEntitlementRequest"></a>
+
+### UpdateEntitlementRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| id | [string](#string) |  |  |
+| display_name | [string](#string) |  | The identifier is immutable (apps depend on it); only display_name is editable. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateEntitlementResponse"></a>
+
+### UpdateEntitlementResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entitlement | [Entitlement](#moth-admin-v1-Entitlement) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-EntitlementService"></a>
+
+### EntitlementService
+EntitlementService manages a project&#39;s entitlement definitions — the named
+capabilities (`pro`, `premium`, …) apps gate features on, decoupled from the
+products that grant them. All RPCs require an authenticated admin session.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| ListEntitlements | [ListEntitlementsRequest](#moth-admin-v1-ListEntitlementsRequest) | [ListEntitlementsResponse](#moth-admin-v1-ListEntitlementsResponse) |  |
+| CreateEntitlement | [CreateEntitlementRequest](#moth-admin-v1-CreateEntitlementRequest) | [CreateEntitlementResponse](#moth-admin-v1-CreateEntitlementResponse) |  |
+| UpdateEntitlement | [UpdateEntitlementRequest](#moth-admin-v1-UpdateEntitlementRequest) | [UpdateEntitlementResponse](#moth-admin-v1-UpdateEntitlementResponse) |  |
+| DeleteEntitlement | [DeleteEntitlementRequest](#moth-admin-v1-DeleteEntitlementRequest) | [DeleteEntitlementResponse](#moth-admin-v1-DeleteEntitlementResponse) | DeleteEntitlement removes the definition; it cascades to product grants and operator grants referencing it. |
+
+ 
+
+
+
+<a name="moth_admin_v1_product-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/product.proto
+
+
+
+<a name="moth-admin-v1-CreateProductRequest"></a>
+
+### CreateProductRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| product | [Product](#moth-admin-v1-Product) |  | The product to create; id and timestamps are ignored (server-assigned). |
+
+
+
+
+
+
+<a name="moth-admin-v1-CreateProductResponse"></a>
+
+### CreateProductResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product | [Product](#moth-admin-v1-Product) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-DeleteProductRequest"></a>
+
+### DeleteProductRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-DeleteProductResponse"></a>
+
+### DeleteProductResponse
+
+
+
+
+
+
+
+<a name="moth-admin-v1-GetProductRequest"></a>
+
+### GetProductRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetProductResponse"></a>
+
+### GetProductResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product | [Product](#moth-admin-v1-Product) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListProductsRequest"></a>
+
+### ListProductsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListProductsResponse"></a>
+
+### ListProductsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| products | [Product](#moth-admin-v1-Product) | repeated |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-Product"></a>
+
+### Product
+Product is one subscription tier. An &#34;offering&#34; is not a separate object: the
+products sharing an `offering` tag, ordered by `sort_order`, form one paywall
+listing.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| identifier | [string](#string) |  | Internal catalog identifier, unique within the project (e.g. &#34;monthly&#34;). |
+| display_name | [string](#string) |  |  |
+| apple_product_id | [string](#string) |  | Store SKUs; either may be empty when the tier ships on one store only. |
+| google_product_id | [string](#string) |  |  |
+| billing_period | [string](#string) |  | Billing period (&#34;weekly&#34;, &#34;monthly&#34;, &#34;yearly&#34;, …); free-form, the store read is authoritative. |
+| price_amount_micros | [int64](#int64) |  | List price metadata (display &#43; analytics only). Micros = price * 1_000_000. |
+| currency | [string](#string) |  |  |
+| trial_period | [string](#string) |  | Intro/trial descriptor (display &#43; analytics only). |
+| intro_price_amount_micros | [int64](#int64) |  |  |
+| intro_period | [string](#string) |  |  |
+| offering | [string](#string) |  | Paywall grouping tag and order within it. |
+| sort_order | [int32](#int32) |  |  |
+| entitlement_ids | [string](#string) | repeated | The entitlements this product grants while active (entitlement ids). |
+| create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| stripe_price_id | [string](#string) |  | Stripe recurring Price id (&#34;price_...&#34;); empty when the tier does not sell on the web. Provisioning (&#34;create in Stripe&#34;) writes it back; a price edit creates a new Price and re-points this field (Stripe prices are immutable). |
+| stripe_product_id | [string](#string) |  | The linked Stripe Product id (&#34;prod_...&#34;), written back by provisioning. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateProductRequest"></a>
+
+### UpdateProductRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| id | [string](#string) |  |  |
+| product | [Product](#moth-admin-v1-Product) |  | The desired product state; entitlement_ids replaces the whole grant set. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdateProductResponse"></a>
+
+### UpdateProductResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product | [Product](#moth-admin-v1-Product) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-ProductService"></a>
+
+### ProductService
+ProductService manages a project&#39;s subscription tiers (products): their store
+SKUs, the entitlements they grant, price metadata, and paywall placement.
+This is the catalog the store-catalog automation (milestone 12) and the
+paywall (milestone 13) consume. All RPCs require an authenticated admin
+session.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| ListProducts | [ListProductsRequest](#moth-admin-v1-ListProductsRequest) | [ListProductsResponse](#moth-admin-v1-ListProductsResponse) | ListProducts returns the project&#39;s products in paywall order (by sort_order). |
+| GetProduct | [GetProductRequest](#moth-admin-v1-GetProductRequest) | [GetProductResponse](#moth-admin-v1-GetProductResponse) |  |
+| CreateProduct | [CreateProductRequest](#moth-admin-v1-CreateProductRequest) | [CreateProductResponse](#moth-admin-v1-CreateProductResponse) |  |
+| UpdateProduct | [UpdateProductRequest](#moth-admin-v1-UpdateProductRequest) | [UpdateProductResponse](#moth-admin-v1-UpdateProductResponse) |  |
+| DeleteProduct | [DeleteProductRequest](#moth-admin-v1-DeleteProductRequest) | [DeleteProductResponse](#moth-admin-v1-DeleteProductResponse) |  |
+
+ 
+
+
+
+<a name="moth_admin_v1_subscription-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/subscription.proto
+
+
+
+<a name="moth-admin-v1-GetUserSubscriptionRequest"></a>
+
+### GetUserSubscriptionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetUserSubscriptionResponse"></a>
+
+### GetUserSubscriptionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| subscription | [Subscription](#moth-admin-v1-Subscription) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-Grant"></a>
+
+### Grant
+Grant is one operator (promo/comp) entitlement grant.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| entitlement_id | [string](#string) |  |  |
+| expire_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | When the grant lapses; unset for a non-expiring grant. |
+| reason | [string](#string) |  |  |
+| granted_by | [string](#string) |  | Label of the operator credential that created it. |
+| create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| revoke_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Set once revoked. |
+
+
+
+
+
+
+<a name="moth-admin-v1-GrantEntitlementRequest"></a>
+
+### GrantEntitlementRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| user_id | [string](#string) |  |  |
+| entitlement_id | [string](#string) |  |  |
+| expire_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Optional expiry; unset grants indefinitely. |
+| reason | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GrantEntitlementResponse"></a>
+
+### GrantEntitlementResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| grant | [Grant](#moth-admin-v1-Grant) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListUserSubscriptionsRequest"></a>
+
+### ListUserSubscriptionsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| user_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListUserSubscriptionsResponse"></a>
+
+### ListUserSubscriptionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| subscriptions | [Subscription](#moth-admin-v1-Subscription) | repeated |  |
+| grants | [Grant](#moth-admin-v1-Grant) | repeated | All grants of the user (active, expired and revoked), newest first. |
+
+
+
+
+
+
+<a name="moth-admin-v1-RevokeGrantRequest"></a>
+
+### RevokeGrantRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| grant_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-RevokeGrantResponse"></a>
+
+### RevokeGrantResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| grant | [Grant](#moth-admin-v1-Grant) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-Subscription"></a>
+
+### Subscription
+Subscription is the operator&#39;s view of one store subscription.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| user_id | [string](#string) |  |  |
+| store | [Store](#moth-admin-v1-Store) |  |  |
+| product_id | [string](#string) |  | The moth product id the store SKU maps to; empty when unmapped. |
+| status | [SubscriptionStatus](#moth-admin-v1-SubscriptionStatus) |  |  |
+| current_period_end | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| auto_renew | [bool](#bool) |  |  |
+| environment | [string](#string) |  | &#34;sandbox&#34; or &#34;production&#34;. |
+| store_transaction_id | [string](#string) |  | Store identity: Apple original_transaction_id or Google purchase_token. |
+| create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| update_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+ 
+
+
+<a name="moth-admin-v1-Store"></a>
+
+### Store
+Store identifies which app store a subscription belongs to.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STORE_UNSPECIFIED | 0 |  |
+| STORE_APPLE | 1 |  |
+| STORE_GOOGLE | 2 |  |
+| STORE_STRIPE | 3 |  |
+
+
+
+<a name="moth-admin-v1-SubscriptionStatus"></a>
+
+### SubscriptionStatus
+SubscriptionStatus mirrors the store&#39;s renewal state.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SUBSCRIPTION_STATUS_UNSPECIFIED | 0 |  |
+| SUBSCRIPTION_STATUS_ACTIVE | 1 |  |
+| SUBSCRIPTION_STATUS_TRIALING | 2 |  |
+| SUBSCRIPTION_STATUS_IN_GRACE_PERIOD | 3 |  |
+| SUBSCRIPTION_STATUS_IN_BILLING_RETRY | 4 |  |
+| SUBSCRIPTION_STATUS_PAUSED | 5 |  |
+| SUBSCRIPTION_STATUS_EXPIRED | 6 |  |
+| SUBSCRIPTION_STATUS_REVOKED | 7 |  |
+
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-SubscriptionService"></a>
+
+### SubscriptionService
+SubscriptionService gives operators the per-user subscription view and the
+promo/comp actions: inspect a user&#39;s subscriptions and grants, comp an
+entitlement, or revoke a grant. Grant/revoke actions are audit-logged
+(milestone 10). All RPCs require an authenticated admin session.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| ListUserSubscriptions | [ListUserSubscriptionsRequest](#moth-admin-v1-ListUserSubscriptionsRequest) | [ListUserSubscriptionsResponse](#moth-admin-v1-ListUserSubscriptionsResponse) | ListUserSubscriptions returns a user&#39;s store subscriptions and their operator grants (the full billing picture for the user detail page). |
+| GetUserSubscription | [GetUserSubscriptionRequest](#moth-admin-v1-GetUserSubscriptionRequest) | [GetUserSubscriptionResponse](#moth-admin-v1-GetUserSubscriptionResponse) | GetUserSubscription returns one subscription by id. |
+| GrantEntitlement | [GrantEntitlementRequest](#moth-admin-v1-GrantEntitlementRequest) | [GrantEntitlementResponse](#moth-admin-v1-GrantEntitlementResponse) | GrantEntitlement writes an operator grant (comp a reviewer, extend a grace period, grant a promo), optionally with an expiry. |
+| RevokeGrant | [RevokeGrantRequest](#moth-admin-v1-RevokeGrantRequest) | [RevokeGrantResponse](#moth-admin-v1-RevokeGrantResponse) | RevokeGrant marks an operator grant revoked from now on. |
+
+ 
+
+
+
+<a name="moth_admin_v1_monetization-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/monetization.proto
+
+
+
+<a name="moth-admin-v1-GetOfferingRequest"></a>
+
+### GetOfferingRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| offering | [string](#string) |  | Offering tag; empty selects the default offering. |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetOfferingResponse"></a>
+
+### GetOfferingResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| offering | [Offering](#moth-admin-v1-Offering) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetStoreCatalogStatusRequest"></a>
+
+### GetStoreCatalogStatusRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetStoreCatalogStatusResponse"></a>
+
+### GetStoreCatalogStatusResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| stores | [StoreCatalogStatus](#moth-admin-v1-StoreCatalogStatus) | repeated | One entry per store (Apple, Google). |
+
+
+
+
+
+
+<a name="moth-admin-v1-GuidedStep"></a>
+
+### GuidedStep
+GuidedStep is a manual action the store APIs cannot perform, stated with the
+exact values to enter (honest automation: never silently skipped).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| title | [string](#string) |  |  |
+| detail | [string](#string) |  |  |
+| url | [string](#string) |  | Deep link into the store console, when one exists. |
+| values | [GuidedValue](#moth-admin-v1-GuidedValue) | repeated |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GuidedValue"></a>
+
+### GuidedValue
+GuidedValue is one exact value an operator must paste into a store console.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| label | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-Offering"></a>
+
+### Offering
+Offering is the ordered set of products a paywall presents (the products
+sharing an `offering` tag, in sort_order). Every project has a default
+offering (&#34;default&#34;).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  |  |
+| is_default | [bool](#bool) |  |  |
+| product_ids | [string](#string) | repeated | Product ids in paywall order. |
+| products | [Product](#moth-admin-v1-Product) | repeated | The products themselves, in the same order. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ProductSyncItem"></a>
+
+### ProductSyncItem
+ProductSyncItem is one product&#39;s line in a sync plan (dry_run) or applied
+result.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product_id | [string](#string) |  |  |
+| identifier | [string](#string) |  | The moth catalog identifier (stable; e.g. &#34;monthly&#34;). |
+| store_product_id | [string](#string) |  | The store SKU this maps to (desired, or created). |
+| action | [SyncAction](#moth-admin-v1-SyncAction) |  |  |
+| summary | [string](#string) |  | Human summary of the change (&#34;create monthly at 9.99 USD / month&#34;). |
+| changes | [SyncFieldChange](#moth-admin-v1-SyncFieldChange) | repeated | Field-level changes pushed to the store. |
+| guided_steps | [GuidedStep](#moth-admin-v1-GuidedStep) | repeated | Manual steps the API cannot perform for this product. |
+| status | [ProductSyncStatus](#moth-admin-v1-ProductSyncStatus) |  | Reconcile outcome (unset on dry_run). |
+| error | [string](#string) |  | Error when status is ERROR. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ProductSyncState"></a>
+
+### ProductSyncState
+ProductSyncState is one product&#39;s standing sync record for a store.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product_id | [string](#string) |  |  |
+| identifier | [string](#string) |  |  |
+| store_product_id | [string](#string) |  |  |
+| status | [ProductSyncStatus](#moth-admin-v1-ProductSyncStatus) |  |  |
+| revision | [string](#string) |  | Opaque store-side revision observed at last sync. |
+| error | [string](#string) |  |  |
+| last_sync_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ReorderOfferingRequest"></a>
+
+### ReorderOfferingRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| offering | [string](#string) |  | Offering tag; empty selects the default offering. |
+| product_ids | [string](#string) | repeated | Product ids in the desired paywall order. Every product currently in the offering must appear exactly once. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ReorderOfferingResponse"></a>
+
+### ReorderOfferingResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| offering | [Offering](#moth-admin-v1-Offering) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-StoreCatalogStatus"></a>
+
+### StoreCatalogStatus
+StoreCatalogStatus is one store&#39;s connection &#43; reconciliation summary.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| store | [Store](#moth-admin-v1-Store) |  |  |
+| credentials_present | [bool](#bool) |  | Whether this store&#39;s API credentials are configured. |
+| notifications_wired | [bool](#bool) |  | Whether the notification plumbing is wired (Apple ASSN URL / Play RTDN Pub/Sub topic present in the billing config). |
+| products_total | [int32](#int32) |  |  |
+| products_in_sync | [int32](#int32) |  |  |
+| products_drift | [int32](#int32) |  |  |
+| products_error | [int32](#int32) |  |  |
+| products_unmapped | [int32](#int32) |  | Products with no store SKU set for this store. |
+| last_sync_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | Latest successful sync across the store&#39;s products. |
+| products | [ProductSyncState](#moth-admin-v1-ProductSyncState) | repeated | Per-product detail. |
+
+
+
+
+
+
+<a name="moth-admin-v1-SyncFieldChange"></a>
+
+### SyncFieldChange
+SyncFieldChange is one field the reconcile will (or would) push to the store.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| field | [string](#string) |  | Field path (&#34;price&#34;, &#34;billing_period&#34;, &#34;localization.en-US.name&#34;, …). |
+| current | [string](#string) |  | Store-side current value (&#34;&#34; when creating). |
+| desired | [string](#string) |  | Desired value from moth&#39;s catalog. |
+
+
+
+
+
+
+<a name="moth-admin-v1-SyncStoreCatalogRequest"></a>
+
+### SyncStoreCatalogRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| store | [Store](#moth-admin-v1-Store) |  | Which store to reconcile. |
+| dry_run | [bool](#bool) |  | When true, compute and return the plan without mutating the store. |
+
+
+
+
+
+
+<a name="moth-admin-v1-SyncStoreCatalogResponse"></a>
+
+### SyncStoreCatalogResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| store | [Store](#moth-admin-v1-Store) |  |  |
+| items | [ProductSyncItem](#moth-admin-v1-ProductSyncItem) | repeated | Per-product plan (dry_run) or applied result. |
+| in_sync | [bool](#bool) |  | True when the catalog already matches the store (every item is noop) — the idempotency signal. |
+| guided_steps | [GuidedStep](#moth-admin-v1-GuidedStep) | repeated | Guided steps not tied to a single product (e.g. notification wiring). |
+
+
+
+
+
+ 
+
+
+<a name="moth-admin-v1-ProductSyncStatus"></a>
+
+### ProductSyncStatus
+ProductSyncStatus mirrors the store.product_store_sync.status column: the
+standing reconciliation state of one product for one store.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PRODUCT_SYNC_STATUS_UNSPECIFIED | 0 |  |
+| PRODUCT_SYNC_STATUS_PENDING | 1 | Never pushed to this store. |
+| PRODUCT_SYNC_STATUS_IN_SYNC | 2 | Store SKU matches moth. |
+| PRODUCT_SYNC_STATUS_DRIFT | 3 | Store SKU exists but differs from moth. |
+| PRODUCT_SYNC_STATUS_ERROR | 4 | Last reconcile failed. |
+
+
+
+<a name="moth-admin-v1-SyncAction"></a>
+
+### SyncAction
+SyncAction is the reconcile verb the plan assigns to one product for one
+store.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SYNC_ACTION_UNSPECIFIED | 0 |  |
+| SYNC_ACTION_NOOP | 1 | The store SKU already matches moth&#39;s desired state. |
+| SYNC_ACTION_CREATE | 2 | Create the product (subscription/base plan) in the store. |
+| SYNC_ACTION_UPDATE | 3 | Update store-side values that drifted (e.g. a changed price). |
+| SYNC_ACTION_GUIDED | 4 | The store API cannot perform this; guided_steps carry the exact manual actions and values. |
+
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-MonetizationService"></a>
+
+### MonetizationService
+MonetizationService reconciles a project&#39;s product catalog (milestone 11 —
+entitlements, products, offering) into App Store Connect and Google Play, and
+reports the reconciliation state. moth&#39;s catalog is the desired state; the
+stores stay authoritative for money and renewals, so a push produces a
+diff/plan a human can inspect and any step the store APIs cannot perform is
+surfaced as a guided checklist rather than silently skipped.
+
+CAPABILITY SPIKE — what each store&#39;s official API actually allows (the
+milestone-08 &#34;honest automation&#34; contract: automate what the APIs expose,
+guided fallback with exact paste values where they don&#39;t, verify the result):
+
+  Apple, App Store Connect API v1 (ASC JWT auth from milestone 08):
+    AUTOMATABLE: create subscriptionGroups; create auto-renewable
+      subscriptions; set base subscriptionPrices from price points; create
+      in-app-purchase/subscription localizations (display name &#43; description);
+      read created product ids back to map onto moth products.
+    GUIDED (API cannot, or cannot reliably, do it): price-schedule nuances and
+      regional availability, and — the canonical example — SUBMITTING A NEW
+      SUBSCRIPTION FOR REVIEW. These become guided steps with exact values.
+    NOTIFICATIONS: the App Store Server Notifications V2 URL is set on the app
+      version / in App Store Connect; moth supplies the exact URL &#43; shared
+      secret to register (guided), then verifies via a sandbox status read.
+
+  Google, Android Publisher API v3 (service-account authed):
+    AUTOMATABLE: monetization.subscriptions with basePlans &#43; offers (price,
+      billing period, free-trial/intro phases); read ids back. inappproducts
+      is the legacy path for one-off SKUs.
+    GUIDED: Play Console product activation/availability and country pricing
+      matrices the API leaves to the console.
+    NOTIFICATIONS: create/point a Cloud Pub/Sub topic for Real-time developer
+      notifications and register it on the app; moth points the push
+      subscription at /billing/google/rtdn/{slug}. Topic creation lives in
+      GCP (Pub/Sub API), not the Publisher API — guided where credentials
+      don&#39;t cover it.
+
+All RPCs require an authenticated admin session. The store API calls
+themselves live behind injectable clients (a later stage); this service is
+the contract they satisfy.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| SyncStoreCatalog | [SyncStoreCatalogRequest](#moth-admin-v1-SyncStoreCatalogRequest) | [SyncStoreCatalogResponse](#moth-admin-v1-SyncStoreCatalogResponse) | SyncStoreCatalog reconciles moth&#39;s catalog into one store. With dry_run it returns the plan (per product: noop | create | update | guided) without mutating the store; otherwise it applies the plan and returns the result. Idempotent by contract: a second run with no catalog change reports in_sync with an all-noop plan. |
+| GetStoreCatalogStatus | [GetStoreCatalogStatusRequest](#moth-admin-v1-GetStoreCatalogStatusRequest) | [GetStoreCatalogStatusResponse](#moth-admin-v1-GetStoreCatalogStatusResponse) | GetStoreCatalogStatus returns, per store, whether credentials and notification plumbing are configured and a catalog drift summary — the data behind the admin store-connection panel and `moth doctor` billing checks. |
+| GetOffering | [GetOfferingRequest](#moth-admin-v1-GetOfferingRequest) | [GetOfferingResponse](#moth-admin-v1-GetOfferingResponse) | GetOffering returns an offering — the ordered set of products a paywall presents (the products sharing an `offering` tag, in sort_order). An empty offering id selects the default offering. |
+| ReorderOffering | [ReorderOfferingRequest](#moth-admin-v1-ReorderOfferingRequest) | [ReorderOfferingResponse](#moth-admin-v1-ReorderOfferingResponse) | ReorderOffering rewrites the paywall order of an offering&#39;s products. Every product currently in the offering must appear exactly once. |
+
+ 
+
+
+
+<a name="moth_admin_v1_paywall-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/admin/v1/paywall.proto
+
+
+
+<a name="moth-admin-v1-GetPaywallConfigRequest"></a>
+
+### GetPaywallConfigRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-GetPaywallConfigResponse"></a>
+
+### GetPaywallConfigResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [PaywallConfig](#moth-admin-v1-PaywallConfig) |  |  |
+| revision_id | [string](#string) |  | Empty when the project renders the built-in default paywall config. |
+| is_default | [bool](#bool) |  | True when no config was ever saved (or after ResetPaywall). |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListPaywallRevisionsRequest"></a>
+
+### ListPaywallRevisionsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| limit | [int32](#int32) |  | Maximum revisions to return; 0 (or anything above what the server keeps) returns all kept revisions. |
+
+
+
+
+
+
+<a name="moth-admin-v1-ListPaywallRevisionsResponse"></a>
+
+### ListPaywallRevisionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revisions | [PaywallRevision](#moth-admin-v1-PaywallRevision) | repeated | Newest first. |
+
+
+
+
+
+
+<a name="moth-admin-v1-PaywallConfig"></a>
+
+### PaywallConfig
+PaywallConfig is one project&#39;s complete paywall configuration, mirroring the
+versioned JSON schema in internal/paywall (the schema version is a storage
+concern and does not appear here).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| headline | [string](#string) |  | Primary title (required, bounded length). |
+| subtitle | [string](#string) |  | Supporting line under the headline (optional, bounded length). |
+| benefits | [string](#string) | repeated | Feature/benefit bullets, in display order (bounded count and length). |
+| offering | [string](#string) |  | The offering tag whose products the paywall lists; empty selects the project&#39;s default offering. |
+| highlighted_product_identifier | [string](#string) |  | The product identifier rendered as &#34;most popular&#34;; empty highlights nothing. A stable catalog identifier (e.g. &#34;yearly&#34;), never a store SKU. |
+| layout | [PaywallLayout](#moth-admin-v1-PaywallLayout) |  |  |
+| legal | [PaywallLegal](#moth-admin-v1-PaywallLegal) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-PaywallLegal"></a>
+
+### PaywallLegal
+PaywallLegal holds the optional legal links rendered in the paywall footer;
+must be absolute http(s) URLs.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| terms_url | [string](#string) |  |  |
+| privacy_url | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-PaywallRevision"></a>
+
+### PaywallRevision
+PaywallRevision is one saved version of a project&#39;s paywall config.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revision_id | [string](#string) |  |  |
+| config | [PaywallConfig](#moth-admin-v1-PaywallConfig) |  |  |
+| create_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ResetPaywallRequest"></a>
+
+### ResetPaywallRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ResetPaywallResponse"></a>
+
+### ResetPaywallResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [PaywallConfig](#moth-admin-v1-PaywallConfig) |  | The built-in default paywall config now in effect. |
+
+
+
+
+
+
+<a name="moth-admin-v1-RestorePaywallRevisionRequest"></a>
+
+### RestorePaywallRevisionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| revision_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-RestorePaywallRevisionResponse"></a>
+
+### RestorePaywallRevisionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [PaywallConfig](#moth-admin-v1-PaywallConfig) |  |  |
+| revision_id | [string](#string) |  | The id of the new revision created by the restore. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdatePaywallConfigRequest"></a>
+
+### UpdatePaywallConfigRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| project_id | [string](#string) |  |  |
+| config | [PaywallConfig](#moth-admin-v1-PaywallConfig) |  | The full replacement config. |
+
+
+
+
+
+
+<a name="moth-admin-v1-UpdatePaywallConfigResponse"></a>
+
+### UpdatePaywallConfigResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| config | [PaywallConfig](#moth-admin-v1-PaywallConfig) |  |  |
+| revision_id | [string](#string) |  | The id of the revision this save created. |
+
+
+
+
+
+ 
+
+
+<a name="moth-admin-v1-PaywallLayout"></a>
+
+### PaywallLayout
+PaywallLayout is the rendering variant the paywall screen uses; the token
+space (colors/spacing/radius) always comes from the theme.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PAYWALL_LAYOUT_UNSPECIFIED | 0 |  |
+| PAYWALL_LAYOUT_TILES | 1 | One card per tier, side by side (the default). |
+| PAYWALL_LAYOUT_LIST | 2 | Tiers stacked as full-width rows. |
+| PAYWALL_LAYOUT_COMPACT | 3 | A single selected tier with a period toggle. |
+
+
+ 
+
+ 
+
+
+<a name="moth-admin-v1-PaywallService"></a>
+
+### PaywallService
+PaywallService manages a project&#39;s paywall configuration (milestone 13): the
+copy and layout the SDK&#39;s batteries-included paywall screen renders from.
+The paywall owns no design tokens of its own — colors, typography, spacing,
+radius and logo inherit from the theme (ThemeService, milestone 06); this
+config only carries the headline/subtitle copy, benefit bullets, which
+offering to present, which tier to highlight, the layout variant and the
+legal links. Configs are validated server-side (bounded copy, known layout,
+http(s) legal links), and every save creates a revision (the last 10 are
+kept for undo), mirroring ThemeService exactly. All RPCs require an
+authenticated admin session.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetPaywallConfig | [GetPaywallConfigRequest](#moth-admin-v1-GetPaywallConfigRequest) | [GetPaywallConfigResponse](#moth-admin-v1-GetPaywallConfigResponse) | GetPaywallConfig returns the project&#39;s current paywall config: the saved one, or the built-in defaults when the project never customized anything (revision_id empty, is_default true). |
+| UpdatePaywallConfig | [UpdatePaywallConfigRequest](#moth-admin-v1-UpdatePaywallConfigRequest) | [UpdatePaywallConfigResponse](#moth-admin-v1-UpdatePaywallConfigResponse) | UpdatePaywallConfig validates and installs a full replacement config and returns the new revision. Partial updates are done client-side: GetPaywallConfig, edit, UpdatePaywallConfig. |
+| ListPaywallRevisions | [ListPaywallRevisionsRequest](#moth-admin-v1-ListPaywallRevisionsRequest) | [ListPaywallRevisionsResponse](#moth-admin-v1-ListPaywallRevisionsResponse) | ListPaywallRevisions returns the saved revisions, newest first (at most the 10 the server keeps). |
+| RestorePaywallRevision | [RestorePaywallRevisionRequest](#moth-admin-v1-RestorePaywallRevisionRequest) | [RestorePaywallRevisionResponse](#moth-admin-v1-RestorePaywallRevisionResponse) | RestorePaywallRevision re-installs an old revision&#39;s config as a new revision (history only ever moves forward). |
+| ResetPaywall | [ResetPaywallRequest](#moth-admin-v1-ResetPaywallRequest) | [ResetPaywallResponse](#moth-admin-v1-ResetPaywallResponse) | ResetPaywall reverts the project to the built-in default paywall config. The revision history is kept, so the previous config stays restorable. |
 
  
 
@@ -1566,6 +3642,23 @@ AppleProviderConfig configures Sign in with Apple for one project.
 
 
 
+<a name="moth-admin-v1-EntitlementSpec"></a>
+
+### EntitlementSpec
+EntitlementSpec is one named capability. `identifier` is the identity apply
+keys on (immutable); only display_name is editable.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  |  |
+| display_name | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="moth-admin-v1-ExportProjectRequest"></a>
 
 ### ExportProjectRequest
@@ -1806,6 +3899,54 @@ first sign-in, then transparently rehashed to argon2id.
 
 
 
+<a name="moth-admin-v1-MonetizationSpec"></a>
+
+### MonetizationSpec
+MonetizationSpec is a project&#39;s declarative subscription catalog: the
+entitlements apps gate on and the products (tiers) that grant them. Keyed on
+identifiers (not server-assigned ids) so it round-trips through dump/apply.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entitlements | [EntitlementSpec](#moth-admin-v1-EntitlementSpec) | repeated |  |
+| products | [ProductSpec](#moth-admin-v1-ProductSpec) | repeated |  |
+
+
+
+
+
+
+<a name="moth-admin-v1-ProductSpec"></a>
+
+### ProductSpec
+ProductSpec is one subscription tier in declarative form. `identifier` is the
+identity apply keys on. `entitlements` and `offering`/`sort_order` capture the
+grant set and paywall placement; an offering is just the set of products
+sharing an `offering` tag, ordered by sort_order.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  |  |
+| display_name | [string](#string) |  |  |
+| apple_product_id | [string](#string) |  | Store SKUs; either may be empty when the tier ships on one store only. |
+| google_product_id | [string](#string) |  |  |
+| billing_period | [string](#string) |  | Billing period (&#34;weekly&#34;, &#34;monthly&#34;, &#34;yearly&#34;, …); the store read is authoritative. |
+| price_amount_micros | [int64](#int64) |  | List price metadata (display &#43; analytics only). Micros = price * 1_000_000. |
+| currency | [string](#string) |  |  |
+| trial_period | [string](#string) |  |  |
+| intro_price_amount_micros | [int64](#int64) |  |  |
+| intro_period | [string](#string) |  |  |
+| offering | [string](#string) |  | Paywall grouping tag (&#34;default&#34; when empty) and order within it. |
+| sort_order | [int32](#int32) |  |  |
+| entitlements | [string](#string) | repeated | Entitlement IDENTIFIERS (not ids) this product grants while active. |
+
+
+
+
+
+
 <a name="moth-admin-v1-Project"></a>
 
 ### Project
@@ -1851,6 +3992,7 @@ ProjectSettings is the per-project auth policy.
 | signup_email_allowlist | [string](#string) | repeated | When non-empty, signup is restricted to email addresses whose domain matches one of these glob patterns (e.g. &#34;example.com&#34;, &#34;*.acme.io&#34;); every other domain is rejected. |
 | signup_email_blocklist | [string](#string) | repeated | Email-domain glob patterns rejected at signup, evaluated after the allowlist. |
 | captcha_verify_url | [string](#string) |  | Optional CAPTCHA verification endpoint. The CAPTCHA hook is documented but off by default in v1: this field is stored but not yet wired. |
+| redirect_origins | [string](#string) | repeated | Web origins (e.g. &#34;https://app.example.com&#34;) the web-redirect OAuth fallback may redirect back to, for browser SPAs. Exact-origin matching (scheme &#43; host &#43; port) constrains the host, so unlike a bare http(s) scheme this is not an open redirect. Bare origins only — no path, query or fragment; http is accepted for localhost during development. |
 
 
 
@@ -1878,6 +4020,7 @@ logo asset paths) are ignored on apply.
 | slug | [string](#string) |  | Identity of the spec: apply creates the project when no project has this slug and updates it otherwise. |
 | settings | [ProjectSettings](#moth-admin-v1-ProjectSettings) |  |  |
 | theme | [Theme](#moth-admin-v1-Theme) |  | Design-system theme (legal links included); unset means the built-in default theme. |
+| monetization | [MonetizationSpec](#moth-admin-v1-MonetizationSpec) |  | Subscription catalog (entitlements, products, offering) — the monetization desired state milestone 12 defines once and reconciles into the stores. Unlike settings (which merge), the catalog is full desired state: apply creates/updates/deletes to match, keyed on stable identifiers, so a dump re-applied diffs to zero. Unset leaves the catalog untouched. Store API credentials are NOT part of the spec — they are write-only secrets managed through BillingCredentialsService / `moth setup billing`. |
 
 
 
@@ -3193,6 +5336,44 @@ configuration.
 
 
 
+<a name="moth-auth-v1-Copy"></a>
+
+### Copy
+Copy is the resolved, localized copy for the negotiated locale: the message
+key → localized-string map the SDK renders its auth screens from
+(sign_in.*, sign_up.*, password_reset.*, verify_email.*), already merged
+bundled-default → project-override. The locale is negotiated server-side
+from the request&#39;s Accept-Language / x-moth-language metadata against the
+project&#39;s available locales; the client never dictates raw copy.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| copy_revision | [string](#string) |  | Opaque cache token identifying this (locale, override-revision) pair. It changes whenever the negotiated locale or the project&#39;s copy overrides change. Cache `messages` keyed by this value and echo it as GetProjectConfigRequest.known_copy_revision; the response omits `messages` when it still matches (see the caching contract on the request). |
+| locale | [string](#string) |  | The negotiated BCP-47 locale this copy is for (e.g. &#34;fr&#34;). Echoed so the client sets lang/dir correctly and re-requests when the device language changes; always present even when `messages` is omitted. |
+| messages | [Copy.MessagesEntry](#moth-auth-v1-Copy-MessagesEntry) | repeated | Resolved message key → localized string for the negotiated locale. |
+
+
+
+
+
+
+<a name="moth-auth-v1-Copy-MessagesEntry"></a>
+
+### Copy.MessagesEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="moth-auth-v1-GetProjectConfigRequest"></a>
 
 ### GetProjectConfigRequest
@@ -3202,6 +5383,7 @@ configuration.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | known_theme_revision | [string](#string) |  | Theme caching contract: pass the revision_id of the theme the client has cached (empty on first call). When it still matches the current revision, the response omits `theme` entirely — the client keeps rendering its cached copy. When it differs (or was empty), `theme` is present and the client replaces its cache. |
+| known_copy_revision | [string](#string) |  | Copy caching contract (identical shape to the theme one, but keyed by the negotiated locale too): pass the copy_revision the client has cached for the locale it is about to render (empty on first call). When it still matches the token the server computes for the negotiated locale, the response&#39;s `copy` carries the locale &#43; copy_revision but omits `messages` (stale-while-revalidate); when it differs (or was empty), `messages` is present and the client replaces its cache. The negotiated locale comes from Accept-Language / x-moth-language metadata, never from this body. |
 
 
 
@@ -3221,6 +5403,7 @@ configuration.
 | password_min_length | [int32](#int32) |  | Minimum accepted password length. |
 | sign_up_open | [bool](#bool) |  | Whether the public SignUp RPC is open. |
 | theme | [Theme](#moth-auth-v1-Theme) |  | The project&#39;s design system. Omitted when GetProjectConfigRequest.known_theme_revision matches the current revision (see the caching contract there); always present otherwise, including for projects on the built-in default theme. |
+| copy | [Copy](#moth-auth-v1-Copy) |  | The localized copy for the negotiated locale. Always present (it carries the negotiated locale &#43; copy_revision so the client caches per (locale, revision)); its `messages` map is omitted when GetProjectConfigRequest.known_copy_revision matches, present otherwise — including for projects with no copy overrides (fully bundled defaults). |
 
 
 
@@ -3320,6 +5503,863 @@ Later milestones extend GetProjectConfigResponse: SDK bootstrap values in
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
 | GetProjectConfig | [GetProjectConfigRequest](#moth-auth-v1-GetProjectConfigRequest) | [GetProjectConfigResponse](#moth-auth-v1-GetProjectConfigResponse) | GetProjectConfig returns the project configuration a client may see. Never includes secrets; only values that are safe to embed in an app. |
+
+ 
+
+
+
+<a name="moth_billing_v1_billing-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/billing/v1/billing.proto
+
+
+
+<a name="moth-billing-v1-ActiveSubscription"></a>
+
+### ActiveSubscription
+ActiveSubscription is one of the user&#39;s store subscriptions.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product_identifier | [string](#string) |  | The moth product identifier, when the store SKU is mapped; empty otherwise. |
+| store | [Store](#moth-billing-v1-Store) |  |  |
+| status | [SubscriptionStatus](#moth-billing-v1-SubscriptionStatus) |  |  |
+| current_period_end | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | End of the current paid (or trial) period; the renewal date when auto_renew is true. |
+| auto_renew | [bool](#bool) |  |  |
+| is_sandbox | [bool](#bool) |  | Whether this subscription is a sandbox/test purchase. |
+
+
+
+
+
+
+<a name="moth-billing-v1-Copy"></a>
+
+### Copy
+Copy is the resolved, localized paywall copy for the negotiated locale: the
+paywall.* message key → localized-string map (headline, subtitle, benefit
+bullets, CTA, legal labels), merged bundled-default → project-override. The
+paywall copy keys are part of the same catalog as the auth-screen copy
+(moth.auth.v1). The locale is negotiated server-side from the request&#39;s
+Accept-Language / x-moth-language metadata; the client never dictates raw
+copy. The structural Paywall message above stays authoritative for
+layout/offering/tier selection.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| copy_revision | [string](#string) |  | Opaque cache token identifying this (locale, override-revision) pair. Cache `messages` keyed by it and echo it as GetPaywallRequest.known_copy_revision; the response omits `messages` when it still matches. |
+| locale | [string](#string) |  | The negotiated BCP-47 locale this copy is for (e.g. &#34;fr&#34;). |
+| messages | [Copy.MessagesEntry](#moth-billing-v1-Copy-MessagesEntry) | repeated | Resolved paywall.* message key → localized string for the negotiated locale. |
+
+
+
+
+
+
+<a name="moth-billing-v1-Copy-MessagesEntry"></a>
+
+### Copy.MessagesEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-billing-v1-CreateBillingPortalSessionRequest"></a>
+
+### CreateBillingPortalSessionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| return_url | [string](#string) |  | Where Stripe redirects the browser when the user leaves the portal. |
+
+
+
+
+
+
+<a name="moth-billing-v1-CreateBillingPortalSessionResponse"></a>
+
+### CreateBillingPortalSessionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| url | [string](#string) |  | The Stripe-hosted Billing Portal URL to redirect the browser to. |
+
+
+
+
+
+
+<a name="moth-billing-v1-CreateCheckoutSessionRequest"></a>
+
+### CreateCheckoutSessionRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| product_identifier | [string](#string) |  | The moth product identifier to subscribe to (its own catalog id, not the Stripe price id). The tier must carry a stripe_price_id. |
+| success_url | [string](#string) |  | Where Stripe redirects the browser after a completed checkout. |
+| cancel_url | [string](#string) |  | Where Stripe redirects the browser when the user backs out. |
+
+
+
+
+
+
+<a name="moth-billing-v1-CreateCheckoutSessionResponse"></a>
+
+### CreateCheckoutSessionResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| url | [string](#string) |  | The Stripe-hosted Checkout URL to redirect the browser to. |
+
+
+
+
+
+
+<a name="moth-billing-v1-CustomerInfo"></a>
+
+### CustomerInfo
+CustomerInfo is the complete subscription picture for one user. Apps gate
+features on active_entitlements (never on a product id): check whether the
+stable entitlement identifier (e.g. &#34;pro&#34;) is present.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| active_entitlements | [Entitlement](#moth-billing-v1-Entitlement) | repeated | The entitlements the user currently holds. Empty means the free `none` tier — a valid, expected state, not an error. |
+| subscriptions | [ActiveSubscription](#moth-billing-v1-ActiveSubscription) | repeated | The user&#39;s known subscriptions across stores (may include inactive ones, for history/paywall display). |
+
+
+
+
+
+
+<a name="moth-billing-v1-Entitlement"></a>
+
+### Entitlement
+Entitlement is one active capability the user holds.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  | Stable identifier the app checks (e.g. &#34;pro&#34;). Never changes across app releases even when the granting product does. |
+| expire_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | When the entitlement lapses; unset for a non-expiring grant. |
+| source | [EntitlementSource](#moth-billing-v1-EntitlementSource) |  | Why it is active (store subscription vs operator grant). |
+| product_identifier | [string](#string) |  | The moth product identifier that granted it, when source is STORE; empty for grants. |
+
+
+
+
+
+
+<a name="moth-billing-v1-GetCustomerInfoRequest"></a>
+
+### GetCustomerInfoRequest
+
+
+
+
+
+
+
+<a name="moth-billing-v1-GetCustomerInfoResponse"></a>
+
+### GetCustomerInfoResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| customer_info | [CustomerInfo](#moth-billing-v1-CustomerInfo) |  |  |
+
+
+
+
+
+
+<a name="moth-billing-v1-GetOfferingsRequest"></a>
+
+### GetOfferingsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| offering | [string](#string) |  | Offering tag; empty selects the project&#39;s default offering. |
+
+
+
+
+
+
+<a name="moth-billing-v1-GetOfferingsResponse"></a>
+
+### GetOfferingsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| offering | [Offering](#moth-billing-v1-Offering) |  |  |
+
+
+
+
+
+
+<a name="moth-billing-v1-GetPaywallRequest"></a>
+
+### GetPaywallRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| known_paywall_revision | [string](#string) |  | The revision_id of the paywall the client has cached (empty on first call). When it still matches the current revision, the response omits `paywall`; see the caching contract on GetPaywall. |
+| known_copy_revision | [string](#string) |  | The copy_revision the client has cached for the locale it is about to render (empty on first call). When it still matches the token the server computes for the negotiated locale, the response&#39;s `copy` carries the locale &#43; copy_revision but omits `messages`; when it differs (or was empty), `messages` is present. The negotiated locale comes from Accept-Language / x-moth-language metadata, never from this body. |
+
+
+
+
+
+
+<a name="moth-billing-v1-GetPaywallResponse"></a>
+
+### GetPaywallResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| paywall | [Paywall](#moth-billing-v1-Paywall) |  | Omitted when GetPaywallRequest.known_paywall_revision matches the current revision; present otherwise (including for projects on the built-in default paywall config). |
+| copy | [Copy](#moth-billing-v1-Copy) |  | The localized paywall copy for the negotiated locale. Always present (it carries the negotiated locale &#43; copy_revision); its `messages` map is omitted when GetPaywallRequest.known_copy_revision matches, present otherwise — including for projects with no copy overrides. |
+
+
+
+
+
+
+<a name="moth-billing-v1-Offering"></a>
+
+### Offering
+Offering is the ordered set of products a paywall presents — the products
+sharing an `offering` tag, in sort order. Every project has a default
+offering (&#34;default&#34;).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  | Offering tag; &#34;default&#34; for the project&#39;s default offering. |
+| is_default | [bool](#bool) |  |  |
+| products | [OfferingProduct](#moth-billing-v1-OfferingProduct) | repeated | The products to display, in paywall order. |
+
+
+
+
+
+
+<a name="moth-billing-v1-OfferingProduct"></a>
+
+### OfferingProduct
+OfferingProduct is one purchasable tier as the paywall needs it: enough to
+render a card and match the native store product. Price/period are display
+&#43; analytics metadata; the native store read stays authoritative for the
+localized price actually charged.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  | Stable moth catalog identifier (e.g. &#34;monthly&#34;); the app never gates on this — it gates on entitlements — but the SDK uses it to drive purchases. |
+| display_name | [string](#string) |  |  |
+| apple_product_id | [string](#string) |  | Store SKUs so the SDK can pair this tier with the native store product; either may be empty when the tier ships on one store only. |
+| google_product_id | [string](#string) |  |  |
+| billing_period | [string](#string) |  |  |
+| price_amount_micros | [int64](#int64) |  |  |
+| currency | [string](#string) |  |  |
+| trial_period | [string](#string) |  | Trial/intro descriptor (display &#43; analytics only). |
+| intro_price_amount_micros | [int64](#int64) |  |  |
+| intro_period | [string](#string) |  |  |
+| entitlements | [string](#string) | repeated | The stable entitlement identifiers this product grants while active (e.g. &#34;pro&#34;), so the paywall can label what a tier unlocks. |
+| sort_order | [int32](#int32) |  |  |
+| highlighted | [bool](#bool) |  | Whether this tier is the paywall&#39;s highlighted &#34;most popular&#34; tier (from the paywall config&#39;s highlighted_product_identifier). |
+| stripe_price_id | [string](#string) |  | Stripe recurring Price id (&#34;price_...&#34;); empty when the tier does not sell on the web (the React paywall marks such tiers unavailable). |
+
+
+
+
+
+
+<a name="moth-billing-v1-Paywall"></a>
+
+### Paywall
+Paywall is the public, render-ready paywall configuration. Copy and layout
+only — colors/typography inherit from the theme.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| revision_id | [string](#string) |  | Identifies this version of the paywall config; changes on every admin edit. Cache the paywall keyed by this value and echo it as GetPaywallRequest.known_paywall_revision. |
+| headline | [string](#string) |  |  |
+| subtitle | [string](#string) |  |  |
+| benefits | [string](#string) | repeated | Feature/benefit bullets, in display order. |
+| offering | [string](#string) |  | The offering tag whose products this paywall lists; pass it to GetOfferings.offering. Empty selects the default offering. |
+| highlighted_product_identifier | [string](#string) |  | The product identifier to render as &#34;most popular&#34;; empty for none. |
+| layout | [PaywallLayout](#moth-billing-v1-PaywallLayout) |  |  |
+| terms_url | [string](#string) |  | Optional legal links rendered in the paywall footer. |
+| privacy_url | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-billing-v1-RestorePurchasesRequest"></a>
+
+### RestorePurchasesRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| store | [Store](#moth-billing-v1-Store) |  |  |
+| receipts | [string](#string) | repeated | The receipts to re-link. For Apple, StoreKit 2 signed transactions (JWS); for Google, Play Billing purchase tokens. |
+
+
+
+
+
+
+<a name="moth-billing-v1-RestorePurchasesResponse"></a>
+
+### RestorePurchasesResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| customer_info | [CustomerInfo](#moth-billing-v1-CustomerInfo) |  |  |
+
+
+
+
+
+
+<a name="moth-billing-v1-SubmitPurchaseRequest"></a>
+
+### SubmitPurchaseRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| store | [Store](#moth-billing-v1-Store) |  |  |
+| product_identifier | [string](#string) |  | The moth product identifier the app is purchasing (its own catalog id, not the store SKU). moth maps it to the store product for validation. |
+| apple_jws_transaction | [string](#string) |  |  |
+| google_purchase_token | [string](#string) |  |  |
+| google_subscription_id | [string](#string) |  | Google Play subscription id (the store product id); required alongside google_purchase_token, ignored for Apple. |
+
+
+
+
+
+
+<a name="moth-billing-v1-SubmitPurchaseResponse"></a>
+
+### SubmitPurchaseResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| customer_info | [CustomerInfo](#moth-billing-v1-CustomerInfo) |  |  |
+
+
+
+
+
+ 
+
+
+<a name="moth-billing-v1-EntitlementSource"></a>
+
+### EntitlementSource
+EntitlementSource explains why an entitlement is active.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| ENTITLEMENT_SOURCE_UNSPECIFIED | 0 |  |
+| ENTITLEMENT_SOURCE_STORE | 1 | Granted by an active store subscription. |
+| ENTITLEMENT_SOURCE_GRANT | 2 | Granted by an operator (promo/comp), independent of store state. |
+| ENTITLEMENT_SOURCE_NONE | 3 | The built-in free tier (no active subscription or grant). Reserved; the free tier is normally conveyed by an empty active_entitlements list. |
+
+
+
+<a name="moth-billing-v1-PaywallLayout"></a>
+
+### PaywallLayout
+PaywallLayout is the rendering variant the paywall screen uses; the token
+space (colors/spacing/radius) always comes from the theme.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| PAYWALL_LAYOUT_UNSPECIFIED | 0 |  |
+| PAYWALL_LAYOUT_TILES | 1 | One card per tier, side by side (the default). |
+| PAYWALL_LAYOUT_LIST | 2 | Tiers stacked as full-width rows. |
+| PAYWALL_LAYOUT_COMPACT | 3 | A single selected tier with a period toggle. |
+
+
+
+<a name="moth-billing-v1-Store"></a>
+
+### Store
+Store identifies which app store a purchase or subscription belongs to.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| STORE_UNSPECIFIED | 0 |  |
+| STORE_APPLE | 1 |  |
+| STORE_GOOGLE | 2 |  |
+| STORE_STRIPE | 3 |  |
+
+
+
+<a name="moth-billing-v1-SubscriptionStatus"></a>
+
+### SubscriptionStatus
+SubscriptionStatus mirrors the store&#39;s renewal state, mapped to a small set
+common to Apple and Google. active/trialing/in_grace_period/in_billing_retry
+all keep access; paused/expired/revoked do not.
+
+| Name | Number | Description |
+| ---- | ------ | ----------- |
+| SUBSCRIPTION_STATUS_UNSPECIFIED | 0 |  |
+| SUBSCRIPTION_STATUS_ACTIVE | 1 |  |
+| SUBSCRIPTION_STATUS_TRIALING | 2 |  |
+| SUBSCRIPTION_STATUS_IN_GRACE_PERIOD | 3 |  |
+| SUBSCRIPTION_STATUS_IN_BILLING_RETRY | 4 | Google &#34;on hold&#34;: the renewal is being retried after a payment failure. |
+| SUBSCRIPTION_STATUS_PAUSED | 5 |  |
+| SUBSCRIPTION_STATUS_EXPIRED | 6 |  |
+| SUBSCRIPTION_STATUS_REVOKED | 7 |  |
+
+
+ 
+
+ 
+
+
+<a name="moth-billing-v1-BillingService"></a>
+
+### BillingService
+BillingService is the client-facing subscription API, consumed by the moth
+Flutter SDK. Authenticated exactly like AuthService: every call carries the
+project publishable key in `x-moth-key: pk_...` request metadata AND a user
+access token in the `Authorization: Bearer &lt;jwt&gt;` header — every RPC is
+scoped to the signed-in user.
+
+The core contract: **a user always has a valid subscription state.** A
+never-paid user, a free-tier user, and a user in a project that has declared
+no products all get a well-formed CustomerInfo with an empty
+active_entitlements list (the built-in `none` tier) — never an error. moth is
+a validating mirror of the store: it never marks a subscription active on the
+client&#39;s say-so, only after verifying a signed transaction or reading the
+store&#39;s authoritative state.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetCustomerInfo | [GetCustomerInfoRequest](#moth-billing-v1-GetCustomerInfoRequest) | [GetCustomerInfoResponse](#moth-billing-v1-GetCustomerInfoResponse) | GetCustomerInfo returns the signed-in user&#39;s active entitlements and subscriptions. Always succeeds with a valid object; `none` (empty entitlements) for free users. Cheap and safe to call on every app launch. |
+| SubmitPurchase | [SubmitPurchaseRequest](#moth-billing-v1-SubmitPurchaseRequest) | [SubmitPurchaseResponse](#moth-billing-v1-SubmitPurchaseResponse) | SubmitPurchase hands moth the receipt of a purchase the app just completed natively. moth validates it against the store, links the subscription to the current user, derives entitlements, and returns the fresh CustomerInfo. |
+| RestorePurchases | [RestorePurchasesRequest](#moth-billing-v1-RestorePurchasesRequest) | [RestorePurchasesResponse](#moth-billing-v1-RestorePurchasesResponse) | RestorePurchases re-links a user&#39;s existing store purchases to the current account (new device, reinstall, account change), applying the store&#39;s own transfer rules, then returns the fresh CustomerInfo. |
+| GetOfferings | [GetOfferingsRequest](#moth-billing-v1-GetOfferingsRequest) | [GetOfferingsResponse](#moth-billing-v1-GetOfferingsResponse) | GetOfferings returns an offering&#39;s products for the paywall to display: per product the catalog identifier, display name, store SKUs (so the SDK can match the native store products), price/period metadata, trial/intro descriptor, the entitlements it grants, sort order and the &#34;most popular&#34; highlight flag. Unlike the three RPCs above this is publishable-key only (no Bearer): a paywall renders before the user signs in. |
+| GetPaywall | [GetPaywallRequest](#moth-billing-v1-GetPaywallRequest) | [GetPaywallResponse](#moth-billing-v1-GetPaywallResponse) | GetPaywall returns the project&#39;s public paywall configuration (copy, benefit bullets, offering ref, layout, highlighted tier, legal links) with a revision id, for the SDK&#39;s batteries-included paywall screen. Colors and typography are NOT here — the paywall inherits them from the theme (GetProjectConfig, milestone 06).
+
+Caching contract (identical to GetProjectConfig &#43; theme): the client caches the paywall keyed by revision_id and echoes it as GetPaywallRequest.known_paywall_revision. When it still matches, the response omits `paywall` and the client keeps rendering its cache (stale-while-revalidate); when it differs (or was empty on first call), `paywall` is present and the client replaces its cache. Publishable-key only, like GetOfferings. |
+| CreateCheckoutSession | [CreateCheckoutSessionRequest](#moth-billing-v1-CreateCheckoutSessionRequest) | [CreateCheckoutSessionResponse](#moth-billing-v1-CreateCheckoutSessionResponse) | CreateCheckoutSession starts a Stripe-hosted Checkout for a subscription to the tier&#39;s Stripe price, bound to the signed-in user&#39;s Stripe customer (created on demand). moth never renders a card field: the response is a redirect URL to Stripe&#39;s hosted Checkout, and the resulting subscription lands through the webhook like any other store event. Requires Bearer (like GetCustomerInfo); fails with a precondition error when the project has no Stripe credentials, and an invalid-argument error when the tier has no Stripe price. |
+| CreateBillingPortalSession | [CreateBillingPortalSessionRequest](#moth-billing-v1-CreateBillingPortalSessionRequest) | [CreateBillingPortalSessionResponse](#moth-billing-v1-CreateBillingPortalSessionResponse) | CreateBillingPortalSession returns a Stripe Billing Portal URL for the signed-in user — cancel, payment-method and invoice management stay Stripe-hosted, the web analogue of deep-linking to the stores&#39; subscription-management UI. Requires Bearer. |
+
+ 
+
+
+
+<a name="moth_projectconfig_v1_projectconfig-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/projectconfig/v1/projectconfig.proto
+
+
+
+<a name="moth-projectconfig-v1-CacheEnvelope"></a>
+
+### CacheEnvelope
+CacheEnvelope wraps a config payload the Flutter SDK persists on device
+(theme, paywall, copy — milestone 16 caches, re-encoded from JSON to
+protobuf). payload is the serialized wire message exactly as the server
+delivered it (moth.auth.v1.Theme / moth.billing.v1.Paywall /
+moth.auth.v1.Copy), so the cache and the wire share one schema. The SDK
+serves the cached payload without any network call until
+fetched_at_unix_ms &#43; its configured TTL has passed, then revalidates
+cheaply with the known_*_revision request fields.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| payload | [bytes](#bytes) |  |  |
+| revision | [string](#string) |  | revision is the server revision the payload came from (theme/paywall/copy revision id) — the revalidation key. |
+| locale | [string](#string) |  | locale is the negotiated BCP-47 tag for locale-keyed payloads (copy); empty for locale-independent payloads. |
+| fetched_at_unix_ms | [int64](#int64) |  | fetched_at_unix_ms is when the payload was fetched or last revalidated, Unix milliseconds UTC. |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-CopyLocaleMessages"></a>
+
+### CopyLocaleMessages
+CopyLocaleMessages is one locale&#39;s copy overrides: catalog message key
+(e.g. &#34;sign_in.title&#34;) to the operator-customized string.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| messages | [CopyLocaleMessages.MessagesEntry](#moth-projectconfig-v1-CopyLocaleMessages-MessagesEntry) | repeated |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-CopyLocaleMessages-MessagesEntry"></a>
+
+### CopyLocaleMessages.MessagesEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-LegalLinks"></a>
+
+### LegalLinks
+LegalLinks are the optional legal URLs rendered near signup and on the
+paywall footer.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| terms_url | [string](#string) |  |  |
+| privacy_url | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-StoredCopy"></a>
+
+### StoredCopy
+StoredCopy is one project&#39;s localization overrides as persisted on the
+project row and in copy_revisions (milestone 15, re-encoded from JSON to
+protobuf): BCP-47 locale tag to that locale&#39;s key overrides. Bundled
+catalog defaults live in the binary (internal/i18n), never here.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| locales | [StoredCopy.LocalesEntry](#moth-projectconfig-v1-StoredCopy-LocalesEntry) | repeated |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-StoredCopy-LocalesEntry"></a>
+
+### StoredCopy.LocalesEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [CopyLocaleMessages](#moth-projectconfig-v1-CopyLocaleMessages) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-StoredPaywall"></a>
+
+### StoredPaywall
+StoredPaywall is one project&#39;s paywall configuration as persisted on the
+project row and in paywall_revisions (milestone 13, re-encoded from JSON
+to protobuf). Colors/typography always inherit from the theme — the
+paywall owns no design tokens.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [int32](#int32) |  | version is the document schema version (internal/paywall.SchemaVersion). |
+| headline | [string](#string) |  |  |
+| subtitle | [string](#string) |  |  |
+| benefits | [string](#string) | repeated |  |
+| offering | [string](#string) |  | offering names the product offering the paywall presents; empty = the project&#39;s default offering. |
+| highlighted_identifier | [string](#string) |  | highlighted_identifier marks the &#34;most popular&#34; tier; empty = none. |
+| layout | [string](#string) |  |  |
+| legal | [LegalLinks](#moth-projectconfig-v1-LegalLinks) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-StoredTheme"></a>
+
+### StoredTheme
+StoredTheme is one project&#39;s complete design system as persisted on the
+project row and in theme_revisions (milestone 06, re-encoded from JSON to
+protobuf). internal/theme owns validation and dark-palette derivation;
+this message owns only the shape.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| version | [int32](#int32) |  | version is the document schema version (internal/theme.SchemaVersion). |
+| colors | [ThemeColors](#moth-projectconfig-v1-ThemeColors) |  |  |
+| dark_colors | [ThemeColorOverrides](#moth-projectconfig-v1-ThemeColorOverrides) |  | dark_colors optionally overrides individual dark-palette colors; absent = fully derived from colors. |
+| typography | [ThemeTypography](#moth-projectconfig-v1-ThemeTypography) |  |  |
+| spacing | [ThemeSpacing](#moth-projectconfig-v1-ThemeSpacing) |  |  |
+| shape | [ThemeShape](#moth-projectconfig-v1-ThemeShape) |  |  |
+| logo | [ThemeLogo](#moth-projectconfig-v1-ThemeLogo) |  |  |
+| legal | [LegalLinks](#moth-projectconfig-v1-LegalLinks) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-ThemeColorOverrides"></a>
+
+### ThemeColorOverrides
+ThemeColorOverrides is a partial dark palette: any empty field is derived
+from the light palette instead (see internal/theme.DeriveDark).
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primary | [string](#string) |  |  |
+| on_primary | [string](#string) |  |  |
+| background | [string](#string) |  |  |
+| on_background | [string](#string) |  |  |
+| surface | [string](#string) |  |  |
+| on_surface | [string](#string) |  |  |
+| error | [string](#string) |  |  |
+| on_error | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-ThemeColors"></a>
+
+### ThemeColors
+ThemeColors is a complete palette: every role and its &#34;on&#34; (foreground)
+counterpart, as #RRGGBB values.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| primary | [string](#string) |  |  |
+| on_primary | [string](#string) |  |  |
+| background | [string](#string) |  |  |
+| on_background | [string](#string) |  |  |
+| surface | [string](#string) |  |  |
+| on_surface | [string](#string) |  |  |
+| error | [string](#string) |  |  |
+| on_error | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-ThemeLogo"></a>
+
+### ThemeLogo
+ThemeLogo holds the server-managed asset paths of the uploaded logos,
+one per color scheme (&#34;/assets/{project}/logo-light.png&#34;). Empty = none.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| light | [string](#string) |  |  |
+| dark | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-ThemeShape"></a>
+
+### ThemeShape
+ThemeShape controls component rounding, in logical pixels.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| corner_radius | [int32](#int32) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-ThemeSpacing"></a>
+
+### ThemeSpacing
+ThemeSpacing is the base spacing grid step in logical pixels.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| unit | [int32](#int32) |  |  |
+
+
+
+
+
+
+<a name="moth-projectconfig-v1-ThemeTypography"></a>
+
+### ThemeTypography
+ThemeTypography selects one of the curated embedded fonts and a global
+size multiplier.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| font_family | [string](#string) |  |  |
+| scale | [double](#double) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+ 
+
+
+
+<a name="moth_server_v1_entitlement-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## moth/server/v1/entitlement.proto
+
+
+
+<a name="moth-server-v1-Entitlement"></a>
+
+### Entitlement
+Entitlement is one active capability a user holds, derived from store
+subscriptions and operator grants.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| identifier | [string](#string) |  | Stable identifier the app gates on (e.g. &#34;pro&#34;). |
+| expire_time | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | When the entitlement lapses; unset for a non-expiring grant. |
+| source | [string](#string) |  | Why it is active: &#34;store&#34; (an active subscription) or &#34;grant&#34; (an operator promo/comp). |
+| product_identifier | [string](#string) |  | The moth product identifier that granted it, when source is &#34;store&#34;. |
+| is_sandbox | [bool](#bool) |  | True when this entitlement is backed by a store sandbox / license-tester subscription rather than a real production purchase. A backend gating paid features server-side should treat a sandbox entitlement as non-paying. Always false for operator grants. |
+
+
+
+
+
+
+<a name="moth-server-v1-GetUserEntitlementsRequest"></a>
+
+### GetUserEntitlementsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| user_id | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="moth-server-v1-GetUserEntitlementsResponse"></a>
+
+### GetUserEntitlementsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entitlements | [Entitlement](#moth-server-v1-Entitlement) | repeated |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
+
+
+<a name="moth-server-v1-EntitlementService"></a>
+
+### EntitlementService
+EntitlementService lets the developer&#39;s own backend read a user&#39;s derived
+entitlements, so it can gate server-side features without trusting the
+client. It returns exactly the set the client sees from
+moth.billing.v1.GetCustomerInfo. Authenticated with the project secret key
+(`x-moth-key: sk_...`); always scoped to that project.
+
+| Method Name | Request Type | Response Type | Description |
+| ----------- | ------------ | ------------- | ------------|
+| GetUserEntitlements | [GetUserEntitlementsRequest](#moth-server-v1-GetUserEntitlementsRequest) | [GetUserEntitlementsResponse](#moth-server-v1-GetUserEntitlementsResponse) | GetUserEntitlements returns a user&#39;s currently active entitlements. A user with no subscription and no grant returns an empty list (the free `none` tier) — not an error. |
 
  
 

@@ -29,6 +29,7 @@ const (
 	Store_STORE_UNSPECIFIED Store = 0
 	Store_STORE_APPLE       Store = 1
 	Store_STORE_GOOGLE      Store = 2
+	Store_STORE_STRIPE      Store = 3
 )
 
 // Enum value maps for Store.
@@ -37,11 +38,13 @@ var (
 		0: "STORE_UNSPECIFIED",
 		1: "STORE_APPLE",
 		2: "STORE_GOOGLE",
+		3: "STORE_STRIPE",
 	}
 	Store_value = map[string]int32{
 		"STORE_UNSPECIFIED": 0,
 		"STORE_APPLE":       1,
 		"STORE_GOOGLE":      2,
+		"STORE_STRIPE":      3,
 	}
 )
 
@@ -841,11 +844,12 @@ const file_moth_admin_v1_subscription_proto_rawDesc = "" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x19\n" +
 	"\bgrant_id\x18\x02 \x01(\tR\agrantId\"A\n" +
 	"\x13RevokeGrantResponse\x12*\n" +
-	"\x05grant\x18\x01 \x01(\v2\x14.moth.admin.v1.GrantR\x05grant*A\n" +
+	"\x05grant\x18\x01 \x01(\v2\x14.moth.admin.v1.GrantR\x05grant*S\n" +
 	"\x05Store\x12\x15\n" +
 	"\x11STORE_UNSPECIFIED\x10\x00\x12\x0f\n" +
 	"\vSTORE_APPLE\x10\x01\x12\x10\n" +
-	"\fSTORE_GOOGLE\x10\x02*\xb0\x02\n" +
+	"\fSTORE_GOOGLE\x10\x02\x12\x10\n" +
+	"\fSTORE_STRIPE\x10\x03*\xb0\x02\n" +
 	"\x12SubscriptionStatus\x12#\n" +
 	"\x1fSUBSCRIPTION_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
 	"\x1aSUBSCRIPTION_STATUS_ACTIVE\x10\x01\x12 \n" +

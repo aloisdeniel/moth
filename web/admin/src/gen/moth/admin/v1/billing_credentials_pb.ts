@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/billing_credentials.proto.
  */
 export const file_moth_admin_v1_billing_credentials: GenFile = /*@__PURE__*/
-  fileDesc("Cidtb3RoL2FkbWluL3YxL2JpbGxpbmdfY3JlZGVudGlhbHMucHJvdG8SDW1vdGguYWRtaW4udjEi6QEKEkFwcGxlQmlsbGluZ0NvbmZpZxISCgppYXBfa2V5X2lkGAEgASgJEhUKDWlhcF9pc3N1ZXJfaWQYAiABKAkSEgoKaWFwX2tleV9wOBgDIAEoCRITCgtoYXNfaWFwX2tleRgEIAEoCBIRCglidW5kbGVfaWQYBSABKAkSFAoMYXBwX2FwcGxlX2lkGAYgASgJEhsKE25vdGlmaWNhdGlvbl9zZWNyZXQYByABKAkSHwoXaGFzX25vdGlmaWNhdGlvbl9zZWNyZXQYCCABKAgSGAoQbm90aWZpY2F0aW9uX3VybBgJIAEoCSKqAQoTR29vZ2xlQmlsbGluZ0NvbmZpZxIcChRzZXJ2aWNlX2FjY291bnRfanNvbhgBIAEoCRIbChNoYXNfc2VydmljZV9hY2NvdW50GAIgASgIEhQKDHBhY2thZ2VfbmFtZRgDIAEoCRIUCgxwdWJzdWJfdG9waWMYBCABKAkSEwoLcnRkbl9zZWNyZXQYBSABKAkSFwoPaGFzX3J0ZG5fc2VjcmV0GAYgASgIIjIKHEdldEJpbGxpbmdDcmVkZW50aWFsc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCSKFAQodR2V0QmlsbGluZ0NyZWRlbnRpYWxzUmVzcG9uc2USMAoFYXBwbGUYASABKAsyIS5tb3RoLmFkbWluLnYxLkFwcGxlQmlsbGluZ0NvbmZpZxIyCgZnb29nbGUYAiABKAsyIi5tb3RoLmFkbWluLnYxLkdvb2dsZUJpbGxpbmdDb25maWcimwEKH1VwZGF0ZUJpbGxpbmdDcmVkZW50aWFsc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIwCgVhcHBsZRgCIAEoCzIhLm1vdGguYWRtaW4udjEuQXBwbGVCaWxsaW5nQ29uZmlnEjIKBmdvb2dsZRgDIAEoCzIiLm1vdGguYWRtaW4udjEuR29vZ2xlQmlsbGluZ0NvbmZpZyKIAQogVXBkYXRlQmlsbGluZ0NyZWRlbnRpYWxzUmVzcG9uc2USMAoFYXBwbGUYASABKAsyIS5tb3RoLmFkbWluLnYxLkFwcGxlQmlsbGluZ0NvbmZpZxIyCgZnb29nbGUYAiABKAsyIi5tb3RoLmFkbWluLnYxLkdvb2dsZUJpbGxpbmdDb25maWcyjAIKGUJpbGxpbmdDcmVkZW50aWFsc1NlcnZpY2UScgoVR2V0QmlsbGluZ0NyZWRlbnRpYWxzEisubW90aC5hZG1pbi52MS5HZXRCaWxsaW5nQ3JlZGVudGlhbHNSZXF1ZXN0GiwubW90aC5hZG1pbi52MS5HZXRCaWxsaW5nQ3JlZGVudGlhbHNSZXNwb25zZRJ7ChhVcGRhdGVCaWxsaW5nQ3JlZGVudGlhbHMSLi5tb3RoLmFkbWluLnYxLlVwZGF0ZUJpbGxpbmdDcmVkZW50aWFsc1JlcXVlc3QaLy5tb3RoLmFkbWluLnYxLlVwZGF0ZUJpbGxpbmdDcmVkZW50aWFsc1Jlc3BvbnNlQjdaNWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hZG1pbi92MTthZG1pbnYxYgZwcm90bzM");
+  fileDesc("Cidtb3RoL2FkbWluL3YxL2JpbGxpbmdfY3JlZGVudGlhbHMucHJvdG8SDW1vdGguYWRtaW4udjEi6QEKEkFwcGxlQmlsbGluZ0NvbmZpZxISCgppYXBfa2V5X2lkGAEgASgJEhUKDWlhcF9pc3N1ZXJfaWQYAiABKAkSEgoKaWFwX2tleV9wOBgDIAEoCRITCgtoYXNfaWFwX2tleRgEIAEoCBIRCglidW5kbGVfaWQYBSABKAkSFAoMYXBwX2FwcGxlX2lkGAYgASgJEhsKE25vdGlmaWNhdGlvbl9zZWNyZXQYByABKAkSHwoXaGFzX25vdGlmaWNhdGlvbl9zZWNyZXQYCCABKAgSGAoQbm90aWZpY2F0aW9uX3VybBgJIAEoCSKqAQoTR29vZ2xlQmlsbGluZ0NvbmZpZxIcChRzZXJ2aWNlX2FjY291bnRfanNvbhgBIAEoCRIbChNoYXNfc2VydmljZV9hY2NvdW50GAIgASgIEhQKDHBhY2thZ2VfbmFtZRgDIAEoCRIUCgxwdWJzdWJfdG9waWMYBCABKAkSEwoLcnRkbl9zZWNyZXQYBSABKAkSFwoPaGFzX3J0ZG5fc2VjcmV0GAYgASgIIpIBChNTdHJpcGVCaWxsaW5nQ29uZmlnEhIKCnNlY3JldF9rZXkYASABKAkSFgoOaGFzX3NlY3JldF9rZXkYAiABKAgSFgoOd2ViaG9va19zZWNyZXQYAyABKAkSGgoSaGFzX3dlYmhvb2tfc2VjcmV0GAQgASgIEhsKE3dlYmhvb2tfZW5kcG9pbnRfaWQYBSABKAkiMgocR2V0QmlsbGluZ0NyZWRlbnRpYWxzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIrkBCh1HZXRCaWxsaW5nQ3JlZGVudGlhbHNSZXNwb25zZRIwCgVhcHBsZRgBIAEoCzIhLm1vdGguYWRtaW4udjEuQXBwbGVCaWxsaW5nQ29uZmlnEjIKBmdvb2dsZRgCIAEoCzIiLm1vdGguYWRtaW4udjEuR29vZ2xlQmlsbGluZ0NvbmZpZxIyCgZzdHJpcGUYAyABKAsyIi5tb3RoLmFkbWluLnYxLlN0cmlwZUJpbGxpbmdDb25maWcizwEKH1VwZGF0ZUJpbGxpbmdDcmVkZW50aWFsc1JlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIwCgVhcHBsZRgCIAEoCzIhLm1vdGguYWRtaW4udjEuQXBwbGVCaWxsaW5nQ29uZmlnEjIKBmdvb2dsZRgDIAEoCzIiLm1vdGguYWRtaW4udjEuR29vZ2xlQmlsbGluZ0NvbmZpZxIyCgZzdHJpcGUYBCABKAsyIi5tb3RoLmFkbWluLnYxLlN0cmlwZUJpbGxpbmdDb25maWcivAEKIFVwZGF0ZUJpbGxpbmdDcmVkZW50aWFsc1Jlc3BvbnNlEjAKBWFwcGxlGAEgASgLMiEubW90aC5hZG1pbi52MS5BcHBsZUJpbGxpbmdDb25maWcSMgoGZ29vZ2xlGAIgASgLMiIubW90aC5hZG1pbi52MS5Hb29nbGVCaWxsaW5nQ29uZmlnEjIKBnN0cmlwZRgDIAEoCzIiLm1vdGguYWRtaW4udjEuU3RyaXBlQmlsbGluZ0NvbmZpZzKMAgoZQmlsbGluZ0NyZWRlbnRpYWxzU2VydmljZRJyChVHZXRCaWxsaW5nQ3JlZGVudGlhbHMSKy5tb3RoLmFkbWluLnYxLkdldEJpbGxpbmdDcmVkZW50aWFsc1JlcXVlc3QaLC5tb3RoLmFkbWluLnYxLkdldEJpbGxpbmdDcmVkZW50aWFsc1Jlc3BvbnNlEnsKGFVwZGF0ZUJpbGxpbmdDcmVkZW50aWFscxIuLm1vdGguYWRtaW4udjEuVXBkYXRlQmlsbGluZ0NyZWRlbnRpYWxzUmVxdWVzdBovLm1vdGguYWRtaW4udjEuVXBkYXRlQmlsbGluZ0NyZWRlbnRpYWxzUmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw");
 
 /**
  * AppleBillingConfig is a project's App Store Server API configuration.
@@ -153,6 +153,60 @@ export const GoogleBillingConfigSchema: GenMessage<GoogleBillingConfig> = /*@__P
   messageDesc(file_moth_admin_v1_billing_credentials, 1);
 
 /**
+ * StripeBillingConfig is a project's Stripe API configuration (milestone 17).
+ *
+ * @generated from message moth.admin.v1.StripeBillingConfig
+ */
+export type StripeBillingConfig = Message<"moth.admin.v1.StripeBillingConfig"> & {
+  /**
+   * Stripe secret key (a restricted key is recommended). Write-only: accepted
+   * on update, never returned; empty keeps the stored one. Stored encrypted.
+   *
+   * @generated from field: string secret_key = 1;
+   */
+  secretKey: string;
+
+  /**
+   * Output only: whether a secret key is stored.
+   *
+   * @generated from field: bool has_secret_key = 2;
+   */
+  hasSecretKey: boolean;
+
+  /**
+   * Webhook signing secret ("whsec_...") authenticating the Stripe-Signature
+   * header. Write-only; empty keeps the stored one. Stored encrypted.
+   *
+   * @generated from field: string webhook_secret = 3;
+   */
+  webhookSecret: string;
+
+  /**
+   * Output only: whether a webhook secret is stored.
+   *
+   * @generated from field: bool has_webhook_secret = 4;
+   */
+  hasWebhookSecret: boolean;
+
+  /**
+   * The Stripe webhook endpoint ("we_...") moth created via the API, persisted
+   * to keep `moth setup billing` idempotent (mirroring the Apple
+   * notification_url). Set by the CLI after a successful registration; empty
+   * on update keeps the stored one.
+   *
+   * @generated from field: string webhook_endpoint_id = 5;
+   */
+  webhookEndpointId: string;
+};
+
+/**
+ * Describes the message moth.admin.v1.StripeBillingConfig.
+ * Use `create(StripeBillingConfigSchema)` to create a new message.
+ */
+export const StripeBillingConfigSchema: GenMessage<StripeBillingConfig> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_billing_credentials, 2);
+
+/**
  * @generated from message moth.admin.v1.GetBillingCredentialsRequest
  */
 export type GetBillingCredentialsRequest = Message<"moth.admin.v1.GetBillingCredentialsRequest"> & {
@@ -167,7 +221,7 @@ export type GetBillingCredentialsRequest = Message<"moth.admin.v1.GetBillingCred
  * Use `create(GetBillingCredentialsRequestSchema)` to create a new message.
  */
 export const GetBillingCredentialsRequestSchema: GenMessage<GetBillingCredentialsRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_billing_credentials, 2);
+  messageDesc(file_moth_admin_v1_billing_credentials, 3);
 
 /**
  * @generated from message moth.admin.v1.GetBillingCredentialsResponse
@@ -182,6 +236,11 @@ export type GetBillingCredentialsResponse = Message<"moth.admin.v1.GetBillingCre
    * @generated from field: moth.admin.v1.GoogleBillingConfig google = 2;
    */
   google?: GoogleBillingConfig | undefined;
+
+  /**
+   * @generated from field: moth.admin.v1.StripeBillingConfig stripe = 3;
+   */
+  stripe?: StripeBillingConfig | undefined;
 };
 
 /**
@@ -189,7 +248,7 @@ export type GetBillingCredentialsResponse = Message<"moth.admin.v1.GetBillingCre
  * Use `create(GetBillingCredentialsResponseSchema)` to create a new message.
  */
 export const GetBillingCredentialsResponseSchema: GenMessage<GetBillingCredentialsResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_billing_credentials, 3);
+  messageDesc(file_moth_admin_v1_billing_credentials, 4);
 
 /**
  * @generated from message moth.admin.v1.UpdateBillingCredentialsRequest
@@ -209,6 +268,11 @@ export type UpdateBillingCredentialsRequest = Message<"moth.admin.v1.UpdateBilli
    * @generated from field: moth.admin.v1.GoogleBillingConfig google = 3;
    */
   google?: GoogleBillingConfig | undefined;
+
+  /**
+   * @generated from field: moth.admin.v1.StripeBillingConfig stripe = 4;
+   */
+  stripe?: StripeBillingConfig | undefined;
 };
 
 /**
@@ -216,7 +280,7 @@ export type UpdateBillingCredentialsRequest = Message<"moth.admin.v1.UpdateBilli
  * Use `create(UpdateBillingCredentialsRequestSchema)` to create a new message.
  */
 export const UpdateBillingCredentialsRequestSchema: GenMessage<UpdateBillingCredentialsRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_billing_credentials, 4);
+  messageDesc(file_moth_admin_v1_billing_credentials, 5);
 
 /**
  * @generated from message moth.admin.v1.UpdateBillingCredentialsResponse
@@ -231,6 +295,11 @@ export type UpdateBillingCredentialsResponse = Message<"moth.admin.v1.UpdateBill
    * @generated from field: moth.admin.v1.GoogleBillingConfig google = 2;
    */
   google?: GoogleBillingConfig | undefined;
+
+  /**
+   * @generated from field: moth.admin.v1.StripeBillingConfig stripe = 3;
+   */
+  stripe?: StripeBillingConfig | undefined;
 };
 
 /**
@@ -238,7 +307,7 @@ export type UpdateBillingCredentialsResponse = Message<"moth.admin.v1.UpdateBill
  * Use `create(UpdateBillingCredentialsResponseSchema)` to create a new message.
  */
 export const UpdateBillingCredentialsResponseSchema: GenMessage<UpdateBillingCredentialsResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_billing_credentials, 5);
+  messageDesc(file_moth_admin_v1_billing_credentials, 6);
 
 /**
  * BillingCredentialsService edits a project's store API credentials — the

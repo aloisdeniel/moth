@@ -104,6 +104,12 @@ message ProjectSettings {
   // Optional CAPTCHA verification endpoint. The CAPTCHA hook is documented
   // but off by default in v1: this field is stored but not yet wired.
   string captcha_verify_url = 15;
+  // Web origins (e.g. "https://app.example.com") the web-redirect OAuth
+  // fallback may redirect back to, for browser SPAs. Exact-origin matching
+  // (scheme + host + port) constrains the host, so unlike a bare http(s)
+  // scheme this is not an open redirect. Bare origins only — no path,
+  // query or fragment; http is accepted for localhost during development.
+  repeated string redirect_origins = 16;
 }
 
 // GoogleProviderConfig configures Sign in with Google for one project. The

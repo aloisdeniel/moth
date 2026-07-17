@@ -228,7 +228,7 @@ func TestSubscriptionStatsRoundTripAndIdempotent(t *testing.T) {
 	stats := []SubscriptionStats{
 		{ProjectID: "p1", Period: "2026-07", Currency: "USD", RevenueMicros: 9_990_000,
 			ActiveSubscribers: 2, NewSubscribers: 1, Renewals: 1, TrialsStarted: 1,
-			StoreAppleRevenueMicros: 9_990_000},
+			StoreAppleRevenueMicros: 8_990_000, StoreStripeRevenueMicros: 1_000_000},
 		{ProjectID: "p1", Period: "2026-07", Currency: "EUR", RevenueMicros: 4_990_000,
 			ActiveSubscribers: 1, NewSubscribers: 1, StoreGoogleRevenueMicros: 4_990_000},
 	}
@@ -266,6 +266,9 @@ func TestSubscriptionStatsRoundTripAndIdempotent(t *testing.T) {
 	if got[0].Currency != "EUR" || got[1].Currency != "USD" || got[1].RevenueMicros != 9_990_000 {
 		t.Fatalf("round-trip mismatch: %+v", got)
 	}
+	if got[1].StoreAppleRevenueMicros != 8_990_000 || got[1].StoreStripeRevenueMicros != 1_000_000 {
+		t.Fatalf("store split round-trip mismatch: %+v", got[1])
+	}
 
 	gotTiers, err := s.GetSubscriptionTierStats(ctx, "p1", "2026-01", "2026-12")
 	if err != nil {
@@ -296,6 +299,47 @@ func TestSubscriptionStatsRoundTripAndIdempotent(t *testing.T) {
 	// Empty for a project with no rollup, and "" latest period.
 	if latest, _ := s.LatestSubscriptionStatsPeriod(ctx, "missing"); latest != "" {
 		t.Fatalf("missing project latest = %q", latest)
+	}
+}
+
+// TestAggregateSubscriptionStripeStoreSplit covers the milestone-17 store
+// dimension: stripe revenue lands in its own per-store slice beside apple and
+// google, and refunds subtract from it.
+func TestAggregateSubscriptionStripeStoreSplit(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	p, k := testProject("p1", "app-one")
+	if err := s.CreateProject(ctx, p, k); err != nil {
+		t.Fatal(err)
+	}
+	insertSubEvents(t, s, "p1", []subEvent{
+		{"a", "u1", SubscriptionEventPurchased, "prod_pro", SubscriptionStoreApple, "USD", "", 9_990_000, "2026-07-05T10:00:00Z"},
+		{"b", "u2", SubscriptionEventPurchased, "prod_pro", SubscriptionStoreStripe, "USD", "", 9_990_000, "2026-07-06T10:00:00Z"},
+		{"c", "u3", SubscriptionEventRenewed, "prod_pro", SubscriptionStoreStripe, "USD", "", 9_990_000, "2026-07-10T10:00:00Z"},
+		{"d", "u4", SubscriptionEventRefunded, "prod_pro", SubscriptionStoreStripe, "USD", "", 4_990_000, "2026-07-12T10:00:00Z"},
+	})
+	from, to, _ := MonthWindow("2026-07", time.UTC)
+	stats, _, _, err := s.AggregateSubscription(ctx, "p1", "2026-07", from, to, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(stats) != 1 {
+		t.Fatalf("want 1 currency row, got %d: %+v", len(stats), stats)
+	}
+	row := stats[0]
+	if row.StoreAppleRevenueMicros != 9_990_000 {
+		t.Errorf("apple revenue = %d", row.StoreAppleRevenueMicros)
+	}
+	// Stripe: purchase + renewal - refund.
+	if want := int64(14_990_000); row.StoreStripeRevenueMicros != want {
+		t.Errorf("stripe revenue = %d, want %d", row.StoreStripeRevenueMicros, want)
+	}
+	if row.StoreGoogleRevenueMicros != 0 {
+		t.Errorf("google revenue = %d, want 0", row.StoreGoogleRevenueMicros)
+	}
+	// The per-store slices sum to the blended total.
+	if sum := row.StoreAppleRevenueMicros + row.StoreGoogleRevenueMicros + row.StoreStripeRevenueMicros; sum != row.RevenueMicros {
+		t.Errorf("store split %d != total %d", sum, row.RevenueMicros)
 	}
 }
 

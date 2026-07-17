@@ -146,6 +146,9 @@ test("monetization: create an entitlement and a product, and show the store URLs
   await expect(
     page.getByText("http://127.0.0.1:8990/billing/google/rtdn/birdwatch"),
   ).toBeVisible();
+  await expect(
+    page.getByText("http://127.0.0.1:8990/billing/stripe/webhook/birdwatch"),
+  ).toBeVisible();
 
   // Create an entitlement (dialog-scoped: the product dialog also has an
   // "Identifier" field).
@@ -190,6 +193,8 @@ test("monetization: store-connection panel renders and a push dry-run opens", as
   await expect(page.getByRole("heading", { name: "Store connection" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Apple — App Store Connect" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Google — Google Play" })).toBeVisible();
+  // The Stripe card (milestone 17) sits alongside the mobile stores.
+  await expect(page.getByRole("button", { name: "Push to Stripe" })).toBeVisible();
 
   // "Push to Apple" runs a dry-run and opens the plan dialog. No store call
   // happens without credentials — the server returns an empty/guided plan.

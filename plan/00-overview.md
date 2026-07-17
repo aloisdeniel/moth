@@ -11,12 +11,13 @@ The defining idea: **one moth server carries your entire portfolio of independen
 - **Single binary server** — no external dependencies, embedded database, embedded admin UI, embedded Flutter package. `moth serve` and you're running.
 - **One server, many independent apps** — unlimited projects per instance, each a sealed tenant: its own user base, its own signing keypair, its own Google/Apple credentials, its own login branding. Nothing is shared across projects unless the operator is looking at the admin console.
 - **Per-project authentication** — email/password, Sign in with Google, Sign in with Apple. Users belong to exactly one project; the same email in two apps is two unrelated accounts.
-- **Subscriptions & entitlements** (post-v1.0) — per-user App Store / Google Play subscriptions, validated server-side, with entitlements (`pro`, …) derived from subscription state and grants (promos, grace periods). A built-in `none` (free) tier is always present, so paid subscriptions are optional. moth centralizes subscription state, reflects tiers into the stores, drives a themed Flutter paywall, and reports revenue per month.
+- **Subscriptions & entitlements** (post-v1.0) — per-user App Store / Google Play subscriptions, validated server-side, with entitlements (`pro`, …) derived from subscription state and grants (promos, grace periods). A built-in `none` (free) tier is always present, so paid subscriptions are optional. moth centralizes subscription state, reflects tiers into the stores, drives a themed Flutter paywall, and reports revenue per month. Post-v1.2, Stripe joins as a third store for the web: same tiers, same entitlements, hosted Checkout.
 - **Internationalization** (post-v1.1) — the app sends its language as an HTTP header; moth negotiates the best available locale and returns adapted copy for the SDK screens, hosted pages, and emails, from a bundled curated locale set. Operators customize the sign-in, sign-up, and paywall copy per language in the admin and preview every SDK screen for any language.
 - **Admin web application** — create/configure projects, manage users, view analytics, copy setup instructions, customize the login design system (colors, font, spacing, logo) and per-language copy.
 - **Admin CLI** — the same binary drives any moth instance from the terminal (personal access tokens): scriptable project/user management, declarative `moth project apply`, and one-command Google/Apple console configuration (`moth setup google|apple`).
 - **Agent-ready** — `moth skill export` emits an Agent Skills package (optionally interpolated with a project's real config) that teaches coding agents both how to integrate moth into an app and how to administer an instance through the CLI.
 - **Served Flutter package** — the server exposes a pub-compatible repository so developers reference the SDK directly from their moth instance in `pubspec.yaml`. The SDK provides a wrapper widget for the whole app and exposes auth state through an `InheritedWidget`.
+- **Served React SDK** (post-v1.2) — the same model for the web: an npm-compatible registry serves `@moth/react` from the binary; a provider component gates the app, hooks expose auth and entitlement state, and a themed paywall sells web subscriptions through Stripe Checkout — with the project's theme and localized copy applied.
 
 ## Architecture decisions
 
@@ -49,14 +50,16 @@ The defining idea: **one moth server carries your entire portfolio of independen
 │  moth.billing.v1.*→ subscription gRPC services (publishable key + JWT):    │
 │                     customer info, submit/restore purchase (post-v1.0)     │
 │  /pub/*           → pub repository API (HTTP) serving moth_auth           │
+│  /npm/*           → npm registry API (HTTP) serving @moth/react (post-v1.2)│
 │  /p/*, /assets/*  → hosted pages & project assets (HTTP)                  │
-│  /billing/*       → App Store / Play store notifications (HTTP, post-v1.0) │
+│  /billing/*       → App Store / Play / Stripe notifications (HTTP, post-v1.0)│
 │  /p/{slug}/.well-known/jwks.json → per-project public keys (HTTP)         │
 │                                                                          │
 │  SQLite (data/moth.db) · file store (data/uploads/) · keys (data/keys/)  │
 └──────────────────────────────────────────────────────────────────────────┘
         ▲                                ▲
         │ admin browser                  │ Flutter app (moth_auth SDK)
+        │                                │ web app (@moth/react SDK)
 ```
 
 ## Data model (sketch)
@@ -80,6 +83,10 @@ Subscriptions (post-v1.0) add:
 - `subscription_events` — revenue/analytics stream (start, renew, cancel, refund, amount, currency).
 - `billing_credentials` — per-project store API credentials, encrypted under the master key.
 - `paywalls` — per-project paywall config (copy, offering, layout, legal links), an extension of the theme.
+
+Web billing (post-v1.2) adds:
+
+- `stripe_customers` — per-project per-user mapping to the Stripe customer id; `products` gain a `stripe_price_id` and `subscriptions`/`billing_credentials` accept `stripe` as a third store.
 
 Localization (post-v1.1) adds:
 
@@ -121,6 +128,15 @@ Phase 2 is dependency-ordered too: 11 is the engine, 12 gets tiers into the stor
 | [16](16-localized-sdk.md) | Localized Flutter SDK | The SDK sends the device language, consumes the negotiated project copy (revision-cached), and falls back to bundled translations offline — `MothLoginScreen` (sign-in/sign-up) and `MothPaywallScreen` render fully localized with the project's own wording. |
 
 Phase 3 is dependency-ordered: 15 delivers the server negotiation, the copy model, and the admin editor + preview; 16 makes the Flutter SDK send its language and render the negotiated, project-customized copy with a bundled offline fallback. It extends the milestone-06 design system (the Design tab and its live preview) and the milestone-05/13 config-delivery + client-cache mechanism (theme, paywall, now copy).
+
+### Phase 4 — Web (post-v1.2, ships as v1.3)
+
+| # | Milestone | Outcome |
+|---|---|---|
+| [17](17-stripe-billing.md) | Stripe billing (web) | Stripe as a third store in the milestone-11 engine: tiers gain a Stripe price, hosted Checkout + Billing Portal sessions, signature-verified webhooks with validating re-reads, full API-driven catalog provisioning, exact web revenue in the analytics. |
+| [18](18-react-sdk.md) | React SDK + npm serving | `@moth/react` served from the binary via an embedded npm registry; `MothProvider` + hooks + a batteries-included login screen, themed (06) and localized (15) from day one; entitlement gating and a themed web paywall selling through Stripe Checkout (17) — the milestone-05 + 13 developer experience for the web. |
+
+Phase 4 is dependency-ordered like the others: 17 extends the milestone-11 billing engine server-side (same status enum, derivation matrix, notifications table, and analytics stream — Stripe is a new `store` value, not a parallel system), and 18 packages the whole stack for the browser the way 05 did for Flutter — the auth protos already speak gRPC-Web (the admin SPA proves it), milestone 04 built the web OAuth flows, theme + copy delivery exist, and the milestone-13 paywall config now drives a web paywall too. The React SDK's auth story stands alone, so 18's login-facing work can proceed in parallel with 17; its billing surface lands once 17 does.
 
 ## Non-goals (v1)
 

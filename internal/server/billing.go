@@ -85,6 +85,27 @@ func (s *Server) handleGoogleRTDN(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+// handleStripeWebhook receives a Stripe webhook event:
+// POST /billing/stripe/webhook/{slug} with a Stripe-Signature header. The raw
+// body bytes are what the HMAC signs, so they are read verbatim and verified
+// inside ProcessStripeWebhook before anything is parsed or persisted.
+func (s *Server) handleStripeWebhook(w http.ResponseWriter, r *http.Request) {
+	project, ok := s.billingProject(w, r)
+	if !ok {
+		return
+	}
+	body, err := io.ReadAll(io.LimitReader(r.Body, webhookMaxBody))
+	if err != nil {
+		http.Error(w, "read body", http.StatusBadRequest)
+		return
+	}
+	if err := s.billing.ProcessStripeWebhook(r.Context(), project, body, r.Header.Get("Stripe-Signature")); err != nil {
+		s.writeWebhookError(w, r, "stripe", err)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
 // billingProject resolves the {slug} path value to a project, writing a 404 when
 // it is unknown.
 func (s *Server) billingProject(w http.ResponseWriter, r *http.Request) (store.Project, bool) {

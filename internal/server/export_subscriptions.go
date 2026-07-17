@@ -83,7 +83,8 @@ func (s *Server) handleExportSubscriptions(w http.ResponseWriter, r *http.Reques
 	cw := csv.NewWriter(w)
 	_ = cw.Write([]string{"period", "currency", "revenue_micros", "active_subscribers",
 		"new_subscribers", "renewals", "churned", "trials_started", "trials_converted",
-		"store_apple_revenue_micros", "store_google_revenue_micros"})
+		"store_apple_revenue_micros", "store_google_revenue_micros",
+		"store_stripe_revenue_micros"})
 	for _, row := range rows {
 		// currency is store-reported; run it through csvSafe so a hostile
 		// value cannot smuggle a spreadsheet formula. Numbers are safe as-is.
@@ -99,6 +100,7 @@ func (s *Server) handleExportSubscriptions(w http.ResponseWriter, r *http.Reques
 			strconv.Itoa(row.TrialsConverted),
 			strconv.FormatInt(row.StoreAppleRevenueMicros, 10),
 			strconv.FormatInt(row.StoreGoogleRevenueMicros, 10),
+			strconv.FormatInt(row.StoreStripeRevenueMicros, 10),
 		})
 	}
 	cw.Flush()

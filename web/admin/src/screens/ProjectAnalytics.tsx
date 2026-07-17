@@ -527,6 +527,11 @@ function SubscriptionSection({ project }: { project: Project }) {
                 label: "Google",
                 value: Math.round(Number(amountFor(stores?.google ?? [], currency)) / 1_000_000),
               },
+              {
+                // Stripe money is the web channel in the store dimension.
+                label: "Web",
+                value: Math.round(Number(amountFor(stores?.stripe ?? [], currency)) / 1_000_000),
+              },
             ]}
           />
         </section>

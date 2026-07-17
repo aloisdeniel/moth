@@ -120,6 +120,7 @@ class OfferingProduct extends $pb.GeneratedMessage {
     $core.Iterable<$core.String>? entitlements,
     $core.int? sortOrder,
     $core.bool? highlighted,
+    $core.String? stripePriceId,
   }) {
     final result = create();
     if (identifier != null) result.identifier = identifier;
@@ -136,6 +137,7 @@ class OfferingProduct extends $pb.GeneratedMessage {
     if (entitlements != null) result.entitlements.addAll(entitlements);
     if (sortOrder != null) result.sortOrder = sortOrder;
     if (highlighted != null) result.highlighted = highlighted;
+    if (stripePriceId != null) result.stripePriceId = stripePriceId;
     return result;
   }
 
@@ -166,6 +168,7 @@ class OfferingProduct extends $pb.GeneratedMessage {
     ..pPS(11, _omitFieldNames ? '' : 'entitlements')
     ..aI(12, _omitFieldNames ? '' : 'sortOrder')
     ..aOB(13, _omitFieldNames ? '' : 'highlighted')
+    ..aOS(14, _omitFieldNames ? '' : 'stripePriceId')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -306,6 +309,17 @@ class OfferingProduct extends $pb.GeneratedMessage {
   $core.bool hasHighlighted() => $_has(12);
   @$pb.TagNumber(13)
   void clearHighlighted() => $_clearField(13);
+
+  /// Stripe recurring Price id ("price_..."); empty when the tier does not sell
+  /// on the web (the React paywall marks such tiers unavailable).
+  @$pb.TagNumber(14)
+  $core.String get stripePriceId => $_getSZ(13);
+  @$pb.TagNumber(14)
+  set stripePriceId($core.String value) => $_setString(13, value);
+  @$pb.TagNumber(14)
+  $core.bool hasStripePriceId() => $_has(13);
+  @$pb.TagNumber(14)
+  void clearStripePriceId() => $_clearField(14);
 }
 
 /// Paywall is the public, render-ready paywall configuration. Copy and layout
@@ -1527,6 +1541,273 @@ class RestorePurchasesResponse extends $pb.GeneratedMessage {
   void clearCustomerInfo() => $_clearField(1);
   @$pb.TagNumber(1)
   CustomerInfo ensureCustomerInfo() => $_ensure(0);
+}
+
+class CreateCheckoutSessionRequest extends $pb.GeneratedMessage {
+  factory CreateCheckoutSessionRequest({
+    $core.String? productIdentifier,
+    $core.String? successUrl,
+    $core.String? cancelUrl,
+  }) {
+    final result = create();
+    if (productIdentifier != null) result.productIdentifier = productIdentifier;
+    if (successUrl != null) result.successUrl = successUrl;
+    if (cancelUrl != null) result.cancelUrl = cancelUrl;
+    return result;
+  }
+
+  CreateCheckoutSessionRequest._();
+
+  factory CreateCheckoutSessionRequest.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory CreateCheckoutSessionRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'CreateCheckoutSessionRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'productIdentifier')
+    ..aOS(2, _omitFieldNames ? '' : 'successUrl')
+    ..aOS(3, _omitFieldNames ? '' : 'cancelUrl')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateCheckoutSessionRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateCheckoutSessionRequest copyWith(
+          void Function(CreateCheckoutSessionRequest) updates) =>
+      super.copyWith(
+              (message) => updates(message as CreateCheckoutSessionRequest))
+          as CreateCheckoutSessionRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateCheckoutSessionRequest create() =>
+      CreateCheckoutSessionRequest._();
+  @$core.override
+  CreateCheckoutSessionRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static CreateCheckoutSessionRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<CreateCheckoutSessionRequest>(create);
+  static CreateCheckoutSessionRequest? _defaultInstance;
+
+  /// The moth product identifier to subscribe to (its own catalog id, not the
+  /// Stripe price id). The tier must carry a stripe_price_id.
+  @$pb.TagNumber(1)
+  $core.String get productIdentifier => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set productIdentifier($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasProductIdentifier() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearProductIdentifier() => $_clearField(1);
+
+  /// Where Stripe redirects the browser after a completed checkout.
+  @$pb.TagNumber(2)
+  $core.String get successUrl => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set successUrl($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasSuccessUrl() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearSuccessUrl() => $_clearField(2);
+
+  /// Where Stripe redirects the browser when the user backs out.
+  @$pb.TagNumber(3)
+  $core.String get cancelUrl => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set cancelUrl($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasCancelUrl() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearCancelUrl() => $_clearField(3);
+}
+
+class CreateCheckoutSessionResponse extends $pb.GeneratedMessage {
+  factory CreateCheckoutSessionResponse({
+    $core.String? url,
+  }) {
+    final result = create();
+    if (url != null) result.url = url;
+    return result;
+  }
+
+  CreateCheckoutSessionResponse._();
+
+  factory CreateCheckoutSessionResponse.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory CreateCheckoutSessionResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'CreateCheckoutSessionResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'url')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateCheckoutSessionResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateCheckoutSessionResponse copyWith(
+          void Function(CreateCheckoutSessionResponse) updates) =>
+      super.copyWith(
+              (message) => updates(message as CreateCheckoutSessionResponse))
+          as CreateCheckoutSessionResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateCheckoutSessionResponse create() =>
+      CreateCheckoutSessionResponse._();
+  @$core.override
+  CreateCheckoutSessionResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static CreateCheckoutSessionResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<CreateCheckoutSessionResponse>(create);
+  static CreateCheckoutSessionResponse? _defaultInstance;
+
+  /// The Stripe-hosted Checkout URL to redirect the browser to.
+  @$pb.TagNumber(1)
+  $core.String get url => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set url($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasUrl() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUrl() => $_clearField(1);
+}
+
+class CreateBillingPortalSessionRequest extends $pb.GeneratedMessage {
+  factory CreateBillingPortalSessionRequest({
+    $core.String? returnUrl,
+  }) {
+    final result = create();
+    if (returnUrl != null) result.returnUrl = returnUrl;
+    return result;
+  }
+
+  CreateBillingPortalSessionRequest._();
+
+  factory CreateBillingPortalSessionRequest.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory CreateBillingPortalSessionRequest.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'CreateBillingPortalSessionRequest',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'returnUrl')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateBillingPortalSessionRequest clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateBillingPortalSessionRequest copyWith(
+          void Function(CreateBillingPortalSessionRequest) updates) =>
+      super.copyWith((message) =>
+              updates(message as CreateBillingPortalSessionRequest))
+          as CreateBillingPortalSessionRequest;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateBillingPortalSessionRequest create() =>
+      CreateBillingPortalSessionRequest._();
+  @$core.override
+  CreateBillingPortalSessionRequest createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static CreateBillingPortalSessionRequest getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<CreateBillingPortalSessionRequest>(
+          create);
+  static CreateBillingPortalSessionRequest? _defaultInstance;
+
+  /// Where Stripe redirects the browser when the user leaves the portal.
+  @$pb.TagNumber(1)
+  $core.String get returnUrl => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set returnUrl($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasReturnUrl() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearReturnUrl() => $_clearField(1);
+}
+
+class CreateBillingPortalSessionResponse extends $pb.GeneratedMessage {
+  factory CreateBillingPortalSessionResponse({
+    $core.String? url,
+  }) {
+    final result = create();
+    if (url != null) result.url = url;
+    return result;
+  }
+
+  CreateBillingPortalSessionResponse._();
+
+  factory CreateBillingPortalSessionResponse.fromBuffer(
+          $core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory CreateBillingPortalSessionResponse.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'CreateBillingPortalSessionResponse',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'url')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateBillingPortalSessionResponse clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  CreateBillingPortalSessionResponse copyWith(
+          void Function(CreateBillingPortalSessionResponse) updates) =>
+      super.copyWith((message) =>
+              updates(message as CreateBillingPortalSessionResponse))
+          as CreateBillingPortalSessionResponse;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static CreateBillingPortalSessionResponse create() =>
+      CreateBillingPortalSessionResponse._();
+  @$core.override
+  CreateBillingPortalSessionResponse createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static CreateBillingPortalSessionResponse getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<CreateBillingPortalSessionResponse>(
+          create);
+  static CreateBillingPortalSessionResponse? _defaultInstance;
+
+  /// The Stripe-hosted Billing Portal URL to redirect the browser to.
+  @$pb.TagNumber(1)
+  $core.String get url => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set url($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasUrl() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUrl() => $_clearField(1);
 }
 
 const $core.bool _omitFieldNames =

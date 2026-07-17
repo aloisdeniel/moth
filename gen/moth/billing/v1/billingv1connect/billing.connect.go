@@ -48,6 +48,12 @@ const (
 	// BillingServiceGetPaywallProcedure is the fully-qualified name of the BillingService's GetPaywall
 	// RPC.
 	BillingServiceGetPaywallProcedure = "/moth.billing.v1.BillingService/GetPaywall"
+	// BillingServiceCreateCheckoutSessionProcedure is the fully-qualified name of the BillingService's
+	// CreateCheckoutSession RPC.
+	BillingServiceCreateCheckoutSessionProcedure = "/moth.billing.v1.BillingService/CreateCheckoutSession"
+	// BillingServiceCreateBillingPortalSessionProcedure is the fully-qualified name of the
+	// BillingService's CreateBillingPortalSession RPC.
+	BillingServiceCreateBillingPortalSessionProcedure = "/moth.billing.v1.BillingService/CreateBillingPortalSession"
 )
 
 // BillingServiceClient is a client for the moth.billing.v1.BillingService service.
@@ -85,6 +91,20 @@ type BillingServiceClient interface {
 	// `paywall` is present and the client replaces its cache. Publishable-key
 	// only, like GetOfferings.
 	GetPaywall(context.Context, *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error)
+	// CreateCheckoutSession starts a Stripe-hosted Checkout for a subscription to
+	// the tier's Stripe price, bound to the signed-in user's Stripe customer
+	// (created on demand). moth never renders a card field: the response is a
+	// redirect URL to Stripe's hosted Checkout, and the resulting subscription
+	// lands through the webhook like any other store event. Requires Bearer
+	// (like GetCustomerInfo); fails with a precondition error when the project
+	// has no Stripe credentials, and an invalid-argument error when the tier has
+	// no Stripe price.
+	CreateCheckoutSession(context.Context, *connect.Request[v1.CreateCheckoutSessionRequest]) (*connect.Response[v1.CreateCheckoutSessionResponse], error)
+	// CreateBillingPortalSession returns a Stripe Billing Portal URL for the
+	// signed-in user — cancel, payment-method and invoice management stay
+	// Stripe-hosted, the web analogue of deep-linking to the stores'
+	// subscription-management UI. Requires Bearer.
+	CreateBillingPortalSession(context.Context, *connect.Request[v1.CreateBillingPortalSessionRequest]) (*connect.Response[v1.CreateBillingPortalSessionResponse], error)
 }
 
 // NewBillingServiceClient constructs a client for the moth.billing.v1.BillingService service. By
@@ -128,16 +148,30 @@ func NewBillingServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(billingServiceMethods.ByName("GetPaywall")),
 			connect.WithClientOptions(opts...),
 		),
+		createCheckoutSession: connect.NewClient[v1.CreateCheckoutSessionRequest, v1.CreateCheckoutSessionResponse](
+			httpClient,
+			baseURL+BillingServiceCreateCheckoutSessionProcedure,
+			connect.WithSchema(billingServiceMethods.ByName("CreateCheckoutSession")),
+			connect.WithClientOptions(opts...),
+		),
+		createBillingPortalSession: connect.NewClient[v1.CreateBillingPortalSessionRequest, v1.CreateBillingPortalSessionResponse](
+			httpClient,
+			baseURL+BillingServiceCreateBillingPortalSessionProcedure,
+			connect.WithSchema(billingServiceMethods.ByName("CreateBillingPortalSession")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // billingServiceClient implements BillingServiceClient.
 type billingServiceClient struct {
-	getCustomerInfo  *connect.Client[v1.GetCustomerInfoRequest, v1.GetCustomerInfoResponse]
-	submitPurchase   *connect.Client[v1.SubmitPurchaseRequest, v1.SubmitPurchaseResponse]
-	restorePurchases *connect.Client[v1.RestorePurchasesRequest, v1.RestorePurchasesResponse]
-	getOfferings     *connect.Client[v1.GetOfferingsRequest, v1.GetOfferingsResponse]
-	getPaywall       *connect.Client[v1.GetPaywallRequest, v1.GetPaywallResponse]
+	getCustomerInfo            *connect.Client[v1.GetCustomerInfoRequest, v1.GetCustomerInfoResponse]
+	submitPurchase             *connect.Client[v1.SubmitPurchaseRequest, v1.SubmitPurchaseResponse]
+	restorePurchases           *connect.Client[v1.RestorePurchasesRequest, v1.RestorePurchasesResponse]
+	getOfferings               *connect.Client[v1.GetOfferingsRequest, v1.GetOfferingsResponse]
+	getPaywall                 *connect.Client[v1.GetPaywallRequest, v1.GetPaywallResponse]
+	createCheckoutSession      *connect.Client[v1.CreateCheckoutSessionRequest, v1.CreateCheckoutSessionResponse]
+	createBillingPortalSession *connect.Client[v1.CreateBillingPortalSessionRequest, v1.CreateBillingPortalSessionResponse]
 }
 
 // GetCustomerInfo calls moth.billing.v1.BillingService.GetCustomerInfo.
@@ -163,6 +197,16 @@ func (c *billingServiceClient) GetOfferings(ctx context.Context, req *connect.Re
 // GetPaywall calls moth.billing.v1.BillingService.GetPaywall.
 func (c *billingServiceClient) GetPaywall(ctx context.Context, req *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error) {
 	return c.getPaywall.CallUnary(ctx, req)
+}
+
+// CreateCheckoutSession calls moth.billing.v1.BillingService.CreateCheckoutSession.
+func (c *billingServiceClient) CreateCheckoutSession(ctx context.Context, req *connect.Request[v1.CreateCheckoutSessionRequest]) (*connect.Response[v1.CreateCheckoutSessionResponse], error) {
+	return c.createCheckoutSession.CallUnary(ctx, req)
+}
+
+// CreateBillingPortalSession calls moth.billing.v1.BillingService.CreateBillingPortalSession.
+func (c *billingServiceClient) CreateBillingPortalSession(ctx context.Context, req *connect.Request[v1.CreateBillingPortalSessionRequest]) (*connect.Response[v1.CreateBillingPortalSessionResponse], error) {
+	return c.createBillingPortalSession.CallUnary(ctx, req)
 }
 
 // BillingServiceHandler is an implementation of the moth.billing.v1.BillingService service.
@@ -200,6 +244,20 @@ type BillingServiceHandler interface {
 	// `paywall` is present and the client replaces its cache. Publishable-key
 	// only, like GetOfferings.
 	GetPaywall(context.Context, *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error)
+	// CreateCheckoutSession starts a Stripe-hosted Checkout for a subscription to
+	// the tier's Stripe price, bound to the signed-in user's Stripe customer
+	// (created on demand). moth never renders a card field: the response is a
+	// redirect URL to Stripe's hosted Checkout, and the resulting subscription
+	// lands through the webhook like any other store event. Requires Bearer
+	// (like GetCustomerInfo); fails with a precondition error when the project
+	// has no Stripe credentials, and an invalid-argument error when the tier has
+	// no Stripe price.
+	CreateCheckoutSession(context.Context, *connect.Request[v1.CreateCheckoutSessionRequest]) (*connect.Response[v1.CreateCheckoutSessionResponse], error)
+	// CreateBillingPortalSession returns a Stripe Billing Portal URL for the
+	// signed-in user — cancel, payment-method and invoice management stay
+	// Stripe-hosted, the web analogue of deep-linking to the stores'
+	// subscription-management UI. Requires Bearer.
+	CreateBillingPortalSession(context.Context, *connect.Request[v1.CreateBillingPortalSessionRequest]) (*connect.Response[v1.CreateBillingPortalSessionResponse], error)
 }
 
 // NewBillingServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -239,6 +297,18 @@ func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.Handler
 		connect.WithSchema(billingServiceMethods.ByName("GetPaywall")),
 		connect.WithHandlerOptions(opts...),
 	)
+	billingServiceCreateCheckoutSessionHandler := connect.NewUnaryHandler(
+		BillingServiceCreateCheckoutSessionProcedure,
+		svc.CreateCheckoutSession,
+		connect.WithSchema(billingServiceMethods.ByName("CreateCheckoutSession")),
+		connect.WithHandlerOptions(opts...),
+	)
+	billingServiceCreateBillingPortalSessionHandler := connect.NewUnaryHandler(
+		BillingServiceCreateBillingPortalSessionProcedure,
+		svc.CreateBillingPortalSession,
+		connect.WithSchema(billingServiceMethods.ByName("CreateBillingPortalSession")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/moth.billing.v1.BillingService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case BillingServiceGetCustomerInfoProcedure:
@@ -251,6 +321,10 @@ func NewBillingServiceHandler(svc BillingServiceHandler, opts ...connect.Handler
 			billingServiceGetOfferingsHandler.ServeHTTP(w, r)
 		case BillingServiceGetPaywallProcedure:
 			billingServiceGetPaywallHandler.ServeHTTP(w, r)
+		case BillingServiceCreateCheckoutSessionProcedure:
+			billingServiceCreateCheckoutSessionHandler.ServeHTTP(w, r)
+		case BillingServiceCreateBillingPortalSessionProcedure:
+			billingServiceCreateBillingPortalSessionHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -278,4 +352,12 @@ func (UnimplementedBillingServiceHandler) GetOfferings(context.Context, *connect
 
 func (UnimplementedBillingServiceHandler) GetPaywall(context.Context, *connect.Request[v1.GetPaywallRequest]) (*connect.Response[v1.GetPaywallResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.billing.v1.BillingService.GetPaywall is not implemented"))
+}
+
+func (UnimplementedBillingServiceHandler) CreateCheckoutSession(context.Context, *connect.Request[v1.CreateCheckoutSessionRequest]) (*connect.Response[v1.CreateCheckoutSessionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.billing.v1.BillingService.CreateCheckoutSession is not implemented"))
+}
+
+func (UnimplementedBillingServiceHandler) CreateBillingPortalSession(context.Context, *connect.Request[v1.CreateBillingPortalSessionRequest]) (*connect.Response[v1.CreateBillingPortalSessionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.billing.v1.BillingService.CreateBillingPortalSession is not implemented"))
 }

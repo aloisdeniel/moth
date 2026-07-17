@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -90,7 +92,7 @@ func TestProductCRUDWithEntitlements(t *testing.T) {
 
 	p := Product{
 		ID: "prod1", ProjectID: pid, Identifier: "monthly", DisplayName: "Monthly",
-		AppleProductID: "com.app.monthly", GoogleProductID: "",
+		AppleProductID: "com.app.monthly", GoogleProductID: "", StripePriceID: "price_123",
 		BillingPeriod: "monthly", PriceAmountMicros: 4990000, Currency: "USD",
 		TrialPeriod: "P1W", Offering: "default", SortOrder: 1,
 		EntitlementIDs: []string{"ent-pro"}, CreatedAt: now, UpdatedAt: now,
@@ -113,6 +115,9 @@ func TestProductCRUDWithEntitlements(t *testing.T) {
 	if got.AppleProductID != "com.app.monthly" || got.GoogleProductID != "" {
 		t.Fatalf("nullable store ids not round-tripped: %+v", got)
 	}
+	if got.StripePriceID != "price_123" || got.StripeProductID != "" {
+		t.Fatalf("stripe ids not round-tripped: %+v", got)
+	}
 	if got.PriceAmountMicros != 4990000 || got.Currency != "USD" {
 		t.Fatalf("price metadata mismatch: %+v", got)
 	}
@@ -120,9 +125,11 @@ func TestProductCRUDWithEntitlements(t *testing.T) {
 		t.Fatalf("entitlement grants mismatch: %+v", got.EntitlementIDs)
 	}
 
-	// Update replaces the grant set.
+	// Update replaces the grant set and writes back the Stripe product id (the
+	// provisioning write-back path).
 	got.EntitlementIDs = []string{"ent-pro", "ent-premium"}
 	got.DisplayName = "Monthly Pro"
+	got.StripeProductID = "prod_stripe1"
 	got.UpdatedAt = now.Add(time.Second)
 	if err := s.UpdateProduct(ctx, got); err != nil {
 		t.Fatal(err)
@@ -130,6 +137,9 @@ func TestProductCRUDWithEntitlements(t *testing.T) {
 	got2, _ := s.GetProduct(ctx, pid, "prod1")
 	if got2.DisplayName != "Monthly Pro" || len(got2.EntitlementIDs) != 2 {
 		t.Fatalf("update not applied: %+v", got2)
+	}
+	if got2.StripePriceID != "price_123" || got2.StripeProductID != "prod_stripe1" {
+		t.Fatalf("stripe ids not updated: %+v", got2)
 	}
 
 	// Deleting an entitlement cascades the join row.
@@ -167,23 +177,29 @@ func TestSubscriptionUpsertByStoreIdentity(t *testing.T) {
 		CurrentPeriodEnd: &end, AutoRenew: true, Environment: SubscriptionEnvironmentProduction,
 		RawState: `{"a":1}`, CreatedAt: now, UpdatedAt: now,
 	}
-	stored, err := s.UpsertSubscription(ctx, sub)
+	stored, inserted, err := s.UpsertSubscription(ctx, sub)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if !inserted {
+		t.Fatal("first upsert must report inserted=true")
 	}
 	if stored.ID != "sub1" || stored.CurrentPeriodEnd == nil || !stored.AutoRenew {
 		t.Fatalf("insert mismatch: %+v", stored)
 	}
 
 	// Second upsert on the same store identity keeps id/created_at, updates
-	// the mutable fields.
+	// the mutable fields, and reports inserted=false.
 	sub.ID = "ignored-id"
 	sub.Status = SubscriptionStatusExpired
 	sub.AutoRenew = false
 	sub.UpdatedAt = now.Add(time.Hour)
-	stored2, err := s.UpsertSubscription(ctx, sub)
+	stored2, inserted2, err := s.UpsertSubscription(ctx, sub)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if inserted2 {
+		t.Fatal("upsert of an existing identity must report inserted=false")
 	}
 	if stored2.ID != "sub1" {
 		t.Fatalf("upsert must preserve id, got %q", stored2.ID)
@@ -206,6 +222,59 @@ func TestSubscriptionUpsertByStoreIdentity(t *testing.T) {
 	}
 }
 
+// TestUpsertSubscriptionConcurrentInsert pins the atomic inserted flag: many
+// goroutines upserting the same store identity (the checkout.session.completed
+// vs customer.subscription.created webhook race) see exactly one inserted=true
+// — the guard that keeps acquisition revenue events from double-emitting. Run
+// with -race.
+func TestUpsertSubscriptionConcurrentInsert(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	pid, uid := billingFixture(t, s)
+	now := time.Now()
+
+	const workers = 8
+	var wg sync.WaitGroup
+	insertedCh := make(chan bool, workers)
+	errCh := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			_, inserted, err := s.UpsertSubscription(ctx, Subscription{
+				ID: fmt.Sprintf("cand-%d", i), ProjectID: pid, UserID: uid,
+				Store: SubscriptionStoreStripe, StoreTransactionID: "sub_race",
+				Status: SubscriptionStatusActive, AutoRenew: true,
+				Environment: SubscriptionEnvironmentProduction,
+				CreatedAt:   now, UpdatedAt: now,
+			})
+			if err != nil {
+				errCh <- err
+				return
+			}
+			insertedCh <- inserted
+		}(i)
+	}
+	wg.Wait()
+	close(insertedCh)
+	close(errCh)
+	for err := range errCh {
+		t.Fatalf("concurrent upsert: %v", err)
+	}
+	insertedCount := 0
+	for inserted := range insertedCh {
+		if inserted {
+			insertedCount++
+		}
+	}
+	if insertedCount != 1 {
+		t.Fatalf("inserted=true reported %d times, want exactly 1", insertedCount)
+	}
+	if _, err := s.GetSubscriptionByStoreID(ctx, pid, SubscriptionStoreStripe, "sub_race"); err != nil {
+		t.Fatalf("row missing after concurrent upserts: %v", err)
+	}
+}
+
 func TestListSubscriptionsForReconciliation(t *testing.T) {
 	s := openTestStore(t)
 	ctx := context.Background()
@@ -215,7 +284,7 @@ func TestListSubscriptionsForReconciliation(t *testing.T) {
 	future := now.Add(time.Hour)
 
 	mk := func(id, txn, status string, end *time.Time) {
-		if _, err := s.UpsertSubscription(ctx, Subscription{
+		if _, _, err := s.UpsertSubscription(ctx, Subscription{
 			ID: id, ProjectID: pid, UserID: uid, Store: SubscriptionStoreApple,
 			StoreTransactionID: txn, Status: status, CurrentPeriodEnd: end,
 			Environment: SubscriptionEnvironmentProduction, CreatedAt: now, UpdatedAt: now,
@@ -370,6 +439,134 @@ func TestBillingCredentialsWriteOnlySecrets(t *testing.T) {
 	got, _ = s.GetBillingCredentials(ctx, pid)
 	if len(got.AppleIAPKeyEnc) != 0 {
 		t.Fatalf("empty slice should clear secret, got %v", got.AppleIAPKeyEnc)
+	}
+}
+
+func TestBillingCredentialsStripeSecrets(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	pid, _ := billingFixture(t, s)
+	now := time.Now()
+
+	key := []byte{0x0a, 0x0b}
+	whsec := []byte{0x0c, 0x0d}
+	c := BillingCredentials{
+		ProjectID: pid, StripeSecretKeyEnc: key, StripeWebhookSecretEnc: whsec,
+		StripeWebhookEndpointID: "we_1", CreatedAt: now, UpdatedAt: now,
+	}
+	if err := s.UpsertBillingCredentials(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetBillingCredentials(ctx, pid)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got.StripeSecretKeyEnc, key) || !bytes.Equal(got.StripeWebhookSecretEnc, whsec) {
+		t.Fatalf("stripe secrets not round-tripped: %+v", got)
+	}
+	if got.StripeWebhookEndpointID != "we_1" {
+		t.Fatalf("stripe webhook endpoint id not round-tripped: %+v", got)
+	}
+
+	// nil secrets keep the stored ciphertexts; "" keeps the endpoint id
+	// (mirroring apple_notification_url).
+	c.StripeSecretKeyEnc = nil
+	c.StripeWebhookSecretEnc = nil
+	c.StripeWebhookEndpointID = ""
+	c.UpdatedAt = now.Add(time.Second)
+	if err := s.UpsertBillingCredentials(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = s.GetBillingCredentials(ctx, pid)
+	if !bytes.Equal(got.StripeSecretKeyEnc, key) || !bytes.Equal(got.StripeWebhookSecretEnc, whsec) {
+		t.Fatalf("nil stripe secrets should keep stored values: %+v", got)
+	}
+	if got.StripeWebhookEndpointID != "we_1" {
+		t.Fatalf("empty endpoint id should keep stored value, got %q", got.StripeWebhookEndpointID)
+	}
+
+	// Non-empty replaces; empty (non-nil) slice clears.
+	key2 := []byte{0x0e}
+	c.StripeSecretKeyEnc = key2
+	c.StripeWebhookSecretEnc = []byte{}
+	c.StripeWebhookEndpointID = "we_2"
+	c.UpdatedAt = now.Add(2 * time.Second)
+	if err := s.UpsertBillingCredentials(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = s.GetBillingCredentials(ctx, pid)
+	if !bytes.Equal(got.StripeSecretKeyEnc, key2) {
+		t.Fatalf("non-empty stripe key should replace, got %v", got.StripeSecretKeyEnc)
+	}
+	if len(got.StripeWebhookSecretEnc) != 0 {
+		t.Fatalf("empty slice should clear stripe webhook secret, got %v", got.StripeWebhookSecretEnc)
+	}
+	if got.StripeWebhookEndpointID != "we_2" {
+		t.Fatalf("non-empty endpoint id should replace, got %q", got.StripeWebhookEndpointID)
+	}
+}
+
+func TestStripeCustomers(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+	pid, uid := billingFixture(t, s)
+	now := time.Now()
+
+	if _, err := s.GetStripeCustomer(ctx, pid, uid); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing stripe customer: want ErrNotFound, got %v", err)
+	}
+	if _, err := s.GetStripeCustomerByStripeID(ctx, pid, "cus_1"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing stripe customer by stripe id: want ErrNotFound, got %v", err)
+	}
+
+	c := StripeCustomer{ProjectID: pid, UserID: uid, StripeCustomerID: "cus_1", CreatedAt: now}
+	if err := s.CreateStripeCustomer(ctx, c); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetStripeCustomer(ctx, pid, uid)
+	if err != nil || got.StripeCustomerID != "cus_1" || got.ProjectID != pid || got.UserID != uid {
+		t.Fatalf("get mismatch: %+v (%v)", got, err)
+	}
+	byStripe, err := s.GetStripeCustomerByStripeID(ctx, pid, "cus_1")
+	if err != nil || byStripe.UserID != uid {
+		t.Fatalf("get by stripe id mismatch: %+v (%v)", byStripe, err)
+	}
+	// Another project cannot see the mapping.
+	if _, err := s.GetStripeCustomerByStripeID(ctx, "other-project", "cus_1"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("cross-project lookup: want ErrNotFound, got %v", err)
+	}
+
+	// One Stripe customer per (project, user): a second insert is ErrConflict.
+	dup := StripeCustomer{ProjectID: pid, UserID: uid, StripeCustomerID: "cus_2", CreatedAt: now}
+	if err := s.CreateStripeCustomer(ctx, dup); !errors.Is(err, ErrConflict) {
+		t.Fatalf("duplicate stripe customer: want ErrConflict, got %v", err)
+	}
+
+	// UpdateStripeCustomer overwrites the mapping in place (the stale-mapping
+	// self-heal); updating an absent mapping is ErrNotFound.
+	if err := s.UpdateStripeCustomer(ctx, StripeCustomer{ProjectID: pid, UserID: uid, StripeCustomerID: "cus_fresh"}); err != nil {
+		t.Fatal(err)
+	}
+	got, err = s.GetStripeCustomer(ctx, pid, uid)
+	if err != nil || got.StripeCustomerID != "cus_fresh" {
+		t.Fatalf("update not applied: %+v (%v)", got, err)
+	}
+	if _, err := s.GetStripeCustomerByStripeID(ctx, pid, "cus_1"); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("old stripe id must no longer resolve: %v", err)
+	}
+	if _, err := s.GetStripeCustomerByStripeID(ctx, pid, "cus_fresh"); err != nil {
+		t.Fatalf("fresh stripe id must resolve: %v", err)
+	}
+	if err := s.UpdateStripeCustomer(ctx, StripeCustomer{ProjectID: pid, UserID: "missing-user", StripeCustomerID: "cus_x"}); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("update of absent mapping: want ErrNotFound, got %v", err)
+	}
+
+	// Deleting the user cascades the mapping.
+	if err := s.DeleteUser(ctx, pid, uid); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.GetStripeCustomer(ctx, pid, uid); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("cascade: want ErrNotFound after user delete, got %v", err)
 	}
 }
 

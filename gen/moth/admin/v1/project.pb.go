@@ -172,8 +172,14 @@ type ProjectSettings struct {
 	// Optional CAPTCHA verification endpoint. The CAPTCHA hook is documented
 	// but off by default in v1: this field is stored but not yet wired.
 	CaptchaVerifyUrl string `protobuf:"bytes,15,opt,name=captcha_verify_url,json=captchaVerifyUrl,proto3" json:"captcha_verify_url,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Web origins (e.g. "https://app.example.com") the web-redirect OAuth
+	// fallback may redirect back to, for browser SPAs. Exact-origin matching
+	// (scheme + host + port) constrains the host, so unlike a bare http(s)
+	// scheme this is not an open redirect. Bare origins only — no path,
+	// query or fragment; http is accepted for localhost during development.
+	RedirectOrigins []string `protobuf:"bytes,16,rep,name=redirect_origins,json=redirectOrigins,proto3" json:"redirect_origins,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *ProjectSettings) Reset() {
@@ -309,6 +315,13 @@ func (x *ProjectSettings) GetCaptchaVerifyUrl() string {
 		return x.CaptchaVerifyUrl
 	}
 	return ""
+}
+
+func (x *ProjectSettings) GetRedirectOrigins() []string {
+	if x != nil {
+		return x.RedirectOrigins
+	}
+	return nil
 }
 
 // GoogleProviderConfig configures Sign in with Google for one project. The
@@ -2348,7 +2361,7 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"updateTime\x12:\n" +
 	"\bsettings\x18\a \x01(\v2\x1e.moth.admin.v1.ProjectSettingsR\bsettings\x12\x1d\n" +
 	"\n" +
-	"user_count\x18\b \x01(\x03R\tuserCount\"\xcf\x06\n" +
+	"user_count\x18\b \x01(\x03R\tuserCount\"\xfa\x06\n" +
 	"\x0fProjectSettings\x12.\n" +
 	"\x13password_min_length\x18\x01 \x01(\x05R\x11passwordMinLength\x12<\n" +
 	"\x1arequire_email_verification\x18\x02 \x01(\bR\x18requireEmailVerification\x12.\n" +
@@ -2365,7 +2378,8 @@ const file_moth_admin_v1_project_proto_rawDesc = "" +
 	"\x0frollup_timezone\x18\f \x01(\tR\x0erollupTimezone\x124\n" +
 	"\x16signup_email_allowlist\x18\r \x03(\tR\x14signupEmailAllowlist\x124\n" +
 	"\x16signup_email_blocklist\x18\x0e \x03(\tR\x14signupEmailBlocklist\x12,\n" +
-	"\x12captcha_verify_url\x18\x0f \x01(\tR\x10captchaVerifyUrlB\x1b\n" +
+	"\x12captcha_verify_url\x18\x0f \x01(\tR\x10captchaVerifyUrl\x12)\n" +
+	"\x10redirect_origins\x18\x10 \x03(\tR\x0fredirectOriginsB\x1b\n" +
 	"\x19_auto_link_verified_email\"\x83\x02\n" +
 	"\x14GoogleProviderConfig\x12\x18\n" +
 	"\aenabled\x18\x01 \x01(\bR\aenabled\x12\"\n" +

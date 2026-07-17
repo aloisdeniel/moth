@@ -107,7 +107,7 @@ func TestGetUserEntitlementsMatchesDerivedSet(t *testing.T) {
 		t.Fatal(err)
 	}
 	end := now.Add(24 * time.Hour)
-	if _, err := st.UpsertSubscription(ctx, store.Subscription{ID: authrpc.NewID(),
+	if _, _, err := st.UpsertSubscription(ctx, store.Subscription{ID: authrpc.NewID(),
 		ProjectID: project.ID, UserID: tester.ID, Store: store.SubscriptionStoreApple, ProductID: prod.ID,
 		StoreTransactionID: "sandbox-otx", Status: store.SubscriptionStatusActive, CurrentPeriodEnd: &end,
 		Environment: store.SubscriptionEnvironmentSandbox, CreatedAt: now, UpdatedAt: now}); err != nil {

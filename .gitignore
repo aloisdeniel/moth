@@ -12,3 +12,5 @@ sdk/flutter/pubspec.lock
 web/admin/test-results/
 web/admin/playwright-report/
 web/admin/e2e/preview/
+sdk/react/test-results/
+sdk/react/playwright-report/

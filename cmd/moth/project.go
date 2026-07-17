@@ -466,8 +466,9 @@ differs: it creates the project when the slug is free, updates the name
 and settings otherwise, and installs (or resets) the theme. Running the
 same spec twice reports zero changes.
 
-Unset numeric settings, an empty timezone, an absent redirect_schemes
-list and absent google/apple sections keep the server's current values,
+Unset numeric settings, an empty timezone, absent redirect_schemes and
+redirect_origins lists and absent google/apple sections keep the
+server's current values,
 so partial specs keep unrelated fields untouched. Booleans are the
 exception: proto3 cannot distinguish an omitted boolean from false, so a
 partial spec that omits e.g. require_email_verification applies it as

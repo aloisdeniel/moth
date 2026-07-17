@@ -58,6 +58,11 @@ var throttledProcedures = map[string]bool{
 	// so it is throttled per IP and per project (no account bucket: the request
 	// carries no email).
 	"/moth.billing.v1.BillingService/SubmitPurchase": true,
+	// Milestone 17 — both Stripe RPCs do an outbound Stripe round-trip per call
+	// (checkout may even create a Stripe customer), so they carry the same
+	// per-IP / per-project throttle as SubmitPurchase.
+	"/moth.billing.v1.BillingService/CreateCheckoutSession":      true,
+	"/moth.billing.v1.BillingService/CreateBillingPortalSession": true,
 }
 
 // NewRateLimitInterceptor throttles the sensitive RPCs against the shared,

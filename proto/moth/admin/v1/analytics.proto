@@ -218,6 +218,7 @@ message SubscriptionTierBreakdown {
 message SubscriptionStoreBreakdown {
   repeated CurrencyAmount apple = 1;
   repeated CurrencyAmount google = 2;
+  repeated CurrencyAmount stripe = 3;
 }
 
 message GetSubscriptionStatsResponse {

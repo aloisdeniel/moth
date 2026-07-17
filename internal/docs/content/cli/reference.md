@@ -142,6 +142,7 @@ Flags:
       --json                            print machine-readable JSON
       --project string                  project slug to check provider config for
       --smtp-to string                  send a real test email to this address
+      --stripe-secret-key string        the project's Stripe secret key (sk_/rk_), enabling the Stripe API probe
 ```
 
 ## moth instance
@@ -255,8 +256,9 @@ differs: it creates the project when the slug is free, updates the name
 and settings otherwise, and installs (or resets) the theme. Running the
 same spec twice reports zero changes.
 
-Unset numeric settings, an empty timezone, an absent redirect_schemes
-list and absent google/apple sections keep the server's current values,
+Unset numeric settings, an empty timezone, absent redirect_schemes and
+redirect_origins lists and absent google/apple sections keep the
+server's current values,
 so partial specs keep unrelated fields untouched. Booleans are the
 exception: proto3 cannot distinguish an omitted boolean from false, so a
 partial spec that omits e.g. require_email_verification applies it as
@@ -547,17 +549,22 @@ Flags:
 ## moth setup billing
 
 Configures a project's store monetization end to end: it stores the
-Apple App Store Server API and Google Play Developer API credentials into
-moth's encrypted billing config, pushes moth's product catalog into App
-Store Connect and Google Play (automated where the store APIs allow it,
-guided with exact values where they don't), wires the notification
-endpoints, and verifies each store is reachable and authenticated.
+Apple App Store Server API, Google Play Developer API and Stripe
+credentials into moth's encrypted billing config, pushes moth's product
+catalog into App Store Connect, Google Play and Stripe (automated where
+the store APIs allow it, guided with exact values where they don't),
+wires the notification/webhook endpoints, and verifies each store is
+reachable and authenticated.
 
 The App Store Connect API key (--asc-*) drives the Apple catalog push and
 is used in-process only, never stored. The In-App-Purchase key (--apple-
 iap-*) and the Google service account are stored encrypted for the
-milestone-11 billing engine. Idempotent: re-running diffs the current
-store state and changes only what is needed.
+milestone-11 billing engine. The Stripe secret key (--stripe-secret-key,
+a restricted key is recommended) is stored encrypted AND drives the
+Stripe leg in-process: it provisions a Product + recurring Price per
+tier (writing the ids back onto moth's products), creates the webhook
+endpoint via the API and stores the returned signing secret. Idempotent:
+re-running diffs the current store state and changes only what is needed.
 
 ```
 moth setup billing [flags]
@@ -583,6 +590,8 @@ Flags:
       --google-rtdn-secret string              RTDN push webhook shared secret (stored encrypted)
       --google-service-account string          path to the Play Developer API service-account JSON (stored encrypted)
       --project string                         project slug (required)
+      --stripe                                 enable Stripe (prompts for the secret key when --stripe-secret-key is omitted)
+      --stripe-secret-key string               Stripe restricted/secret key (sk_/rk_; stored encrypted, also drives the catalog push + webhook creation; prefer omitting it: the command prompts without echo)
       --yes                                    push to the live stores without the confirmation prompt
 ```
 

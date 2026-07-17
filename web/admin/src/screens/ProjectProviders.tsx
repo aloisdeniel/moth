@@ -33,6 +33,7 @@ export function ProjectProviders({ project }: { project: Project }) {
   // Shared
   const [autoLink, setAutoLink] = useState(s?.autoLinkVerifiedEmail ?? true);
   const [redirectSchemes, setRedirectSchemes] = useState<string[]>(s?.redirectSchemes ?? []);
+  const [redirectOrigins, setRedirectOrigins] = useState<string[]>(s?.redirectOrigins ?? []);
   const [saved, setSaved] = useState(false);
 
   const instance = useQuery(InstanceSettingsService.method.getInstanceSettings);
@@ -81,6 +82,7 @@ export function ProjectProviders({ project }: { project: Project }) {
         },
         autoLinkVerifiedEmail: autoLink,
         redirectSchemes,
+        redirectOrigins,
         // Owned by the Settings tab; carried through so a providers save
         // does not wipe the abuse-control lists.
         signupEmailAllowlist: s?.signupEmailAllowlist ?? [],
@@ -396,6 +398,13 @@ export function ProjectProviders({ project }: { project: Project }) {
           onChange={setRedirectSchemes}
           placeholder={project.slug}
           help={`Custom URL schemes the web-redirect fallback may send users back to, e.g. "${project.slug}" for ${project.slug}://auth?code=…. Open-redirect protection: callbacks only redirect to schemes on this list.`}
+        />
+        <StringListField
+          label="Redirect origins (web)"
+          values={redirectOrigins}
+          onChange={setRedirectOrigins}
+          placeholder="https://app.example.com"
+          help="https://app.example.com — where the browser SDK may receive the sign-in code; exact origin match (scheme, host and port), any path. Bare origins only; http:// is accepted for localhost during development."
         />
       </section>
 

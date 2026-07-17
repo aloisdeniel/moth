@@ -19,7 +19,9 @@ import (
 // identity resolution with.
 
 // handleOAuthStart begins the flow:
-// GET /oauth/{provider}/start?project={slug}&redirect={registered-scheme URI}.
+// GET /oauth/{provider}/start?project={slug}&redirect={URI}, where the
+// redirect URI targets a registered custom scheme (mobile deep link) or a
+// registered web origin (browser SPA).
 func (s *Server) handleOAuthStart(w http.ResponseWriter, r *http.Request) {
 	provider := r.PathValue("provider")
 	project, err := s.store.GetProjectBySlug(r.Context(), r.URL.Query().Get("project"))
@@ -78,11 +80,14 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if redirectURI != "" {
+		// A plain 302 works for both registered destinations: custom
+		// schemes hand off to the mobile app, http(s) origins land the
+		// browser back on the SPA's return route with ?code=….
 		http.Redirect(w, r, appendCodeParam(redirectURI, code), http.StatusFound)
 		return
 	}
-	// No registered scheme: hosted success page (manual testing and
-	// non-mobile clients); the code is shown so it can be exchanged by
+	// No redirect registered at start: hosted success page (manual testing
+	// and non-mobile clients); the code is shown so it can be exchanged by
 	// hand.
 	s.renderPage(w, r, project, pageData{
 		Title:   loc.Value(i18n.HostedOAuthSuccess, map[string]string{"app": project.Name}),

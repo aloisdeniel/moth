@@ -63,6 +63,7 @@ export default defineConfig({
           ],
         },
         { label: 'Flutter SDK reference', slug: 'docs/sdk' },
+        { label: 'React SDK reference', slug: 'docs/react' },
         {
           label: 'CLI reference',
           items: [

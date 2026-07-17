@@ -49,6 +49,12 @@ message Product {
   repeated string entitlement_ids = 14;
   google.protobuf.Timestamp create_time = 15;
   google.protobuf.Timestamp update_time = 16;
+  // Stripe recurring Price id ("price_..."); empty when the tier does not sell
+  // on the web. Provisioning ("create in Stripe") writes it back; a price edit
+  // creates a new Price and re-points this field (Stripe prices are immutable).
+  string stripe_price_id = 17;
+  // The linked Stripe Product id ("prod_..."), written back by provisioning.
+  string stripe_product_id = 18;
 }
 
 message ListProductsRequest {

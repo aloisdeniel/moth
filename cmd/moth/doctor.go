@@ -45,5 +45,7 @@ verified against the providers' live endpoints.`,
 		"path to the project's App Store Server API In-App-Purchase .p8, enabling the billing store probe")
 	cmd.Flags().StringVar(&d.GoogleServiceAccountPath, "google-service-account", "",
 		"path to the project's Play Developer API service-account JSON, enabling the billing store probe")
+	cmd.Flags().StringVar(&d.StripeSecretKey, "stripe-secret-key", "",
+		"the project's Stripe secret key (sk_/rk_), enabling the Stripe API probe")
 	return cmd
 }

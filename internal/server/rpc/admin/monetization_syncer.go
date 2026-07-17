@@ -32,9 +32,17 @@ func NewLiveStoreSyncer(master keys.MasterKey) LiveStoreSyncer {
 // push runs here. The RTDN Pub/Sub topic needs a separate pubsub-scoped
 // credential moth does not hold, so topic/subscription wiring degrades to a
 // guided notification result.
+//
+// Stripe: the secret key is stored and the Stripe API can do everything, so
+// the catalog push (Products + recurring Prices) is fully automated here. The
+// webhook endpoint is NOT wired from this path — Stripe reveals the signing
+// secret exactly once at creation and `moth setup billing` persists it in the
+// same run; the handler surfaces a guided step until the secret is stored.
 type LiveStoreSyncer struct {
 	master keys.MasterKey
 	httpc  billing.Doer
+	// stripeBaseURL overrides the Stripe API host (test double); "" is prod.
+	stripeBaseURL string
 }
 
 func (s LiveStoreSyncer) Sync(ctx context.Context, storeName, slug, baseURL string, creds store.BillingCredentials, cat setup.DesiredCatalog) (*setup.SyncResult, error) {
@@ -43,6 +51,8 @@ func (s LiveStoreSyncer) Sync(ctx context.Context, storeName, slug, baseURL stri
 		return s.syncApple(slug), nil
 	case store.SubscriptionStoreGoogle:
 		return s.syncGoogle(ctx, slug, baseURL, creds, cat)
+	case store.SubscriptionStoreStripe:
+		return s.syncStripe(ctx, creds, cat)
 	default:
 		return nil, fmt.Errorf("unknown store %q", storeName)
 	}
@@ -88,6 +98,19 @@ func (s LiveStoreSyncer) syncGoogle(ctx context.Context, slug, baseURL string, c
 		_ = setup.WireRTDN(ctx, nil, topicID, "moth-"+slug+"-rtdn", endpoint, res)
 	}
 	return res, nil
+}
+
+// syncStripe pushes the catalog into Stripe with the stored (decrypted) secret
+// key — the fully-automatable third store (plan/17). Created/re-pointed
+// Price/Product ids come back through ProductResult and are written onto
+// moth's products by the handler's applySync.
+func (s LiveStoreSyncer) syncStripe(ctx context.Context, creds store.BillingCredentials, cat setup.DesiredCatalog) (*setup.SyncResult, error) {
+	key, err := s.master.Decrypt(creds.StripeSecretKeyEnc)
+	if err != nil {
+		return nil, fmt.Errorf("decrypt stripe secret key: %w", err)
+	}
+	sc := &setup.StripeCatalog{BaseURL: s.stripeBaseURL, SecretKey: string(key), HTTPC: s.httpc}
+	return sc.Sync(ctx, cat)
 }
 
 // rtdnEndpoint builds the RTDN push endpoint including the shared-secret

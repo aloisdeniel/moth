@@ -59,6 +59,7 @@ export function ProjectSettings({ project }: { project: Project }) {
         apple: s?.apple,
         autoLinkVerifiedEmail: s?.autoLinkVerifiedEmail,
         redirectSchemes: s?.redirectSchemes ?? [],
+        redirectOrigins: s?.redirectOrigins ?? [],
         signupEmailAllowlist: allowlist,
         signupEmailBlocklist: blocklist,
         captchaVerifyUrl: captchaUrl.trim(),

@@ -108,6 +108,34 @@ class BillingServiceClient extends $grpc.Client {
     return $createUnaryCall(_$getPaywall, request, options: options);
   }
 
+  /// CreateCheckoutSession starts a Stripe-hosted Checkout for a subscription to
+  /// the tier's Stripe price, bound to the signed-in user's Stripe customer
+  /// (created on demand). moth never renders a card field: the response is a
+  /// redirect URL to Stripe's hosted Checkout, and the resulting subscription
+  /// lands through the webhook like any other store event. Requires Bearer
+  /// (like GetCustomerInfo); fails with a precondition error when the project
+  /// has no Stripe credentials, and an invalid-argument error when the tier has
+  /// no Stripe price.
+  $grpc.ResponseFuture<$0.CreateCheckoutSessionResponse> createCheckoutSession(
+    $0.CreateCheckoutSessionRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$createCheckoutSession, request, options: options);
+  }
+
+  /// CreateBillingPortalSession returns a Stripe Billing Portal URL for the
+  /// signed-in user — cancel, payment-method and invoice management stay
+  /// Stripe-hosted, the web analogue of deep-linking to the stores'
+  /// subscription-management UI. Requires Bearer.
+  $grpc.ResponseFuture<$0.CreateBillingPortalSessionResponse>
+      createBillingPortalSession(
+    $0.CreateBillingPortalSessionRequest request, {
+    $grpc.CallOptions? options,
+  }) {
+    return $createUnaryCall(_$createBillingPortalSession, request,
+        options: options);
+  }
+
   // method descriptors
 
   static final _$getCustomerInfo =
@@ -135,6 +163,17 @@ class BillingServiceClient extends $grpc.Client {
           '/moth.billing.v1.BillingService/GetPaywall',
           ($0.GetPaywallRequest value) => value.writeToBuffer(),
           $0.GetPaywallResponse.fromBuffer);
+  static final _$createCheckoutSession = $grpc.ClientMethod<
+          $0.CreateCheckoutSessionRequest, $0.CreateCheckoutSessionResponse>(
+      '/moth.billing.v1.BillingService/CreateCheckoutSession',
+      ($0.CreateCheckoutSessionRequest value) => value.writeToBuffer(),
+      $0.CreateCheckoutSessionResponse.fromBuffer);
+  static final _$createBillingPortalSession = $grpc.ClientMethod<
+          $0.CreateBillingPortalSessionRequest,
+          $0.CreateBillingPortalSessionResponse>(
+      '/moth.billing.v1.BillingService/CreateBillingPortalSession',
+      ($0.CreateBillingPortalSessionRequest value) => value.writeToBuffer(),
+      $0.CreateBillingPortalSessionResponse.fromBuffer);
 }
 
 @$pb.GrpcServiceName('moth.billing.v1.BillingService')
@@ -185,6 +224,25 @@ abstract class BillingServiceBase extends $grpc.Service {
         false,
         ($core.List<$core.int> value) => $0.GetPaywallRequest.fromBuffer(value),
         ($0.GetPaywallResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.CreateCheckoutSessionRequest,
+            $0.CreateCheckoutSessionResponse>(
+        'CreateCheckoutSession',
+        createCheckoutSession_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.CreateCheckoutSessionRequest.fromBuffer(value),
+        ($0.CreateCheckoutSessionResponse value) => value.writeToBuffer()));
+    $addMethod($grpc.ServiceMethod<$0.CreateBillingPortalSessionRequest,
+            $0.CreateBillingPortalSessionResponse>(
+        'CreateBillingPortalSession',
+        createBillingPortalSession_Pre,
+        false,
+        false,
+        ($core.List<$core.int> value) =>
+            $0.CreateBillingPortalSessionRequest.fromBuffer(value),
+        ($0.CreateBillingPortalSessionResponse value) =>
+            value.writeToBuffer()));
   }
 
   $async.Future<$0.GetCustomerInfoResponse> getCustomerInfo_Pre(
@@ -230,4 +288,23 @@ abstract class BillingServiceBase extends $grpc.Service {
 
   $async.Future<$0.GetPaywallResponse> getPaywall(
       $grpc.ServiceCall call, $0.GetPaywallRequest request);
+
+  $async.Future<$0.CreateCheckoutSessionResponse> createCheckoutSession_Pre(
+      $grpc.ServiceCall $call,
+      $async.Future<$0.CreateCheckoutSessionRequest> $request) async {
+    return createCheckoutSession($call, await $request);
+  }
+
+  $async.Future<$0.CreateCheckoutSessionResponse> createCheckoutSession(
+      $grpc.ServiceCall call, $0.CreateCheckoutSessionRequest request);
+
+  $async.Future<$0.CreateBillingPortalSessionResponse>
+      createBillingPortalSession_Pre($grpc.ServiceCall $call,
+          $async.Future<$0.CreateBillingPortalSessionRequest> $request) async {
+    return createBillingPortalSession($call, await $request);
+  }
+
+  $async.Future<$0.CreateBillingPortalSessionResponse>
+      createBillingPortalSession(
+          $grpc.ServiceCall call, $0.CreateBillingPortalSessionRequest request);
 }

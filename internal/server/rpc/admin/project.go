@@ -455,6 +455,7 @@ func (h *ProjectHandler) settingsProto(ctx context.Context, projectID string, s 
 		},
 		AutoLinkVerifiedEmail:  &autoLink,
 		RedirectSchemes:        s.RedirectSchemes,
+		RedirectOrigins:        s.RedirectOrigins,
 		AnalyticsRetentionDays: int32(s.AnalyticsRetentionDays),
 		RollupTimezone:         s.RollupTimezone,
 		SignupEmailAllowlist:   s.SignupEmailAllowlist,
@@ -550,12 +551,23 @@ func settingsFromProto(s *adminv1.ProjectSettings) (store.ProjectSettings, error
 		}
 		// The redirect check matches the scheme only, so registering
 		// http(s) would let the OAuth callback redirect to any host (open
-		// redirect); only custom app schemes are accepted.
+		// redirect); only custom app schemes are accepted. Web apps
+		// register their exact origin in redirect_origins instead.
 		if scheme == "http" || scheme == "https" {
 			return store.ProjectSettings{}, fmt.Errorf(
-				"redirect scheme %q is not allowed; register the app's custom scheme instead", scheme)
+				"redirect scheme %q is not allowed; register the app's custom scheme instead (web apps: register the origin in redirect_origins)", scheme)
 		}
 		out.RedirectSchemes = append(out.RedirectSchemes, scheme)
+	}
+	for _, origin := range s.RedirectOrigins {
+		if strings.TrimSpace(origin) == "" {
+			continue
+		}
+		normalized, err := authrpc.NormalizeRedirectOrigin(origin)
+		if err != nil {
+			return store.ProjectSettings{}, err
+		}
+		out.RedirectOrigins = append(out.RedirectOrigins, normalized)
 	}
 	// Abuse controls: normalize domain patterns (trim + lowercase, drop
 	// blanks). The matcher in internal/server/rpc/auth/abuse.go accepts exact

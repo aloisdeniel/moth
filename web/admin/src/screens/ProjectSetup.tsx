@@ -29,14 +29,45 @@ function useSdkVersion(): string | null | undefined {
   return version;
 }
 
+// useNpmSdkVersion fetches the @moth/react version served by this instance's
+// embedded npm registry (the packument's dist-tags.latest). null on failure —
+// e.g. a server built before /npm existed — so the React section degrades to
+// an unpinned install instead of breaking the page.
+function useNpmSdkVersion(): string | null | undefined {
+  const [version, setVersion] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/npm/@moth/react")
+      .then((resp) => (resp.ok ? resp.json() : Promise.reject(resp.status)))
+      .then((packument: { "dist-tags"?: { latest?: string } }) => {
+        if (!cancelled) setVersion(packument["dist-tags"]?.latest ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setVersion(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return version;
+}
+
 // ProjectSetup renders copy-paste instructions with this project's real
 // values — the setup page is the product.
 export function ProjectSetup({ project }: { project: Project }) {
   const instance = useQuery(InstanceSettingsService.method.getInstanceSettings);
   const signing = useQuery(ProjectService.method.getSigningKey, { projectId: project.id });
   const sdkVersion = useSdkVersion();
+  const npmVersion = useNpmSdkVersion();
+  const [platform, setPlatform] = useState<"flutter" | "react">("flutter");
 
-  if (instance.isPending || signing.isPending || sdkVersion === undefined) return <Loading />;
+  if (
+    instance.isPending ||
+    signing.isPending ||
+    sdkVersion === undefined ||
+    npmVersion === undefined
+  )
+    return <Loading />;
   if (instance.isError) return <ErrorNote message={errorMessage(instance.error)} />;
   if (signing.isError) return <ErrorNote message={errorMessage(signing.error)} />;
   if (sdkVersion === null) return <ErrorNote message="could not load the served SDK version from /pub" />;
@@ -57,6 +88,37 @@ export function ProjectSetup({ project }: { project: Project }) {
   moth_auth:
     hosted: ${base}/pub
     version: ${versionConstraint}`;
+
+  // npm ranges never match pre-releases either — same pin-or-caret rule as
+  // the pubspec above. npmVersion === null (no /npm on this server yet)
+  // degrades to an unpinned install.
+  const npmConstraint =
+    npmVersion === null ? null : npmVersion.includes("-") ? npmVersion : `^${npmVersion}`;
+
+  const npmrc = `@moth:registry=${base}/npm`;
+
+  const npmInstall =
+    npmConstraint === null
+      ? "npm install @moth/react"
+      : `npm install @moth/react@"${npmConstraint}"`;
+
+  const mainTsx = `import { createRoot } from 'react-dom/client'
+import { MothProvider, MothLoginScreen } from '@moth/react'
+
+import App from './App'
+
+createRoot(document.getElementById('root')!).render(
+  <MothProvider
+    config={{
+      endpoint: '${base}',
+      publishableKey: '${project.publishableKey}',
+      projectSlug: '${project.slug}',
+    }}
+    signedOut={<MothLoginScreen />}
+  >
+    <App />
+  </MothProvider>,
+)`;
 
   const mainDart = `import 'package:flutter/material.dart';
 import 'package:moth_auth/moth_auth.dart';
@@ -168,32 +230,120 @@ moth doctor --project ${project.slug}`;
   child: const MyApp(),
 );`;
 
+  const paywallReact = `<MothProvider
+  config={{
+    endpoint: '${base}',
+    publishableKey: '${project.publishableKey}',
+    projectSlug: '${project.slug}',
+  }}
+  signedOut={<MothLoginScreen />}
+>
+  {/* Free users see the themed paywall; purchase redirects to Stripe
+      Checkout and the gate unlocks when the entitlement lands. */}
+  <MothGate entitlement="pro" fallback={<MothPaywallScreen />}>
+    <ProFeatures />
+  </MothGate>
+</MothProvider>`;
+
   const cliBilling = `moth setup billing --project ${project.slug}`;
 
   return (
     <div className="stack-32" style={{ maxWidth: 720 }}>
-      <section className="stack-12">
-        <h2>1 · Add the SDK</h2>
-        <p className="caption">
-          This instance serves the{" "}
-          <span className="inline-code">moth_auth</span> Flutter SDK from its
-          own pub repository at{" "}
-          <span className="inline-code">{base}/pub</span>; the SDK version
-          tracks the server version.
-        </p>
-        <p className="caption body-strong">pubspec.yaml</p>
-        <CodeBlock code={pubspec} />
-      </section>
+      <div className="seg" role="group" aria-label="Client SDK">
+        <button
+          type="button"
+          className="seg__btn"
+          aria-pressed={platform === "flutter"}
+          onClick={() => setPlatform("flutter")}
+        >
+          Flutter
+        </button>
+        <button
+          type="button"
+          className="seg__btn"
+          aria-pressed={platform === "react"}
+          onClick={() => setPlatform("react")}
+        >
+          React
+        </button>
+      </div>
 
-      <section className="stack-12">
-        <h2>2 · Wrap your app</h2>
-        <p className="caption">
-          Your publishable key is safe to embed in the app:
-        </p>
-        <KeyWell value={project.publishableKey} />
-        <p className="caption body-strong">lib/main.dart</p>
-        <CodeBlock code={mainDart} />
-      </section>
+      {platform === "flutter" ? (
+        <>
+          <section className="stack-12">
+            <h2>1 · Add the SDK</h2>
+            <p className="caption">
+              This instance serves the{" "}
+              <span className="inline-code">moth_auth</span> Flutter SDK from its
+              own pub repository at{" "}
+              <span className="inline-code">{base}/pub</span>; the SDK version
+              tracks the server version.
+            </p>
+            <p className="caption body-strong">pubspec.yaml</p>
+            <CodeBlock code={pubspec} />
+          </section>
+
+          <section className="stack-12">
+            <h2>2 · Wrap your app</h2>
+            <p className="caption">
+              Your publishable key is safe to embed in the app:
+            </p>
+            <KeyWell value={project.publishableKey} />
+            <p className="caption body-strong">lib/main.dart</p>
+            <CodeBlock code={mainDart} />
+          </section>
+        </>
+      ) : (
+        <>
+          <section className="stack-12">
+            <h2>1 · Add the SDK</h2>
+            <p className="caption">
+              This instance serves the{" "}
+              <span className="inline-code">@moth/react</span> package from its
+              own npm registry at{" "}
+              <span className="inline-code">{base}/npm</span>; the SDK version
+              tracks the server version. The scope line routes only{" "}
+              <span className="inline-code">@moth</span> packages here —
+              everything else stays on npmjs.
+            </p>
+            <p className="caption body-strong">.npmrc</p>
+            <CodeBlock code={npmrc} />
+            <CodeBlock code={npmInstall} />
+            {npmConstraint === null && (
+              <p className="caption">
+                This server does not expose{" "}
+                <span className="inline-code">/npm</span> yet, so the served
+                version could not be read — the install resolves once the
+                instance is upgraded.
+              </p>
+            )}
+          </section>
+
+          <section className="stack-12">
+            <h2>2 · Wrap your app</h2>
+            <p className="caption">
+              Your publishable key is safe to embed in the app:
+            </p>
+            <KeyWell value={project.publishableKey} />
+            <p className="caption body-strong">src/main.tsx</p>
+            <CodeBlock code={mainTsx} />
+            <p className="caption">
+              <span className="inline-code">projectSlug</span> enables the
+              Google/Apple buttons (the web-redirect OAuth flow); also
+              register your app's origin under Providers →{" "}
+              <span className="body-strong">"Redirect origins (web)"</span>.
+            </p>
+            <p className="caption">
+              To call your own backend, attach{" "}
+              <span className="inline-code">
+                Authorization: Bearer &lt;accessToken&gt;
+              </span>{" "}
+              (the SDK's fetch wrapper does it for you) and verify the token
+              exactly as in step 3 below — same JWKS, issuer and audience.
+            </p>
+          </section>
+        </>
+      )}
 
       <section className="stack-12">
         <h2>3 · Verify tokens on your backend</h2>
@@ -266,7 +416,7 @@ moth doctor --project ${project.slug}`;
           (e.g. <span className="inline-code">pro</span>) and your tiers under
           the <span className="body-strong">Monetization</span> tab, connect
           the store credentials there (or run the one-command setup below),
-          and push the catalog to App Store Connect and Google Play. Paywall
+          and push the catalog to App Store Connect, Google Play and Stripe. Paywall
           copy and layout live under{" "}
           <span className="body-strong">Design → Paywall</span>, per language.
           A free tier is always built in — apps without paid tiers keep
@@ -282,8 +432,17 @@ moth doctor --project ${project.slug}`;
           </span>
           .
         </p>
-        <p className="caption body-strong">lib/main.dart</p>
-        <CodeBlock code={paywallDart} />
+        {platform === "flutter" ? (
+          <>
+            <p className="caption body-strong">lib/main.dart</p>
+            <CodeBlock code={paywallDart} />
+          </>
+        ) : (
+          <>
+            <p className="caption body-strong">src/main.tsx</p>
+            <CodeBlock code={paywallReact} />
+          </>
+        )}
       </section>
     </div>
   );

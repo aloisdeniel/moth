@@ -62,6 +62,9 @@ type Store interface {
 	// StoreNotificationStore backs the billing webhook idempotency; the other
 	// billing surfaces come in through adminrpc.Store.
 	store.StoreNotificationStore
+	// StripeCustomerStore backs the Stripe checkout/webhook user↔customer
+	// mapping (milestone 17).
+	store.StripeCustomerStore
 }
 
 // Options configures a Server.
@@ -83,6 +86,11 @@ type Options struct {
 	// AuthEndpoints override the Google/Apple OAuth endpoint locations;
 	// zero value means the real providers (tests point them at doubles).
 	AuthEndpoints authrpc.ProviderEndpoints
+	// StripeBaseURL overrides the Stripe API host for the billing engine;
+	// empty means the real https://api.stripe.com. A testing hook like
+	// AuthEndpoints (the SDK e2e harnesses point it at a local double via
+	// the env-only MOTH_STRIPE_API_URL — see cmd/moth/serve.go).
+	StripeBaseURL string
 	// Now is injectable for tests; defaults to time.Now.
 	Now func() time.Time
 	// Metrics is the instrumentation registry; nil creates a fresh one.
@@ -107,6 +115,9 @@ type Server struct {
 	// pub is the embedded moth_auth Flutter package, built once so the
 	// sha256 in the /pub version listing always matches the served bytes.
 	pub *pubArchive
+	// npm is the embedded @moth/react package, built once so the integrity
+	// hashes in the /npm packument always match the served bytes.
+	npm *npmArchive
 	// limiter is the shared, SQLite-backed rate limiter driving both the
 	// gRPC interceptor and the plain-HTTP throttle (OAuth redirects, hosted
 	// pages, pub repository) that sit outside the connect interceptor chain.
@@ -181,6 +192,13 @@ func New(o Options) (*Server, error) {
 	}
 	s.pub = pub
 
+	// The @moth/react SDK served at /npm; same version discipline.
+	npm, err := buildNpmArchive(version.Version)
+	if err != nil {
+		return nil, err
+	}
+	s.npm = npm
+
 	// One shared audit sink behind every admin mutation and the security
 	// events (refresh-token reuse). Writes are fire-and-forget: an audit
 	// failure is logged, never surfaced to the request.
@@ -218,12 +236,13 @@ func New(o Options) (*Server, error) {
 	// It reuses the auth handler for Bearer user authentication and the shared
 	// outbound HTTP client for store API calls.
 	s.billing = billingrpc.New(billingrpc.Options{
-		Store:      o.Store,
-		Master:     o.Master,
-		Auth:       s.auth,
-		Logger:     o.Logger,
-		Now:        o.Now,
-		HTTPClient: httpc,
+		Store:         o.Store,
+		Master:        o.Master,
+		Auth:          s.auth,
+		Logger:        o.Logger,
+		Now:           o.Now,
+		HTTPClient:    httpc,
+		StripeBaseURL: o.StripeBaseURL,
 	})
 
 	// chain prepends the shared observability interceptors to a service's
@@ -381,6 +400,13 @@ func New(o Options) (*Server, error) {
 	mux.HandleFunc("GET /pub/api/packages/{package}", s.handlePubVersions)
 	mux.HandleFunc("GET /pub/packages/{package}/versions/{file}", s.handlePubArchive)
 
+	// The npm registry serving the @moth/react SDK. npm/pnpm request the
+	// scoped name as one percent-encoded segment (matched by {pkg}); yarn
+	// and bun request it as two literal segments (see plan/18).
+	mux.HandleFunc("GET /npm/{pkg}", s.handleNpmPackument)
+	mux.HandleFunc("GET /npm/@moth/react", s.handleNpmPackument)
+	mux.HandleFunc("GET /npm/@moth/react/-/{file}", s.handleNpmTarball)
+
 	// Theme assets: embedded fonts and uploaded project logos. One wildcard
 	// route because "/assets/fonts/" and "/assets/{project}/{file}" would
 	// overlap ambiguously as separate mux patterns.
@@ -402,6 +428,7 @@ func New(o Options) (*Server, error) {
 	// RTDN via Pub/Sub push). Project-scoped by slug; plain HTTP.
 	mux.HandleFunc("POST /billing/apple/notifications/{slug}", s.handleAppleNotification)
 	mux.HandleFunc("POST /billing/google/rtdn/{slug}", s.handleGoogleRTDN)
+	mux.HandleFunc("POST /billing/stripe/webhook/{slug}", s.handleStripeWebhook)
 	mux.HandleFunc("GET /admin", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/", s.handleAdminPage)
 	mux.HandleFunc("GET /admin/status", s.handleAdminStatus)
@@ -493,6 +520,7 @@ func httpThrottled(path string) bool {
 	return strings.HasPrefix(path, "/oauth/") ||
 		strings.HasPrefix(path, "/p/") ||
 		strings.HasPrefix(path, "/pub/") ||
+		strings.HasPrefix(path, "/npm/") ||
 		strings.HasPrefix(path, "/billing/")
 }
 
@@ -531,6 +559,7 @@ func isPublicSurface(path string) bool {
 	return strings.HasPrefix(path, "/moth.auth.v1.") ||
 		strings.HasPrefix(path, "/moth.billing.v1.") ||
 		strings.HasPrefix(path, "/pub/") ||
+		strings.HasPrefix(path, "/npm/") ||
 		strings.HasPrefix(path, "/p/") ||
 		strings.HasPrefix(path, "/assets/") ||
 		strings.HasPrefix(path, "/billing/")

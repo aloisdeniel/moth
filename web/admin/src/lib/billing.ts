@@ -7,6 +7,8 @@ export function storeLabel(store: Store): string {
       return "Apple";
     case Store.GOOGLE:
       return "Google";
+    case Store.STRIPE:
+      return "Stripe";
     default:
       return "—";
   }

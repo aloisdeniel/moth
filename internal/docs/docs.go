@@ -55,6 +55,7 @@ var nav = []NavEntry{
 	{Slug: "guides/migration", Title: "Migration import & export"},
 	{Group: "Reference"},
 	{Slug: "sdk", Title: "Flutter SDK reference"},
+	{Slug: "react", Title: "React SDK reference"},
 	{Slug: "cli", Title: "CLI overview"},
 	{Slug: "cli/reference", Title: "CLI commands"},
 	{Slug: "agents", Title: "Agents & automation"},

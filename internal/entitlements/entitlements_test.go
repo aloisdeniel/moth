@@ -90,6 +90,64 @@ func TestDeriveSubscriptionStatusCells(t *testing.T) {
 	}
 }
 
+// TestDeriveStripeStatusCells covers every cell of the plan/17 Stripe status
+// mapping through the shared derivation matrix. The Stripe -> moth mapping is
+// performed upstream by internal/billing normalizeStripeSubscription:
+//
+//	active             -> active           (granted)
+//	trialing           -> trialing         (granted)
+//	past_due           -> in_billing_retry (granted — never lock out a paying
+//	                                        user over a card hiccup)
+//	paused /
+//	pause_collection   -> paused           (not granted)
+//	canceled, unpaid,
+//	incomplete,
+//	incomplete_expired -> expired          (not granted)
+//
+// Derive itself is store-agnostic — the same status strings drive the same
+// cells — so these tests pin that a stripe-store subscription flows through
+// every mapped status exactly like the mobile stores.
+func TestDeriveStripeStatusCells(t *testing.T) {
+	ents, products := catalog()
+	end := now.Add(24 * time.Hour)
+	cases := []struct {
+		stripeStatus string // as reported by the Stripe API
+		mothStatus   string // after normalizeStripeSubscription
+		granted      bool
+	}{
+		{"active", store.SubscriptionStatusActive, true},
+		{"trialing", store.SubscriptionStatusTrialing, true},
+		{"past_due", store.SubscriptionStatusInBillingRetry, true},
+		{"paused", store.SubscriptionStatusPaused, false},
+		{"active + pause_collection", store.SubscriptionStatusPaused, false},
+		{"canceled", store.SubscriptionStatusExpired, false},
+		{"unpaid", store.SubscriptionStatusExpired, false},
+		{"incomplete", store.SubscriptionStatusExpired, false},
+		{"incomplete_expired", store.SubscriptionStatusExpired, false},
+	}
+	for _, c := range cases {
+		s := store.Subscription{ID: "s1", ProjectID: "prj", UserID: "u1",
+			Store: store.SubscriptionStoreStripe, ProductID: "p-monthly",
+			Status: c.mothStatus, CurrentPeriodEnd: &end,
+			Environment: store.SubscriptionEnvironmentSandbox}
+		got := Derive(now, ents, products, []store.Subscription{s}, nil)
+		has := len(got) == 1 && got[0].Identifier == "pro"
+		if has != c.granted {
+			t.Errorf("stripe %q (moth %q): granted=%v, want %v (got %+v)",
+				c.stripeStatus, c.mothStatus, has, c.granted, got)
+		}
+		if c.granted {
+			if got[0].Source != SourceStore {
+				t.Errorf("stripe %q: source=%q want store", c.stripeStatus, got[0].Source)
+			}
+			// Stripe test mode (livemode=false) surfaces as a sandbox flag.
+			if !got[0].IsSandbox {
+				t.Errorf("stripe %q: test-mode subscription must flag sandbox", c.stripeStatus)
+			}
+		}
+	}
+}
+
 func TestDeriveNoneIsEmpty(t *testing.T) {
 	ents, products := catalog()
 	if got := Derive(now, ents, products, nil, nil); len(got) != 0 {

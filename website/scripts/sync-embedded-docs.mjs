@@ -44,6 +44,7 @@ const pages = [
   ['guides/backups', join(contentRoot, 'guides', 'backups.md')],
   ['guides/migration', join(contentRoot, 'guides', 'migration.md')],
   ['sdk', join(contentRoot, 'sdk.md')],
+  ['react', join(contentRoot, 'react.md')],
   ['cli', join(contentRoot, 'cli.md')],
   ['cli/reference', cliReference],
   ['agents', join(contentRoot, 'agents.md')],

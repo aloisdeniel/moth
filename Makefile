@@ -1,7 +1,7 @@
 VERSION ?= dev
 LDFLAGS := -s -w -X github.com/aloisdeniel/moth/internal/version.Version=$(VERSION)
 
-.PHONY: build test lint proto proto-dart run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens website website-screenshots website-check docs-embed docs-proto
+.PHONY: build test lint proto proto-dart proto-react run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens sdk-react sdk-react-test sdk-react-e2e website website-screenshots website-check docs-embed docs-proto
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/moth ./cmd/moth
@@ -25,6 +25,30 @@ proto:
 proto-dart:
 	PATH="$(HOME)/.pub-cache/bin:$(PATH)" buf generate --template buf.gen.dart.yaml
 	cd sdk/flutter && dart format lib/src/gen >/dev/null
+
+# Regenerates the TypeScript stubs for the React SDK (sdk/react/src/gen);
+# commit the result. Needs sdk/react/node_modules (run `npm ci` in sdk/react
+# once).
+proto-react:
+	buf generate --template buf.gen.react.yaml
+
+# Rebuilds the @moth/react package into sdk/react/dist; commit the result —
+# `make build` embeds whatever is there (CI fails when it is stale).
+sdk-react:
+	cd sdk/react && npm ci && npm run build
+
+# Typechecks and unit-tests the React SDK.
+sdk-react-test:
+	cd sdk/react && npm run typecheck && npm test
+
+# End-to-end React SDK test against a freshly built moth binary: spawns
+# bin/moth, a local Stripe API double and the example app (Vite), then
+# drives signup → transparent refresh → sign-out plus the paywall →
+# checkout → unlock billing loop in a real browser. Needs node_modules in
+# sdk/react and sdk/react/example (`npm ci` once in each) and Playwright's
+# chromium (`npx playwright install chromium` in sdk/react once).
+sdk-react-e2e: build
+	cd sdk/react && npm run e2e
 
 # Analyzes and tests the Flutter SDK and its example app.
 sdk-test:

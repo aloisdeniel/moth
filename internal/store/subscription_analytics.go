@@ -30,6 +30,7 @@ type SubscriptionStats struct {
 	// Same net revenue split by store, for the per-store breakdown.
 	StoreAppleRevenueMicros  int64
 	StoreGoogleRevenueMicros int64
+	StoreStripeRevenueMicros int64
 }
 
 // SubscriptionTierStats is the per-product slice of one month/currency rollup —
@@ -280,6 +281,8 @@ func addStoreRevenue(st *SubscriptionStats, storeName string, delta int64) {
 		st.StoreAppleRevenueMicros += delta
 	case SubscriptionStoreGoogle:
 		st.StoreGoogleRevenueMicros += delta
+	case SubscriptionStoreStripe:
+		st.StoreStripeRevenueMicros += delta
 	}
 }
 
@@ -337,11 +340,12 @@ func (s *Store) UpsertSubscriptionStats(ctx context.Context, projectID, period s
 		if _, err := tx.ExecContext(ctx,
 			`INSERT INTO subscription_monthly_stats (project_id, period, currency, revenue_micros,
 			        active_subscribers, new_subscribers, renewals, churned, trials_started,
-			        trials_converted, store_apple_revenue_micros, store_google_revenue_micros)
-			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			        trials_converted, store_apple_revenue_micros, store_google_revenue_micros,
+			        store_stripe_revenue_micros)
+			 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 			projectID, period, st.Currency, st.RevenueMicros, st.ActiveSubscribers,
 			st.NewSubscribers, st.Renewals, st.Churned, st.TrialsStarted, st.TrialsConverted,
-			st.StoreAppleRevenueMicros, st.StoreGoogleRevenueMicros); err != nil {
+			st.StoreAppleRevenueMicros, st.StoreGoogleRevenueMicros, st.StoreStripeRevenueMicros); err != nil {
 			return fmt.Errorf("insert subscription monthly stats: %w", err)
 		}
 	}
@@ -406,7 +410,7 @@ func (s *Store) GetSubscriptionStats(ctx context.Context, projectID, fromPeriod,
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT project_id, period, currency, revenue_micros, active_subscribers, new_subscribers,
 		        renewals, churned, trials_started, trials_converted,
-		        store_apple_revenue_micros, store_google_revenue_micros
+		        store_apple_revenue_micros, store_google_revenue_micros, store_stripe_revenue_micros
 		   FROM subscription_monthly_stats
 		  WHERE project_id = ? AND period >= ? AND period <= ?
 		  ORDER BY period, currency`, projectID, fromPeriod, toPeriod)
@@ -420,7 +424,7 @@ func (s *Store) GetSubscriptionStats(ctx context.Context, projectID, fromPeriod,
 		if err := rows.Scan(&st.ProjectID, &st.Period, &st.Currency, &st.RevenueMicros,
 			&st.ActiveSubscribers, &st.NewSubscribers, &st.Renewals, &st.Churned,
 			&st.TrialsStarted, &st.TrialsConverted, &st.StoreAppleRevenueMicros,
-			&st.StoreGoogleRevenueMicros); err != nil {
+			&st.StoreGoogleRevenueMicros, &st.StoreStripeRevenueMicros); err != nil {
 			return nil, fmt.Errorf("scan subscription stats: %w", err)
 		}
 		out = append(out, st)

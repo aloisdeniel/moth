@@ -3,9 +3,11 @@ name: release
 # Cuts a moth release on every semver tag: GoReleaser builds the six
 # platform binaries, archives, cosign-signed checksums, the Homebrew cask,
 # and the scratch multi-arch Docker images. The binary embeds the admin SPA,
-# the /docs content and the moth_auth Flutter SDK, and the ldflags stamp the
-# tag into internal/version.Version — so the served pub SDK and the embedded
-# docs both match the released binary version. (See .goreleaser.yaml.)
+# the /docs content, the moth_auth Flutter SDK and the @moth/react SDK
+# (all committed files — CI's staleness gates keep them current), and the
+# ldflags stamp the tag into internal/version.Version — so the served pub
+# and npm SDKs and the embedded docs all match the released binary version.
+# (See .goreleaser.yaml.)
 
 on:
   push:

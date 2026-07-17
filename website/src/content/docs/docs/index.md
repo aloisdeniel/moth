@@ -12,8 +12,9 @@ admin, zero new infrastructure.
 
 Everything ships inside a single Go binary: the SQLite database, the admin
 web console, the hosted email pages, the `moth_auth` Flutter SDK (served
-from the instance's own pub repository), and the admin CLI. `moth serve`
-and you're running.
+from the instance's own pub repository), the `@moth/react` React SDK
+(served from the instance's own npm registry), and the admin CLI.
+`moth serve` and you're running.
 
 ## Where to start
 
@@ -29,6 +30,8 @@ and you're running.
   the admin, no app release needed.
 - **[Flutter SDK reference](sdk/)** — `MothApp`, `MothScope`,
   `MothLoginScreen`, and the full `MothClient` API.
+- **[React SDK reference](react/)** — `MothProvider`, hooks, entitlement
+  gates, and the web paywall backed by Stripe Checkout.
 - **[CLI reference](cli/)** — every command, generated from the binary.
 - **[API reference](api/)** — the gRPC surfaces, token claims, JWKS, and
   how your backend verifies moth tokens.
@@ -47,6 +50,7 @@ and you're running.
 │  moth.server.v1.* → your backend's gRPC services (secret key, sk_):     │
 │                     token introspection, user management                │
 │  /pub/*           → pub repository serving the moth_auth Flutter SDK    │
+│  /npm/*           → npm registry serving the @moth/react React SDK      │
 │  /p/{slug}/*      → hosted verify/reset/confirm-email pages             │
 │  /p/{slug}/.well-known/jwks.json → per-project public signing keys      │
 │  /oauth/*         → web-redirect fallback for social sign-in            │

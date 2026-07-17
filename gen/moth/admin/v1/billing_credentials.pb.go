@@ -237,6 +237,93 @@ func (x *GoogleBillingConfig) GetHasRtdnSecret() bool {
 	return false
 }
 
+// StripeBillingConfig is a project's Stripe API configuration (milestone 17).
+type StripeBillingConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Stripe secret key (a restricted key is recommended). Write-only: accepted
+	// on update, never returned; empty keeps the stored one. Stored encrypted.
+	SecretKey string `protobuf:"bytes,1,opt,name=secret_key,json=secretKey,proto3" json:"secret_key,omitempty"`
+	// Output only: whether a secret key is stored.
+	HasSecretKey bool `protobuf:"varint,2,opt,name=has_secret_key,json=hasSecretKey,proto3" json:"has_secret_key,omitempty"`
+	// Webhook signing secret ("whsec_...") authenticating the Stripe-Signature
+	// header. Write-only; empty keeps the stored one. Stored encrypted.
+	WebhookSecret string `protobuf:"bytes,3,opt,name=webhook_secret,json=webhookSecret,proto3" json:"webhook_secret,omitempty"`
+	// Output only: whether a webhook secret is stored.
+	HasWebhookSecret bool `protobuf:"varint,4,opt,name=has_webhook_secret,json=hasWebhookSecret,proto3" json:"has_webhook_secret,omitempty"`
+	// The Stripe webhook endpoint ("we_...") moth created via the API, persisted
+	// to keep `moth setup billing` idempotent (mirroring the Apple
+	// notification_url). Set by the CLI after a successful registration; empty
+	// on update keeps the stored one.
+	WebhookEndpointId string `protobuf:"bytes,5,opt,name=webhook_endpoint_id,json=webhookEndpointId,proto3" json:"webhook_endpoint_id,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *StripeBillingConfig) Reset() {
+	*x = StripeBillingConfig{}
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StripeBillingConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StripeBillingConfig) ProtoMessage() {}
+
+func (x *StripeBillingConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StripeBillingConfig.ProtoReflect.Descriptor instead.
+func (*StripeBillingConfig) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *StripeBillingConfig) GetSecretKey() string {
+	if x != nil {
+		return x.SecretKey
+	}
+	return ""
+}
+
+func (x *StripeBillingConfig) GetHasSecretKey() bool {
+	if x != nil {
+		return x.HasSecretKey
+	}
+	return false
+}
+
+func (x *StripeBillingConfig) GetWebhookSecret() string {
+	if x != nil {
+		return x.WebhookSecret
+	}
+	return ""
+}
+
+func (x *StripeBillingConfig) GetHasWebhookSecret() bool {
+	if x != nil {
+		return x.HasWebhookSecret
+	}
+	return false
+}
+
+func (x *StripeBillingConfig) GetWebhookEndpointId() string {
+	if x != nil {
+		return x.WebhookEndpointId
+	}
+	return ""
+}
+
 type GetBillingCredentialsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
@@ -246,7 +333,7 @@ type GetBillingCredentialsRequest struct {
 
 func (x *GetBillingCredentialsRequest) Reset() {
 	*x = GetBillingCredentialsRequest{}
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[2]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -258,7 +345,7 @@ func (x *GetBillingCredentialsRequest) String() string {
 func (*GetBillingCredentialsRequest) ProtoMessage() {}
 
 func (x *GetBillingCredentialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[2]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -271,7 +358,7 @@ func (x *GetBillingCredentialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBillingCredentialsRequest.ProtoReflect.Descriptor instead.
 func (*GetBillingCredentialsRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{2}
+	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetBillingCredentialsRequest) GetProjectId() string {
@@ -285,13 +372,14 @@ type GetBillingCredentialsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Apple         *AppleBillingConfig    `protobuf:"bytes,1,opt,name=apple,proto3" json:"apple,omitempty"`
 	Google        *GoogleBillingConfig   `protobuf:"bytes,2,opt,name=google,proto3" json:"google,omitempty"`
+	Stripe        *StripeBillingConfig   `protobuf:"bytes,3,opt,name=stripe,proto3" json:"stripe,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetBillingCredentialsResponse) Reset() {
 	*x = GetBillingCredentialsResponse{}
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[3]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -303,7 +391,7 @@ func (x *GetBillingCredentialsResponse) String() string {
 func (*GetBillingCredentialsResponse) ProtoMessage() {}
 
 func (x *GetBillingCredentialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[3]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -316,7 +404,7 @@ func (x *GetBillingCredentialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBillingCredentialsResponse.ProtoReflect.Descriptor instead.
 func (*GetBillingCredentialsResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{3}
+	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetBillingCredentialsResponse) GetApple() *AppleBillingConfig {
@@ -333,18 +421,26 @@ func (x *GetBillingCredentialsResponse) GetGoogle() *GoogleBillingConfig {
 	return nil
 }
 
+func (x *GetBillingCredentialsResponse) GetStripe() *StripeBillingConfig {
+	if x != nil {
+		return x.Stripe
+	}
+	return nil
+}
+
 type UpdateBillingCredentialsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId     string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
 	Apple         *AppleBillingConfig    `protobuf:"bytes,2,opt,name=apple,proto3" json:"apple,omitempty"`
 	Google        *GoogleBillingConfig   `protobuf:"bytes,3,opt,name=google,proto3" json:"google,omitempty"`
+	Stripe        *StripeBillingConfig   `protobuf:"bytes,4,opt,name=stripe,proto3" json:"stripe,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateBillingCredentialsRequest) Reset() {
 	*x = UpdateBillingCredentialsRequest{}
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[4]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -356,7 +452,7 @@ func (x *UpdateBillingCredentialsRequest) String() string {
 func (*UpdateBillingCredentialsRequest) ProtoMessage() {}
 
 func (x *UpdateBillingCredentialsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[4]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -369,7 +465,7 @@ func (x *UpdateBillingCredentialsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBillingCredentialsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateBillingCredentialsRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{4}
+	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *UpdateBillingCredentialsRequest) GetProjectId() string {
@@ -393,17 +489,25 @@ func (x *UpdateBillingCredentialsRequest) GetGoogle() *GoogleBillingConfig {
 	return nil
 }
 
+func (x *UpdateBillingCredentialsRequest) GetStripe() *StripeBillingConfig {
+	if x != nil {
+		return x.Stripe
+	}
+	return nil
+}
+
 type UpdateBillingCredentialsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Apple         *AppleBillingConfig    `protobuf:"bytes,1,opt,name=apple,proto3" json:"apple,omitempty"`
 	Google        *GoogleBillingConfig   `protobuf:"bytes,2,opt,name=google,proto3" json:"google,omitempty"`
+	Stripe        *StripeBillingConfig   `protobuf:"bytes,3,opt,name=stripe,proto3" json:"stripe,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *UpdateBillingCredentialsResponse) Reset() {
 	*x = UpdateBillingCredentialsResponse{}
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[5]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +519,7 @@ func (x *UpdateBillingCredentialsResponse) String() string {
 func (*UpdateBillingCredentialsResponse) ProtoMessage() {}
 
 func (x *UpdateBillingCredentialsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[5]
+	mi := &file_moth_admin_v1_billing_credentials_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +532,7 @@ func (x *UpdateBillingCredentialsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateBillingCredentialsResponse.ProtoReflect.Descriptor instead.
 func (*UpdateBillingCredentialsResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{5}
+	return file_moth_admin_v1_billing_credentials_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *UpdateBillingCredentialsResponse) GetApple() *AppleBillingConfig {
@@ -441,6 +545,13 @@ func (x *UpdateBillingCredentialsResponse) GetApple() *AppleBillingConfig {
 func (x *UpdateBillingCredentialsResponse) GetGoogle() *GoogleBillingConfig {
 	if x != nil {
 		return x.Google
+	}
+	return nil
+}
+
+func (x *UpdateBillingCredentialsResponse) GetStripe() *StripeBillingConfig {
+	if x != nil {
+		return x.Stripe
 	}
 	return nil
 }
@@ -470,21 +581,31 @@ const file_moth_admin_v1_billing_credentials_proto_rawDesc = "" +
 	"\fpubsub_topic\x18\x04 \x01(\tR\vpubsubTopic\x12\x1f\n" +
 	"\vrtdn_secret\x18\x05 \x01(\tR\n" +
 	"rtdnSecret\x12&\n" +
-	"\x0fhas_rtdn_secret\x18\x06 \x01(\bR\rhasRtdnSecret\"=\n" +
+	"\x0fhas_rtdn_secret\x18\x06 \x01(\bR\rhasRtdnSecret\"\xdf\x01\n" +
+	"\x13StripeBillingConfig\x12\x1d\n" +
+	"\n" +
+	"secret_key\x18\x01 \x01(\tR\tsecretKey\x12$\n" +
+	"\x0ehas_secret_key\x18\x02 \x01(\bR\fhasSecretKey\x12%\n" +
+	"\x0ewebhook_secret\x18\x03 \x01(\tR\rwebhookSecret\x12,\n" +
+	"\x12has_webhook_secret\x18\x04 \x01(\bR\x10hasWebhookSecret\x12.\n" +
+	"\x13webhook_endpoint_id\x18\x05 \x01(\tR\x11webhookEndpointId\"=\n" +
 	"\x1cGetBillingCredentialsRequest\x12\x1d\n" +
 	"\n" +
-	"project_id\x18\x01 \x01(\tR\tprojectId\"\x94\x01\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\"\xd0\x01\n" +
 	"\x1dGetBillingCredentialsResponse\x127\n" +
 	"\x05apple\x18\x01 \x01(\v2!.moth.admin.v1.AppleBillingConfigR\x05apple\x12:\n" +
-	"\x06google\x18\x02 \x01(\v2\".moth.admin.v1.GoogleBillingConfigR\x06google\"\xb5\x01\n" +
+	"\x06google\x18\x02 \x01(\v2\".moth.admin.v1.GoogleBillingConfigR\x06google\x12:\n" +
+	"\x06stripe\x18\x03 \x01(\v2\".moth.admin.v1.StripeBillingConfigR\x06stripe\"\xf1\x01\n" +
 	"\x1fUpdateBillingCredentialsRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x127\n" +
 	"\x05apple\x18\x02 \x01(\v2!.moth.admin.v1.AppleBillingConfigR\x05apple\x12:\n" +
-	"\x06google\x18\x03 \x01(\v2\".moth.admin.v1.GoogleBillingConfigR\x06google\"\x97\x01\n" +
+	"\x06google\x18\x03 \x01(\v2\".moth.admin.v1.GoogleBillingConfigR\x06google\x12:\n" +
+	"\x06stripe\x18\x04 \x01(\v2\".moth.admin.v1.StripeBillingConfigR\x06stripe\"\xd3\x01\n" +
 	" UpdateBillingCredentialsResponse\x127\n" +
 	"\x05apple\x18\x01 \x01(\v2!.moth.admin.v1.AppleBillingConfigR\x05apple\x12:\n" +
-	"\x06google\x18\x02 \x01(\v2\".moth.admin.v1.GoogleBillingConfigR\x06google2\x8c\x02\n" +
+	"\x06google\x18\x02 \x01(\v2\".moth.admin.v1.GoogleBillingConfigR\x06google\x12:\n" +
+	"\x06stripe\x18\x03 \x01(\v2\".moth.admin.v1.StripeBillingConfigR\x06stripe2\x8c\x02\n" +
 	"\x19BillingCredentialsService\x12r\n" +
 	"\x15GetBillingCredentials\x12+.moth.admin.v1.GetBillingCredentialsRequest\x1a,.moth.admin.v1.GetBillingCredentialsResponse\x12{\n" +
 	"\x18UpdateBillingCredentials\x12..moth.admin.v1.UpdateBillingCredentialsRequest\x1a/.moth.admin.v1.UpdateBillingCredentialsResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
@@ -501,31 +622,35 @@ func file_moth_admin_v1_billing_credentials_proto_rawDescGZIP() []byte {
 	return file_moth_admin_v1_billing_credentials_proto_rawDescData
 }
 
-var file_moth_admin_v1_billing_credentials_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_moth_admin_v1_billing_credentials_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_moth_admin_v1_billing_credentials_proto_goTypes = []any{
 	(*AppleBillingConfig)(nil),               // 0: moth.admin.v1.AppleBillingConfig
 	(*GoogleBillingConfig)(nil),              // 1: moth.admin.v1.GoogleBillingConfig
-	(*GetBillingCredentialsRequest)(nil),     // 2: moth.admin.v1.GetBillingCredentialsRequest
-	(*GetBillingCredentialsResponse)(nil),    // 3: moth.admin.v1.GetBillingCredentialsResponse
-	(*UpdateBillingCredentialsRequest)(nil),  // 4: moth.admin.v1.UpdateBillingCredentialsRequest
-	(*UpdateBillingCredentialsResponse)(nil), // 5: moth.admin.v1.UpdateBillingCredentialsResponse
+	(*StripeBillingConfig)(nil),              // 2: moth.admin.v1.StripeBillingConfig
+	(*GetBillingCredentialsRequest)(nil),     // 3: moth.admin.v1.GetBillingCredentialsRequest
+	(*GetBillingCredentialsResponse)(nil),    // 4: moth.admin.v1.GetBillingCredentialsResponse
+	(*UpdateBillingCredentialsRequest)(nil),  // 5: moth.admin.v1.UpdateBillingCredentialsRequest
+	(*UpdateBillingCredentialsResponse)(nil), // 6: moth.admin.v1.UpdateBillingCredentialsResponse
 }
 var file_moth_admin_v1_billing_credentials_proto_depIdxs = []int32{
-	0, // 0: moth.admin.v1.GetBillingCredentialsResponse.apple:type_name -> moth.admin.v1.AppleBillingConfig
-	1, // 1: moth.admin.v1.GetBillingCredentialsResponse.google:type_name -> moth.admin.v1.GoogleBillingConfig
-	0, // 2: moth.admin.v1.UpdateBillingCredentialsRequest.apple:type_name -> moth.admin.v1.AppleBillingConfig
-	1, // 3: moth.admin.v1.UpdateBillingCredentialsRequest.google:type_name -> moth.admin.v1.GoogleBillingConfig
-	0, // 4: moth.admin.v1.UpdateBillingCredentialsResponse.apple:type_name -> moth.admin.v1.AppleBillingConfig
-	1, // 5: moth.admin.v1.UpdateBillingCredentialsResponse.google:type_name -> moth.admin.v1.GoogleBillingConfig
-	2, // 6: moth.admin.v1.BillingCredentialsService.GetBillingCredentials:input_type -> moth.admin.v1.GetBillingCredentialsRequest
-	4, // 7: moth.admin.v1.BillingCredentialsService.UpdateBillingCredentials:input_type -> moth.admin.v1.UpdateBillingCredentialsRequest
-	3, // 8: moth.admin.v1.BillingCredentialsService.GetBillingCredentials:output_type -> moth.admin.v1.GetBillingCredentialsResponse
-	5, // 9: moth.admin.v1.BillingCredentialsService.UpdateBillingCredentials:output_type -> moth.admin.v1.UpdateBillingCredentialsResponse
-	8, // [8:10] is the sub-list for method output_type
-	6, // [6:8] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	0,  // 0: moth.admin.v1.GetBillingCredentialsResponse.apple:type_name -> moth.admin.v1.AppleBillingConfig
+	1,  // 1: moth.admin.v1.GetBillingCredentialsResponse.google:type_name -> moth.admin.v1.GoogleBillingConfig
+	2,  // 2: moth.admin.v1.GetBillingCredentialsResponse.stripe:type_name -> moth.admin.v1.StripeBillingConfig
+	0,  // 3: moth.admin.v1.UpdateBillingCredentialsRequest.apple:type_name -> moth.admin.v1.AppleBillingConfig
+	1,  // 4: moth.admin.v1.UpdateBillingCredentialsRequest.google:type_name -> moth.admin.v1.GoogleBillingConfig
+	2,  // 5: moth.admin.v1.UpdateBillingCredentialsRequest.stripe:type_name -> moth.admin.v1.StripeBillingConfig
+	0,  // 6: moth.admin.v1.UpdateBillingCredentialsResponse.apple:type_name -> moth.admin.v1.AppleBillingConfig
+	1,  // 7: moth.admin.v1.UpdateBillingCredentialsResponse.google:type_name -> moth.admin.v1.GoogleBillingConfig
+	2,  // 8: moth.admin.v1.UpdateBillingCredentialsResponse.stripe:type_name -> moth.admin.v1.StripeBillingConfig
+	3,  // 9: moth.admin.v1.BillingCredentialsService.GetBillingCredentials:input_type -> moth.admin.v1.GetBillingCredentialsRequest
+	5,  // 10: moth.admin.v1.BillingCredentialsService.UpdateBillingCredentials:input_type -> moth.admin.v1.UpdateBillingCredentialsRequest
+	4,  // 11: moth.admin.v1.BillingCredentialsService.GetBillingCredentials:output_type -> moth.admin.v1.GetBillingCredentialsResponse
+	6,  // 12: moth.admin.v1.BillingCredentialsService.UpdateBillingCredentials:output_type -> moth.admin.v1.UpdateBillingCredentialsResponse
+	11, // [11:13] is the sub-list for method output_type
+	9,  // [9:11] is the sub-list for method input_type
+	9,  // [9:9] is the sub-list for extension type_name
+	9,  // [9:9] is the sub-list for extension extendee
+	0,  // [0:9] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_billing_credentials_proto_init() }
@@ -539,7 +664,7 @@ func file_moth_admin_v1_billing_credentials_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_admin_v1_billing_credentials_proto_rawDesc), len(file_moth_admin_v1_billing_credentials_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

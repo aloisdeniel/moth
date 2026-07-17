@@ -32,7 +32,8 @@ func instanceDouble(t *testing.T, broken map[string]bool) *httptest.Server {
 			w.Write([]byte(`{"name":"moth_auth","versions":[{"version":"0.1.0"}]}`))
 		case "/p/demo/.well-known/jwks.json":
 			w.Write([]byte(`{"keys":[{"kty":"EC","crv":"P-256"}]}`))
-		case "/billing/apple/notifications/demo", "/billing/google/rtdn/demo":
+		case "/billing/apple/notifications/demo", "/billing/google/rtdn/demo",
+			"/billing/stripe/webhook/demo":
 			// Wired webhook routes reject the probe's empty POST before doing any
 			// work; any non-404 status means "route exists". (400 mirrors the real
 			// Apple handler's "invalid notification body".)

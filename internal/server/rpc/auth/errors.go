@@ -39,6 +39,19 @@ const (
 	ReasonBillingNotConfigured = "BILLING_NOT_CONFIGURED"
 	ReasonInvalidReceipt       = "INVALID_RECEIPT"
 	ReasonStoreUnavailable     = "STORE_UNAVAILABLE"
+	// Milestone 17 — Stripe web billing. Store-agnostic vocabulary on purpose:
+	// PRODUCT_NOT_ON_STORE marks a tier that does not ship on the requested
+	// store (no stripe_price_id yet); NO_BILLING_HISTORY marks a user with no
+	// purchase history on the store, so there is nothing to manage;
+	// ALREADY_SUBSCRIBED marks a checkout for a tier the user already holds an
+	// access-granting subscription to (the store would happily double-bill);
+	// TRIAL_NOT_SUPPORTED marks a tier whose advertised trial period the
+	// requested store cannot express (charging without the advertised trial is
+	// never an option).
+	ReasonProductNotOnStore = "PRODUCT_NOT_ON_STORE"
+	ReasonNoBillingHistory  = "NO_BILLING_HISTORY"
+	ReasonAlreadySubscribed = "ALREADY_SUBSCRIBED"
+	ReasonTrialNotSupported = "TRIAL_NOT_SUPPORTED"
 )
 
 // NewError builds a connect error carrying a stable moth reason detail.

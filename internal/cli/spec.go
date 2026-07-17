@@ -101,8 +101,9 @@ func (p ApplyPlan) Summary() []string {
 // project has the spec's slug; theme is the project's current theme, nil on
 // create) and returns the plan plus the settings message an update must
 // send. The sent settings are the spec's merged over the current ones —
-// zero numeric fields, an empty timezone, an absent redirect_schemes list
-// and absent sub-messages mean "keep what the server has" — so partial
+// zero numeric fields, an empty timezone, absent redirect_schemes /
+// redirect_origins lists and absent sub-messages mean "keep what the
+// server has" — so partial
 // hand-written specs stay idempotent and never clobber unrelated fields.
 // Plain proto3 booleans are the exception (omitted means false); the
 // plan's SettingsChanges lists every field about to change.
@@ -155,8 +156,9 @@ func PlanApply(spec *adminv1.ProjectSpec, current *adminv1.Project, theme *admin
 }
 
 // MergeSettings returns desired with its "unset" fields (zero numerics,
-// empty timezone, nil optional/sub-messages, an absent redirect_schemes
-// list) filled from current, i.e. the full settings object an
+// empty timezone, nil optional/sub-messages, absent redirect_schemes /
+// redirect_origins lists) filled from current, i.e. the full settings
+// object an
 // UpdateProject must send. proto3 booleans cannot express "unset", so
 // false always means false — the plan's SettingsChanges makes an
 // accidental reset visible.
@@ -190,6 +192,10 @@ func MergeSettings(current, desired *adminv1.ProjectSettings) *adminv1.ProjectSe
 		// An absent list keeps the registered OAuth redirect schemes; a
 		// partial spec must never silently break mobile social sign-in.
 		merged.RedirectSchemes = slices.Clone(current.RedirectSchemes)
+	}
+	if merged.RedirectOrigins == nil {
+		// Same for the web origins the browser SDK redirects back to.
+		merged.RedirectOrigins = slices.Clone(current.RedirectOrigins)
 	}
 	if merged.Google == nil {
 		merged.Google, _ = proto.Clone(current.Google).(*adminv1.GoogleProviderConfig)

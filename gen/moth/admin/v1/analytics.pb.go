@@ -1158,6 +1158,7 @@ type SubscriptionStoreBreakdown struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Apple         []*CurrencyAmount      `protobuf:"bytes,1,rep,name=apple,proto3" json:"apple,omitempty"`
 	Google        []*CurrencyAmount      `protobuf:"bytes,2,rep,name=google,proto3" json:"google,omitempty"`
+	Stripe        []*CurrencyAmount      `protobuf:"bytes,3,rep,name=stripe,proto3" json:"stripe,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1202,6 +1203,13 @@ func (x *SubscriptionStoreBreakdown) GetApple() []*CurrencyAmount {
 func (x *SubscriptionStoreBreakdown) GetGoogle() []*CurrencyAmount {
 	if x != nil {
 		return x.Google
+	}
+	return nil
+}
+
+func (x *SubscriptionStoreBreakdown) GetStripe() []*CurrencyAmount {
+	if x != nil {
+		return x.Stripe
 	}
 	return nil
 }
@@ -1494,10 +1502,11 @@ const file_moth_admin_v1_analytics_proto_rawDesc = "" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x127\n" +
 	"\arevenue\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\arevenue\x12'\n" +
 	"\x0fnew_subscribers\x18\x03 \x01(\x03R\x0enewSubscribers\x12-\n" +
-	"\x12active_subscribers\x18\x04 \x01(\x03R\x11activeSubscribers\"\x88\x01\n" +
+	"\x12active_subscribers\x18\x04 \x01(\x03R\x11activeSubscribers\"\xbf\x01\n" +
 	"\x1aSubscriptionStoreBreakdown\x123\n" +
 	"\x05apple\x18\x01 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x05apple\x125\n" +
-	"\x06google\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x06google\"\x99\x02\n" +
+	"\x06google\x18\x02 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x06google\x125\n" +
+	"\x06stripe\x18\x03 \x03(\v2\x1d.moth.admin.v1.CurrencyAmountR\x06stripe\"\x99\x02\n" +
 	"\x1cGetSubscriptionStatsResponse\x126\n" +
 	"\x05tiles\x18\x01 \x01(\v2 .moth.admin.v1.SubscriptionTilesR\x05tiles\x12>\n" +
 	"\x06series\x18\x02 \x03(\v2&.moth.admin.v1.SubscriptionMonthlyStatR\x06series\x12>\n" +
@@ -1573,25 +1582,26 @@ var file_moth_admin_v1_analytics_proto_depIdxs = []int32{
 	11, // 10: moth.admin.v1.SubscriptionTierBreakdown.revenue:type_name -> moth.admin.v1.CurrencyAmount
 	11, // 11: moth.admin.v1.SubscriptionStoreBreakdown.apple:type_name -> moth.admin.v1.CurrencyAmount
 	11, // 12: moth.admin.v1.SubscriptionStoreBreakdown.google:type_name -> moth.admin.v1.CurrencyAmount
-	12, // 13: moth.admin.v1.GetSubscriptionStatsResponse.tiles:type_name -> moth.admin.v1.SubscriptionTiles
-	13, // 14: moth.admin.v1.GetSubscriptionStatsResponse.series:type_name -> moth.admin.v1.SubscriptionMonthlyStat
-	14, // 15: moth.admin.v1.GetSubscriptionStatsResponse.tiers:type_name -> moth.admin.v1.SubscriptionTierBreakdown
-	15, // 16: moth.admin.v1.GetSubscriptionStatsResponse.stores:type_name -> moth.admin.v1.SubscriptionStoreBreakdown
-	19, // 17: moth.admin.v1.RunRollupResponse.start_time:type_name -> google.protobuf.Timestamp
-	19, // 18: moth.admin.v1.RunRollupResponse.finish_time:type_name -> google.protobuf.Timestamp
-	1,  // 19: moth.admin.v1.AnalyticsService.GetStats:input_type -> moth.admin.v1.GetStatsRequest
-	8,  // 20: moth.admin.v1.AnalyticsService.ListRecentEvents:input_type -> moth.admin.v1.ListRecentEventsRequest
-	17, // 21: moth.admin.v1.AnalyticsService.RunRollup:input_type -> moth.admin.v1.RunRollupRequest
-	10, // 22: moth.admin.v1.AnalyticsService.GetSubscriptionStats:input_type -> moth.admin.v1.GetSubscriptionStatsRequest
-	6,  // 23: moth.admin.v1.AnalyticsService.GetStats:output_type -> moth.admin.v1.GetStatsResponse
-	9,  // 24: moth.admin.v1.AnalyticsService.ListRecentEvents:output_type -> moth.admin.v1.ListRecentEventsResponse
-	18, // 25: moth.admin.v1.AnalyticsService.RunRollup:output_type -> moth.admin.v1.RunRollupResponse
-	16, // 26: moth.admin.v1.AnalyticsService.GetSubscriptionStats:output_type -> moth.admin.v1.GetSubscriptionStatsResponse
-	23, // [23:27] is the sub-list for method output_type
-	19, // [19:23] is the sub-list for method input_type
-	19, // [19:19] is the sub-list for extension type_name
-	19, // [19:19] is the sub-list for extension extendee
-	0,  // [0:19] is the sub-list for field type_name
+	11, // 13: moth.admin.v1.SubscriptionStoreBreakdown.stripe:type_name -> moth.admin.v1.CurrencyAmount
+	12, // 14: moth.admin.v1.GetSubscriptionStatsResponse.tiles:type_name -> moth.admin.v1.SubscriptionTiles
+	13, // 15: moth.admin.v1.GetSubscriptionStatsResponse.series:type_name -> moth.admin.v1.SubscriptionMonthlyStat
+	14, // 16: moth.admin.v1.GetSubscriptionStatsResponse.tiers:type_name -> moth.admin.v1.SubscriptionTierBreakdown
+	15, // 17: moth.admin.v1.GetSubscriptionStatsResponse.stores:type_name -> moth.admin.v1.SubscriptionStoreBreakdown
+	19, // 18: moth.admin.v1.RunRollupResponse.start_time:type_name -> google.protobuf.Timestamp
+	19, // 19: moth.admin.v1.RunRollupResponse.finish_time:type_name -> google.protobuf.Timestamp
+	1,  // 20: moth.admin.v1.AnalyticsService.GetStats:input_type -> moth.admin.v1.GetStatsRequest
+	8,  // 21: moth.admin.v1.AnalyticsService.ListRecentEvents:input_type -> moth.admin.v1.ListRecentEventsRequest
+	17, // 22: moth.admin.v1.AnalyticsService.RunRollup:input_type -> moth.admin.v1.RunRollupRequest
+	10, // 23: moth.admin.v1.AnalyticsService.GetSubscriptionStats:input_type -> moth.admin.v1.GetSubscriptionStatsRequest
+	6,  // 24: moth.admin.v1.AnalyticsService.GetStats:output_type -> moth.admin.v1.GetStatsResponse
+	9,  // 25: moth.admin.v1.AnalyticsService.ListRecentEvents:output_type -> moth.admin.v1.ListRecentEventsResponse
+	18, // 26: moth.admin.v1.AnalyticsService.RunRollup:output_type -> moth.admin.v1.RunRollupResponse
+	16, // 27: moth.admin.v1.AnalyticsService.GetSubscriptionStats:output_type -> moth.admin.v1.GetSubscriptionStatsResponse
+	24, // [24:28] is the sub-list for method output_type
+	20, // [20:24] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_analytics_proto_init() }

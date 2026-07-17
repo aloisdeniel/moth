@@ -108,6 +108,7 @@ func (h *Handler) GetOfferings(ctx context.Context, req *connect.Request[billing
 			DisplayName:            p.DisplayName,
 			AppleProductId:         p.AppleProductID,
 			GoogleProductId:        p.GoogleProductID,
+			StripePriceId:          p.StripePriceID,
 			BillingPeriod:          p.BillingPeriod,
 			PriceAmountMicros:      p.PriceAmountMicros,
 			Currency:               p.Currency,

@@ -37,6 +37,11 @@ type ProjectSettings struct {
 	// RedirectSchemes are the custom URL schemes the web-redirect OAuth
 	// fallback may redirect back to (open-redirect protection).
 	RedirectSchemes []string `json:"redirect_schemes,omitempty"`
+	// RedirectOrigins are the web origins ("https://app.example.com") the
+	// web-redirect OAuth fallback may redirect back to, for browser SPAs.
+	// Stored canonicalized (lowercase scheme+host, default port stripped)
+	// and matched exactly against the redirect URI's origin.
+	RedirectOrigins []string `json:"redirect_origins,omitempty"`
 	// AnalyticsRetentionDays is how long raw analytics events are kept
 	// before the rollup job prunes them (default 90).
 	AnalyticsRetentionDays int `json:"analytics_retention_days"`

@@ -282,7 +282,7 @@ func (h *AnalyticsHandler) GetSubscriptionStats(ctx context.Context, req *connec
 		Stores: &adminv1.SubscriptionStoreBreakdown{},
 	}
 	// Contiguous, zero-filled monthly series.
-	appleRev, googleRev := map[string]int64{}, map[string]int64{}
+	appleRev, googleRev, stripeRev := map[string]int64{}, map[string]int64{}, map[string]int64{}
 	for m := from; m <= to; m = nextMonth(m) {
 		stat := &adminv1.SubscriptionMonthlyStat{Period: m}
 		rev := map[string]int64{}
@@ -298,6 +298,7 @@ func (h *AnalyticsHandler) GetSubscriptionStats(ctx context.Context, req *connec
 			stat.TrialsConverted += int64(r.TrialsConverted)
 			appleRev[r.Currency] += r.StoreAppleRevenueMicros
 			googleRev[r.Currency] += r.StoreGoogleRevenueMicros
+			stripeRev[r.Currency] += r.StoreStripeRevenueMicros
 		}
 		stat.ActiveSubscribers = int64(activeByPeriod[m][""])
 		stat.Revenue = currencyAmounts(rev)
@@ -305,6 +306,7 @@ func (h *AnalyticsHandler) GetSubscriptionStats(ctx context.Context, req *connec
 	}
 	resp.Stores.Apple = currencyAmounts(appleRev)
 	resp.Stores.Google = currencyAmounts(googleRev)
+	resp.Stores.Stripe = currencyAmounts(stripeRev)
 
 	// Per-tier breakdown over the whole range. Revenue and new-subscriber counts
 	// are additive, so they sum across every month/currency in the range. Active

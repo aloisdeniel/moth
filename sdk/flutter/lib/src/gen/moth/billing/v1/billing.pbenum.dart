@@ -55,15 +55,18 @@ class Store extends $pb.ProtobufEnum {
       Store._(1, _omitEnumNames ? '' : 'STORE_APPLE');
   static const Store STORE_GOOGLE =
       Store._(2, _omitEnumNames ? '' : 'STORE_GOOGLE');
+  static const Store STORE_STRIPE =
+      Store._(3, _omitEnumNames ? '' : 'STORE_STRIPE');
 
   static const $core.List<Store> values = <Store>[
     STORE_UNSPECIFIED,
     STORE_APPLE,
     STORE_GOOGLE,
+    STORE_STRIPE,
   ];
 
   static final $core.List<Store?> _byValue =
-      $pb.ProtobufEnum.$_initByValueList(values, 2);
+      $pb.ProtobufEnum.$_initByValueList(values, 3);
   static Store? valueOf($core.int value) =>
       value < 0 || value >= _byValue.length ? null : _byValue[value];
 

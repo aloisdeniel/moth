@@ -39,13 +39,14 @@ const Store$json = {
     {'1': 'STORE_UNSPECIFIED', '2': 0},
     {'1': 'STORE_APPLE', '2': 1},
     {'1': 'STORE_GOOGLE', '2': 2},
+    {'1': 'STORE_STRIPE', '2': 3},
   ],
 };
 
 /// Descriptor for `Store`. Decode as a `google.protobuf.EnumDescriptorProto`.
 final $typed_data.Uint8List storeDescriptor = $convert.base64Decode(
     'CgVTdG9yZRIVChFTVE9SRV9VTlNQRUNJRklFRBAAEg8KC1NUT1JFX0FQUExFEAESEAoMU1RPUk'
-    'VfR09PR0xFEAI=');
+    'VfR09PR0xFEAISEAoMU1RPUkVfU1RSSVBFEAM=');
 
 @$core.Deprecated('Use subscriptionStatusDescriptor instead')
 const SubscriptionStatus$json = {
@@ -140,6 +141,7 @@ const OfferingProduct$json = {
     {'1': 'entitlements', '3': 11, '4': 3, '5': 9, '10': 'entitlements'},
     {'1': 'sort_order', '3': 12, '4': 1, '5': 5, '10': 'sortOrder'},
     {'1': 'highlighted', '3': 13, '4': 1, '5': 8, '10': 'highlighted'},
+    {'1': 'stripe_price_id', '3': 14, '4': 1, '5': 9, '10': 'stripePriceId'},
   ],
 };
 
@@ -154,7 +156,7 @@ final $typed_data.Uint8List offeringProductDescriptor = $convert.base64Decode(
     'Y2VfYW1vdW50X21pY3JvcxgJIAEoA1IWaW50cm9QcmljZUFtb3VudE1pY3JvcxIhCgxpbnRyb1'
     '9wZXJpb2QYCiABKAlSC2ludHJvUGVyaW9kEiIKDGVudGl0bGVtZW50cxgLIAMoCVIMZW50aXRs'
     'ZW1lbnRzEh0KCnNvcnRfb3JkZXIYDCABKAVSCXNvcnRPcmRlchIgCgtoaWdobGlnaHRlZBgNIA'
-    'EoCFILaGlnaGxpZ2h0ZWQ=');
+    'EoCFILaGlnaGxpZ2h0ZWQSJgoPc3RyaXBlX3ByaWNlX2lkGA4gASgJUg1zdHJpcGVQcmljZUlk');
 
 @$core.Deprecated('Use paywallDescriptor instead')
 const Paywall$json = {
@@ -586,3 +588,66 @@ final $typed_data.Uint8List restorePurchasesResponseDescriptor =
     $convert.base64Decode(
         'ChhSZXN0b3JlUHVyY2hhc2VzUmVzcG9uc2USQgoNY3VzdG9tZXJfaW5mbxgBIAEoCzIdLm1vdG'
         'guYmlsbGluZy52MS5DdXN0b21lckluZm9SDGN1c3RvbWVySW5mbw==');
+
+@$core.Deprecated('Use createCheckoutSessionRequestDescriptor instead')
+const CreateCheckoutSessionRequest$json = {
+  '1': 'CreateCheckoutSessionRequest',
+  '2': [
+    {
+      '1': 'product_identifier',
+      '3': 1,
+      '4': 1,
+      '5': 9,
+      '10': 'productIdentifier'
+    },
+    {'1': 'success_url', '3': 2, '4': 1, '5': 9, '10': 'successUrl'},
+    {'1': 'cancel_url', '3': 3, '4': 1, '5': 9, '10': 'cancelUrl'},
+  ],
+};
+
+/// Descriptor for `CreateCheckoutSessionRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createCheckoutSessionRequestDescriptor =
+    $convert.base64Decode(
+        'ChxDcmVhdGVDaGVja291dFNlc3Npb25SZXF1ZXN0Ei0KEnByb2R1Y3RfaWRlbnRpZmllchgBIA'
+        'EoCVIRcHJvZHVjdElkZW50aWZpZXISHwoLc3VjY2Vzc191cmwYAiABKAlSCnN1Y2Nlc3NVcmwS'
+        'HQoKY2FuY2VsX3VybBgDIAEoCVIJY2FuY2VsVXJs');
+
+@$core.Deprecated('Use createCheckoutSessionResponseDescriptor instead')
+const CreateCheckoutSessionResponse$json = {
+  '1': 'CreateCheckoutSessionResponse',
+  '2': [
+    {'1': 'url', '3': 1, '4': 1, '5': 9, '10': 'url'},
+  ],
+};
+
+/// Descriptor for `CreateCheckoutSessionResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createCheckoutSessionResponseDescriptor =
+    $convert.base64Decode(
+        'Ch1DcmVhdGVDaGVja291dFNlc3Npb25SZXNwb25zZRIQCgN1cmwYASABKAlSA3VybA==');
+
+@$core.Deprecated('Use createBillingPortalSessionRequestDescriptor instead')
+const CreateBillingPortalSessionRequest$json = {
+  '1': 'CreateBillingPortalSessionRequest',
+  '2': [
+    {'1': 'return_url', '3': 1, '4': 1, '5': 9, '10': 'returnUrl'},
+  ],
+};
+
+/// Descriptor for `CreateBillingPortalSessionRequest`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createBillingPortalSessionRequestDescriptor =
+    $convert.base64Decode(
+        'CiFDcmVhdGVCaWxsaW5nUG9ydGFsU2Vzc2lvblJlcXVlc3QSHQoKcmV0dXJuX3VybBgBIAEoCV'
+        'IJcmV0dXJuVXJs');
+
+@$core.Deprecated('Use createBillingPortalSessionResponseDescriptor instead')
+const CreateBillingPortalSessionResponse$json = {
+  '1': 'CreateBillingPortalSessionResponse',
+  '2': [
+    {'1': 'url', '3': 1, '4': 1, '5': 9, '10': 'url'},
+  ],
+};
+
+/// Descriptor for `CreateBillingPortalSessionResponse`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List createBillingPortalSessionResponseDescriptor =
+    $convert.base64Decode(
+        'CiJDcmVhdGVCaWxsaW5nUG9ydGFsU2Vzc2lvblJlc3BvbnNlEhAKA3VybBgBIAEoCVIDdXJs');

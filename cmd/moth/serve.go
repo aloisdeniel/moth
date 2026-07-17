@@ -105,6 +105,12 @@ func serve(ctx context.Context, cfg config.Config) error {
 		Logger:     log,
 		SetupToken: setupToken,
 		Reflection: cfg.Reflection,
+		// Testing hook (env-only, deliberately not part of the resolved
+		// config or user docs, like MOTH_MASTER_KEY): points the billing
+		// engine's Stripe API calls at a local test double so the SDK e2e
+		// suites can drive the full checkout/webhook loop against a spawned
+		// binary. Empty means the real https://api.stripe.com.
+		StripeBaseURL: os.Getenv("MOTH_STRIPE_API_URL"),
 	})
 	if err != nil {
 		return err
