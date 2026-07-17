@@ -249,6 +249,48 @@ test("paywall editor saves a headline and the preview reflects it", async ({ pag
   await expect(page.locator(".mothpw__headline")).toHaveText("Go Pro today");
 });
 
+test("localization: Design sub-tabs render and sign-up copy persists per language", async ({
+  page,
+}) => {
+  await page.goto("/admin/login");
+  await page.getByLabel("Email").fill(admin.email);
+  await page.getByLabel("Password").fill(admin.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+
+  await page.getByText("Birdwatch").first().click();
+  await page.getByRole("tab", { name: "Design" }).click();
+
+  // The Design tab is now a set of sub-tabs (milestone 15).
+  const subtabs = page.getByRole("group", { name: "Design screen" });
+  await expect(subtabs.getByRole("button", { name: "Theme", exact: true })).toBeVisible();
+  await expect(subtabs.getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  await expect(subtabs.getByRole("button", { name: "Sign up", exact: true })).toBeVisible();
+  await expect(subtabs.getByRole("button", { name: "Paywall", exact: true })).toBeVisible();
+
+  // Sign-up sub-tab: pick French and override the title copy.
+  await subtabs.getByRole("button", { name: "Sign up", exact: true }).click();
+  await page.getByLabel("Language").selectOption("fr");
+
+  await page.getByLabel("sign_up.title").fill("Créer un compte test");
+
+  // The live preview reflects the unsaved override immediately.
+  await expect(page.locator(".mothpv__title")).toHaveText("Créer un compte test");
+
+  await page.getByRole("button", { name: "Save copy" }).click();
+  await expect(page.getByText("Saved.")).toBeVisible();
+
+  // Survives a full reload for French; the override really landed on the
+  // project's copy document and the preview renders it in that language.
+  await page.reload();
+  await page
+    .getByRole("group", { name: "Design screen" })
+    .getByRole("button", { name: "Sign up", exact: true })
+    .click();
+  await page.getByLabel("Language").selectOption("fr");
+  await expect(page.getByLabel("sign_up.title")).toHaveValue("Créer un compte test");
+  await expect(page.locator(".mothpv__title")).toHaveText("Créer un compte test");
+});
+
 // Preview honesty (plan/06): the three reference themes shared with the
 // Flutter golden suite (sdk/flutter/test/golden), as UpdateTheme payloads.
 const referenceThemes: Record<string, object> = {

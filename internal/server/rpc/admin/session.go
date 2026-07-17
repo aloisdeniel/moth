@@ -36,6 +36,7 @@ type Store interface {
 	store.ProviderSecretStore
 	store.ThemeStore
 	store.PaywallStore
+	store.CopyStore
 	store.EventStore
 	store.StatsStore
 	store.SubscriptionStatsStore

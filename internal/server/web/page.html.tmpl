@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{if .Lang}}{{.Lang}}{{else}}en{{end}}"{{if .Dir}} dir="{{.Dir}}"{{end}}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -43,18 +43,19 @@
     {{- if .LogoDark}}
     <img class="logo logo-dark" src="{{.LogoDark}}" alt="">
     {{- end}}
-    <h1>{{.Title}}</h1>
+    <h1{{if .IsError}} class="err"{{end}}>{{.Title}}</h1>
+    {{- if .Message}}
+    <p>{{.Message}}</p>
+    {{- end}}
     {{- if .Error}}
     <p class="err">{{.Error}}</p>
-    {{- else}}
-    <p>{{.Message}}</p>
     {{- end}}
     {{- if .ShowResetForm}}
     <form method="post" action="reset">
       <input type="hidden" name="token" value="{{.Token}}">
-      <label for="password">New password</label>
+      <label for="password">{{.PasswordLabel}}</label>
       <input type="password" id="password" name="password" autocomplete="new-password" required>
-      <button type="submit">Set new password</button>
+      <button type="submit">{{.SubmitLabel}}</button>
     </form>
     {{- end}}
     <footer>

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/billing/v1/billing.proto.
  */
 export const file_moth_billing_v1_billing: GenFile = /*@__PURE__*/
-  fileDesc("Ch1tb3RoL2JpbGxpbmcvdjEvYmlsbGluZy5wcm90bxIPbW90aC5iaWxsaW5nLnYxImYKCE9mZmVyaW5nEhIKCmlkZW50aWZpZXIYASABKAkSEgoKaXNfZGVmYXVsdBgCIAEoCBIyCghwcm9kdWN0cxgDIAMoCzIgLm1vdGguYmlsbGluZy52MS5PZmZlcmluZ1Byb2R1Y3QixQIKD09mZmVyaW5nUHJvZHVjdBISCgppZGVudGlmaWVyGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIYChBhcHBsZV9wcm9kdWN0X2lkGAMgASgJEhkKEWdvb2dsZV9wcm9kdWN0X2lkGAQgASgJEhYKDmJpbGxpbmdfcGVyaW9kGAUgASgJEhsKE3ByaWNlX2Ftb3VudF9taWNyb3MYBiABKAMSEAoIY3VycmVuY3kYByABKAkSFAoMdHJpYWxfcGVyaW9kGAggASgJEiEKGWludHJvX3ByaWNlX2Ftb3VudF9taWNyb3MYCSABKAMSFAoMaW50cm9fcGVyaW9kGAogASgJEhQKDGVudGl0bGVtZW50cxgLIAMoCRISCgpzb3J0X29yZGVyGAwgASgFEhMKC2hpZ2hsaWdodGVkGA0gASgIIuYBCgdQYXl3YWxsEhMKC3JldmlzaW9uX2lkGAEgASgJEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEiYKHmhpZ2hsaWdodGVkX3Byb2R1Y3RfaWRlbnRpZmllchgGIAEoCRIuCgZsYXlvdXQYByABKA4yHi5tb3RoLmJpbGxpbmcudjEuUGF5d2FsbExheW91dBIRCgl0ZXJtc191cmwYCCABKAkSEwoLcHJpdmFjeV91cmwYCSABKAkiJwoTR2V0T2ZmZXJpbmdzUmVxdWVzdBIQCghvZmZlcmluZxgBIAEoCSJDChRHZXRPZmZlcmluZ3NSZXNwb25zZRIrCghvZmZlcmluZxgBIAEoCzIZLm1vdGguYmlsbGluZy52MS5PZmZlcmluZyIzChFHZXRQYXl3YWxsUmVxdWVzdBIeChZrbm93bl9wYXl3YWxsX3JldmlzaW9uGAEgASgJIj8KEkdldFBheXdhbGxSZXNwb25zZRIpCgdwYXl3YWxsGAEgASgLMhgubW90aC5iaWxsaW5nLnYxLlBheXdhbGwihQEKDEN1c3RvbWVySW5mbxI5ChNhY3RpdmVfZW50aXRsZW1lbnRzGAEgAygLMhwubW90aC5iaWxsaW5nLnYxLkVudGl0bGVtZW50EjoKDXN1YnNjcmlwdGlvbnMYAiADKAsyIy5tb3RoLmJpbGxpbmcudjEuQWN0aXZlU3Vic2NyaXB0aW9uIqIBCgtFbnRpdGxlbWVudBISCgppZGVudGlmaWVyGAEgASgJEi8KC2V4cGlyZV90aW1lGAIgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIyCgZzb3VyY2UYAyABKA4yIi5tb3RoLmJpbGxpbmcudjEuRW50aXRsZW1lbnRTb3VyY2USGgoScHJvZHVjdF9pZGVudGlmaWVyGAQgASgJIuwBChJBY3RpdmVTdWJzY3JpcHRpb24SGgoScHJvZHVjdF9pZGVudGlmaWVyGAEgASgJEiUKBXN0b3JlGAIgASgOMhYubW90aC5iaWxsaW5nLnYxLlN0b3JlEjMKBnN0YXR1cxgDIAEoDjIjLm1vdGguYmlsbGluZy52MS5TdWJzY3JpcHRpb25TdGF0dXMSNgoSY3VycmVudF9wZXJpb2RfZW5kGAQgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBISCgphdXRvX3JlbmV3GAUgASgIEhIKCmlzX3NhbmRib3gYBiABKAgiGAoWR2V0Q3VzdG9tZXJJbmZvUmVxdWVzdCJPChdHZXRDdXN0b21lckluZm9SZXNwb25zZRI0Cg1jdXN0b21lcl9pbmZvGAEgASgLMh0ubW90aC5iaWxsaW5nLnYxLkN1c3RvbWVySW5mbyLHAQoVU3VibWl0UHVyY2hhc2VSZXF1ZXN0EiUKBXN0b3JlGAEgASgOMhYubW90aC5iaWxsaW5nLnYxLlN0b3JlEhoKEnByb2R1Y3RfaWRlbnRpZmllchgCIAEoCRIfChVhcHBsZV9qd3NfdHJhbnNhY3Rpb24YAyABKAlIABIfChVnb29nbGVfcHVyY2hhc2VfdG9rZW4YBCABKAlIABIeChZnb29nbGVfc3Vic2NyaXB0aW9uX2lkGAUgASgJQgkKB3JlY2VpcHQiTgoWU3VibWl0UHVyY2hhc2VSZXNwb25zZRI0Cg1jdXN0b21lcl9pbmZvGAEgASgLMh0ubW90aC5iaWxsaW5nLnYxLkN1c3RvbWVySW5mbyJSChdSZXN0b3JlUHVyY2hhc2VzUmVxdWVzdBIlCgVzdG9yZRgBIAEoDjIWLm1vdGguYmlsbGluZy52MS5TdG9yZRIQCghyZWNlaXB0cxgCIAMoCSJQChhSZXN0b3JlUHVyY2hhc2VzUmVzcG9uc2USNAoNY3VzdG9tZXJfaW5mbxgBIAEoCzIdLm1vdGguYmlsbGluZy52MS5DdXN0b21lckluZm8qfgoNUGF5d2FsbExheW91dBIeChpQQVlXQUxMX0xBWU9VVF9VTlNQRUNJRklFRBAAEhgKFFBBWVdBTExfTEFZT1VUX1RJTEVTEAESFwoTUEFZV0FMTF9MQVlPVVRfTElTVBACEhoKFlBBWVdBTExfTEFZT1VUX0NPTVBBQ1QQAypBCgVTdG9yZRIVChFTVE9SRV9VTlNQRUNJRklFRBAAEg8KC1NUT1JFX0FQUExFEAESEAoMU1RPUkVfR09PR0xFEAIqsAIKElN1YnNjcmlwdGlvblN0YXR1cxIjCh9TVUJTQ1JJUFRJT05fU1RBVFVTX1VOU1BFQ0lGSUVEEAASHgoaU1VCU0NSSVBUSU9OX1NUQVRVU19BQ1RJVkUQARIgChxTVUJTQ1JJUFRJT05fU1RBVFVTX1RSSUFMSU5HEAISJwojU1VCU0NSSVBUSU9OX1NUQVRVU19JTl9HUkFDRV9QRVJJT0QQAxIoCiRTVUJTQ1JJUFRJT05fU1RBVFVTX0lOX0JJTExJTkdfUkVUUlkQBBIeChpTVUJTQ1JJUFRJT05fU1RBVFVTX1BBVVNFRBAFEh8KG1NVQlNDUklQVElPTl9TVEFUVVNfRVhQSVJFRBAGEh8KG1NVQlNDUklQVElPTl9TVEFUVVNfUkVWT0tFRBAHKpABChFFbnRpdGxlbWVudFNvdXJjZRIiCh5FTlRJVExFTUVOVF9TT1VSQ0VfVU5TUEVDSUZJRUQQABIcChhFTlRJVExFTUVOVF9TT1VSQ0VfU1RPUkUQARIcChhFTlRJVExFTUVOVF9TT1VSQ0VfR1JBTlQQAhIbChdFTlRJVExFTUVOVF9TT1VSQ0VfTk9ORRADMvYDCg5CaWxsaW5nU2VydmljZRJkCg9HZXRDdXN0b21lckluZm8SJy5tb3RoLmJpbGxpbmcudjEuR2V0Q3VzdG9tZXJJbmZvUmVxdWVzdBooLm1vdGguYmlsbGluZy52MS5HZXRDdXN0b21lckluZm9SZXNwb25zZRJhCg5TdWJtaXRQdXJjaGFzZRImLm1vdGguYmlsbGluZy52MS5TdWJtaXRQdXJjaGFzZVJlcXVlc3QaJy5tb3RoLmJpbGxpbmcudjEuU3VibWl0UHVyY2hhc2VSZXNwb25zZRJnChBSZXN0b3JlUHVyY2hhc2VzEigubW90aC5iaWxsaW5nLnYxLlJlc3RvcmVQdXJjaGFzZXNSZXF1ZXN0GikubW90aC5iaWxsaW5nLnYxLlJlc3RvcmVQdXJjaGFzZXNSZXNwb25zZRJbCgxHZXRPZmZlcmluZ3MSJC5tb3RoLmJpbGxpbmcudjEuR2V0T2ZmZXJpbmdzUmVxdWVzdBolLm1vdGguYmlsbGluZy52MS5HZXRPZmZlcmluZ3NSZXNwb25zZRJVCgpHZXRQYXl3YWxsEiIubW90aC5iaWxsaW5nLnYxLkdldFBheXdhbGxSZXF1ZXN0GiMubW90aC5iaWxsaW5nLnYxLkdldFBheXdhbGxSZXNwb25zZUI7WjlnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYmlsbGluZy92MTtiaWxsaW5ndjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
+  fileDesc("Ch1tb3RoL2JpbGxpbmcvdjEvYmlsbGluZy5wcm90bxIPbW90aC5iaWxsaW5nLnYxImYKCE9mZmVyaW5nEhIKCmlkZW50aWZpZXIYASABKAkSEgoKaXNfZGVmYXVsdBgCIAEoCBIyCghwcm9kdWN0cxgDIAMoCzIgLm1vdGguYmlsbGluZy52MS5PZmZlcmluZ1Byb2R1Y3QixQIKD09mZmVyaW5nUHJvZHVjdBISCgppZGVudGlmaWVyGAEgASgJEhQKDGRpc3BsYXlfbmFtZRgCIAEoCRIYChBhcHBsZV9wcm9kdWN0X2lkGAMgASgJEhkKEWdvb2dsZV9wcm9kdWN0X2lkGAQgASgJEhYKDmJpbGxpbmdfcGVyaW9kGAUgASgJEhsKE3ByaWNlX2Ftb3VudF9taWNyb3MYBiABKAMSEAoIY3VycmVuY3kYByABKAkSFAoMdHJpYWxfcGVyaW9kGAggASgJEiEKGWludHJvX3ByaWNlX2Ftb3VudF9taWNyb3MYCSABKAMSFAoMaW50cm9fcGVyaW9kGAogASgJEhQKDGVudGl0bGVtZW50cxgLIAMoCRISCgpzb3J0X29yZGVyGAwgASgFEhMKC2hpZ2hsaWdodGVkGA0gASgIIuYBCgdQYXl3YWxsEhMKC3JldmlzaW9uX2lkGAEgASgJEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEiYKHmhpZ2hsaWdodGVkX3Byb2R1Y3RfaWRlbnRpZmllchgGIAEoCRIuCgZsYXlvdXQYByABKA4yHi5tb3RoLmJpbGxpbmcudjEuUGF5d2FsbExheW91dBIRCgl0ZXJtc191cmwYCCABKAkSEwoLcHJpdmFjeV91cmwYCSABKAkiJwoTR2V0T2ZmZXJpbmdzUmVxdWVzdBIQCghvZmZlcmluZxgBIAEoCSJDChRHZXRPZmZlcmluZ3NSZXNwb25zZRIrCghvZmZlcmluZxgBIAEoCzIZLm1vdGguYmlsbGluZy52MS5PZmZlcmluZyKVAQoEQ29weRIVCg1jb3B5X3JldmlzaW9uGAEgASgJEg4KBmxvY2FsZRgCIAEoCRI1CghtZXNzYWdlcxgDIAMoCzIjLm1vdGguYmlsbGluZy52MS5Db3B5Lk1lc3NhZ2VzRW50cnkaLwoNTWVzc2FnZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlAKEUdldFBheXdhbGxSZXF1ZXN0Eh4KFmtub3duX3BheXdhbGxfcmV2aXNpb24YASABKAkSGwoTa25vd25fY29weV9yZXZpc2lvbhgCIAEoCSJkChJHZXRQYXl3YWxsUmVzcG9uc2USKQoHcGF5d2FsbBgBIAEoCzIYLm1vdGguYmlsbGluZy52MS5QYXl3YWxsEiMKBGNvcHkYAiABKAsyFS5tb3RoLmJpbGxpbmcudjEuQ29weSKFAQoMQ3VzdG9tZXJJbmZvEjkKE2FjdGl2ZV9lbnRpdGxlbWVudHMYASADKAsyHC5tb3RoLmJpbGxpbmcudjEuRW50aXRsZW1lbnQSOgoNc3Vic2NyaXB0aW9ucxgCIAMoCzIjLm1vdGguYmlsbGluZy52MS5BY3RpdmVTdWJzY3JpcHRpb24iogEKC0VudGl0bGVtZW50EhIKCmlkZW50aWZpZXIYASABKAkSLwoLZXhwaXJlX3RpbWUYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjIKBnNvdXJjZRgDIAEoDjIiLm1vdGguYmlsbGluZy52MS5FbnRpdGxlbWVudFNvdXJjZRIaChJwcm9kdWN0X2lkZW50aWZpZXIYBCABKAki7AEKEkFjdGl2ZVN1YnNjcmlwdGlvbhIaChJwcm9kdWN0X2lkZW50aWZpZXIYASABKAkSJQoFc3RvcmUYAiABKA4yFi5tb3RoLmJpbGxpbmcudjEuU3RvcmUSMwoGc3RhdHVzGAMgASgOMiMubW90aC5iaWxsaW5nLnYxLlN1YnNjcmlwdGlvblN0YXR1cxI2ChJjdXJyZW50X3BlcmlvZF9lbmQYBCABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhIKCmF1dG9fcmVuZXcYBSABKAgSEgoKaXNfc2FuZGJveBgGIAEoCCIYChZHZXRDdXN0b21lckluZm9SZXF1ZXN0Ik8KF0dldEN1c3RvbWVySW5mb1Jlc3BvbnNlEjQKDWN1c3RvbWVyX2luZm8YASABKAsyHS5tb3RoLmJpbGxpbmcudjEuQ3VzdG9tZXJJbmZvIscBChVTdWJtaXRQdXJjaGFzZVJlcXVlc3QSJQoFc3RvcmUYASABKA4yFi5tb3RoLmJpbGxpbmcudjEuU3RvcmUSGgoScHJvZHVjdF9pZGVudGlmaWVyGAIgASgJEh8KFWFwcGxlX2p3c190cmFuc2FjdGlvbhgDIAEoCUgAEh8KFWdvb2dsZV9wdXJjaGFzZV90b2tlbhgEIAEoCUgAEh4KFmdvb2dsZV9zdWJzY3JpcHRpb25faWQYBSABKAlCCQoHcmVjZWlwdCJOChZTdWJtaXRQdXJjaGFzZVJlc3BvbnNlEjQKDWN1c3RvbWVyX2luZm8YASABKAsyHS5tb3RoLmJpbGxpbmcudjEuQ3VzdG9tZXJJbmZvIlIKF1Jlc3RvcmVQdXJjaGFzZXNSZXF1ZXN0EiUKBXN0b3JlGAEgASgOMhYubW90aC5iaWxsaW5nLnYxLlN0b3JlEhAKCHJlY2VpcHRzGAIgAygJIlAKGFJlc3RvcmVQdXJjaGFzZXNSZXNwb25zZRI0Cg1jdXN0b21lcl9pbmZvGAEgASgLMh0ubW90aC5iaWxsaW5nLnYxLkN1c3RvbWVySW5mbyp+Cg1QYXl3YWxsTGF5b3V0Eh4KGlBBWVdBTExfTEFZT1VUX1VOU1BFQ0lGSUVEEAASGAoUUEFZV0FMTF9MQVlPVVRfVElMRVMQARIXChNQQVlXQUxMX0xBWU9VVF9MSVNUEAISGgoWUEFZV0FMTF9MQVlPVVRfQ09NUEFDVBADKkEKBVN0b3JlEhUKEVNUT1JFX1VOU1BFQ0lGSUVEEAASDwoLU1RPUkVfQVBQTEUQARIQCgxTVE9SRV9HT09HTEUQAiqwAgoSU3Vic2NyaXB0aW9uU3RhdHVzEiMKH1NVQlNDUklQVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIeChpTVUJTQ1JJUFRJT05fU1RBVFVTX0FDVElWRRABEiAKHFNVQlNDUklQVElPTl9TVEFUVVNfVFJJQUxJTkcQAhInCiNTVUJTQ1JJUFRJT05fU1RBVFVTX0lOX0dSQUNFX1BFUklPRBADEigKJFNVQlNDUklQVElPTl9TVEFUVVNfSU5fQklMTElOR19SRVRSWRAEEh4KGlNVQlNDUklQVElPTl9TVEFUVVNfUEFVU0VEEAUSHwobU1VCU0NSSVBUSU9OX1NUQVRVU19FWFBJUkVEEAYSHwobU1VCU0NSSVBUSU9OX1NUQVRVU19SRVZPS0VEEAcqkAEKEUVudGl0bGVtZW50U291cmNlEiIKHkVOVElUTEVNRU5UX1NPVVJDRV9VTlNQRUNJRklFRBAAEhwKGEVOVElUTEVNRU5UX1NPVVJDRV9TVE9SRRABEhwKGEVOVElUTEVNRU5UX1NPVVJDRV9HUkFOVBACEhsKF0VOVElUTEVNRU5UX1NPVVJDRV9OT05FEAMy9gMKDkJpbGxpbmdTZXJ2aWNlEmQKD0dldEN1c3RvbWVySW5mbxInLm1vdGguYmlsbGluZy52MS5HZXRDdXN0b21lckluZm9SZXF1ZXN0GigubW90aC5iaWxsaW5nLnYxLkdldEN1c3RvbWVySW5mb1Jlc3BvbnNlEmEKDlN1Ym1pdFB1cmNoYXNlEiYubW90aC5iaWxsaW5nLnYxLlN1Ym1pdFB1cmNoYXNlUmVxdWVzdBonLm1vdGguYmlsbGluZy52MS5TdWJtaXRQdXJjaGFzZVJlc3BvbnNlEmcKEFJlc3RvcmVQdXJjaGFzZXMSKC5tb3RoLmJpbGxpbmcudjEuUmVzdG9yZVB1cmNoYXNlc1JlcXVlc3QaKS5tb3RoLmJpbGxpbmcudjEuUmVzdG9yZVB1cmNoYXNlc1Jlc3BvbnNlElsKDEdldE9mZmVyaW5ncxIkLm1vdGguYmlsbGluZy52MS5HZXRPZmZlcmluZ3NSZXF1ZXN0GiUubW90aC5iaWxsaW5nLnYxLkdldE9mZmVyaW5nc1Jlc3BvbnNlElUKCkdldFBheXdhbGwSIi5tb3RoLmJpbGxpbmcudjEuR2V0UGF5d2FsbFJlcXVlc3QaIy5tb3RoLmJpbGxpbmcudjEuR2V0UGF5d2FsbFJlc3BvbnNlQjtaOWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9iaWxsaW5nL3YxO2JpbGxpbmd2MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
 
 /**
  * Offering is the ordered set of products a paywall presents — the products
@@ -255,6 +255,52 @@ export const GetOfferingsResponseSchema: GenMessage<GetOfferingsResponse> = /*@_
   messageDesc(file_moth_billing_v1_billing, 4);
 
 /**
+ * Copy is the resolved, localized paywall copy for the negotiated locale: the
+ * paywall.* message key → localized-string map (headline, subtitle, benefit
+ * bullets, CTA, legal labels), merged bundled-default → project-override. The
+ * paywall copy keys are part of the same catalog as the auth-screen copy
+ * (moth.auth.v1). The locale is negotiated server-side from the request's
+ * Accept-Language / x-moth-language metadata; the client never dictates raw
+ * copy. The structural Paywall message above stays authoritative for
+ * layout/offering/tier selection.
+ *
+ * @generated from message moth.billing.v1.Copy
+ */
+export type Copy = Message<"moth.billing.v1.Copy"> & {
+  /**
+   * Opaque cache token identifying this (locale, override-revision) pair.
+   * Cache `messages` keyed by it and echo it as
+   * GetPaywallRequest.known_copy_revision; the response omits `messages` when
+   * it still matches.
+   *
+   * @generated from field: string copy_revision = 1;
+   */
+  copyRevision: string;
+
+  /**
+   * The negotiated BCP-47 locale this copy is for (e.g. "fr").
+   *
+   * @generated from field: string locale = 2;
+   */
+  locale: string;
+
+  /**
+   * Resolved paywall.* message key → localized string for the negotiated
+   * locale.
+   *
+   * @generated from field: map<string, string> messages = 3;
+   */
+  messages: { [key: string]: string };
+};
+
+/**
+ * Describes the message moth.billing.v1.Copy.
+ * Use `create(CopySchema)` to create a new message.
+ */
+export const CopySchema: GenMessage<Copy> = /*@__PURE__*/
+  messageDesc(file_moth_billing_v1_billing, 5);
+
+/**
  * @generated from message moth.billing.v1.GetPaywallRequest
  */
 export type GetPaywallRequest = Message<"moth.billing.v1.GetPaywallRequest"> & {
@@ -266,6 +312,18 @@ export type GetPaywallRequest = Message<"moth.billing.v1.GetPaywallRequest"> & {
    * @generated from field: string known_paywall_revision = 1;
    */
   knownPaywallRevision: string;
+
+  /**
+   * The copy_revision the client has cached for the locale it is about to
+   * render (empty on first call). When it still matches the token the server
+   * computes for the negotiated locale, the response's `copy` carries the
+   * locale + copy_revision but omits `messages`; when it differs (or was
+   * empty), `messages` is present. The negotiated locale comes from
+   * Accept-Language / x-moth-language metadata, never from this body.
+   *
+   * @generated from field: string known_copy_revision = 2;
+   */
+  knownCopyRevision: string;
 };
 
 /**
@@ -273,7 +331,7 @@ export type GetPaywallRequest = Message<"moth.billing.v1.GetPaywallRequest"> & {
  * Use `create(GetPaywallRequestSchema)` to create a new message.
  */
 export const GetPaywallRequestSchema: GenMessage<GetPaywallRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 5);
+  messageDesc(file_moth_billing_v1_billing, 6);
 
 /**
  * @generated from message moth.billing.v1.GetPaywallResponse
@@ -287,6 +345,16 @@ export type GetPaywallResponse = Message<"moth.billing.v1.GetPaywallResponse"> &
    * @generated from field: moth.billing.v1.Paywall paywall = 1;
    */
   paywall?: Paywall | undefined;
+
+  /**
+   * The localized paywall copy for the negotiated locale. Always present (it
+   * carries the negotiated locale + copy_revision); its `messages` map is
+   * omitted when GetPaywallRequest.known_copy_revision matches, present
+   * otherwise — including for projects with no copy overrides.
+   *
+   * @generated from field: moth.billing.v1.Copy copy = 2;
+   */
+  copy?: Copy | undefined;
 };
 
 /**
@@ -294,7 +362,7 @@ export type GetPaywallResponse = Message<"moth.billing.v1.GetPaywallResponse"> &
  * Use `create(GetPaywallResponseSchema)` to create a new message.
  */
 export const GetPaywallResponseSchema: GenMessage<GetPaywallResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 6);
+  messageDesc(file_moth_billing_v1_billing, 7);
 
 /**
  * CustomerInfo is the complete subscription picture for one user. Apps gate
@@ -326,7 +394,7 @@ export type CustomerInfo = Message<"moth.billing.v1.CustomerInfo"> & {
  * Use `create(CustomerInfoSchema)` to create a new message.
  */
 export const CustomerInfoSchema: GenMessage<CustomerInfo> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 7);
+  messageDesc(file_moth_billing_v1_billing, 8);
 
 /**
  * Entitlement is one active capability the user holds.
@@ -370,7 +438,7 @@ export type Entitlement = Message<"moth.billing.v1.Entitlement"> & {
  * Use `create(EntitlementSchema)` to create a new message.
  */
 export const EntitlementSchema: GenMessage<Entitlement> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 8);
+  messageDesc(file_moth_billing_v1_billing, 9);
 
 /**
  * ActiveSubscription is one of the user's store subscriptions.
@@ -421,7 +489,7 @@ export type ActiveSubscription = Message<"moth.billing.v1.ActiveSubscription"> &
  * Use `create(ActiveSubscriptionSchema)` to create a new message.
  */
 export const ActiveSubscriptionSchema: GenMessage<ActiveSubscription> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 9);
+  messageDesc(file_moth_billing_v1_billing, 10);
 
 /**
  * @generated from message moth.billing.v1.GetCustomerInfoRequest
@@ -434,7 +502,7 @@ export type GetCustomerInfoRequest = Message<"moth.billing.v1.GetCustomerInfoReq
  * Use `create(GetCustomerInfoRequestSchema)` to create a new message.
  */
 export const GetCustomerInfoRequestSchema: GenMessage<GetCustomerInfoRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 10);
+  messageDesc(file_moth_billing_v1_billing, 11);
 
 /**
  * @generated from message moth.billing.v1.GetCustomerInfoResponse
@@ -451,7 +519,7 @@ export type GetCustomerInfoResponse = Message<"moth.billing.v1.GetCustomerInfoRe
  * Use `create(GetCustomerInfoResponseSchema)` to create a new message.
  */
 export const GetCustomerInfoResponseSchema: GenMessage<GetCustomerInfoResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 11);
+  messageDesc(file_moth_billing_v1_billing, 12);
 
 /**
  * @generated from message moth.billing.v1.SubmitPurchaseRequest
@@ -505,7 +573,7 @@ export type SubmitPurchaseRequest = Message<"moth.billing.v1.SubmitPurchaseReque
  * Use `create(SubmitPurchaseRequestSchema)` to create a new message.
  */
 export const SubmitPurchaseRequestSchema: GenMessage<SubmitPurchaseRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 12);
+  messageDesc(file_moth_billing_v1_billing, 13);
 
 /**
  * @generated from message moth.billing.v1.SubmitPurchaseResponse
@@ -522,7 +590,7 @@ export type SubmitPurchaseResponse = Message<"moth.billing.v1.SubmitPurchaseResp
  * Use `create(SubmitPurchaseResponseSchema)` to create a new message.
  */
 export const SubmitPurchaseResponseSchema: GenMessage<SubmitPurchaseResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 13);
+  messageDesc(file_moth_billing_v1_billing, 14);
 
 /**
  * @generated from message moth.billing.v1.RestorePurchasesRequest
@@ -547,7 +615,7 @@ export type RestorePurchasesRequest = Message<"moth.billing.v1.RestorePurchasesR
  * Use `create(RestorePurchasesRequestSchema)` to create a new message.
  */
 export const RestorePurchasesRequestSchema: GenMessage<RestorePurchasesRequest> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 14);
+  messageDesc(file_moth_billing_v1_billing, 15);
 
 /**
  * @generated from message moth.billing.v1.RestorePurchasesResponse
@@ -564,7 +632,7 @@ export type RestorePurchasesResponse = Message<"moth.billing.v1.RestorePurchases
  * Use `create(RestorePurchasesResponseSchema)` to create a new message.
  */
 export const RestorePurchasesResponseSchema: GenMessage<RestorePurchasesResponse> = /*@__PURE__*/
-  messageDesc(file_moth_billing_v1_billing, 15);
+  messageDesc(file_moth_billing_v1_billing, 16);
 
 /**
  * PaywallLayout is the rendering variant the paywall screen uses; the token

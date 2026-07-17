@@ -39,6 +39,7 @@ type Store interface {
 	store.StoreNotificationStore
 	store.BillingCredentialStore
 	store.SubscriptionEventStore
+	store.CopyStore
 }
 
 var _ billingv1connect.BillingServiceHandler = (*Handler)(nil)

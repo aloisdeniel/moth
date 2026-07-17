@@ -204,6 +204,24 @@ type PaywallStore interface {
 	ListPaywallRevisions(ctx context.Context, projectID string, limit int) ([]PaywallRevision, error)
 }
 
+// CopyStore persists per-project localization copy overrides and their
+// revision history (raw CopyOverrides JSON documents). The low-level CAS
+// primitives mirror ThemeStore / PaywallStore; the read-modify-write mutators
+// (GetProjectCopy/UpdateProjectCopy/ResetCopy/RestoreCopyRevision) and
+// ListAvailableLocales layer the copy contract on top so it stays
+// self-contained (validation is injected via CopyValidator).
+type CopyStore interface {
+	SetProjectCopy(ctx context.Context, rev CopyRevision, prevRevisionID string) error
+	ClearProjectCopy(ctx context.Context, projectID string, now time.Time) error
+	GetCopyRevision(ctx context.Context, projectID, revisionID string) (CopyRevision, error)
+	ListCopyRevisions(ctx context.Context, projectID string, limit int) ([]CopyRevision, error)
+	GetProjectCopy(ctx context.Context, projectID string) (CopyOverrides, string, error)
+	UpdateProjectCopy(ctx context.Context, projectID, locale string, values map[string]string, id string, now time.Time, validate CopyValidator) (string, error)
+	ResetCopy(ctx context.Context, projectID, locale, key, id string, now time.Time) (string, error)
+	RestoreCopyRevision(ctx context.Context, projectID, revisionID, id string, now time.Time) (string, error)
+	ListAvailableLocales(ctx context.Context, projectID, defaultLocale string) ([]string, error)
+}
+
 // EventStore records and reads the raw analytics event stream.
 type EventStore interface {
 	InsertEvent(ctx context.Context, e Event) error
@@ -369,6 +387,7 @@ var (
 	_ ProviderSecretStore      = (*Store)(nil)
 	_ ThemeStore               = (*Store)(nil)
 	_ PaywallStore             = (*Store)(nil)
+	_ CopyStore                = (*Store)(nil)
 	_ EventStore               = (*Store)(nil)
 	_ StatsStore               = (*Store)(nil)
 	_ SubscriptionStatsStore   = (*Store)(nil)

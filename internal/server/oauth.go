@@ -8,6 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/aloisdeniel/moth/internal/i18n"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
 )
@@ -60,11 +61,13 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 		s.internalError(w, r, err)
 		return
 	}
+	loc := s.localize(r, project)
 	if msg := r.FormValue("error"); msg != "" || r.FormValue("code") == "" {
 		s.renderPageStatus(w, r, http.StatusBadRequest, project, pageData{
-			Title: "Sign-in not completed",
-			Error: "The provider did not complete the sign-in. Return to the app and try again.",
-		})
+			Title:   loc.Value(i18n.HostedOAuthIncompleteTitle, nil),
+			Error:   loc.Value(i18n.HostedOAuthIncomplete, nil),
+			IsError: true,
+		}, loc)
 		return
 	}
 
@@ -82,43 +85,44 @@ func (s *Server) handleOAuthCallback(w http.ResponseWriter, r *http.Request) {
 	// non-mobile clients); the code is shown so it can be exchanged by
 	// hand.
 	s.renderPage(w, r, project, pageData{
-		Title:   "Signed in",
-		Message: "Sign-in complete. Return to the app and exchange this one-time code: " + code,
-	})
+		Title:   loc.Value(i18n.HostedOAuthSuccess, map[string]string{"app": project.Name}),
+		Message: loc.Value(i18n.HostedOAuthCode, map[string]string{"code": code}),
+	}, loc)
 }
 
 // oauthErrorPage maps an OAuthStart/OAuthCallback error to a friendly 4xx
 // page.
 func (s *Server) oauthErrorPage(w http.ResponseWriter, r *http.Request, project store.Project, err error) {
-	data := pageData{Title: "Sign-in failed"}
+	loc := s.localize(r, project)
+	data := pageData{Title: loc.Value(i18n.HostedOAuthFailedTitle, nil), IsError: true}
 	status := http.StatusBadRequest
 	switch authrpc.ErrorReason(err) {
 	case authrpc.ReasonProviderDisabled:
-		data.Error = "This sign-in method is not available for this app."
+		data.Error = loc.Value(i18n.HostedOAuthErrProviderDisabled, nil)
 	case authrpc.ReasonInvalidRedirect:
-		data.Error = "The requested redirect is not registered for this app."
+		data.Error = loc.Value(i18n.HostedOAuthErrInvalidRedirect, nil)
 	case authrpc.ReasonInvalidToken:
-		data.Error = "This sign-in link is invalid, expired or was already used. Return to the app and try again."
+		data.Error = loc.Value(i18n.HostedOAuthErrInvalidToken, nil)
 	case authrpc.ReasonInvalidProviderToken:
 		status = http.StatusUnauthorized
-		data.Error = "The provider sign-in could not be verified. Return to the app and try again."
+		data.Error = loc.Value(i18n.HostedOAuthErrProviderToken, nil)
 	case authrpc.ReasonEmailAlreadyExists:
-		data.Error = "An account with this email already exists. Sign in with it to link this provider."
+		data.Error = loc.Value(i18n.HostedOAuthErrEmailExists, nil)
 	case authrpc.ReasonUserDisabled:
 		status = http.StatusForbidden
-		data.Error = "This account is disabled."
+		data.Error = loc.Value(i18n.HostedOAuthErrUserDisabled, nil)
 	case authrpc.ReasonSignupClosed:
 		status = http.StatusForbidden
-		data.Error = "Signup is closed for this app."
+		data.Error = loc.Value(i18n.HostedOAuthErrSignupClosed, nil)
 	default:
 		if connect.CodeOf(err) == connect.CodeInvalidArgument {
-			data.Error = "Invalid sign-in request."
+			data.Error = loc.Value(i18n.HostedOAuthErrInvalid, nil)
 		} else {
 			s.internalError(w, r, err)
 			return
 		}
 	}
-	s.renderPageStatus(w, r, status, project, data)
+	s.renderPageStatus(w, r, status, project, data, loc)
 }
 
 // appendCodeParam adds the one-time code query parameter to the app's

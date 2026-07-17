@@ -578,13 +578,106 @@ class GetOfferingsResponse extends $pb.GeneratedMessage {
   Offering ensureOffering() => $_ensure(0);
 }
 
+/// Copy is the resolved, localized paywall copy for the negotiated locale: the
+/// paywall.* message key → localized-string map (headline, subtitle, benefit
+/// bullets, CTA, legal labels), merged bundled-default → project-override. The
+/// paywall copy keys are part of the same catalog as the auth-screen copy
+/// (moth.auth.v1). The locale is negotiated server-side from the request's
+/// Accept-Language / x-moth-language metadata; the client never dictates raw
+/// copy. The structural Paywall message above stays authoritative for
+/// layout/offering/tier selection.
+class Copy extends $pb.GeneratedMessage {
+  factory Copy({
+    $core.String? copyRevision,
+    $core.String? locale,
+    $core.Iterable<$core.MapEntry<$core.String, $core.String>>? messages,
+  }) {
+    final result = create();
+    if (copyRevision != null) result.copyRevision = copyRevision;
+    if (locale != null) result.locale = locale;
+    if (messages != null) result.messages.addEntries(messages);
+    return result;
+  }
+
+  Copy._();
+
+  factory Copy.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Copy.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Copy',
+      package:
+          const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'copyRevision')
+    ..aOS(2, _omitFieldNames ? '' : 'locale')
+    ..m<$core.String, $core.String>(3, _omitFieldNames ? '' : 'messages',
+        entryClassName: 'Copy.MessagesEntry',
+        keyFieldType: $pb.PbFieldType.OS,
+        valueFieldType: $pb.PbFieldType.OS,
+        packageName: const $pb.PackageName('moth.billing.v1'))
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Copy clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Copy copyWith(void Function(Copy) updates) =>
+      super.copyWith((message) => updates(message as Copy)) as Copy;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Copy create() => Copy._();
+  @$core.override
+  Copy createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Copy getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Copy>(create);
+  static Copy? _defaultInstance;
+
+  /// Opaque cache token identifying this (locale, override-revision) pair.
+  /// Cache `messages` keyed by it and echo it as
+  /// GetPaywallRequest.known_copy_revision; the response omits `messages` when
+  /// it still matches.
+  @$pb.TagNumber(1)
+  $core.String get copyRevision => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set copyRevision($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCopyRevision() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCopyRevision() => $_clearField(1);
+
+  /// The negotiated BCP-47 locale this copy is for (e.g. "fr").
+  @$pb.TagNumber(2)
+  $core.String get locale => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set locale($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasLocale() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearLocale() => $_clearField(2);
+
+  /// Resolved paywall.* message key → localized string for the negotiated
+  /// locale.
+  @$pb.TagNumber(3)
+  $pb.PbMap<$core.String, $core.String> get messages => $_getMap(2);
+}
+
 class GetPaywallRequest extends $pb.GeneratedMessage {
   factory GetPaywallRequest({
     $core.String? knownPaywallRevision,
+    $core.String? knownCopyRevision,
   }) {
     final result = create();
     if (knownPaywallRevision != null)
       result.knownPaywallRevision = knownPaywallRevision;
+    if (knownCopyRevision != null) result.knownCopyRevision = knownCopyRevision;
     return result;
   }
 
@@ -603,6 +696,7 @@ class GetPaywallRequest extends $pb.GeneratedMessage {
           const $pb.PackageName(_omitMessageNames ? '' : 'moth.billing.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'knownPaywallRevision')
+    ..aOS(2, _omitFieldNames ? '' : 'knownCopyRevision')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -635,14 +729,31 @@ class GetPaywallRequest extends $pb.GeneratedMessage {
   $core.bool hasKnownPaywallRevision() => $_has(0);
   @$pb.TagNumber(1)
   void clearKnownPaywallRevision() => $_clearField(1);
+
+  /// The copy_revision the client has cached for the locale it is about to
+  /// render (empty on first call). When it still matches the token the server
+  /// computes for the negotiated locale, the response's `copy` carries the
+  /// locale + copy_revision but omits `messages`; when it differs (or was
+  /// empty), `messages` is present. The negotiated locale comes from
+  /// Accept-Language / x-moth-language metadata, never from this body.
+  @$pb.TagNumber(2)
+  $core.String get knownCopyRevision => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set knownCopyRevision($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasKnownCopyRevision() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearKnownCopyRevision() => $_clearField(2);
 }
 
 class GetPaywallResponse extends $pb.GeneratedMessage {
   factory GetPaywallResponse({
     Paywall? paywall,
+    Copy? copy,
   }) {
     final result = create();
     if (paywall != null) result.paywall = paywall;
+    if (copy != null) result.copy = copy;
     return result;
   }
 
@@ -662,6 +773,7 @@ class GetPaywallResponse extends $pb.GeneratedMessage {
       createEmptyInstance: create)
     ..aOM<Paywall>(1, _omitFieldNames ? '' : 'paywall',
         subBuilder: Paywall.create)
+    ..aOM<Copy>(2, _omitFieldNames ? '' : 'copy', subBuilder: Copy.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -696,6 +808,21 @@ class GetPaywallResponse extends $pb.GeneratedMessage {
   void clearPaywall() => $_clearField(1);
   @$pb.TagNumber(1)
   Paywall ensurePaywall() => $_ensure(0);
+
+  /// The localized paywall copy for the negotiated locale. Always present (it
+  /// carries the negotiated locale + copy_revision); its `messages` map is
+  /// omitted when GetPaywallRequest.known_copy_revision matches, present
+  /// otherwise — including for projects with no copy overrides.
+  @$pb.TagNumber(2)
+  Copy get copy => $_getN(1);
+  @$pb.TagNumber(2)
+  set copy(Copy value) => $_setField(2, value);
+  @$pb.TagNumber(2)
+  $core.bool hasCopy() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearCopy() => $_clearField(2);
+  @$pb.TagNumber(2)
+  Copy ensureCopy() => $_ensure(1);
 }
 
 /// CustomerInfo is the complete subscription picture for one user. Apps gate

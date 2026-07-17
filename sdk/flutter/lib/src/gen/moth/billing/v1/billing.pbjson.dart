@@ -228,6 +228,41 @@ final $typed_data.Uint8List getOfferingsResponseDescriptor = $convert.base64Deco
     'ChRHZXRPZmZlcmluZ3NSZXNwb25zZRI1CghvZmZlcmluZxgBIAEoCzIZLm1vdGguYmlsbGluZy'
     '52MS5PZmZlcmluZ1IIb2ZmZXJpbmc=');
 
+@$core.Deprecated('Use copyDescriptor instead')
+const Copy$json = {
+  '1': 'Copy',
+  '2': [
+    {'1': 'copy_revision', '3': 1, '4': 1, '5': 9, '10': 'copyRevision'},
+    {'1': 'locale', '3': 2, '4': 1, '5': 9, '10': 'locale'},
+    {
+      '1': 'messages',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.moth.billing.v1.Copy.MessagesEntry',
+      '10': 'messages'
+    },
+  ],
+  '3': [Copy_MessagesEntry$json],
+};
+
+@$core.Deprecated('Use copyDescriptor instead')
+const Copy_MessagesEntry$json = {
+  '1': 'MessagesEntry',
+  '2': [
+    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
+    {'1': 'value', '3': 2, '4': 1, '5': 9, '10': 'value'},
+  ],
+  '7': {'7': true},
+};
+
+/// Descriptor for `Copy`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List copyDescriptor = $convert.base64Decode(
+    'CgRDb3B5EiMKDWNvcHlfcmV2aXNpb24YASABKAlSDGNvcHlSZXZpc2lvbhIWCgZsb2NhbGUYAi'
+    'ABKAlSBmxvY2FsZRI/CghtZXNzYWdlcxgDIAMoCzIjLm1vdGguYmlsbGluZy52MS5Db3B5Lk1l'
+    'c3NhZ2VzRW50cnlSCG1lc3NhZ2VzGjsKDU1lc3NhZ2VzRW50cnkSEAoDa2V5GAEgASgJUgNrZX'
+    'kSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ==');
+
 @$core.Deprecated('Use getPaywallRequestDescriptor instead')
 const GetPaywallRequest$json = {
   '1': 'GetPaywallRequest',
@@ -239,13 +274,21 @@ const GetPaywallRequest$json = {
       '5': 9,
       '10': 'knownPaywallRevision'
     },
+    {
+      '1': 'known_copy_revision',
+      '3': 2,
+      '4': 1,
+      '5': 9,
+      '10': 'knownCopyRevision'
+    },
   ],
 };
 
 /// Descriptor for `GetPaywallRequest`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List getPaywallRequestDescriptor = $convert.base64Decode(
     'ChFHZXRQYXl3YWxsUmVxdWVzdBI0ChZrbm93bl9wYXl3YWxsX3JldmlzaW9uGAEgASgJUhRrbm'
-    '93blBheXdhbGxSZXZpc2lvbg==');
+    '93blBheXdhbGxSZXZpc2lvbhIuChNrbm93bl9jb3B5X3JldmlzaW9uGAIgASgJUhFrbm93bkNv'
+    'cHlSZXZpc2lvbg==');
 
 @$core.Deprecated('Use getPaywallResponseDescriptor instead')
 const GetPaywallResponse$json = {
@@ -259,13 +302,22 @@ const GetPaywallResponse$json = {
       '6': '.moth.billing.v1.Paywall',
       '10': 'paywall'
     },
+    {
+      '1': 'copy',
+      '3': 2,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.billing.v1.Copy',
+      '10': 'copy'
+    },
   ],
 };
 
 /// Descriptor for `GetPaywallResponse`. Decode as a `google.protobuf.DescriptorProto`.
 final $typed_data.Uint8List getPaywallResponseDescriptor = $convert.base64Decode(
     'ChJHZXRQYXl3YWxsUmVzcG9uc2USMgoHcGF5d2FsbBgBIAEoCzIYLm1vdGguYmlsbGluZy52MS'
-    '5QYXl3YWxsUgdwYXl3YWxs');
+    '5QYXl3YWxsUgdwYXl3YWxsEikKBGNvcHkYAiABKAsyFS5tb3RoLmJpbGxpbmcudjEuQ29weVIE'
+    'Y29weQ==');
 
 @$core.Deprecated('Use customerInfoDescriptor instead')
 const CustomerInfo$json = {

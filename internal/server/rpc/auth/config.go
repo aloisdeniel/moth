@@ -41,5 +41,20 @@ func (h *Handler) GetProjectConfig(ctx context.Context, req *connect.Request[aut
 	if req.Msg.KnownThemeRevision != t.RevisionId {
 		resp.Theme = t
 	}
-	return connect.NewResponse(resp), nil
+	// Localized copy for the negotiated locale, same stale-while-revalidate
+	// contract as the theme but keyed by (locale, override-revision). The
+	// Copy message always ships (it carries the negotiated locale + token);
+	// its messages map is omitted when the client's token still matches.
+	loc, err := NewLocalizer(ctx, h.store, project.ID, req.Header())
+	if err != nil {
+		return nil, errInternal(err)
+	}
+	cp := &authv1.Copy{CopyRevision: loc.Token(), Locale: string(loc.Locale)}
+	if req.Msg.KnownCopyRevision != loc.Token() {
+		cp.Messages = loc.Messages(ConfigCopyScreens, map[string]string{"app": project.Name})
+	}
+	resp.Copy = cp
+	out := connect.NewResponse(resp)
+	out.Header().Set(LocaleHeader, string(loc.Locale))
+	return out, nil
 }

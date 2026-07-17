@@ -112,6 +112,41 @@ final $typed_data.Uint8List themeColorsDescriptor = $convert.base64Decode(
     '0KCm9uX3N1cmZhY2UYBiABKAlSCW9uU3VyZmFjZRIUCgVlcnJvchgHIAEoCVIFZXJyb3ISGQoI'
     'b25fZXJyb3IYCCABKAlSB29uRXJyb3I=');
 
+@$core.Deprecated('Use copyDescriptor instead')
+const Copy$json = {
+  '1': 'Copy',
+  '2': [
+    {'1': 'copy_revision', '3': 1, '4': 1, '5': 9, '10': 'copyRevision'},
+    {'1': 'locale', '3': 2, '4': 1, '5': 9, '10': 'locale'},
+    {
+      '1': 'messages',
+      '3': 3,
+      '4': 3,
+      '5': 11,
+      '6': '.moth.auth.v1.Copy.MessagesEntry',
+      '10': 'messages'
+    },
+  ],
+  '3': [Copy_MessagesEntry$json],
+};
+
+@$core.Deprecated('Use copyDescriptor instead')
+const Copy_MessagesEntry$json = {
+  '1': 'MessagesEntry',
+  '2': [
+    {'1': 'key', '3': 1, '4': 1, '5': 9, '10': 'key'},
+    {'1': 'value', '3': 2, '4': 1, '5': 9, '10': 'value'},
+  ],
+  '7': {'7': true},
+};
+
+/// Descriptor for `Copy`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List copyDescriptor = $convert.base64Decode(
+    'CgRDb3B5EiMKDWNvcHlfcmV2aXNpb24YASABKAlSDGNvcHlSZXZpc2lvbhIWCgZsb2NhbGUYAi'
+    'ABKAlSBmxvY2FsZRI8CghtZXNzYWdlcxgDIAMoCzIgLm1vdGguYXV0aC52MS5Db3B5Lk1lc3Nh'
+    'Z2VzRW50cnlSCG1lc3NhZ2VzGjsKDU1lc3NhZ2VzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFA'
+    'oFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ==');
+
 @$core.Deprecated('Use getProjectConfigRequestDescriptor instead')
 const GetProjectConfigRequest$json = {
   '1': 'GetProjectConfigRequest',
@@ -123,14 +158,21 @@ const GetProjectConfigRequest$json = {
       '5': 9,
       '10': 'knownThemeRevision'
     },
+    {
+      '1': 'known_copy_revision',
+      '3': 2,
+      '4': 1,
+      '5': 9,
+      '10': 'knownCopyRevision'
+    },
   ],
 };
 
 /// Descriptor for `GetProjectConfigRequest`. Decode as a `google.protobuf.DescriptorProto`.
-final $typed_data.Uint8List getProjectConfigRequestDescriptor =
-    $convert.base64Decode(
-        'ChdHZXRQcm9qZWN0Q29uZmlnUmVxdWVzdBIwChRrbm93bl90aGVtZV9yZXZpc2lvbhgBIAEoCV'
-        'ISa25vd25UaGVtZVJldmlzaW9u');
+final $typed_data.Uint8List getProjectConfigRequestDescriptor = $convert.base64Decode(
+    'ChdHZXRQcm9qZWN0Q29uZmlnUmVxdWVzdBIwChRrbm93bl90aGVtZV9yZXZpc2lvbhgBIAEoCV'
+    'ISa25vd25UaGVtZVJldmlzaW9uEi4KE2tub3duX2NvcHlfcmV2aXNpb24YAiABKAlSEWtub3du'
+    'Q29weVJldmlzaW9u');
 
 @$core.Deprecated('Use getProjectConfigResponseDescriptor instead')
 const GetProjectConfigResponse$json = {
@@ -168,6 +210,14 @@ const GetProjectConfigResponse$json = {
       '6': '.moth.auth.v1.Theme',
       '10': 'theme'
     },
+    {
+      '1': 'copy',
+      '3': 6,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.auth.v1.Copy',
+      '10': 'copy'
+    },
   ],
 };
 
@@ -177,4 +227,5 @@ final $typed_data.Uint8List getProjectConfigResponseDescriptor = $convert.base64
     'YxLkdvb2dsZUNvbmZpZ1IGZ29vZ2xlEi8KBWFwcGxlGAIgASgLMhkubW90aC5hdXRoLnYxLkFw'
     'cGxlQ29uZmlnUgVhcHBsZRIuChNwYXNzd29yZF9taW5fbGVuZ3RoGAMgASgFUhFwYXNzd29yZE'
     '1pbkxlbmd0aBIgCgxzaWduX3VwX29wZW4YBCABKAhSCnNpZ25VcE9wZW4SKQoFdGhlbWUYBSAB'
-    'KAsyEy5tb3RoLmF1dGgudjEuVGhlbWVSBXRoZW1l');
+    'KAsyEy5tb3RoLmF1dGgudjEuVGhlbWVSBXRoZW1lEiYKBGNvcHkYBiABKAsyEi5tb3RoLmF1dG'
+    'gudjEuQ29weVIEY29weQ==');

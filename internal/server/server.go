@@ -282,6 +282,9 @@ func New(o Options) (*Server, error) {
 	paywallPath, paywallHandler := adminv1connect.NewPaywallServiceHandler(
 		adminrpc.NewPaywallHandler(o.Store, auditor), adminInterceptors)
 	mux.Handle(paywallPath, paywallHandler)
+	copyPath, copyHandler := adminv1connect.NewCopyServiceHandler(
+		adminrpc.NewCopyHandler(o.Store, auditor), adminInterceptors)
+	mux.Handle(copyPath, copyHandler)
 	analyticsPath, analyticsHandler := adminv1connect.NewAnalyticsServiceHandler(
 		adminrpc.NewAnalyticsHandler(o.Store, s.rollup, o.Now), adminInterceptors)
 	mux.Handle(analyticsPath, analyticsHandler)
@@ -333,6 +336,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.InstanceSettingsServiceName,
 		adminv1connect.ThemeServiceName,
 		adminv1connect.PaywallServiceName,
+		adminv1connect.CopyServiceName,
 		adminv1connect.AnalyticsServiceName,
 		adminv1connect.AuditServiceName,
 		adminv1connect.MonetizationServiceName,

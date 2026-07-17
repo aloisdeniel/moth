@@ -3,6 +3,7 @@ import { useRef, useState, type CSSProperties } from "react";
 
 import { errorMessage, invalidate } from "../api";
 import { Badge, ConfirmDialog, ErrorNote, Field, Loading } from "../components/ui";
+import { CopyScreen } from "../gen/moth/admin/v1/copy_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import type { GetThemeResponse, ThemeRevision } from "../gen/moth/admin/v1/theme_pb";
 import { LogoVariant, ThemeService } from "../gen/moth/admin/v1/theme_pb";
@@ -31,45 +32,56 @@ import {
   type EditorTheme,
   type Palette,
 } from "../lib/theme";
+import { SignInUpTab } from "./ProjectCopy";
 import { PaywallEditor } from "./ProjectPaywall";
 
-// ProjectDesign is the design tab: two editors sharing the project theme —
-// the login-screen theme editor (design tokens) and the paywall editor
-// (copy/layout that inherits those tokens). A section toggle switches between
-// them so only one live preview renders at a time.
+// The Design tab's sub-tabs (milestone 15): the theme-token editor first,
+// then one screen per SDK surface an operator can localize/preview.
+const SUBTABS = [
+  { id: "theme", label: "Theme" },
+  { id: "sign_in", label: "Sign in" },
+  { id: "sign_up", label: "Sign up" },
+  { id: "paywall", label: "Paywall" },
+] as const;
+
+type SubTab = (typeof SUBTABS)[number]["id"];
+
+// ProjectDesign is the design tab: a sub-tab bar over the shared project
+// theme. "Theme" is the milestone-06 token editor; "Sign in"/"Sign up" are the
+// per-language copy editors with a live login-screen preview; "Paywall" keeps
+// the milestone-13 layout/offering config and adds a copy editor. Each sub-tab
+// renders a single live preview so only one is on screen at a time.
 export function ProjectDesign({ project }: { project: Project }) {
   // The preview renders with the real embedded fonts, not local lookalikes.
   ensurePreviewFonts();
-  const [section, setSection] = useState<"login" | "paywall">("login");
+  const [tab, setTab] = useState<SubTab>("theme");
   const theme = useQuery(ThemeService.method.getTheme, { projectId: project.id });
 
   if (theme.isPending) return <Loading />;
   if (theme.isError) return <ErrorNote message={errorMessage(theme.error)} />;
   return (
     <div className="stack-24">
-      <div className="seg" role="group" aria-label="Design section">
-        <button
-          type="button"
-          className="seg__btn"
-          aria-pressed={section === "login"}
-          onClick={() => setSection("login")}
-        >
-          Login screen
-        </button>
-        <button
-          type="button"
-          className="seg__btn"
-          aria-pressed={section === "paywall"}
-          onClick={() => setSection("paywall")}
-        >
-          Paywall
-        </button>
+      <div className="seg" role="group" aria-label="Design screen">
+        {SUBTABS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className="seg__btn"
+            aria-pressed={tab === s.id}
+            onClick={() => setTab(s.id)}
+          >
+            {s.label}
+          </button>
+        ))}
       </div>
-      {section === "login" ? (
-        <DesignEditor project={project} current={theme.data} />
-      ) : (
-        <PaywallEditor project={project} theme={theme.data} />
+      {tab === "theme" && <DesignEditor project={project} current={theme.data} />}
+      {tab === "sign_in" && (
+        <SignInUpTab project={project} theme={theme.data} screen={CopyScreen.SIGN_IN} />
       )}
+      {tab === "sign_up" && (
+        <SignInUpTab project={project} theme={theme.data} screen={CopyScreen.SIGN_UP} />
+      )}
+      {tab === "paywall" && <PaywallEditor project={project} theme={theme.data} />}
     </div>
   );
 }

@@ -31,8 +31,16 @@ type Project struct {
 	// PaywallRevisionID identifies the revision Paywall came from ("" when
 	// Paywall is empty).
 	PaywallRevisionID string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	// Copy is the raw copy-override JSON document (a locale → key → string
+	// map, see CopyOverrides); empty means the project renders the bundled
+	// catalog defaults. Written through SetProjectCopy / the copy mutators,
+	// never UpdateProject.
+	Copy string
+	// CopyRevisionID identifies the revision Copy came from ("" when Copy is
+	// empty).
+	CopyRevisionID string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
 }
 
 // ProjectKey is one ES256 signing keypair belonging to a project. The
@@ -98,7 +106,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme, theme_revision, paywall, paywall_revision, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme, theme_revision, paywall, paywall_revision, copy, copy_revision, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
@@ -359,7 +367,8 @@ func scanProjectRow(row rowScanner) (Project, error) {
 	var p Project
 	var settings, createdAt, updatedAt string
 	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.PublishableKey, &p.SecretKeyHash,
-		&settings, &p.Theme, &p.ThemeRevisionID, &p.Paywall, &p.PaywallRevisionID, &createdAt, &updatedAt)
+		&settings, &p.Theme, &p.ThemeRevisionID, &p.Paywall, &p.PaywallRevisionID,
+		&p.Copy, &p.CopyRevisionID, &createdAt, &updatedAt)
 	if err != nil {
 		return Project{}, err
 	}

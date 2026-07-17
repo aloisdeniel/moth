@@ -392,6 +392,81 @@ func (x *ThemeColors) GetOnError() string {
 	return ""
 }
 
+// Copy is the resolved, localized copy for the negotiated locale: the message
+// key → localized-string map the SDK renders its auth screens from
+// (sign_in.*, sign_up.*, password_reset.*, verify_email.*), already merged
+// bundled-default → project-override. The locale is negotiated server-side
+// from the request's Accept-Language / x-moth-language metadata against the
+// project's available locales; the client never dictates raw copy.
+type Copy struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Opaque cache token identifying this (locale, override-revision) pair. It
+	// changes whenever the negotiated locale or the project's copy overrides
+	// change. Cache `messages` keyed by this value and echo it as
+	// GetProjectConfigRequest.known_copy_revision; the response omits `messages`
+	// when it still matches (see the caching contract on the request).
+	CopyRevision string `protobuf:"bytes,1,opt,name=copy_revision,json=copyRevision,proto3" json:"copy_revision,omitempty"`
+	// The negotiated BCP-47 locale this copy is for (e.g. "fr"). Echoed so the
+	// client sets lang/dir correctly and re-requests when the device language
+	// changes; always present even when `messages` is omitted.
+	Locale string `protobuf:"bytes,2,opt,name=locale,proto3" json:"locale,omitempty"`
+	// Resolved message key → localized string for the negotiated locale.
+	Messages      map[string]string `protobuf:"bytes,3,rep,name=messages,proto3" json:"messages,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Copy) Reset() {
+	*x = Copy{}
+	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Copy) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Copy) ProtoMessage() {}
+
+func (x *Copy) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Copy.ProtoReflect.Descriptor instead.
+func (*Copy) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *Copy) GetCopyRevision() string {
+	if x != nil {
+		return x.CopyRevision
+	}
+	return ""
+}
+
+func (x *Copy) GetLocale() string {
+	if x != nil {
+		return x.Locale
+	}
+	return ""
+}
+
+func (x *Copy) GetMessages() map[string]string {
+	if x != nil {
+		return x.Messages
+	}
+	return nil
+}
+
 type GetProjectConfigRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Theme caching contract: pass the revision_id of the theme the client
@@ -400,13 +475,22 @@ type GetProjectConfigRequest struct {
 	// rendering its cached copy. When it differs (or was empty), `theme` is
 	// present and the client replaces its cache.
 	KnownThemeRevision string `protobuf:"bytes,1,opt,name=known_theme_revision,json=knownThemeRevision,proto3" json:"known_theme_revision,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Copy caching contract (identical shape to the theme one, but keyed by the
+	// negotiated locale too): pass the copy_revision the client has cached for
+	// the locale it is about to render (empty on first call). When it still
+	// matches the token the server computes for the negotiated locale, the
+	// response's `copy` carries the locale + copy_revision but omits `messages`
+	// (stale-while-revalidate); when it differs (or was empty), `messages` is
+	// present and the client replaces its cache. The negotiated locale comes
+	// from Accept-Language / x-moth-language metadata, never from this body.
+	KnownCopyRevision string `protobuf:"bytes,2,opt,name=known_copy_revision,json=knownCopyRevision,proto3" json:"known_copy_revision,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *GetProjectConfigRequest) Reset() {
 	*x = GetProjectConfigRequest{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -418,7 +502,7 @@ func (x *GetProjectConfigRequest) String() string {
 func (*GetProjectConfigRequest) ProtoMessage() {}
 
 func (x *GetProjectConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -431,12 +515,19 @@ func (x *GetProjectConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectConfigRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectConfigRequest) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{4}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetProjectConfigRequest) GetKnownThemeRevision() string {
 	if x != nil {
 		return x.KnownThemeRevision
+	}
+	return ""
+}
+
+func (x *GetProjectConfigRequest) GetKnownCopyRevision() string {
+	if x != nil {
+		return x.KnownCopyRevision
 	}
 	return ""
 }
@@ -453,14 +544,20 @@ type GetProjectConfigResponse struct {
 	// GetProjectConfigRequest.known_theme_revision matches the current
 	// revision (see the caching contract there); always present otherwise,
 	// including for projects on the built-in default theme.
-	Theme         *Theme `protobuf:"bytes,5,opt,name=theme,proto3" json:"theme,omitempty"`
+	Theme *Theme `protobuf:"bytes,5,opt,name=theme,proto3" json:"theme,omitempty"`
+	// The localized copy for the negotiated locale. Always present (it carries
+	// the negotiated locale + copy_revision so the client caches per (locale,
+	// revision)); its `messages` map is omitted when
+	// GetProjectConfigRequest.known_copy_revision matches, present otherwise —
+	// including for projects with no copy overrides (fully bundled defaults).
+	Copy          *Copy `protobuf:"bytes,6,opt,name=copy,proto3" json:"copy,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetProjectConfigResponse) Reset() {
 	*x = GetProjectConfigResponse{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -472,7 +569,7 @@ func (x *GetProjectConfigResponse) String() string {
 func (*GetProjectConfigResponse) ProtoMessage() {}
 
 func (x *GetProjectConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -485,7 +582,7 @@ func (x *GetProjectConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectConfigResponse) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{5}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetProjectConfigResponse) GetGoogle() *GoogleConfig {
@@ -519,6 +616,13 @@ func (x *GetProjectConfigResponse) GetSignUpOpen() bool {
 func (x *GetProjectConfigResponse) GetTheme() *Theme {
 	if x != nil {
 		return x.Theme
+	}
+	return nil
+}
+
+func (x *GetProjectConfigResponse) GetCopy() *Copy {
+	if x != nil {
+		return x.Copy
 	}
 	return nil
 }
@@ -566,16 +670,25 @@ const file_moth_auth_v1_config_proto_rawDesc = "" +
 	"\n" +
 	"on_surface\x18\x06 \x01(\tR\tonSurface\x12\x14\n" +
 	"\x05error\x18\a \x01(\tR\x05error\x12\x19\n" +
-	"\bon_error\x18\b \x01(\tR\aonError\"K\n" +
+	"\bon_error\x18\b \x01(\tR\aonError\"\xbe\x01\n" +
+	"\x04Copy\x12#\n" +
+	"\rcopy_revision\x18\x01 \x01(\tR\fcopyRevision\x12\x16\n" +
+	"\x06locale\x18\x02 \x01(\tR\x06locale\x12<\n" +
+	"\bmessages\x18\x03 \x03(\v2 .moth.auth.v1.Copy.MessagesEntryR\bmessages\x1a;\n" +
+	"\rMessagesEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"{\n" +
 	"\x17GetProjectConfigRequest\x120\n" +
-	"\x14known_theme_revision\x18\x01 \x01(\tR\x12knownThemeRevision\"\xfc\x01\n" +
+	"\x14known_theme_revision\x18\x01 \x01(\tR\x12knownThemeRevision\x12.\n" +
+	"\x13known_copy_revision\x18\x02 \x01(\tR\x11knownCopyRevision\"\xa4\x02\n" +
 	"\x18GetProjectConfigResponse\x122\n" +
 	"\x06google\x18\x01 \x01(\v2\x1a.moth.auth.v1.GoogleConfigR\x06google\x12/\n" +
 	"\x05apple\x18\x02 \x01(\v2\x19.moth.auth.v1.AppleConfigR\x05apple\x12.\n" +
 	"\x13password_min_length\x18\x03 \x01(\x05R\x11passwordMinLength\x12 \n" +
 	"\fsign_up_open\x18\x04 \x01(\bR\n" +
 	"signUpOpen\x12)\n" +
-	"\x05theme\x18\x05 \x01(\v2\x13.moth.auth.v1.ThemeR\x05theme2r\n" +
+	"\x05theme\x18\x05 \x01(\v2\x13.moth.auth.v1.ThemeR\x05theme\x12&\n" +
+	"\x04copy\x18\x06 \x01(\v2\x12.moth.auth.v1.CopyR\x04copy2r\n" +
 	"\rConfigService\x12a\n" +
 	"\x10GetProjectConfig\x12%.moth.auth.v1.GetProjectConfigRequest\x1a&.moth.auth.v1.GetProjectConfigResponseB5Z3github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1b\x06proto3"
 
@@ -591,28 +704,32 @@ func file_moth_auth_v1_config_proto_rawDescGZIP() []byte {
 	return file_moth_auth_v1_config_proto_rawDescData
 }
 
-var file_moth_auth_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_moth_auth_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_moth_auth_v1_config_proto_goTypes = []any{
 	(*GoogleConfig)(nil),             // 0: moth.auth.v1.GoogleConfig
 	(*AppleConfig)(nil),              // 1: moth.auth.v1.AppleConfig
 	(*Theme)(nil),                    // 2: moth.auth.v1.Theme
 	(*ThemeColors)(nil),              // 3: moth.auth.v1.ThemeColors
-	(*GetProjectConfigRequest)(nil),  // 4: moth.auth.v1.GetProjectConfigRequest
-	(*GetProjectConfigResponse)(nil), // 5: moth.auth.v1.GetProjectConfigResponse
+	(*Copy)(nil),                     // 4: moth.auth.v1.Copy
+	(*GetProjectConfigRequest)(nil),  // 5: moth.auth.v1.GetProjectConfigRequest
+	(*GetProjectConfigResponse)(nil), // 6: moth.auth.v1.GetProjectConfigResponse
+	nil,                              // 7: moth.auth.v1.Copy.MessagesEntry
 }
 var file_moth_auth_v1_config_proto_depIdxs = []int32{
 	3, // 0: moth.auth.v1.Theme.colors:type_name -> moth.auth.v1.ThemeColors
 	3, // 1: moth.auth.v1.Theme.dark_colors:type_name -> moth.auth.v1.ThemeColors
-	0, // 2: moth.auth.v1.GetProjectConfigResponse.google:type_name -> moth.auth.v1.GoogleConfig
-	1, // 3: moth.auth.v1.GetProjectConfigResponse.apple:type_name -> moth.auth.v1.AppleConfig
-	2, // 4: moth.auth.v1.GetProjectConfigResponse.theme:type_name -> moth.auth.v1.Theme
-	4, // 5: moth.auth.v1.ConfigService.GetProjectConfig:input_type -> moth.auth.v1.GetProjectConfigRequest
-	5, // 6: moth.auth.v1.ConfigService.GetProjectConfig:output_type -> moth.auth.v1.GetProjectConfigResponse
-	6, // [6:7] is the sub-list for method output_type
-	5, // [5:6] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	7, // 2: moth.auth.v1.Copy.messages:type_name -> moth.auth.v1.Copy.MessagesEntry
+	0, // 3: moth.auth.v1.GetProjectConfigResponse.google:type_name -> moth.auth.v1.GoogleConfig
+	1, // 4: moth.auth.v1.GetProjectConfigResponse.apple:type_name -> moth.auth.v1.AppleConfig
+	2, // 5: moth.auth.v1.GetProjectConfigResponse.theme:type_name -> moth.auth.v1.Theme
+	4, // 6: moth.auth.v1.GetProjectConfigResponse.copy:type_name -> moth.auth.v1.Copy
+	5, // 7: moth.auth.v1.ConfigService.GetProjectConfig:input_type -> moth.auth.v1.GetProjectConfigRequest
+	6, // 8: moth.auth.v1.ConfigService.GetProjectConfig:output_type -> moth.auth.v1.GetProjectConfigResponse
+	8, // [8:9] is the sub-list for method output_type
+	7, // [7:8] is the sub-list for method input_type
+	7, // [7:7] is the sub-list for extension type_name
+	7, // [7:7] is the sub-list for extension extendee
+	0, // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_moth_auth_v1_config_proto_init() }
@@ -626,7 +743,7 @@ func file_moth_auth_v1_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_auth_v1_config_proto_rawDesc), len(file_moth_auth_v1_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

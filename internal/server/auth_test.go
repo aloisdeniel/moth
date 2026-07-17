@@ -271,7 +271,7 @@ func TestAuthLifecycleE2E(t *testing.T) {
 	}
 	page, _ := io.ReadAll(resp.Body)
 	resp.Body.Close()
-	if !strings.Contains(string(page), "Password updated") {
+	if !strings.Contains(string(page), "has been reset") {
 		t.Fatalf("reset submit page:\n%s", page)
 	}
 

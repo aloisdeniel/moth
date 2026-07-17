@@ -730,6 +730,15 @@ textarea.input {
   flex: none;
 }
 
+/* Copy editor: label row with an inline reset-to-default action. */
+.copyfield__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 28px;
+}
+
 .design__preview {
   position: sticky;
   top: 24px;
@@ -915,6 +924,24 @@ textarea.input {
   color: var(--p-primary);
 }
 
+/* Copy-driven sign in/up preview additions (milestone 15). */
+.mothpv__subtitle {
+  text-align: center;
+  font-size: calc(var(--p-body) * 0.9);
+  color: color-mix(in srgb, var(--p-on-surface) 65%, transparent);
+  margin-top: calc(var(--p-unit) * -0.75);
+}
+
+.mothpv__legal {
+  text-align: center;
+  font-size: calc(var(--p-body) * 0.72);
+  color: color-mix(in srgb, var(--p-on-surface) 60%, transparent);
+}
+
+.mothpv__switch {
+  color: color-mix(in srgb, var(--p-on-background) 75%, transparent);
+}
+
 /*
  * Paywall-screen replica (MothPaywallScreen). Like .mothpv, everything inside
  * .mothpw is styled exclusively from the --p-* custom properties set inline
@@ -1088,6 +1115,12 @@ textarea.input {
   text-align: center;
   color: var(--p-primary);
   font-size: calc(var(--p-body) * 0.85);
+}
+
+.mothpw__terms {
+  text-align: center;
+  font-size: calc(var(--p-body) * 0.72);
+  color: color-mix(in srgb, var(--p-on-surface) 55%, transparent);
 }
 
 .mothpw__footer {

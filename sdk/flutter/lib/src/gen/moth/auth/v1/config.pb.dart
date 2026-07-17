@@ -516,13 +516,105 @@ class ThemeColors extends $pb.GeneratedMessage {
   void clearOnError() => $_clearField(8);
 }
 
+/// Copy is the resolved, localized copy for the negotiated locale: the message
+/// key → localized-string map the SDK renders its auth screens from
+/// (sign_in.*, sign_up.*, password_reset.*, verify_email.*), already merged
+/// bundled-default → project-override. The locale is negotiated server-side
+/// from the request's Accept-Language / x-moth-language metadata against the
+/// project's available locales; the client never dictates raw copy.
+class Copy extends $pb.GeneratedMessage {
+  factory Copy({
+    $core.String? copyRevision,
+    $core.String? locale,
+    $core.Iterable<$core.MapEntry<$core.String, $core.String>>? messages,
+  }) {
+    final result = create();
+    if (copyRevision != null) result.copyRevision = copyRevision;
+    if (locale != null) result.locale = locale;
+    if (messages != null) result.messages.addEntries(messages);
+    return result;
+  }
+
+  Copy._();
+
+  factory Copy.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory Copy.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'Copy',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'moth.auth.v1'),
+      createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'copyRevision')
+    ..aOS(2, _omitFieldNames ? '' : 'locale')
+    ..m<$core.String, $core.String>(3, _omitFieldNames ? '' : 'messages',
+        entryClassName: 'Copy.MessagesEntry',
+        keyFieldType: $pb.PbFieldType.OS,
+        valueFieldType: $pb.PbFieldType.OS,
+        packageName: const $pb.PackageName('moth.auth.v1'))
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Copy clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  Copy copyWith(void Function(Copy) updates) =>
+      super.copyWith((message) => updates(message as Copy)) as Copy;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Copy create() => Copy._();
+  @$core.override
+  Copy createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static Copy getDefault() =>
+      _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Copy>(create);
+  static Copy? _defaultInstance;
+
+  /// Opaque cache token identifying this (locale, override-revision) pair. It
+  /// changes whenever the negotiated locale or the project's copy overrides
+  /// change. Cache `messages` keyed by this value and echo it as
+  /// GetProjectConfigRequest.known_copy_revision; the response omits `messages`
+  /// when it still matches (see the caching contract on the request).
+  @$pb.TagNumber(1)
+  $core.String get copyRevision => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set copyRevision($core.String value) => $_setString(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasCopyRevision() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearCopyRevision() => $_clearField(1);
+
+  /// The negotiated BCP-47 locale this copy is for (e.g. "fr"). Echoed so the
+  /// client sets lang/dir correctly and re-requests when the device language
+  /// changes; always present even when `messages` is omitted.
+  @$pb.TagNumber(2)
+  $core.String get locale => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set locale($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasLocale() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearLocale() => $_clearField(2);
+
+  /// Resolved message key → localized string for the negotiated locale.
+  @$pb.TagNumber(3)
+  $pb.PbMap<$core.String, $core.String> get messages => $_getMap(2);
+}
+
 class GetProjectConfigRequest extends $pb.GeneratedMessage {
   factory GetProjectConfigRequest({
     $core.String? knownThemeRevision,
+    $core.String? knownCopyRevision,
   }) {
     final result = create();
     if (knownThemeRevision != null)
       result.knownThemeRevision = knownThemeRevision;
+    if (knownCopyRevision != null) result.knownCopyRevision = knownCopyRevision;
     return result;
   }
 
@@ -540,6 +632,7 @@ class GetProjectConfigRequest extends $pb.GeneratedMessage {
       package: const $pb.PackageName(_omitMessageNames ? '' : 'moth.auth.v1'),
       createEmptyInstance: create)
     ..aOS(1, _omitFieldNames ? '' : 'knownThemeRevision')
+    ..aOS(2, _omitFieldNames ? '' : 'knownCopyRevision')
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -575,6 +668,23 @@ class GetProjectConfigRequest extends $pb.GeneratedMessage {
   $core.bool hasKnownThemeRevision() => $_has(0);
   @$pb.TagNumber(1)
   void clearKnownThemeRevision() => $_clearField(1);
+
+  /// Copy caching contract (identical shape to the theme one, but keyed by the
+  /// negotiated locale too): pass the copy_revision the client has cached for
+  /// the locale it is about to render (empty on first call). When it still
+  /// matches the token the server computes for the negotiated locale, the
+  /// response's `copy` carries the locale + copy_revision but omits `messages`
+  /// (stale-while-revalidate); when it differs (or was empty), `messages` is
+  /// present and the client replaces its cache. The negotiated locale comes
+  /// from Accept-Language / x-moth-language metadata, never from this body.
+  @$pb.TagNumber(2)
+  $core.String get knownCopyRevision => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set knownCopyRevision($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasKnownCopyRevision() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearKnownCopyRevision() => $_clearField(2);
 }
 
 class GetProjectConfigResponse extends $pb.GeneratedMessage {
@@ -584,6 +694,7 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     $core.int? passwordMinLength,
     $core.bool? signUpOpen,
     Theme? theme,
+    Copy? copy,
   }) {
     final result = create();
     if (google != null) result.google = google;
@@ -591,6 +702,7 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     if (passwordMinLength != null) result.passwordMinLength = passwordMinLength;
     if (signUpOpen != null) result.signUpOpen = signUpOpen;
     if (theme != null) result.theme = theme;
+    if (copy != null) result.copy = copy;
     return result;
   }
 
@@ -614,6 +726,7 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     ..aI(3, _omitFieldNames ? '' : 'passwordMinLength')
     ..aOB(4, _omitFieldNames ? '' : 'signUpOpen')
     ..aOM<Theme>(5, _omitFieldNames ? '' : 'theme', subBuilder: Theme.create)
+    ..aOM<Copy>(6, _omitFieldNames ? '' : 'copy', subBuilder: Copy.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -692,6 +805,22 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
   void clearTheme() => $_clearField(5);
   @$pb.TagNumber(5)
   Theme ensureTheme() => $_ensure(4);
+
+  /// The localized copy for the negotiated locale. Always present (it carries
+  /// the negotiated locale + copy_revision so the client caches per (locale,
+  /// revision)); its `messages` map is omitted when
+  /// GetProjectConfigRequest.known_copy_revision matches, present otherwise —
+  /// including for projects with no copy overrides (fully bundled defaults).
+  @$pb.TagNumber(6)
+  Copy get copy => $_getN(5);
+  @$pb.TagNumber(6)
+  set copy(Copy value) => $_setField(6, value);
+  @$pb.TagNumber(6)
+  $core.bool hasCopy() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearCopy() => $_clearField(6);
+  @$pb.TagNumber(6)
+  Copy ensureCopy() => $_ensure(5);
 }
 
 const $core.bool _omitFieldNames =

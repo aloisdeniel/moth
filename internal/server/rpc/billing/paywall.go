@@ -8,6 +8,7 @@ import (
 	"connectrpc.com/connect"
 
 	billingv1 "github.com/aloisdeniel/moth/gen/moth/billing/v1"
+	"github.com/aloisdeniel/moth/internal/i18n"
 	"github.com/aloisdeniel/moth/internal/paywall"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
@@ -139,7 +140,22 @@ func (h *Handler) GetPaywall(ctx context.Context, req *connect.Request[billingv1
 	if req.Msg.KnownPaywallRevision != rev {
 		resp.Paywall = publicPaywall(cfg, rev)
 	}
-	return connect.NewResponse(resp), nil
+	// Localized paywall copy for the negotiated locale, same stale-while-
+	// revalidate contract as GetProjectConfig but for the paywall.* catalog
+	// keys. The Copy message always ships; its messages map is omitted when
+	// the client's known_copy_revision still matches.
+	loc, err := authrpc.NewLocalizer(ctx, h.store, project.ID, req.Header())
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	cp := &billingv1.Copy{CopyRevision: loc.Token(), Locale: string(loc.Locale)}
+	if req.Msg.KnownCopyRevision != loc.Token() {
+		cp.Messages = loc.Messages([]i18n.Screen{i18n.ScreenPaywall}, map[string]string{"app": project.Name})
+	}
+	resp.Copy = cp
+	out := connect.NewResponse(resp)
+	out.Header().Set(authrpc.LocaleHeader, string(loc.Locale))
+	return out, nil
 }
 
 // publicPaywall converts the config into the render-ready public message.

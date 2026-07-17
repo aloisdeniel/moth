@@ -57,7 +57,11 @@ const (
 	// Milestone 13 — themed paywall.
 	ActionPaywallUpdate  = "paywall.update"
 	ActionPaywallRestore = "paywall.restore"
-	ActionPaywallReset   = "paywall.reset"
+
+	ActionCopyUpdate   = "copy.update"
+	ActionCopyReset    = "copy.reset"
+	ActionCopyRestore  = "copy.restore"
+	ActionPaywallReset = "paywall.reset"
 )
 
 type clientIPCtxKey struct{}

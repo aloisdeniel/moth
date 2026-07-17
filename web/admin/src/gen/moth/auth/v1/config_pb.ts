@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/auth/v1/config.proto.
  */
 export const file_moth_auth_v1_config: GenFile = /*@__PURE__*/
-  fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgitgIKBVRoZW1lEhMKC3JldmlzaW9uX2lkGAEgASgJEikKBmNvbG9ycxgCIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxIuCgtkYXJrX2NvbG9ycxgDIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxITCgtmb250X2ZhbWlseRgEIAEoCRIQCghmb250X3VybBgFIAEoCRISCgpmb250X3NjYWxlGAYgASgBEhQKDHNwYWNpbmdfdW5pdBgHIAEoBRIVCg1jb3JuZXJfcmFkaXVzGAggASgFEhYKDmxvZ29fbGlnaHRfdXJsGAkgASgJEhUKDWxvZ29fZGFya191cmwYCiABKAkSEQoJdGVybXNfdXJsGAsgASgJEhMKC3ByaXZhY3lfdXJsGAwgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSI3ChdHZXRQcm9qZWN0Q29uZmlnUmVxdWVzdBIcChRrbm93bl90aGVtZV9yZXZpc2lvbhgBIAEoCSLHAQoYR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlEioKBmdvb2dsZRgBIAEoCzIaLm1vdGguYXV0aC52MS5Hb29nbGVDb25maWcSKAoFYXBwbGUYAiABKAsyGS5tb3RoLmF1dGgudjEuQXBwbGVDb25maWcSGwoTcGFzc3dvcmRfbWluX2xlbmd0aBgDIAEoBRIUCgxzaWduX3VwX29wZW4YBCABKAgSIgoFdGhlbWUYBSABKAsyEy5tb3RoLmF1dGgudjEuVGhlbWUycgoNQ29uZmlnU2VydmljZRJhChBHZXRQcm9qZWN0Q29uZmlnEiUubW90aC5hdXRoLnYxLkdldFByb2plY3RDb25maWdSZXF1ZXN0GiYubW90aC5hdXRoLnYxLkdldFByb2plY3RDb25maWdSZXNwb25zZUI1WjNnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYXV0aC92MTthdXRodjFiBnByb3RvMw");
+  fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgitgIKBVRoZW1lEhMKC3JldmlzaW9uX2lkGAEgASgJEikKBmNvbG9ycxgCIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxIuCgtkYXJrX2NvbG9ycxgDIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxITCgtmb250X2ZhbWlseRgEIAEoCRIQCghmb250X3VybBgFIAEoCRISCgpmb250X3NjYWxlGAYgASgBEhQKDHNwYWNpbmdfdW5pdBgHIAEoBRIVCg1jb3JuZXJfcmFkaXVzGAggASgFEhYKDmxvZ29fbGlnaHRfdXJsGAkgASgJEhUKDWxvZ29fZGFya191cmwYCiABKAkSEQoJdGVybXNfdXJsGAsgASgJEhMKC3ByaXZhY3lfdXJsGAwgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKSAQoEQ29weRIVCg1jb3B5X3JldmlzaW9uGAEgASgJEg4KBmxvY2FsZRgCIAEoCRIyCghtZXNzYWdlcxgDIAMoCzIgLm1vdGguYXV0aC52MS5Db3B5Lk1lc3NhZ2VzRW50cnkaLwoNTWVzc2FnZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlQKF0dldFByb2plY3RDb25maWdSZXF1ZXN0EhwKFGtub3duX3RoZW1lX3JldmlzaW9uGAEgASgJEhsKE2tub3duX2NvcHlfcmV2aXNpb24YAiABKAki6QEKGEdldFByb2plY3RDb25maWdSZXNwb25zZRIqCgZnb29nbGUYASABKAsyGi5tb3RoLmF1dGgudjEuR29vZ2xlQ29uZmlnEigKBWFwcGxlGAIgASgLMhkubW90aC5hdXRoLnYxLkFwcGxlQ29uZmlnEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYAyABKAUSFAoMc2lnbl91cF9vcGVuGAQgASgIEiIKBXRoZW1lGAUgASgLMhMubW90aC5hdXRoLnYxLlRoZW1lEiAKBGNvcHkYBiABKAsyEi5tb3RoLmF1dGgudjEuQ29weTJyCg1Db25maWdTZXJ2aWNlEmEKEEdldFByb2plY3RDb25maWcSJS5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QaJi5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlQjVaM2dpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hdXRoL3YxO2F1dGh2MWIGcHJvdG8z");
 
 /**
  * GoogleConfig is the public part of a project's Sign in with Google
@@ -228,6 +228,52 @@ export const ThemeColorsSchema: GenMessage<ThemeColors> = /*@__PURE__*/
   messageDesc(file_moth_auth_v1_config, 3);
 
 /**
+ * Copy is the resolved, localized copy for the negotiated locale: the message
+ * key → localized-string map the SDK renders its auth screens from
+ * (sign_in.*, sign_up.*, password_reset.*, verify_email.*), already merged
+ * bundled-default → project-override. The locale is negotiated server-side
+ * from the request's Accept-Language / x-moth-language metadata against the
+ * project's available locales; the client never dictates raw copy.
+ *
+ * @generated from message moth.auth.v1.Copy
+ */
+export type Copy = Message<"moth.auth.v1.Copy"> & {
+  /**
+   * Opaque cache token identifying this (locale, override-revision) pair. It
+   * changes whenever the negotiated locale or the project's copy overrides
+   * change. Cache `messages` keyed by this value and echo it as
+   * GetProjectConfigRequest.known_copy_revision; the response omits `messages`
+   * when it still matches (see the caching contract on the request).
+   *
+   * @generated from field: string copy_revision = 1;
+   */
+  copyRevision: string;
+
+  /**
+   * The negotiated BCP-47 locale this copy is for (e.g. "fr"). Echoed so the
+   * client sets lang/dir correctly and re-requests when the device language
+   * changes; always present even when `messages` is omitted.
+   *
+   * @generated from field: string locale = 2;
+   */
+  locale: string;
+
+  /**
+   * Resolved message key → localized string for the negotiated locale.
+   *
+   * @generated from field: map<string, string> messages = 3;
+   */
+  messages: { [key: string]: string };
+};
+
+/**
+ * Describes the message moth.auth.v1.Copy.
+ * Use `create(CopySchema)` to create a new message.
+ */
+export const CopySchema: GenMessage<Copy> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_config, 4);
+
+/**
  * @generated from message moth.auth.v1.GetProjectConfigRequest
  */
 export type GetProjectConfigRequest = Message<"moth.auth.v1.GetProjectConfigRequest"> & {
@@ -241,6 +287,20 @@ export type GetProjectConfigRequest = Message<"moth.auth.v1.GetProjectConfigRequ
    * @generated from field: string known_theme_revision = 1;
    */
   knownThemeRevision: string;
+
+  /**
+   * Copy caching contract (identical shape to the theme one, but keyed by the
+   * negotiated locale too): pass the copy_revision the client has cached for
+   * the locale it is about to render (empty on first call). When it still
+   * matches the token the server computes for the negotiated locale, the
+   * response's `copy` carries the locale + copy_revision but omits `messages`
+   * (stale-while-revalidate); when it differs (or was empty), `messages` is
+   * present and the client replaces its cache. The negotiated locale comes
+   * from Accept-Language / x-moth-language metadata, never from this body.
+   *
+   * @generated from field: string known_copy_revision = 2;
+   */
+  knownCopyRevision: string;
 };
 
 /**
@@ -248,7 +308,7 @@ export type GetProjectConfigRequest = Message<"moth.auth.v1.GetProjectConfigRequ
  * Use `create(GetProjectConfigRequestSchema)` to create a new message.
  */
 export const GetProjectConfigRequestSchema: GenMessage<GetProjectConfigRequest> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 4);
+  messageDesc(file_moth_auth_v1_config, 5);
 
 /**
  * @generated from message moth.auth.v1.GetProjectConfigResponse
@@ -287,6 +347,17 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
    * @generated from field: moth.auth.v1.Theme theme = 5;
    */
   theme?: Theme | undefined;
+
+  /**
+   * The localized copy for the negotiated locale. Always present (it carries
+   * the negotiated locale + copy_revision so the client caches per (locale,
+   * revision)); its `messages` map is omitted when
+   * GetProjectConfigRequest.known_copy_revision matches, present otherwise —
+   * including for projects with no copy overrides (fully bundled defaults).
+   *
+   * @generated from field: moth.auth.v1.Copy copy = 6;
+   */
+  copy?: Copy | undefined;
 };
 
 /**
@@ -294,7 +365,7 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
  * Use `create(GetProjectConfigResponseSchema)` to create a new message.
  */
 export const GetProjectConfigResponseSchema: GenMessage<GetProjectConfigResponse> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 5);
+  messageDesc(file_moth_auth_v1_config, 6);
 
 /**
  * ConfigService exposes a project's public, non-secret configuration to the

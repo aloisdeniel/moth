@@ -160,6 +160,28 @@ func Test(to string) Message {
 	})
 }
 
+// Content is a pre-localized transactional email: the subject, body
+// paragraphs and an optional action button, already resolved from the i18n
+// catalog for the recipient's negotiated locale by the caller. It lets the
+// auth handlers ship localized copy through the same branded layout the
+// English helpers above use.
+type Content struct {
+	Subject     string
+	Paragraphs  []string
+	ButtonLabel string
+	ButtonURL   string
+}
+
+// RenderContent builds a branded email from pre-resolved localized content.
+func RenderContent(brand Brand, to string, c Content) Message {
+	return render(to, brand, layoutData{
+		Subject:     c.Subject,
+		Paragraphs:  c.Paragraphs,
+		ButtonLabel: c.ButtonLabel,
+		ButtonURL:   c.ButtonURL,
+	})
+}
+
 func render(to string, brand Brand, data layoutData) Message {
 	data.Project = brand.Name
 	data.LogoURL = brand.LogoURL

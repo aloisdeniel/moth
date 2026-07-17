@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/mail"
 	"strings"
 	"time"
@@ -357,7 +358,11 @@ func (h *UserHandler) SendPasswordReset(ctx context.Context, req *connect.Reques
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	if err := h.mailer.Send(ctx, mailpkg.PasswordReset(h.auth.Brand(project), user.Email, link)); err != nil {
+	// Localize to the project default, not the operator's admin-console browser
+	// language: this mail goes to the end user, whose locale is unknown here (no
+	// per-user locale is stored), so an empty header makes negotiation fall back
+	// to the project default rather than the operator's Accept-Language.
+	if err := h.mailer.Send(ctx, h.auth.PasswordResetEmail(ctx, project, user.Email, link, http.Header{})); err != nil {
 		return nil, connect.NewError(connect.CodeUnavailable,
 			fmt.Errorf("send password reset email: %w", err))
 	}

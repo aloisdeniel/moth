@@ -37,6 +37,7 @@ type Store interface {
 	store.EmailTokenStore
 	store.OAuthTokenStore
 	store.ProviderSecretStore
+	store.CopyStore
 }
 
 // Handler implements moth.auth.v1.AuthService.

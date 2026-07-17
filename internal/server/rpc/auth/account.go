@@ -78,7 +78,7 @@ func (h *Handler) SignUp(ctx context.Context, req *connect.Request[authv1.SignUp
 
 	// The verification email goes out on every signup so the address can
 	// become verified even when the project does not require it.
-	if err := h.sendVerification(ctx, project, user); err != nil {
+	if err := h.sendVerification(ctx, project, user, req.Header()); err != nil {
 		return nil, err
 	}
 

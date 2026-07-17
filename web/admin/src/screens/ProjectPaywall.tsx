@@ -3,6 +3,8 @@ import { useState, type CSSProperties } from "react";
 
 import { errorMessage, invalidate } from "../api";
 import { Badge, ConfirmDialog, ErrorNote, Field, Loading, StringListField } from "../components/ui";
+import type { ListLocalesResponse } from "../gen/moth/admin/v1/copy_pb";
+import { CopyScreen, CopyService } from "../gen/moth/admin/v1/copy_pb";
 import { MonetizationService } from "../gen/moth/admin/v1/monetization_pb";
 import type { GetPaywallConfigResponse, PaywallRevision } from "../gen/moth/admin/v1/paywall_pb";
 import { PaywallLayout, PaywallService } from "../gen/moth/admin/v1/paywall_pb";
@@ -21,7 +23,9 @@ import {
   paywallToProto,
   type EditorPaywall,
 } from "../lib/paywall";
+import { copyResolver, draftFromKeys, draftValues, type CopyDraft } from "../lib/copy";
 import { editorFromProto, effectiveDark, fontStack } from "../lib/theme";
+import { CopyFields, LocaleSelector, mergeLocaleOptions } from "./ProjectCopy";
 
 // PaywallEditor is the paywall half of the Design tab: the paywall copy and
 // layout on the left, a live phone-framed replica of MothPaywallScreen on
@@ -30,19 +34,23 @@ import { editorFromProto, effectiveDark, fontStack } from "../lib/theme";
 // this editor never introduces its own token space).
 export function PaywallEditor({ project, theme }: { project: Project; theme: GetThemeResponse }) {
   const config = useQuery(PaywallService.method.getPaywallConfig, { projectId: project.id });
-  if (config.isPending) return <Loading />;
+  const locales = useQuery(CopyService.method.listLocales, { projectId: project.id });
+  if (config.isPending || locales.isPending) return <Loading />;
   if (config.isError) return <ErrorNote message={errorMessage(config.error)} />;
-  return <PaywallForm project={project} theme={theme} current={config.data} />;
+  if (locales.isError) return <ErrorNote message={errorMessage(locales.error)} />;
+  return <PaywallForm project={project} theme={theme} current={config.data} locales={locales.data} />;
 }
 
 function PaywallForm({
   project,
   theme,
   current,
+  locales,
 }: {
   project: Project;
   theme: GetThemeResponse;
   current: GetPaywallConfigResponse;
+  locales: ListLocalesResponse;
 }) {
   const [p, setP] = useState<EditorPaywall>(() => paywallFromProto(current.config));
   const [scheme, setScheme] = useState<"light" | "dark">("light");
@@ -92,6 +100,55 @@ function PaywallForm({
       refresh();
     },
   });
+
+  // ---- Localized copy (milestone 15): the paywall.* catalog keys for the
+  // selected language, previewed alongside the layout/offering config above.
+  const [copyLocale, setCopyLocale] = useState(locales.defaultLocale || "en");
+  const [added, setAdded] = useState<{ tag: string; displayName: string; isDefault: boolean }[]>(
+    [],
+  );
+  const [copySaved, setCopySaved] = useState(false);
+  const copy = useQuery(CopyService.method.getProjectCopy, {
+    projectId: project.id,
+    locale: copyLocale,
+    screen: CopyScreen.PAYWALL,
+  });
+  const [copyDraft, setCopyDraft] = useState<CopyDraft>({});
+  const [copySyncKey, setCopySyncKey] = useState<string | null>(null);
+  const copyDataKey = copy.data ? `${copy.data.locale}:${copy.data.revisionId}` : null;
+  if (copy.data && copyDataKey !== copySyncKey) {
+    setCopySyncKey(copyDataKey);
+    setCopyDraft(draftFromKeys(copy.data.keys));
+  }
+  const updateCopy = useMutation(CopyService.method.updateProjectCopy, {
+    onSuccess: () => {
+      invalidate(CopyService.method.getProjectCopy, CopyService.method.listLocales);
+      setCopySaved(true);
+      setTimeout(() => setCopySaved(false), 2000);
+    },
+  });
+  const copyKeys = copy.data?.keys ?? [];
+  const copyGet = copyResolver(copyKeys, copyDraft, { app: project.name });
+  const localeOptions = mergeLocaleOptions(locales.locales, added, locales.defaultLocale);
+
+  // The paywall's title/subtitle come from the localized copy catalog
+  // (paywall.title / paywall.subtitle) so editing them reflects live in the
+  // preview (plan/15). The milestone-13 structural headline/subtitle remain the
+  // non-localized fallback when this language has no override of that key.
+  const titleOverridden = (copyDraft["paywall.title"] ?? "").trim() !== "";
+  const previewHeadline = titleOverridden ? copyGet("paywall.title") : p.headline.trim() || copyGet("paywall.title");
+  const subtitleOverridden = (copyDraft["paywall.subtitle"] ?? "").trim() !== "";
+  const previewSubtitle = subtitleOverridden
+    ? copyGet("paywall.subtitle")
+    : p.subtitle.trim() || copyGet("paywall.subtitle");
+
+  function saveCopy() {
+    updateCopy.mutate({
+      projectId: project.id,
+      locale: copyLocale,
+      values: draftValues(copyDraft),
+    });
+  }
 
   function set<K extends keyof EditorPaywall>(key: K, value: EditorPaywall[K]) {
     setP((prev) => ({ ...prev, [key]: value }));
@@ -244,6 +301,48 @@ function PaywallForm({
           </Field>
         </section>
 
+        <section className="card card--pad stack-16">
+          <h3 className="card__title">Localized copy</h3>
+          <p className="caption">
+            The paywall's catalog strings (title, subtitle, buttons, terms) per language, layered
+            over moth's bundled defaults. The headline, subtitle and benefits above are the
+            structural config; these localize the surrounding chrome the SDK renders.
+          </p>
+          <LocaleSelector
+            options={localeOptions}
+            value={copyLocale}
+            onChange={setCopyLocale}
+            onAdd={(o) => {
+              setAdded((a) => (a.some((x) => x.tag === o.tag) ? a : [...a, o]));
+              setCopyLocale(o.tag);
+            }}
+          />
+          {copy.isPending && <Loading />}
+          {copy.isError && <ErrorNote message={errorMessage(copy.error)} />}
+          {copy.data && (
+            <CopyFields
+              keys={copyKeys}
+              draft={copyDraft}
+              onChange={(k, v) => setCopyDraft((d) => ({ ...d, [k]: v }))}
+              onReset={(k) => setCopyDraft((d) => ({ ...d, [k]: "" }))}
+            />
+          )}
+          <div className="row-12">
+            <button
+              type="button"
+              className="btn btn--primary"
+              disabled={updateCopy.isPending}
+              onClick={saveCopy}
+            >
+              {updateCopy.isPending ? "Saving…" : "Save copy"}
+            </button>
+            {copySaved && <span className="caption text-success">Saved.</span>}
+            {updateCopy.isError && (
+              <span className="field__error">{errorMessage(updateCopy.error)}</span>
+            )}
+          </div>
+        </section>
+
         <div className="stack-8">
           {headlineInvalid && (
             <p className="field__error">A headline is required before saving.</p>
@@ -343,10 +442,19 @@ function PaywallForm({
             Dark
           </button>
         </div>
-        <PaywallPreview project={project} p={p} tiers={tiers} scheme={scheme} theme={theme} />
+        <PaywallPreview
+          project={project}
+          p={p}
+          tiers={tiers}
+          scheme={scheme}
+          theme={theme}
+          copyGet={copyGet}
+          headline={previewHeadline}
+          subtitle={previewSubtitle}
+        />
         <p className="caption" style={{ textAlign: "center" }}>
           Live preview of the SDK paywall screen, rendered from the unsaved editor
-          state and the project theme.
+          state, the selected language's copy and the project theme.
         </p>
       </div>
 
@@ -399,12 +507,18 @@ function PaywallPreview({
   tiers,
   scheme,
   theme,
+  copyGet,
+  headline,
+  subtitle,
 }: {
   project: Project;
   p: EditorPaywall;
   tiers: Product[];
   scheme: "light" | "dark";
   theme: GetThemeResponse;
+  copyGet: (key: string, fallback?: string) => string;
+  headline: string;
+  subtitle: string;
 }) {
   const t = editorFromProto(theme.theme);
   const palette = scheme === "light" ? t.colors : effectiveDark(t);
@@ -451,8 +565,8 @@ function PaywallPreview({
                 {(project.name[0] ?? "A").toUpperCase()}
               </span>
             )}
-            <div className="mothpw__headline">{p.headline || "Unlock everything"}</div>
-            {p.subtitle.trim() && <div className="mothpw__subtitle">{p.subtitle}</div>}
+            <div className="mothpw__headline">{headline || "Unlock everything"}</div>
+            {subtitle.trim() && <div className="mothpw__subtitle">{subtitle}</div>}
 
             {p.benefits.length > 0 && (
               <ul className="mothpw__benefits">
@@ -496,8 +610,11 @@ function PaywallPreview({
               <div className="mothpw__empty">Nothing to purchase yet</div>
             )}
 
-            <div className="mothpw__btn">Continue</div>
-            <div className="mothpw__link">Restore purchases</div>
+            <div className="mothpw__btn">{copyGet("paywall.cta", "Continue")}</div>
+            <div className="mothpw__link">{copyGet("paywall.restore", "Restore purchases")}</div>
+            {copyGet("paywall.terms").trim() !== "" && (
+              <div className="mothpw__terms">{copyGet("paywall.terms")}</div>
+            )}
           </div>
           <div className="mothpw__footer">
             {legal.length > 0 && (

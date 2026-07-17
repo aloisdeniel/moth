@@ -81,6 +81,27 @@ message ThemeColors {
   string on_error = 8;
 }
 
+// Copy is the resolved, localized copy for the negotiated locale: the message
+// key → localized-string map the SDK renders its auth screens from
+// (sign_in.*, sign_up.*, password_reset.*, verify_email.*), already merged
+// bundled-default → project-override. The locale is negotiated server-side
+// from the request's Accept-Language / x-moth-language metadata against the
+// project's available locales; the client never dictates raw copy.
+message Copy {
+  // Opaque cache token identifying this (locale, override-revision) pair. It
+  // changes whenever the negotiated locale or the project's copy overrides
+  // change. Cache `messages` keyed by this value and echo it as
+  // GetProjectConfigRequest.known_copy_revision; the response omits `messages`
+  // when it still matches (see the caching contract on the request).
+  string copy_revision = 1;
+  // The negotiated BCP-47 locale this copy is for (e.g. "fr"). Echoed so the
+  // client sets lang/dir correctly and re-requests when the device language
+  // changes; always present even when `messages` is omitted.
+  string locale = 2;
+  // Resolved message key → localized string for the negotiated locale.
+  map<string, string> messages = 3;
+}
+
 message GetProjectConfigRequest {
   // Theme caching contract: pass the revision_id of the theme the client
   // has cached (empty on first call). When it still matches the current
@@ -88,6 +109,15 @@ message GetProjectConfigRequest {
   // rendering its cached copy. When it differs (or was empty), `theme` is
   // present and the client replaces its cache.
   string known_theme_revision = 1;
+  // Copy caching contract (identical shape to the theme one, but keyed by the
+  // negotiated locale too): pass the copy_revision the client has cached for
+  // the locale it is about to render (empty on first call). When it still
+  // matches the token the server computes for the negotiated locale, the
+  // response's `copy` carries the locale + copy_revision but omits `messages`
+  // (stale-while-revalidate); when it differs (or was empty), `messages` is
+  // present and the client replaces its cache. The negotiated locale comes
+  // from Accept-Language / x-moth-language metadata, never from this body.
+  string known_copy_revision = 2;
 }
 
 message GetProjectConfigResponse {
@@ -102,4 +132,10 @@ message GetProjectConfigResponse {
   // revision (see the caching contract there); always present otherwise,
   // including for projects on the built-in default theme.
   Theme theme = 5;
+  // The localized copy for the negotiated locale. Always present (it carries
+  // the negotiated locale + copy_revision so the client caches per (locale,
+  // revision)); its `messages` map is omitted when
+  // GetProjectConfigRequest.known_copy_revision matches, present otherwise —
+  // including for projects with no copy overrides (fully bundled defaults).
+  Copy copy = 6;
 }
