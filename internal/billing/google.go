@@ -224,6 +224,15 @@ type SubscriptionPurchaseV2 struct {
 		AutoRenewingPlan *struct {
 			AutoRenewEnabled bool `json:"autoRenewEnabled"`
 		} `json:"autoRenewingPlan"`
+		// OfferDetails is present while the line item is on a base-plan offer
+		// (a free trial or an introductory/promotional price). A non-empty
+		// OfferID means the current period is discounted/free; once it renews
+		// onto the plain base plan the field is absent. moth uses this to
+		// classify the trialing period, mirroring Apple's offerType.
+		OfferDetails *struct {
+			OfferID    string `json:"offerId"`
+			BasePlanID string `json:"basePlanId"`
+		} `json:"offerDetails"`
 	} `json:"lineItems"`
 	// TestPurchase is present only for license-tester / sandbox purchases.
 	TestPurchase         *struct{} `json:"testPurchase"`
@@ -337,6 +346,14 @@ func normalizeGoogle(purchaseToken string, p *SubscriptionPurchaseV2) Normalized
 		}
 		if t, err := time.Parse(time.RFC3339, li.ExpiryTime); err == nil {
 			sub.CurrentPeriodEnd = t.UTC()
+		}
+		// An active subscription still on a base-plan offer (free trial or
+		// intro/promo price) is reported as trialing, symmetric with Apple's
+		// offerType handling. When the offer ends and it renews onto the base
+		// plan the offer detail drops away and the status becomes active — the
+		// trialing->active flip the engine records as a trial conversion.
+		if sub.Status == StatusActive && li.OfferDetails != nil && li.OfferDetails.OfferID != "" {
+			sub.Status = StatusTrialing
 		}
 	}
 	raw, _ := json.Marshal(p)

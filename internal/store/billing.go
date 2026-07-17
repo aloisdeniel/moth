@@ -40,9 +40,11 @@ const (
 	SubscriptionEventRenewed      = "subscription.renewed"
 	SubscriptionEventTrialStarted = "subscription.trial_started"
 	// SubscriptionEventConverted marks a trial converting to a paid
-	// subscription. The milestone-14 rollup consumes it for trial-conversion
-	// stats; wiring its emission from the billing engine (a trialing sub going
-	// active) is a milestone-11 follow-up — until then trials_converted is 0.
+	// subscription. The engine derives it from a status transition — a stored
+	// subscription previously trialing that the store now reports active
+	// (applyNormalized) — since neither store sends a dedicated "converted"
+	// notification. The milestone-14 rollup consumes it for trial-conversion
+	// stats.
 	SubscriptionEventConverted = "subscription.converted"
 	SubscriptionEventCanceled  = "subscription.canceled"
 	SubscriptionEventExpired   = "subscription.expired"

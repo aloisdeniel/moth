@@ -213,6 +213,52 @@ func TestSubmitPurchaseGoogleGrantsEntitlement(t *testing.T) {
 	}
 }
 
+// TestSubmitPurchaseGoogleTrialConversion is the Google counterpart of the
+// Apple trial-conversion guard: a subscription that starts on a base-plan
+// offer (free trial) and later renews onto the plain base plan emits exactly
+// one subscription.converted event, so the trial-to-paid dashboard is
+// populated on Android too — not just Apple.
+func TestSubmitPurchaseGoogleTrialConversion(t *testing.T) {
+	f := newFixture(t)
+	// 1) Trial start: active state on a base-plan offer => trialing.
+	dbl := f.googleDoublesOffer("SUBSCRIPTION_STATE_ACTIVE", f.now.Add(7*24*time.Hour), "free-trial")
+	f.setGoogleCreds(dbl.URL, dbl.URL+"/token", "")
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:                billingv1.Store_STORE_GOOGLE,
+		Receipt:              &billingv1.SubmitPurchaseRequest_GooglePurchaseToken{GooglePurchaseToken: "ptok-conv"},
+		GoogleSubscriptionId: "monthly",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	assertEventCount(t, f, store.SubscriptionEventTrialStarted, 1)
+	assertEventCount(t, f, store.SubscriptionEventConverted, 0)
+
+	// 2) Same token, the offer has ended (renewed onto the base plan) => active.
+	dbl2 := f.googleDoublesOffer("SUBSCRIPTION_STATE_ACTIVE", f.now.Add(37*24*time.Hour), "")
+	f.h.googleBaseURL = dbl2.URL
+	f.h.googleTokenURL = dbl2.URL + "/token"
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:                billingv1.Store_STORE_GOOGLE,
+		Receipt:              &billingv1.SubmitPurchaseRequest_GooglePurchaseToken{GooglePurchaseToken: "ptok-conv"},
+		GoogleSubscriptionId: "monthly",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	assertEventCount(t, f, store.SubscriptionEventConverted, 1)
+	assertEventCount(t, f, store.SubscriptionEventTrialStarted, 1)
+	assertEventCount(t, f, store.SubscriptionEventPurchased, 0)
+
+	// 3) A further active re-read (active -> active) must NOT re-emit converted.
+	if _, err := f.h.SubmitPurchase(f.ctx(), authReq(f, &billingv1.SubmitPurchaseRequest{
+		Store:                billingv1.Store_STORE_GOOGLE,
+		Receipt:              &billingv1.SubmitPurchaseRequest_GooglePurchaseToken{GooglePurchaseToken: "ptok-conv"},
+		GoogleSubscriptionId: "monthly",
+	})); err != nil {
+		t.Fatal(err)
+	}
+	assertEventCount(t, f, store.SubscriptionEventConverted, 1)
+}
+
 func TestGoogleRTDNIdempotentAndFlipsState(t *testing.T) {
 	f := newFixture(t)
 	// Seed an active subscription for the token via SubmitPurchase first.

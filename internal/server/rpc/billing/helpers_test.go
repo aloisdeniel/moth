@@ -408,17 +408,28 @@ func (f *fixture) appleStatusDouble(statusCode int, txn map[string]any) *httptes
 // googleDoubles serves the token endpoint and a subscriptionsv2.get response
 // with the given state and expiry.
 func (f *fixture) googleDoubles(state string, expiry time.Time) *httptest.Server {
+	return f.googleDoublesOffer(state, expiry, "")
+}
+
+// googleDoublesOffer is googleDoubles with a base-plan offer applied to the
+// line item when offerID is non-empty (a free-trial / intro offer), so the
+// normalized status reads as trialing until offerID is dropped.
+func (f *fixture) googleDoublesOffer(state string, expiry time.Time, offerID string) *httptest.Server {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/token" {
 			_ = json.NewEncoder(w).Encode(map[string]any{"access_token": "tok", "expires_in": 3600})
 			return
 		}
+		li := map[string]any{
+			"productId": "monthly", "expiryTime": expiry.UTC().Format(time.RFC3339),
+			"autoRenewingPlan": map[string]any{"autoRenewEnabled": true},
+		}
+		if offerID != "" {
+			li["offerDetails"] = map[string]any{"offerId": offerID, "basePlanId": "monthly"}
+		}
 		resp := map[string]any{
-			"subscriptionState": state,
-			"lineItems": []map[string]any{{
-				"productId": "monthly", "expiryTime": expiry.UTC().Format(time.RFC3339),
-				"autoRenewingPlan": map[string]any{"autoRenewEnabled": true},
-			}},
+			"subscriptionState":    state,
+			"lineItems":            []map[string]any{li},
 			"acknowledgementState": "acknowledgementStateAcknowledged",
 		}
 		_ = json.NewEncoder(w).Encode(resp)

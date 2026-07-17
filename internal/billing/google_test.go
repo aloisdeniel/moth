@@ -164,6 +164,37 @@ func TestGoogleSubscriptionStateMapping(t *testing.T) {
 	}
 }
 
+func TestGoogleTrialOfferMapping(t *testing.T) {
+	// A subscription on a base-plan offer (free trial / intro price) reads as
+	// trialing; once it renews onto the plain base plan it reads as active.
+	// That trialing->active flip is what the engine records as a conversion.
+	build := func(withOffer bool) NormalizedSubscription {
+		li := map[string]any{
+			"productId":        "pro_monthly",
+			"expiryTime":       testNow.Add(7 * 24 * time.Hour).Format(time.RFC3339),
+			"autoRenewingPlan": map[string]any{"autoRenewEnabled": true},
+		}
+		if withOffer {
+			li["offerDetails"] = map[string]any{"offerId": "free-trial", "basePlanId": "monthly"}
+		}
+		b, _ := json.Marshal(map[string]any{
+			"subscriptionState": "SUBSCRIPTION_STATE_ACTIVE",
+			"lineItems":         []map[string]any{li},
+		})
+		var p SubscriptionPurchaseV2
+		if err := json.Unmarshal(b, &p); err != nil {
+			t.Fatalf("unmarshal: %v", err)
+		}
+		return normalizeGoogle("tok", &p)
+	}
+	if got := build(true).Status; got != StatusTrialing {
+		t.Fatalf("on-offer status = %q, want trialing", got)
+	}
+	if got := build(false).Status; got != StatusActive {
+		t.Fatalf("base-plan status = %q, want active", got)
+	}
+}
+
 func TestGoogleSubscriptionNotFound(t *testing.T) {
 	saJSON, key := testServiceAccountJSON(t, "")
 	sa, _ := ParseServiceAccount(saJSON)
