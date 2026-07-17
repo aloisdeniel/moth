@@ -12,7 +12,8 @@ The defining idea: **one moth server carries your entire portfolio of independen
 - **One server, many independent apps** — unlimited projects per instance, each a sealed tenant: its own user base, its own signing keypair, its own Google/Apple credentials, its own login branding. Nothing is shared across projects unless the operator is looking at the admin console.
 - **Per-project authentication** — email/password, Sign in with Google, Sign in with Apple. Users belong to exactly one project; the same email in two apps is two unrelated accounts.
 - **Subscriptions & entitlements** (post-v1.0) — per-user App Store / Google Play subscriptions, validated server-side, with entitlements (`pro`, …) derived from subscription state and grants (promos, grace periods). A built-in `none` (free) tier is always present, so paid subscriptions are optional. moth centralizes subscription state, reflects tiers into the stores, drives a themed Flutter paywall, and reports revenue per month.
-- **Admin web application** — create/configure projects, manage users, view analytics, copy setup instructions, customize the login design system (colors, font, spacing, logo).
+- **Internationalization** (post-v1.1) — the app sends its language as an HTTP header; moth negotiates the best available locale and returns adapted copy for the SDK screens, hosted pages, and emails, from a bundled curated locale set. Operators customize the sign-in, sign-up, and paywall copy per language in the admin and preview every SDK screen for any language.
+- **Admin web application** — create/configure projects, manage users, view analytics, copy setup instructions, customize the login design system (colors, font, spacing, logo) and per-language copy.
 - **Admin CLI** — the same binary drives any moth instance from the terminal (personal access tokens): scriptable project/user management, declarative `moth project apply`, and one-command Google/Apple console configuration (`moth setup google|apple`).
 - **Agent-ready** — `moth skill export` emits an Agent Skills package (optionally interpolated with a project's real config) that teaches coding agents both how to integrate moth into an app and how to administer an instance through the CLI.
 - **Served Flutter package** — the server exposes a pub-compatible repository so developers reference the SDK directly from their moth instance in `pubspec.yaml`. The SDK provides a wrapper widget for the whole app and exposes auth state through an `InheritedWidget`.
@@ -32,6 +33,7 @@ The defining idea: **one moth server carries your entire portfolio of independen
 | Flutter SDK delivery | Server implements the **pub hosted repository API** | `hosted: https://your-moth/pub` in pubspec — no publishing to pub.dev needed, version always matches the server. |
 | Email delivery | SMTP (configurable), console/log transport in dev | Keeps the binary dependency-free. |
 | Subscriptions | **Server-side validation** against the App Store Server API + Google Play Developer API; no billing SaaS | Stores own the money and renewal truth; moth mirrors and re-validates via store notifications. Entitlements are decoupled from products (RevenueCat-style) so tiers can change without an app release. Keeps the binary dependency-free and the model minimal (a few tiers per app). |
+| Localization | **Header-negotiated locale + a closed, bundled message catalog** with per-project overrides | The client asserts its language via a header; moth negotiates against the project's available locales and returns adapted copy from a curated bundled set (English default), refined by per-project per-locale overrides. One catalog serves SDK screens, hosted pages, and emails; bundled defaults always render, mirroring the design-system token model. |
 
 ## System shape
 
@@ -79,6 +81,10 @@ Subscriptions (post-v1.0) add:
 - `billing_credentials` — per-project store API credentials, encrypted under the master key.
 - `paywalls` — per-project paywall config (copy, offering, layout, legal links), an extension of the theme.
 
+Localization (post-v1.1) adds:
+
+- `copy` — per-project per-locale overrides on the bundled message catalog (sign-in, sign-up, password-reset, verify-email, paywall, hosted-page and email keys), revisioned for client caching, merged over the bundled defaults.
+
 ## Milestones
 
 | # | Milestone | Outcome |
@@ -106,6 +112,15 @@ Milestones are strictly ordered by dependency: each ends with a demoable state. 
 | [14](14-subscription-analytics.md) | Subscription analytics | Revenue-per-month and subscriber dashboards on the project analytics tab; closes the phase as a coordinated v1.1 release. |
 
 Phase 2 is dependency-ordered too: 11 is the engine, 12 gets tiers into the stores, 13 is the on-device purchase + paywall (can proceed against manually-created store products if 12's automation lags), 14 reports the money. It builds on the whole v1.0 stack — entitlements ride the milestone-04 store-credential and milestone-08 store-API infrastructure, the paywall extends the milestone-06 design system, and the analytics extend the milestone-07 pipeline.
+
+### Phase 3 — Internationalization (post-v1.1, ships as v1.2)
+
+| # | Milestone | Outcome |
+|---|---|---|
+| [15](15-localization.md) | Localization & customizable copy | Header-negotiated locale; a bundled message catalog with per-project overrides for the sign-in, sign-up, and paywall copy; localized hosted pages + emails; the Design tab restructured into Theme / Sign in / Sign up / Paywall sub-tabs with a per-language live preview of every SDK screen. |
+| [16](16-localized-sdk.md) | Localized Flutter SDK | The SDK sends the device language, consumes the negotiated project copy (revision-cached), and falls back to bundled translations offline — `MothLoginScreen` (sign-in/sign-up) and `MothPaywallScreen` render fully localized with the project's own wording. |
+
+Phase 3 is dependency-ordered: 15 delivers the server negotiation, the copy model, and the admin editor + preview; 16 makes the Flutter SDK send its language and render the negotiated, project-customized copy with a bundled offline fallback. It extends the milestone-06 design system (the Design tab and its live preview) and the milestone-05/13 config-delivery + client-cache mechanism (theme, paywall, now copy).
 
 ## Non-goals (v1)
 
