@@ -43,6 +43,20 @@ const compareRows = [
     label: 'Token signing keys',
     cells: ['Per-project ES256 + JWKS', 'Shared Google keys', 'Per-tenant keys', 'Per-project secret'],
   },
+  { group: 'Beyond sign-in' },
+  {
+    label: 'In-app subscriptions',
+    cells: [
+      'Built in: receipts → entitlements',
+      'Pair with RevenueCat etc.',
+      'Not offered',
+      'Not offered',
+    ],
+  },
+  {
+    label: 'Paywall + revenue analytics',
+    cells: ['Themed paywall, revenue/mo', 'Separate products', 'Not offered', 'Not offered'],
+  },
   { group: "What moth doesn't do (v1)" },
   {
     label: 'Managed scale & SLA',
@@ -107,8 +121,8 @@ ReadWritePaths=/var/lib/moth`;
       <p class="overline">Open-source authentication server</p>
       <h1>Authentication for <em>all</em> your mobile apps. One small binary.</h1>
       <p class="subline">
-        Run one server. Every app you ship gets its own users, keys, and branded
-        login — just add a project.
+        Run one server. Every app you ship gets its own users, keys, branded
+        login — and its own subscriptions — just add a project.
       </p>
 
       <div class="hero-grid">
@@ -127,8 +141,9 @@ ReadWritePaths=/var/lib/moth`;
               <CopyButton text={curl} label="Copy curl install command" />
             </div>
             <p class="hero-install-note">
-              macOS and Linux · a single static binary, no dependencies.
-              Installers ship with v1.0; build from source until then.
+              macOS and Linux · a single static binary, no dependencies. The
+              script verifies checksums and installs the latest signed release
+              (first tag: v1.0).
             </p>
           </div>
         </div>
@@ -250,6 +265,21 @@ ReadWritePaths=/var/lib/moth`;
           Your backend verifies tokens offline against the project's JWKS. A
           token minted for one app can never validate for another.
         </FeatureTile>
+        <FeatureTile title="Subscriptions & entitlements">
+          App Store and Google Play receipts validated server-side — no billing
+          SaaS. Subscription state becomes entitlements like <code>pro</code>,
+          with promos and grace periods; a free tier is always built in.
+        </FeatureTile>
+        <FeatureTile title="Themed paywall">
+          <code>MothPaywallScreen</code> renders your tiers with your branding —
+          copy, layout, and highlighted tier configured per language from the
+          admin, exactly like the login screen.
+        </FeatureTile>
+        <FeatureTile title="Revenue per month">
+          Store-reported revenue, active subscribers, churn, and trial
+          conversion land on the same analytics tab — per project, per
+          currency, in your own database.
+        </FeatureTile>
       </div>
     </div>
   </section>
@@ -320,7 +350,12 @@ ReadWritePaths=/var/lib/moth`;
             <CodeBlock code={tabBrew} />
           </div>
           <div slot="curl">
-            <p>Fetch the signed release binary with the install script (ships with v1.0).</p>
+            <p>
+              The install script detects your platform, verifies the release
+              checksums, and installs the binary — <code>MOTH_VERSION</code> and
+              <code>MOTH_INSTALL_DIR</code> override the defaults. Binaries land
+              with the first tagged release (v1.0).
+            </p>
             <CodeBlock code={tabCurl} />
           </div>
           <div slot="docker">
