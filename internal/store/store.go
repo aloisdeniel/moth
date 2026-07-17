@@ -187,7 +187,7 @@ type ProviderSecretStore interface {
 }
 
 // ThemeStore persists per-project design-system themes and their revision
-// history (raw internal/theme JSON documents).
+// history (raw internal/theme protobuf documents).
 type ThemeStore interface {
 	SetProjectTheme(ctx context.Context, rev ThemeRevision, prevRevisionID string) error
 	ClearProjectTheme(ctx context.Context, projectID string, now time.Time) error
@@ -196,7 +196,7 @@ type ThemeStore interface {
 }
 
 // PaywallStore persists per-project paywall configs and their revision
-// history (raw internal/paywall JSON documents). Mirrors ThemeStore.
+// history (raw internal/paywall protobuf documents). Mirrors ThemeStore.
 type PaywallStore interface {
 	SetProjectPaywall(ctx context.Context, rev PaywallRevision, prevRevisionID string) error
 	ClearProjectPaywall(ctx context.Context, projectID string, now time.Time) error
@@ -205,7 +205,7 @@ type PaywallStore interface {
 }
 
 // CopyStore persists per-project localization copy overrides and their
-// revision history (raw CopyOverrides JSON documents). The low-level CAS
+// revision history (raw CopyOverrides protobuf documents). The low-level CAS
 // primitives mirror ThemeStore / PaywallStore; the read-modify-write mutators
 // (GetProjectCopy/UpdateProjectCopy/ResetCopy/RestoreCopyRevision) and
 // ListAvailableLocales layer the copy contract on top so it stays
@@ -480,7 +480,11 @@ func (s *Store) Migrate(ctx context.Context) error {
 			return fmt.Errorf("commit migration %s: %w", name, err)
 		}
 	}
-	return nil
+	// Data backfills that need Go (parsers, proto encoding) run here, after
+	// every schema migration has applied: Migrate is the single seam every
+	// startup path (serve, admin commands) already goes through, and each
+	// backfill is idempotent like the migrations themselves.
+	return s.backfillProtoConfigs(ctx)
 }
 
 // migrationVersion extracts the numeric prefix of "0001_init.sql".

@@ -17,25 +17,28 @@ type Project struct {
 	PublishableKey string
 	SecretKeyHash  string
 	Settings       ProjectSettings
-	// Theme is the raw design-system JSON document (internal/theme
-	// schema); empty means the built-in default theme. Written through
-	// SetProjectTheme, never UpdateProject.
-	Theme string
+	// Theme is the raw design-system protobuf document
+	// (moth.storage.v1.StoredTheme, see internal/theme); empty means the
+	// built-in default theme. Written through SetProjectTheme, never
+	// UpdateProject.
+	Theme []byte
 	// ThemeRevisionID identifies the revision Theme came from ("" when
 	// Theme is empty).
 	ThemeRevisionID string
-	// Paywall is the raw paywall-config JSON document (internal/paywall
-	// schema); empty means the built-in default paywall. Written through
-	// SetProjectPaywall, never UpdateProject.
-	Paywall string
+	// Paywall is the raw paywall-config protobuf document
+	// (moth.storage.v1.StoredPaywall, see internal/paywall); empty means the
+	// built-in default paywall. Written through SetProjectPaywall, never
+	// UpdateProject.
+	Paywall []byte
 	// PaywallRevisionID identifies the revision Paywall came from ("" when
 	// Paywall is empty).
 	PaywallRevisionID string
-	// Copy is the raw copy-override JSON document (a locale → key → string
-	// map, see CopyOverrides); empty means the project renders the bundled
-	// catalog defaults. Written through SetProjectCopy / the copy mutators,
-	// never UpdateProject.
-	Copy string
+	// Copy is the raw copy-override protobuf document
+	// (moth.storage.v1.StoredCopy, a locale → key → string map, see
+	// CopyOverrides); empty means the project renders the bundled catalog
+	// defaults. Written through SetProjectCopy / the copy mutators, never
+	// UpdateProject.
+	Copy []byte
 	// CopyRevisionID identifies the revision Copy came from ("" when Copy is
 	// empty).
 	CopyRevisionID string
@@ -106,7 +109,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme, theme_revision, paywall, paywall_revision, copy, copy_revision, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme_pb, theme_revision, paywall_pb, paywall_revision, copy_pb, copy_revision, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,

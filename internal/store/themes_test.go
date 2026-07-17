@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +15,7 @@ func themeRev(projectID string, n int, base time.Time) ThemeRevision {
 	return ThemeRevision{
 		ID:        fmt.Sprintf("rev-%03d", n),
 		ProjectID: projectID,
-		Theme:     fmt.Sprintf(`{"version":1,"n":%d}`, n),
+		Theme:     []byte(fmt.Sprintf("proto-doc-%d", n)),
 		CreatedAt: base.Add(time.Duration(n) * time.Second),
 	}
 }
@@ -34,7 +35,7 @@ func TestSetProjectTheme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Theme != "" || got.ThemeRevisionID != "" {
+	if len(got.Theme) != 0 || got.ThemeRevisionID != "" {
 		t.Fatalf("new project must have empty theme, got %q / %q", got.Theme, got.ThemeRevisionID)
 	}
 
@@ -46,7 +47,7 @@ func TestSetProjectTheme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Theme != rev1.Theme || got.ThemeRevisionID != rev1.ID {
+	if !bytes.Equal(got.Theme, rev1.Theme) || got.ThemeRevisionID != rev1.ID {
 		t.Errorf("project theme = %q / %q, want %q / %q", got.Theme, got.ThemeRevisionID, rev1.Theme, rev1.ID)
 	}
 
@@ -75,7 +76,7 @@ func TestSetProjectTheme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stored.Theme != rev1.Theme || !stored.CreatedAt.Equal(rev1.CreatedAt) {
+	if !bytes.Equal(stored.Theme, rev1.Theme) || !stored.CreatedAt.Equal(rev1.CreatedAt) {
 		t.Errorf("revision round trip mismatch: %+v", stored)
 	}
 }
@@ -249,7 +250,7 @@ func TestClearProjectTheme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Theme != "" || got.ThemeRevisionID != "" {
+	if len(got.Theme) != 0 || got.ThemeRevisionID != "" {
 		t.Errorf("theme not cleared: %q / %q", got.Theme, got.ThemeRevisionID)
 	}
 	// History survives a reset so the old theme stays restorable.

@@ -109,6 +109,7 @@ class MothTheme {
     this.termsUrl,
     this.privacyUrl,
     this.resolvedFontFamily,
+    this.source,
   });
 
   /// The theme every project starts from (and the offline fallback when
@@ -162,6 +163,7 @@ class MothTheme {
       logoDarkUrl: blank(proto.logoDarkUrl),
       termsUrl: blank(proto.termsUrl),
       privacyUrl: blank(proto.privacyUrl),
+      source: proto,
     );
   }
 
@@ -230,6 +232,12 @@ class MothTheme {
   /// renders in the system font and swaps when the font is ready.
   final String? resolvedFontFamily;
 
+  /// The wire message this theme was mapped from ([MothTheme.fromProto]) —
+  /// the raw payload the on-device config cache persists, so cache and wire
+  /// share one schema. Null for hand-built themes and [MothTheme.fallback].
+  /// Derivation metadata only; not part of equality.
+  final pb.Theme? source;
+
   /// [spacingUnit] times [units] — spacing helper for themed layouts.
   double space(double units) => spacingUnit * units;
 
@@ -247,6 +255,7 @@ class MothTheme {
     termsUrl: termsUrl,
     privacyUrl: privacyUrl,
     resolvedFontFamily: resolvedFontFamily ?? this.resolvedFontFamily,
+    source: source,
   );
 
   /// Builds the Material theme for [brightness] from the tokens: the

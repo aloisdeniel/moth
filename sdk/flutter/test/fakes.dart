@@ -540,12 +540,14 @@ MothClient newClient(
   Duration skew = const Duration(seconds: 30),
   Locale? locale,
   String? appName,
+  Duration configCacheTtl = const Duration(hours: 1),
 }) => MothClient(
   MothConfig(
     endpoint: Uri.parse('http://localhost:${moth.port}'),
     publishableKey: 'pk_test',
     locale: locale,
     appName: appName,
+    configCacheTtl: configCacheTtl,
   ),
   tokenStore: store ?? InMemoryTokenStore(),
   refreshSkew: skew,

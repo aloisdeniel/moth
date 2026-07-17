@@ -4,6 +4,10 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
+
+	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
 )
 
 func TestDefaultValidates(t *testing.T) {
@@ -12,7 +16,7 @@ func TestDefaultValidates(t *testing.T) {
 	}
 }
 
-func TestJSONRoundTrip(t *testing.T) {
+func TestEncodeParseRoundTrip(t *testing.T) {
 	in := Default()
 	in.DarkColors = &ColorOverrides{Primary: "#D0BCFF", OnPrimary: "#381E72"}
 	in.Logo = Logo{Light: "/assets/my-app/logo-light.png", Dark: "/assets/my-app/logo-dark.png"}
@@ -31,8 +35,9 @@ func TestJSONRoundTrip(t *testing.T) {
 	}
 }
 
-func TestParsePlanExample(t *testing.T) {
-	// The document shape promised in plan/06-design-system.md.
+func TestParseLegacyJSONPlanExample(t *testing.T) {
+	// The legacy JSON document shape promised in plan/06-design-system.md;
+	// ParseLegacyJSON only exists for the one-time storage backfill.
 	raw := `{
 	  "version": 1,
 	  "colors": {
@@ -46,7 +51,7 @@ func TestParsePlanExample(t *testing.T) {
 	  "shape": { "cornerRadius": 12 },
 	  "logo": { "light": "/assets/my-app/logo-light.png" }
 	}`
-	th, err := Parse([]byte(raw))
+	th, err := ParseLegacyJSON([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,17 +61,33 @@ func TestParsePlanExample(t *testing.T) {
 	if th.Colors.Primary != "#6750A4" || th.Logo.Light != "/assets/my-app/logo-light.png" {
 		t.Errorf("unexpected parse result: %+v", th)
 	}
+	// The backfill re-encodes what the legacy parser produced; the proto
+	// round trip must preserve the document.
+	enc, err := Encode(th)
+	if err != nil {
+		t.Fatal(err)
+	}
+	back, err := Parse(enc)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(th, back) {
+		t.Errorf("legacy to proto round trip mismatch: in %+v, out %+v", th, back)
+	}
 }
 
 func TestParseRejectsVersions(t *testing.T) {
-	for _, raw := range []string{
-		`{"version": 2}`,
-		`{"version": 0}`,
-		`{}`,
-		`not json`,
+	future, err := proto.Marshal(&storagev1.StoredTheme{Version: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, raw := range map[string][]byte{
+		"future version": future,
+		"empty document": nil, // version 0 ≠ SchemaVersion, callers treat empty as default before parsing
+		"garbage":        []byte("not a proto message"),
 	} {
-		if _, err := Parse([]byte(raw)); err == nil {
-			t.Errorf("Parse(%q): want error", raw)
+		if _, err := Parse(raw); err == nil {
+			t.Errorf("Parse(%s): want error", name)
 		}
 	}
 }

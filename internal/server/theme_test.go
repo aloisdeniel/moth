@@ -14,10 +14,12 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
+	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/theme"
@@ -454,7 +456,13 @@ func TestUnparseableStoredTheme(t *testing.T) {
 
 	// Simulate a database last written by a future moth: a schema-v2
 	// document this binary cannot parse, installed as the current theme.
-	future := `{"version":2,"colors":{"primary":"#123456"}}`
+	future, err := proto.Marshal(&storagev1.StoredTheme{
+		Version: 2,
+		Colors:  &storagev1.ThemeColors{Primary: "#123456"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := e.store.SetProjectTheme(ctx, store.ThemeRevision{
 		ID: "rev-future", ProjectID: p.Id, Theme: future, CreatedAt: time.Now(),
 	}, goodRev); err != nil {
@@ -468,7 +476,7 @@ func TestUnparseableStoredTheme(t *testing.T) {
 
 	// Write paths must refuse instead of silently replacing the newer
 	// document with a default.
-	_, err := e.themes().UploadLogo(ctx, connect.NewRequest(&adminv1.UploadLogoRequest{
+	_, err = e.themes().UploadLogo(ctx, connect.NewRequest(&adminv1.UploadLogoRequest{
 		ProjectId: p.Id, Variant: adminv1.LogoVariant_LOGO_VARIANT_LIGHT,
 		Data: testLogoPNG(t), ContentType: "image/png",
 	}))
@@ -485,7 +493,7 @@ func TestUnparseableStoredTheme(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if proj.Theme != future {
+	if !bytes.Equal(proj.Theme, future) {
 		t.Errorf("stored document was replaced: %q", proj.Theme)
 	}
 

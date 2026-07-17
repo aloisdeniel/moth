@@ -94,7 +94,7 @@ func (h *ThemeHandler) ListThemeRevisions(ctx context.Context, req *connect.Requ
 	}
 	resp := &adminv1.ListThemeRevisionsResponse{}
 	for _, rev := range revs {
-		t, err := theme.Parse([]byte(rev.Theme))
+		t, err := theme.Parse(rev.Theme)
 		if err != nil {
 			// A revision this binary cannot parse (written by a newer
 			// schema, or corrupted) is skipped rather than failing the whole
@@ -118,7 +118,7 @@ func (h *ThemeHandler) RestoreThemeRevision(ctx context.Context, req *connect.Re
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	restored, err := theme.Parse([]byte(rev.Theme))
+	restored, err := theme.Parse(rev.Theme)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal,
 			fmt.Errorf("stored theme revision %s: %w", rev.ID, err))
@@ -306,7 +306,7 @@ func (h *ThemeHandler) mutateTheme(ctx context.Context, projectID string, mut fu
 		rev := store.ThemeRevision{
 			ID:        NewID(),
 			ProjectID: projectID,
-			Theme:     string(raw),
+			Theme:     raw,
 			CreatedAt: h.now(),
 		}
 		err = h.store.SetProjectTheme(ctx, rev, p.ThemeRevisionID)
@@ -358,10 +358,10 @@ func (h *ThemeHandler) diskLogoPath(projectID, variant string) string {
 // corrupt stored document). Read paths only; write paths go through
 // writableTheme.
 func currentTheme(p store.Project) (theme.Theme, bool) {
-	if p.Theme == "" {
+	if len(p.Theme) == 0 {
 		return theme.Default(), true
 	}
-	t, err := theme.Parse([]byte(p.Theme))
+	t, err := theme.Parse(p.Theme)
 	if err != nil {
 		return theme.Default(), true
 	}
@@ -373,10 +373,10 @@ func currentTheme(p store.Project) (theme.Theme, bool) {
 // corrupted) must block the write instead of being silently replaced by
 // the default — restore a revision or reset the theme to recover.
 func writableTheme(p store.Project) (theme.Theme, error) {
-	if p.Theme == "" {
+	if len(p.Theme) == 0 {
 		return theme.Default(), nil
 	}
-	t, err := theme.Parse([]byte(p.Theme))
+	t, err := theme.Parse(p.Theme)
 	if err != nil {
 		return theme.Theme{}, connect.NewError(connect.CodeFailedPrecondition,
 			fmt.Errorf("the stored theme cannot be edited by this server version (%v); restore a revision or reset the theme", err))

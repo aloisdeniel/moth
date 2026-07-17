@@ -30,10 +30,10 @@ var errNoProject = errors.New("no project in context")
 // DefaultPaywallRevision) when the project never customized anything or the
 // stored document cannot be parsed. Mirrors authrpc.ProjectTheme.
 func projectPaywall(p store.Project) (paywall.Config, string) {
-	if p.Paywall == "" {
+	if len(p.Paywall) == 0 {
 		return paywall.Default(), DefaultPaywallRevision
 	}
-	c, err := paywall.Parse([]byte(p.Paywall))
+	c, err := paywall.Parse(p.Paywall)
 	if err != nil {
 		return paywall.Default(), DefaultPaywallRevision
 	}

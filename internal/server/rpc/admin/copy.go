@@ -2,17 +2,18 @@ package adminrpc
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"time"
 
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	adminv1 "github.com/aloisdeniel/moth/gen/moth/admin/v1"
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
+	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
 	"github.com/aloisdeniel/moth/internal/i18n"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	"github.com/aloisdeniel/moth/internal/store"
@@ -253,18 +254,18 @@ func (h *CopyHandler) ListLocales(ctx context.Context, req *connect.Request[admi
 	return connect.NewResponse(resp), nil
 }
 
-// revisionLocales extracts the locale tags a stored revision document carries,
-// sorted, for a compact history label.
-func revisionLocales(raw string) []string {
-	if raw == "" {
+// revisionLocales extracts the locale tags a stored revision document
+// (moth.storage.v1.StoredCopy) carries, sorted, for a compact history label.
+func revisionLocales(raw []byte) []string {
+	if len(raw) == 0 {
 		return nil
 	}
-	var doc map[string]map[string]string
-	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
+	var doc storagev1.StoredCopy
+	if err := proto.Unmarshal(raw, &doc); err != nil {
 		return nil
 	}
-	locales := make([]string, 0, len(doc))
-	for l := range doc {
+	locales := make([]string, 0, len(doc.GetLocales()))
+	for l := range doc.GetLocales() {
 		locales = append(locales, l)
 	}
 	sort.Strings(locales)

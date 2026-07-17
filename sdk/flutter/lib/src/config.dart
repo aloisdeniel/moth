@@ -10,6 +10,7 @@ class MothConfig {
     required this.publishableKey,
     this.locale,
     this.appName,
+    this.configCacheTtl = const Duration(hours: 1),
   });
 
   /// Base URL of the moth server, e.g. `https://auth.example.com`.
@@ -36,4 +37,20 @@ class MothConfig {
   /// delivers, so this is the localization floor's stand-in. Leave null to
   /// render the placeholder empty.
   final String? appName;
+
+  /// How long the on-device config caches (theme, paywall, localized copy)
+  /// are served without any network revalidation — download once, then
+  /// launch quietly until the TTL expires.
+  ///
+  /// Every cached config payload records when it was fetched or last
+  /// revalidated. While that moment is younger than this TTL, a launch
+  /// renders straight from the cache and performs **zero** config RPCs.
+  /// Once it expires, the SDK revalidates cheaply on the next launch —
+  /// echoing the cached revision so the server omits an unchanged body —
+  /// and the window restarts (an omitted-body match also refreshes it).
+  ///
+  /// Defaults to one hour. Use [Duration.zero] to revalidate on every
+  /// launch. Explicit refresh calls (e.g. [MothThemeController.refresh],
+  /// [MothCopyController.refresh]) always hit the server regardless.
+  final Duration configCacheTtl;
 }

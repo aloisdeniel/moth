@@ -14,12 +14,12 @@ import (
 const PaywallRevisionKeep = 10
 
 // PaywallRevision is one saved version of a project's paywall config. Paywall
-// is the raw versioned JSON document produced by internal/paywall; the store
-// never interprets it.
+// is the raw versioned protobuf document (moth.storage.v1.StoredPaywall)
+// produced by internal/paywall; the store never interprets it.
 type PaywallRevision struct {
 	ID        string
 	ProjectID string
-	Paywall   string
+	Paywall   []byte
 	CreatedAt time.Time
 }
 
@@ -39,8 +39,10 @@ func (s *Store) SetProjectPaywall(ctx context.Context, rev PaywallRevision, prev
 	}
 	defer tx.Rollback()
 
+	// The legacy TEXT column is frozen at '' since migration 0019; the
+	// document lives in paywall_pb.
 	res, err := tx.ExecContext(ctx,
-		`UPDATE projects SET paywall = ?, paywall_revision = ?, updated_at = ?
+		`UPDATE projects SET paywall = '', paywall_pb = ?, paywall_revision = ?, updated_at = ?
 		 WHERE id = ? AND paywall_revision = ?`,
 		rev.Paywall, rev.ID, formatTime(rev.CreatedAt), rev.ProjectID, prevRevisionID)
 	if err != nil {
@@ -63,7 +65,7 @@ func (s *Store) SetProjectPaywall(ctx context.Context, rev PaywallRevision, prev
 		return ErrConflict
 	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO paywall_revisions (id, project_id, paywall, created_at) VALUES (?, ?, ?, ?)`,
+		`INSERT INTO paywall_revisions (id, project_id, paywall, paywall_pb, created_at) VALUES (?, ?, '', ?, ?)`,
 		rev.ID, rev.ProjectID, rev.Paywall, formatTime(rev.CreatedAt)); err != nil {
 		return fmt.Errorf("insert paywall revision: %w", err)
 	}
@@ -89,7 +91,7 @@ func (s *Store) SetProjectPaywall(ctx context.Context, rev PaywallRevision, prev
 // restorable.
 func (s *Store) ClearProjectPaywall(ctx context.Context, projectID string, now time.Time) error {
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE projects SET paywall = '', paywall_revision = '', updated_at = ? WHERE id = ?`,
+		`UPDATE projects SET paywall = '', paywall_pb = X'', paywall_revision = '', updated_at = ? WHERE id = ?`,
 		formatTime(now), projectID)
 	if err != nil {
 		return fmt.Errorf("clear project paywall: %w", err)
@@ -99,7 +101,7 @@ func (s *Store) ClearProjectPaywall(ctx context.Context, projectID string, now t
 
 func (s *Store) GetPaywallRevision(ctx context.Context, projectID, revisionID string) (PaywallRevision, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, project_id, paywall, created_at FROM paywall_revisions
+		`SELECT id, project_id, paywall_pb, created_at FROM paywall_revisions
 		 WHERE project_id = ? AND id = ?`, projectID, revisionID)
 	rev, err := scanPaywallRevision(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -115,7 +117,7 @@ func (s *Store) ListPaywallRevisions(ctx context.Context, projectID string, limi
 		limit = PaywallRevisionKeep
 	}
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, paywall, created_at FROM paywall_revisions
+		`SELECT id, project_id, paywall_pb, created_at FROM paywall_revisions
 		 WHERE project_id = ? ORDER BY id DESC LIMIT ?`,
 		projectID, limit)
 	if err != nil {

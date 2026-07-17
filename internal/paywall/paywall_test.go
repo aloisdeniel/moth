@@ -3,6 +3,10 @@ package paywall
 import (
 	"strings"
 	"testing"
+
+	"google.golang.org/protobuf/proto"
+
+	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
 )
 
 func TestDefaultValidates(t *testing.T) {
@@ -32,8 +36,34 @@ func TestEncodeParseRoundTrip(t *testing.T) {
 }
 
 func TestParseRejectsWrongVersion(t *testing.T) {
-	if _, err := Parse([]byte(`{"version":99,"headline":"x","layout":"tiles"}`)); err == nil {
+	future, err := proto.Marshal(&storagev1.StoredPaywall{Version: 99, Headline: "x", Layout: "tiles"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Parse(future); err == nil {
 		t.Fatal("want error for unsupported schema version")
+	}
+	// Empty bytes carry version 0: also rejected (callers treat empty as
+	// "default config" before parsing).
+	if _, err := Parse(nil); err == nil {
+		t.Fatal("want error for empty document")
+	}
+}
+
+func TestParseLegacyJSON(t *testing.T) {
+	// The exact JSON shape the legacy Encode produced before the protobuf
+	// storage migration; ParseLegacyJSON only exists for the backfill.
+	raw := `{"version":1,"headline":"Unlock","subtitle":"Sub","benefits":["a","b"],"offering":"promo","highlightedIdentifier":"yearly","layout":"list","legal":{"termsUrl":"https://x.io/t"}}`
+	c, err := ParseLegacyJSON([]byte(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Headline != "Unlock" || c.Offering != "promo" || c.HighlightedIdentifier != "yearly" ||
+		c.Layout != LayoutList || len(c.Benefits) != 2 || c.Legal.TermsURL != "https://x.io/t" {
+		t.Errorf("unexpected legacy parse: %+v", c)
+	}
+	if _, err := ParseLegacyJSON([]byte(`{"version":99,"headline":"x","layout":"tiles"}`)); err == nil {
+		t.Fatal("want error for unsupported legacy schema version")
 	}
 }
 

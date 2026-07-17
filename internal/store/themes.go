@@ -13,12 +13,12 @@ import (
 const ThemeRevisionKeep = 10
 
 // ThemeRevision is one saved version of a project's design-system theme.
-// Theme is the raw versioned JSON document produced by internal/theme; the
-// store never interprets it.
+// Theme is the raw versioned protobuf document (moth.storage.v1.StoredTheme)
+// produced by internal/theme; the store never interprets it.
 type ThemeRevision struct {
 	ID        string
 	ProjectID string
-	Theme     string
+	Theme     []byte
 	CreatedAt time.Time
 }
 
@@ -38,8 +38,10 @@ func (s *Store) SetProjectTheme(ctx context.Context, rev ThemeRevision, prevRevi
 	}
 	defer tx.Rollback()
 
+	// The legacy TEXT column is frozen at '' since migration 0019; the
+	// document lives in theme_pb.
 	res, err := tx.ExecContext(ctx,
-		`UPDATE projects SET theme = ?, theme_revision = ?, updated_at = ?
+		`UPDATE projects SET theme = '', theme_pb = ?, theme_revision = ?, updated_at = ?
 		 WHERE id = ? AND theme_revision = ?`,
 		rev.Theme, rev.ID, formatTime(rev.CreatedAt), rev.ProjectID, prevRevisionID)
 	if err != nil {
@@ -62,7 +64,7 @@ func (s *Store) SetProjectTheme(ctx context.Context, rev ThemeRevision, prevRevi
 		return ErrConflict
 	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO theme_revisions (id, project_id, theme, created_at) VALUES (?, ?, ?, ?)`,
+		`INSERT INTO theme_revisions (id, project_id, theme, theme_pb, created_at) VALUES (?, ?, '', ?, ?)`,
 		rev.ID, rev.ProjectID, rev.Theme, formatTime(rev.CreatedAt)); err != nil {
 		return fmt.Errorf("insert theme revision: %w", err)
 	}
@@ -87,7 +89,7 @@ func (s *Store) SetProjectTheme(ctx context.Context, rev ThemeRevision, prevRevi
 // revision history is kept, so the previous theme stays restorable.
 func (s *Store) ClearProjectTheme(ctx context.Context, projectID string, now time.Time) error {
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE projects SET theme = '', theme_revision = '', updated_at = ? WHERE id = ?`,
+		`UPDATE projects SET theme = '', theme_pb = X'', theme_revision = '', updated_at = ? WHERE id = ?`,
 		formatTime(now), projectID)
 	if err != nil {
 		return fmt.Errorf("clear project theme: %w", err)
@@ -97,7 +99,7 @@ func (s *Store) ClearProjectTheme(ctx context.Context, projectID string, now tim
 
 func (s *Store) GetThemeRevision(ctx context.Context, projectID, revisionID string) (ThemeRevision, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, project_id, theme, created_at FROM theme_revisions
+		`SELECT id, project_id, theme_pb, created_at FROM theme_revisions
 		 WHERE project_id = ? AND id = ?`, projectID, revisionID)
 	rev, err := scanThemeRevision(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -113,7 +115,7 @@ func (s *Store) ListThemeRevisions(ctx context.Context, projectID string, limit 
 		limit = ThemeRevisionKeep
 	}
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, theme, created_at FROM theme_revisions
+		`SELECT id, project_id, theme_pb, created_at FROM theme_revisions
 		 WHERE project_id = ? ORDER BY id DESC LIMIT ?`,
 		projectID, limit)
 	if err != nil {

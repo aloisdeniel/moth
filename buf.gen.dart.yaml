@@ -9,6 +9,9 @@ inputs:
     paths:
       - proto/moth/auth/v1
       - proto/moth/billing/v1
+      # storage/v1 ships only CacheEnvelope to the SDK (the on-device config
+      # cache wrapper); the Stored* messages are server-side but harmless.
+      - proto/moth/storage/v1
 plugins:
   - local: protoc-gen-dart
     out: sdk/flutter/lib/src/gen

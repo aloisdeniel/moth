@@ -163,25 +163,37 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
       _failed = false;
     });
     try {
-      MothPaywall? cached;
+      MothCachedPaywall? cachedEntry;
       if (cache != null) {
         try {
-          cached = await cache.load();
+          cachedEntry = await cache.load();
         } on Object {
           // Broken cache — treat as a miss.
         }
       }
+      final cached = cachedEntry?.paywall;
       final MothPaywall paywall;
       if (widget.config != null) {
         paywall = widget.config!;
+      } else if (cachedEntry != null && _isCacheFresh(cachedEntry.fetchedAt)) {
+        // Download-once: within MothConfig.configCacheTtl the cached config
+        // is served with no GetPaywall round-trip at all.
+        paywall = cachedEntry.paywall;
       } else {
         final fetched = await client.getPaywall(
           knownPaywallRevision: cached?.revisionId ?? '',
         );
         // A null response means the cached revision still matches: keep it.
         paywall = fetched ?? cached ?? const MothPaywall();
-        if (fetched != null && cache != null) {
-          unawaited(_saveCache(cache, fetched));
+        if (cache != null) {
+          final now = DateTime.now().toUtc();
+          if (fetched != null) {
+            unawaited(_saveCache(cache, fetched, now));
+          } else if (cached != null) {
+            // Omitted-body match: the cached payload is confirmed current —
+            // restart its download-once TTL window.
+            unawaited(_touchCache(cache, now));
+          }
         }
       }
       final offering = await client.getOfferings(offering: paywall.offering);
@@ -240,13 +252,31 @@ class _MothPaywallScreenState extends State<MothPaywallScreen> {
     }
   }
 
+  bool _isCacheFresh(DateTime fetchedAt) =>
+      DateTime.now().toUtc().difference(fetchedAt.toUtc()) <
+      client.config.configCacheTtl;
+
   /// Persists the fetched config best-effort: a broken cache (unavailable
   /// storage) must never surface as an unhandled error.
-  Future<void> _saveCache(MothPaywallCache cache, MothPaywall paywall) async {
+  Future<void> _saveCache(
+    MothPaywallCache cache,
+    MothPaywall paywall,
+    DateTime fetchedAt,
+  ) async {
     try {
-      await cache.save(paywall);
+      await cache.save(paywall, fetchedAt: fetchedAt);
     } on Object {
       // Best effort — the config is re-delivered next launch.
+    }
+  }
+
+  /// Re-stamps the cached config's fetch time best-effort after an
+  /// omitted-body revalidation.
+  Future<void> _touchCache(MothPaywallCache cache, DateTime fetchedAt) async {
+    try {
+      await cache.touch(fetchedAt);
+    } on Object {
+      // Best effort — worst case the next launch revalidates again.
     }
   }
 

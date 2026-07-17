@@ -28,7 +28,7 @@ func (f *fixture) customizePaywall(cfg paywall.Config) (store.Project, string) {
 	}
 	rev := store.PaywallRevision{
 		ID: authrpc.NewID(), ProjectID: f.project.ID,
-		Paywall: string(raw), CreatedAt: f.now,
+		Paywall: raw, CreatedAt: f.now,
 	}
 	if err := f.st.SetProjectPaywall(f.ctx(), rev, f.project.PaywallRevisionID); err != nil {
 		f.t.Fatal(err)

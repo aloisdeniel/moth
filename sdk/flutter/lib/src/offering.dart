@@ -159,6 +159,7 @@ class MothPaywall {
     this.layout = MothPaywallLayout.tiles,
     this.termsUrl,
     this.privacyUrl,
+    this.source,
   });
 
   factory MothPaywall.fromProto(pb.Paywall proto) {
@@ -173,6 +174,7 @@ class MothPaywall {
       layout: MothPaywallLayout.fromProto(proto.layout),
       termsUrl: blank(proto.termsUrl),
       privacyUrl: blank(proto.privacyUrl),
+      source: proto,
     );
   }
 
@@ -217,6 +219,11 @@ class MothPaywall {
   /// Optional legal links rendered in the paywall footer.
   final String? termsUrl;
   final String? privacyUrl;
+
+  /// The wire message this paywall was mapped from ([MothPaywall.fromProto])
+  /// — the raw payload the on-device config cache persists, so cache and
+  /// wire share one schema. Null for hand-built configs.
+  final pb.Paywall? source;
 
   /// Serializes the config for the client-side revision cache.
   Map<String, Object?> toJson() => {

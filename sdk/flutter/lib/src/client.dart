@@ -521,6 +521,7 @@ class MothClient {
     messages: copy.messages.isEmpty
         ? null
         : Map<String, String>.of(copy.messages),
+    source: copy,
   );
 
   // --------------------------------------------------------------- billing

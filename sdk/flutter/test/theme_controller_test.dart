@@ -17,12 +17,16 @@ class _GatedSaveCache extends MothMemoryThemeCache {
   final gate = Completer<void>();
 
   @override
-  Future<void> saveTheme(MothTheme theme) async {
+  Future<void> saveTheme(MothTheme theme, {required DateTime fetchedAt}) async {
     if (!saving.isCompleted) saving.complete();
     await gate.future;
-    await super.saveTheme(theme);
+    await super.saveTheme(theme, fetchedAt: fetchedAt);
   }
 }
+
+/// A cache fetch time safely outside the default one-hour download-once TTL,
+/// so seeded caches still trigger the revalidation round-trip under test.
+DateTime stale() => DateTime.now().toUtc().subtract(const Duration(hours: 2));
 
 void main() {
   late FakeMoth moth;
@@ -57,7 +61,7 @@ void main() {
     expect(mothHexColor(controller.value.colors.primary), '#0B6E99');
     // First call carries no known revision, and the theme got cached.
     expect(moth.config.lastRequest!.knownThemeRevision, '');
-    expect((await cache.loadTheme())!.revisionId, 'rev-1');
+    expect((await cache.loadTheme())!.theme.revisionId, 'rev-1');
   });
 
   test('stale-while-revalidate: cached theme renders first, refresh swaps '
@@ -65,6 +69,7 @@ void main() {
     final cache = MothMemoryThemeCache();
     await cache.saveTheme(
       MothTheme.fromProto(serverTheme('rev-1', primary: '#C8102E')),
+      fetchedAt: stale(),
     );
     moth.config.response.theme = serverTheme('rev-2', primary: '#2E7D32');
     // Hold the server response: the cached theme must be published while
@@ -97,7 +102,7 @@ void main() {
     // The refresh echoed the cached revision.
     expect(moth.config.lastRequest!.knownThemeRevision, 'rev-1');
     // The new revision replaced the cache.
-    expect((await cache.loadTheme())!.revisionId, 'rev-2');
+    expect((await cache.loadTheme())!.theme.revisionId, 'rev-2');
   });
 
   test(
@@ -105,7 +110,7 @@ void main() {
     () async {
       final cache = MothMemoryThemeCache();
       final theme = MothTheme.fromProto(serverTheme('rev-1'));
-      await cache.saveTheme(theme);
+      await cache.saveTheme(theme, fetchedAt: stale());
       moth.config.response.theme = serverTheme('rev-1');
 
       final controller = MothThemeController(client: client, cache: cache);
@@ -140,7 +145,10 @@ void main() {
 
   test('offline start keeps the cached theme', () async {
     final cache = MothMemoryThemeCache();
-    await cache.saveTheme(MothTheme.fromProto(serverTheme('rev-1')));
+    await cache.saveTheme(
+      MothTheme.fromProto(serverTheme('rev-1')),
+      fetchedAt: stale(),
+    );
     await moth.shutdown(); // nothing listening anymore
 
     final offline = MothClient(
@@ -158,6 +166,97 @@ void main() {
     expect(controller.value.revisionId, 'rev-1');
 
     moth = await startFakeMoth(); // for tearDown symmetry
+  });
+
+  group('download-once TTL', () {
+    test('a fresh cache serves with zero config RPCs', () async {
+      moth.config.response.theme = serverTheme('rev-2');
+      final cache = MothMemoryThemeCache();
+      await cache.saveTheme(
+        MothTheme.fromProto(serverTheme('rev-1')),
+        fetchedAt: DateTime.now().toUtc(),
+      );
+      final controller = MothThemeController(client: client, cache: cache);
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      // Within the TTL the cached theme is served as-is, no revalidation.
+      expect(controller.value.revisionId, 'rev-1');
+      expect(moth.config.calls, 0);
+    });
+
+    test('an expired cache revalidates once; the omitted-body match '
+        'refreshes fetched_at so the next launch is quiet again', () async {
+      moth.config.response.theme = serverTheme('rev-1');
+      final cache = MothMemoryThemeCache();
+      await cache.saveTheme(
+        MothTheme.fromProto(serverTheme('rev-1')),
+        fetchedAt: stale(),
+      );
+
+      final first = MothThemeController(client: client, cache: cache);
+      addTearDown(first.dispose);
+      await first.start();
+      // Expired: exactly one cheap revalidation, echoing the revision (the
+      // server omits the unchanged body).
+      expect(moth.config.calls, 1);
+      expect(moth.config.lastRequest!.knownThemeRevision, 'rev-1');
+      // The omitted-body match re-stamped fetched_at...
+      final entry = await cache.loadTheme();
+      expect(
+        DateTime.now().toUtc().difference(entry!.fetchedAt),
+        lessThan(const Duration(minutes: 1)),
+      );
+
+      // ...so a second launch is quiet: cache only, no config RPC.
+      final second = MothThemeController(client: client, cache: cache);
+      addTearDown(second.dispose);
+      await second.start();
+      expect(moth.config.calls, 1);
+      expect(second.value.revisionId, 'rev-1');
+    });
+
+    test('explicit refresh() forces a fetch despite a fresh cache', () async {
+      moth.config.response.theme = serverTheme('rev-2');
+      final cache = MothMemoryThemeCache();
+      await cache.saveTheme(
+        MothTheme.fromProto(serverTheme('rev-1')),
+        fetchedAt: DateTime.now().toUtc(),
+      );
+      final controller = MothThemeController(client: client, cache: cache);
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      expect(moth.config.calls, 0);
+      await controller.refresh();
+      expect(moth.config.calls, 1);
+      expect(controller.value.revisionId, 'rev-2');
+    });
+
+    test('configCacheTtl: Duration.zero revalidates on every launch', () async {
+      final always = newClient(moth, configCacheTtl: Duration.zero);
+      addTearDown(always.dispose);
+      moth.config.response.theme = serverTheme('rev-2');
+      final cache = MothMemoryThemeCache();
+      await cache.saveTheme(
+        MothTheme.fromProto(serverTheme('rev-1')),
+        fetchedAt: DateTime.now().toUtc(),
+      );
+      final controller = MothThemeController(client: always, cache: cache);
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      expect(moth.config.calls, 1);
+      expect(controller.value.revisionId, 'rev-2');
+    });
+
+    test('MothConfig.configCacheTtl defaults to one hour', () {
+      final config = MothConfig(
+        endpoint: Uri.parse('https://auth.example.com'),
+        publishableKey: 'pk_test',
+      );
+      expect(config.configCacheTtl, const Duration(hours: 1));
+    });
   });
 
   group('MothFontLoader', () {

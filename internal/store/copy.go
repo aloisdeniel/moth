@@ -3,11 +3,14 @@ package store
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
 	"time"
+
+	"google.golang.org/protobuf/proto"
+
+	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
 )
 
 // CopyRevisionKeep is how many revisions of a project's copy overrides are
@@ -27,7 +30,8 @@ const copySaveAttempts = 5
 
 // CopyOverrides is a project's copy customization: BCP-47 locale tag →
 // message key → override string. It is the full override document stored as
-// JSON in projects.copy. An empty map (or an absent document) means the
+// a moth.storage.v1.StoredCopy protobuf message in projects.copy_pb. An
+// empty map (or an absent document) means the
 // project renders the bundled catalog defaults everywhere; overrides are
 // additive on top of the catalog. The store treats the message keys and
 // values opaquely — validation against the bundled catalog is a CopyValidator
@@ -45,34 +49,45 @@ type CopyValidator interface {
 }
 
 // CopyRevision is one saved version of a project's copy overrides. Copy is the
-// raw override JSON document (a CopyOverrides map); the low-level primitives
-// treat it opaquely, exactly like ThemeRevision/PaywallRevision.
+// raw override protobuf document (moth.storage.v1.StoredCopy, a CopyOverrides
+// map); the low-level primitives treat it opaquely, exactly like
+// ThemeRevision/PaywallRevision.
 type CopyRevision struct {
 	ID        string
 	ProjectID string
-	Copy      string
+	Copy      []byte
 	CreatedAt time.Time
 }
 
-// parseCopyOverrides decodes a stored override document; "" (a never-customized
-// or reset project) decodes to an empty, non-nil map.
-func parseCopyOverrides(raw string) (CopyOverrides, error) {
+// parseCopyOverrides decodes a stored override document
+// (moth.storage.v1.StoredCopy); empty bytes (a never-customized or reset
+// project) decode to an empty, non-nil map.
+func parseCopyOverrides(raw []byte) (CopyOverrides, error) {
 	o := CopyOverrides{}
-	if raw == "" {
+	if len(raw) == 0 {
 		return o, nil
 	}
-	if err := json.Unmarshal([]byte(raw), &o); err != nil {
+	var msg storagev1.StoredCopy
+	if err := proto.Unmarshal(raw, &msg); err != nil {
 		return nil, fmt.Errorf("parse copy overrides: %w", err)
+	}
+	for locale, msgs := range msg.GetLocales() {
+		kept := map[string]string{}
+		for k, v := range msgs.GetMessages() {
+			kept[k] = v
+		}
+		o[locale] = kept
 	}
 	return o, nil
 }
 
-// encodeCopyOverrides serializes overrides for storage, dropping empty locales
-// and empty values so the document only ever holds meaningful overrides. It
-// returns "" when nothing is left, so an emptied document reads back as the
-// bundled default — the same "" == default convention themes/paywalls use.
-func encodeCopyOverrides(o CopyOverrides) (string, error) {
-	pruned := CopyOverrides{}
+// encodeCopyOverrides serializes overrides for storage as a
+// moth.storage.v1.StoredCopy message, dropping empty locales and empty values
+// so the document only ever holds meaningful overrides. It returns nil when
+// nothing is left, so an emptied document reads back as the bundled default —
+// the same empty == default convention themes/paywalls use.
+func encodeCopyOverrides(o CopyOverrides) ([]byte, error) {
+	msg := &storagev1.StoredCopy{Locales: map[string]*storagev1.CopyLocaleMessages{}}
 	for locale, msgs := range o {
 		kept := map[string]string{}
 		for k, v := range msgs {
@@ -81,17 +96,17 @@ func encodeCopyOverrides(o CopyOverrides) (string, error) {
 			}
 		}
 		if len(kept) > 0 {
-			pruned[locale] = kept
+			msg.Locales[locale] = &storagev1.CopyLocaleMessages{Messages: kept}
 		}
 	}
-	if len(pruned) == 0 {
-		return "", nil
+	if len(msg.Locales) == 0 {
+		return nil, nil
 	}
-	raw, err := json.Marshal(pruned)
+	raw, err := proto.Marshal(msg)
 	if err != nil {
-		return "", fmt.Errorf("encode copy overrides: %w", err)
+		return nil, fmt.Errorf("encode copy overrides: %w", err)
 	}
-	return string(raw), nil
+	return raw, nil
 }
 
 // SetProjectCopy installs rev as the project's current copy overrides and
@@ -110,8 +125,10 @@ func (s *Store) SetProjectCopy(ctx context.Context, rev CopyRevision, prevRevisi
 	}
 	defer tx.Rollback()
 
+	// The legacy TEXT column is frozen at '' since migration 0019; the
+	// document lives in copy_pb.
 	res, err := tx.ExecContext(ctx,
-		`UPDATE projects SET copy = ?, copy_revision = ?, updated_at = ?
+		`UPDATE projects SET copy = '', copy_pb = ?, copy_revision = ?, updated_at = ?
 		 WHERE id = ? AND copy_revision = ?`,
 		rev.Copy, rev.ID, formatTime(rev.CreatedAt), rev.ProjectID, prevRevisionID)
 	if err != nil {
@@ -134,7 +151,7 @@ func (s *Store) SetProjectCopy(ctx context.Context, rev CopyRevision, prevRevisi
 		return ErrConflict
 	}
 	if _, err := tx.ExecContext(ctx,
-		`INSERT INTO copy_revisions (id, project_id, copy, created_at) VALUES (?, ?, ?, ?)`,
+		`INSERT INTO copy_revisions (id, project_id, copy, copy_pb, created_at) VALUES (?, ?, '', ?, ?)`,
 		rev.ID, rev.ProjectID, rev.Copy, formatTime(rev.CreatedAt)); err != nil {
 		return fmt.Errorf("insert copy revision: %w", err)
 	}
@@ -160,7 +177,7 @@ func (s *Store) SetProjectCopy(ctx context.Context, rev CopyRevision, prevRevisi
 // previous overrides stay restorable. Mirrors ClearProjectTheme.
 func (s *Store) ClearProjectCopy(ctx context.Context, projectID string, now time.Time) error {
 	res, err := s.db.ExecContext(ctx,
-		`UPDATE projects SET copy = '', copy_revision = '', updated_at = ? WHERE id = ?`,
+		`UPDATE projects SET copy = '', copy_pb = X'', copy_revision = '', updated_at = ? WHERE id = ?`,
 		formatTime(now), projectID)
 	if err != nil {
 		return fmt.Errorf("clear project copy: %w", err)
@@ -170,7 +187,7 @@ func (s *Store) ClearProjectCopy(ctx context.Context, projectID string, now time
 
 func (s *Store) GetCopyRevision(ctx context.Context, projectID, revisionID string) (CopyRevision, error) {
 	row := s.db.QueryRowContext(ctx,
-		`SELECT id, project_id, copy, created_at FROM copy_revisions
+		`SELECT id, project_id, copy_pb, created_at FROM copy_revisions
 		 WHERE project_id = ? AND id = ?`, projectID, revisionID)
 	rev, err := scanCopyRevision(row)
 	if errors.Is(err, sql.ErrNoRows) {
@@ -186,7 +203,7 @@ func (s *Store) ListCopyRevisions(ctx context.Context, projectID string, limit i
 		limit = CopyRevisionKeep
 	}
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, project_id, copy, created_at FROM copy_revisions
+		`SELECT id, project_id, copy_pb, created_at FROM copy_revisions
 		 WHERE project_id = ? ORDER BY id DESC LIMIT ?`,
 		projectID, limit)
 	if err != nil {
@@ -364,7 +381,7 @@ func (s *Store) mutateCopy(ctx context.Context, projectID, id string, now time.T
 		if err != nil {
 			return "", err
 		}
-		if raw == "" {
+		if len(raw) == 0 {
 			// The document is now fully default; clear rather than storing an
 			// empty revision, mirroring theme/paywall reset semantics.
 			if err := s.ClearProjectCopy(ctx, projectID, now); err != nil {

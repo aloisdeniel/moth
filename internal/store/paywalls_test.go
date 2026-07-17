@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -14,7 +15,7 @@ func paywallRev(projectID string, n int, base time.Time) PaywallRevision {
 	return PaywallRevision{
 		ID:        fmt.Sprintf("rev-%03d", n),
 		ProjectID: projectID,
-		Paywall:   fmt.Sprintf(`{"version":1,"n":%d}`, n),
+		Paywall:   []byte(fmt.Sprintf("proto-doc-%d", n)),
 		CreatedAt: base.Add(time.Duration(n) * time.Second),
 	}
 }
@@ -34,7 +35,7 @@ func TestSetProjectPaywall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Paywall != "" || got.PaywallRevisionID != "" {
+	if len(got.Paywall) != 0 || got.PaywallRevisionID != "" {
 		t.Fatalf("new project must have empty paywall, got %q / %q", got.Paywall, got.PaywallRevisionID)
 	}
 
@@ -46,7 +47,7 @@ func TestSetProjectPaywall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Paywall != rev1.Paywall || got.PaywallRevisionID != rev1.ID {
+	if !bytes.Equal(got.Paywall, rev1.Paywall) || got.PaywallRevisionID != rev1.ID {
 		t.Errorf("project paywall = %q / %q, want %q / %q", got.Paywall, got.PaywallRevisionID, rev1.Paywall, rev1.ID)
 	}
 
@@ -75,7 +76,7 @@ func TestSetProjectPaywall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stored.Paywall != rev1.Paywall || !stored.CreatedAt.Equal(rev1.CreatedAt) {
+	if !bytes.Equal(stored.Paywall, rev1.Paywall) || !stored.CreatedAt.Equal(rev1.CreatedAt) {
 		t.Errorf("revision round trip mismatch: %+v", stored)
 	}
 }
@@ -244,7 +245,7 @@ func TestClearProjectPaywall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Paywall != "" || got.PaywallRevisionID != "" {
+	if len(got.Paywall) != 0 || got.PaywallRevisionID != "" {
 		t.Errorf("paywall not cleared: %q / %q", got.Paywall, got.PaywallRevisionID)
 	}
 	// History survives a reset so the old config stays restorable.

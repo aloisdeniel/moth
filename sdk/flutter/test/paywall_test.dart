@@ -358,8 +358,11 @@ void main() {
     client = newClient(moth);
 
     final cache = MothMemoryPaywallCache();
+    // Stale (outside the download-once TTL), so the screen still runs the
+    // cheap revalidation round-trip against the cached revision.
     await cache.save(
       const MothPaywall(revisionId: 'pw-1', headline: 'CACHED HEADLINE'),
+      fetchedAt: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
     );
 
     await tester.pumpWidget(
@@ -377,6 +380,86 @@ void main() {
     // place rather than blanking the copy.
     expect(moth.billing.lastPaywallRequest?.knownPaywallRevision, 'pw-1');
     expect(find.text('SERVER HEADLINE'), findsNothing);
+
+    // The omitted-body match re-stamped the envelope's fetch time, so the
+    // next launch stays within the download-once TTL.
+    final entry = await settle(tester, cache.load());
+    expect(
+      DateTime.now().toUtc().difference(entry!.fetchedAt),
+      lessThan(const Duration(minutes: 1)),
+    );
+
+    await settle(tester, client.dispose());
+    await settle(tester, moth.shutdown());
+  });
+
+  testWidgets('download-once TTL: a fresh cached config renders with zero '
+      'GetPaywall calls', (tester) async {
+    moth = await runReal(tester, startFakeMoth);
+    moth.billing.offering = _offeringWithTiers();
+    moth.billing.paywall = _paywall()..headline = 'SERVER HEADLINE';
+    client = newClient(moth);
+
+    final cache = MothMemoryPaywallCache();
+    await cache.save(
+      const MothPaywall(revisionId: 'pw-1', headline: 'CACHED HEADLINE'),
+      fetchedAt: DateTime.now().toUtc(),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MothPaywallScreen(
+          client: client,
+          adapter: FakeBillingAdapter(),
+          paywallCache: cache,
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('CACHED HEADLINE'));
+
+    // Within the TTL the config is served from the cache alone — no
+    // GetPaywall round-trip at all (the offering fetch is not a config RPC).
+    expect(moth.billing.getPaywallCalls, 0);
+    expect(find.text('SERVER HEADLINE'), findsNothing);
+
+    await settle(tester, client.dispose());
+    await settle(tester, moth.shutdown());
+  });
+
+  testWidgets('download-once TTL: an expired cached config revalidates and '
+      'applies a new revision', (tester) async {
+    moth = await runReal(tester, startFakeMoth);
+    moth.billing.offering = _offeringWithTiers();
+    moth.billing.paywall = _paywall()..headline = 'SERVER HEADLINE';
+    client = newClient(moth);
+
+    final cache = MothMemoryPaywallCache();
+    await cache.save(
+      const MothPaywall(revisionId: 'pw-0', headline: 'CACHED HEADLINE'),
+      fetchedAt: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MothPaywallScreen(
+          client: client,
+          adapter: FakeBillingAdapter(),
+          paywallCache: cache,
+        ),
+      ),
+    );
+    await pumpUntilFound(tester, find.text('SERVER HEADLINE'));
+
+    // Exactly one revalidation, echoing the stale revision; the fresh body
+    // replaced the cache with a new fetch time.
+    expect(moth.billing.getPaywallCalls, 1);
+    expect(moth.billing.lastPaywallRequest?.knownPaywallRevision, 'pw-0');
+    final entry = await settle(tester, cache.load());
+    expect(entry!.paywall.revisionId, 'pw-1');
+    expect(
+      DateTime.now().toUtc().difference(entry.fetchedAt),
+      lessThan(const Duration(minutes: 1)),
+    );
 
     await settle(tester, client.dispose());
     await settle(tester, moth.shutdown());

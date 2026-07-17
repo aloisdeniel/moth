@@ -35,31 +35,42 @@ class MothThemeController extends ValueNotifier<MothTheme> {
   bool _started = false;
   bool _disposed = false;
 
-  /// Loads the cached theme (rendering it immediately when present), then
-  /// refreshes from the server in the background. Idempotent; failures are
-  /// swallowed — the current value simply stays.
+  /// Loads the cached theme (rendering it immediately when present), then —
+  /// unless the cache entry is still younger than
+  /// [MothConfig.configCacheTtl] (download-once: a fresh cache means zero
+  /// config RPCs on launch) — refreshes from the server in the background.
+  /// Idempotent; failures are swallowed — the current value simply stays.
   Future<void> start() async {
     if (_started) return;
     _started = true;
-    MothTheme? cached;
+    MothCachedTheme? cached;
     try {
       cached = await _cache.loadTheme();
     } on Object catch (err) {
       _log('theme cache load failed: $err');
     }
-    if (cached != null && !_disposed) {
-      value = cached;
+    if (_disposed) return;
+    if (cached != null) {
+      value = cached.theme;
       // Fonts usually resolve from the disk cache before the network
       // refresh returns; don't serialize the two.
-      unawaited(_applyFont(cached));
+      unawaited(_applyFont(cached.theme));
+      // Download-once: within the TTL the cached payload is served with no
+      // revalidation round-trip. refresh() stays available to force one.
+      if (_isFresh(cached.fetchedAt)) return;
     }
     await refresh();
   }
 
+  bool _isFresh(DateTime fetchedAt) =>
+      DateTime.now().toUtc().difference(fetchedAt.toUtc()) <
+      _client.config.configCacheTtl;
+
   /// Asks the server for the current theme (echoing the revision already
   /// held, so an unchanged theme is not re-sent), applies and caches a new
-  /// revision. Safe to call any time; network failures keep the current
-  /// value.
+  /// revision. Always performs the round-trip — the download-once TTL only
+  /// gates the automatic revalidation in [start]. Safe to call any time;
+  /// network failures keep the current value.
   Future<void> refresh() async {
     final MothProjectConfig config;
     try {
@@ -71,9 +82,20 @@ class MothThemeController extends ValueNotifier<MothTheme> {
       return;
     }
     final theme = config.theme;
-    if (theme == null || _disposed) return; // revision matched (or too late)
+    final now = DateTime.now().toUtc();
+    if (theme == null) {
+      // Revision matched (body omitted): the cached payload is confirmed
+      // current, so restart its download-once TTL window.
+      try {
+        await _cache.touchTheme(now);
+      } on Object catch (err) {
+        _log('theme cache touch failed: $err');
+      }
+      return;
+    }
+    if (_disposed) return; // too late to publish
     try {
-      await _cache.saveTheme(theme);
+      await _cache.saveTheme(theme, fetchedAt: now);
     } on Object catch (err) {
       _log('theme cache save failed: $err');
     }

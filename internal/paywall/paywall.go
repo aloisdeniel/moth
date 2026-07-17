@@ -6,17 +6,21 @@
 // cannot: the headline/subtitle copy, the benefit bullets, which offering to
 // present, which tier to highlight, the layout variant and the legal links.
 //
-// Like a theme, a config is a small versioned JSON document stored per
-// project with a revision id, delivered to clients through the public
-// billing API and cached client-side by revision (stale-while-revalidate).
+// Like a theme, a config is a small versioned document stored per project
+// with a revision id (as a moth.storage.v1.StoredPaywall protobuf message),
+// delivered to clients through the public billing API and cached client-side
+// by revision (stale-while-revalidate).
 package paywall
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"slices"
 	"strings"
+
+	"google.golang.org/protobuf/proto"
+
+	storagev1 "github.com/aloisdeniel/moth/gen/moth/storage/v1"
 )
 
 // SchemaVersion is stamped on every encoded paywall document. Parse rejects
@@ -51,30 +55,30 @@ const (
 // Config is one project's complete paywall configuration.
 type Config struct {
 	// Version is the schema version of the document (SchemaVersion).
-	Version int `json:"version"`
+	Version int
 	// Headline is the paywall's primary title (required).
-	Headline string `json:"headline"`
+	Headline string
 	// Subtitle is the supporting line under the headline (optional).
-	Subtitle string `json:"subtitle,omitempty"`
+	Subtitle string
 	// Benefits are the feature/benefit bullets, in display order.
-	Benefits []string `json:"benefits,omitempty"`
+	Benefits []string
 	// Offering is the offering tag whose products the paywall lists; empty
 	// means the project's default offering.
-	Offering string `json:"offering,omitempty"`
+	Offering string
 	// HighlightedIdentifier is the product identifier rendered as "most
 	// popular"; empty highlights nothing. A stable catalog identifier (e.g.
 	// "yearly"), never a store SKU — it survives store re-provisioning.
-	HighlightedIdentifier string `json:"highlightedIdentifier,omitempty"`
+	HighlightedIdentifier string
 	// Layout is one of Layouts.
-	Layout string `json:"layout"`
+	Layout string
 	// Legal holds the optional terms/privacy links rendered in the footer.
-	Legal Legal `json:"legal"`
+	Legal Legal
 }
 
 // Legal holds the optional legal links rendered in the paywall footer.
 type Legal struct {
-	TermsURL   string `json:"termsUrl,omitempty"`
-	PrivacyURL string `json:"privacyUrl,omitempty"`
+	TermsURL   string
+	PrivacyURL string
 }
 
 // Default returns the paywall config applied to projects that never
@@ -94,28 +98,64 @@ func Default() Config {
 	}
 }
 
-// Encode serializes the config as its canonical JSON document, stamping the
-// current schema version.
+// Encode serializes the config as its canonical storage document (a
+// moth.storage.v1.StoredPaywall protobuf message), stamping the current
+// schema version. An encoded document is never empty: empty stored bytes
+// keep meaning "the built-in default paywall".
 func Encode(c Config) ([]byte, error) {
 	c.Version = SchemaVersion
-	raw, err := json.Marshal(c)
+	raw, err := proto.Marshal(ToProto(c))
 	if err != nil {
 		return nil, fmt.Errorf("encode paywall: %w", err)
 	}
 	return raw, nil
 }
 
-// Parse decodes a stored paywall document. It rejects documents from a
-// different schema version; it does not validate values (Validate does).
+// Parse decodes a stored paywall document (moth.storage.v1.StoredPaywall).
+// It rejects documents from a different schema version — including empty
+// input, which callers treat as "default paywall" before parsing; it does
+// not validate values (Validate does).
 func Parse(raw []byte) (Config, error) {
-	var c Config
-	if err := json.Unmarshal(raw, &c); err != nil {
+	var msg storagev1.StoredPaywall
+	if err := proto.Unmarshal(raw, &msg); err != nil {
 		return Config{}, fmt.Errorf("parse paywall: %w", err)
 	}
-	if c.Version != SchemaVersion {
-		return Config{}, fmt.Errorf("parse paywall: unsupported schema version %d (want %d)", c.Version, SchemaVersion)
+	if msg.Version != SchemaVersion {
+		return Config{}, fmt.Errorf("parse paywall: unsupported schema version %d (want %d)", msg.Version, SchemaVersion)
 	}
-	return c, nil
+	return FromProto(&msg), nil
+}
+
+// ToProto converts the domain config into its storage message.
+func ToProto(c Config) *storagev1.StoredPaywall {
+	return &storagev1.StoredPaywall{
+		Version:               int32(c.Version),
+		Headline:              c.Headline,
+		Subtitle:              c.Subtitle,
+		Benefits:              c.Benefits,
+		Offering:              c.Offering,
+		HighlightedIdentifier: c.HighlightedIdentifier,
+		Layout:                c.Layout,
+		Legal:                 &storagev1.LegalLinks{TermsUrl: c.Legal.TermsURL, PrivacyUrl: c.Legal.PrivacyURL},
+	}
+}
+
+// FromProto converts a storage message into the domain config (a nil legal
+// sub-message becomes empty links).
+func FromProto(msg *storagev1.StoredPaywall) Config {
+	c := Config{
+		Version:               int(msg.GetVersion()),
+		Headline:              msg.GetHeadline(),
+		Subtitle:              msg.GetSubtitle(),
+		Benefits:              msg.GetBenefits(),
+		Offering:              msg.GetOffering(),
+		HighlightedIdentifier: msg.GetHighlightedIdentifier(),
+		Layout:                msg.GetLayout(),
+	}
+	if l := msg.GetLegal(); l != nil {
+		c.Legal = Legal{TermsURL: l.TermsUrl, PrivacyURL: l.PrivacyUrl}
+	}
+	return c
 }
 
 // Validate checks every field and returns the first violation. Offering and

@@ -50,8 +50,11 @@ class MothCopyController extends ValueNotifier<MothCopy> {
   int _generation = 0;
 
   /// Loads the cached copy for the current locale (rendering it immediately
-  /// when present), then refreshes from the server in the background.
-  /// Idempotent; failures are swallowed — the bundled floor simply stays.
+  /// when present), then — unless that locale's cache entry is still younger
+  /// than [MothConfig.configCacheTtl] (download-once: a fresh cache means
+  /// zero config RPCs on launch) — refreshes from the server in the
+  /// background. Idempotent; failures are swallowed — the bundled floor
+  /// simply stays.
   Future<void> start() async {
     if (_started) return;
     _started = true;
@@ -60,8 +63,11 @@ class MothCopyController extends ValueNotifier<MothCopy> {
 
   /// Refreshes from the server, first switching to the current device locale
   /// (reloading its cached floor) when it changed since the last fetch. Safe
-  /// to call any time — on launch, and from a locale-change observer. Network
-  /// failures keep the current value.
+  /// to call any time — on launch, and from a locale-change observer. An
+  /// unchanged locale always hits the server (an explicit refresh ignores
+  /// the download-once TTL); a locale change fetches only when the new
+  /// locale has no fresh cache entry. Network failures keep the current
+  /// value.
   Future<void> refresh() async {
     final locale = _localeOf();
     if (mothLanguageTag(locale) != mothLanguageTag(_requested)) {
@@ -72,19 +78,33 @@ class MothCopyController extends ValueNotifier<MothCopy> {
   }
 
   /// Resets the floor to [locale] (its disk-cached copy, else the bundled
-  /// defaults) and refetches from the server for it.
+  /// defaults) and refetches from the server for it — unless the cached
+  /// entry is still within the download-once TTL, in which case it is served
+  /// as-is with no round-trip.
   Future<void> _load(Locale locale) async {
     _requested = locale;
-    MothCopy? cached;
+    MothCachedCopy? cached;
     try {
       cached = await _cache.load(locale);
     } on Object catch (err) {
       _log('copy cache load failed: $err');
     }
     if (_disposed) return;
-    value = cached ?? MothCopy.bundled(locale);
+    value = cached?.copy ?? MothCopy.bundled(locale);
+    // Download-once: a locale whose envelope is still fresh serves from the
+    // cache alone; the TTL is bypassed only when the new locale has no fresh
+    // envelope. Superseding the generation discards any in-flight fetch for
+    // a previous locale, which must not clobber this cached value.
+    if (cached != null && _isFresh(cached.fetchedAt)) {
+      _generation++;
+      return;
+    }
     await _fetch();
   }
+
+  bool _isFresh(DateTime fetchedAt) =>
+      DateTime.now().toUtc().difference(fetchedAt.toUtc()) <
+      _client.config.configCacheTtl;
 
   /// Asks the server for the copy (echoing the revision already held, so an
   /// unchanged copy is not re-sent), applies and caches a new revision.
@@ -100,22 +120,31 @@ class MothCopyController extends ValueNotifier<MothCopy> {
       return;
     }
     final update = config.copy;
-    // Server predates localized copy, was disposed, a newer fetch superseded
-    // this one (locale switched mid-request), or (messages == null) the
-    // revision matched — keep the current value either way.
-    if (update == null ||
-        update.messages == null ||
-        _disposed ||
-        generation != _generation) {
+    // A null update means the server predates localized copy — nothing to
+    // apply or cache.
+    if (update == null) return;
+    final now = DateTime.now().toUtc();
+    if (update.messages == null) {
+      // Revision matched (messages omitted): the negotiated locale's cached
+      // payload is confirmed current — restart its download-once TTL window.
+      try {
+        await _cache.touch(update.locale, now);
+      } on Object catch (err) {
+        _log('copy cache touch failed: $err');
+      }
       return;
     }
+    // Was disposed, or a newer fetch superseded this one (locale switched
+    // mid-request) — keep the current value.
+    if (_disposed || generation != _generation) return;
     final copy = MothCopy(
       locale: update.locale,
       revisionId: update.revisionId,
       messages: update.messages!,
+      source: update.source,
     );
     try {
-      await _cache.save(copy);
+      await _cache.save(copy, fetchedAt: now);
     } on Object catch (err) {
       _log('copy cache save failed: $err');
     }

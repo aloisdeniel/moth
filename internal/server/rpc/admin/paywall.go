@@ -83,7 +83,7 @@ func (h *PaywallHandler) ListPaywallRevisions(ctx context.Context, req *connect.
 	}
 	resp := &adminv1.ListPaywallRevisionsResponse{}
 	for _, rev := range revs {
-		c, err := paywall.Parse([]byte(rev.Paywall))
+		c, err := paywall.Parse(rev.Paywall)
 		if err != nil {
 			// A revision this binary cannot parse (newer schema or corrupt) is
 			// skipped rather than failing the whole list: the rest stay
@@ -107,7 +107,7 @@ func (h *PaywallHandler) RestorePaywallRevision(ctx context.Context, req *connec
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	restored, err := paywall.Parse([]byte(rev.Paywall))
+	restored, err := paywall.Parse(rev.Paywall)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal,
 			fmt.Errorf("stored paywall revision %s: %w", rev.ID, err))
@@ -171,7 +171,7 @@ func (h *PaywallHandler) mutatePaywall(ctx context.Context, projectID string, mu
 		rev := store.PaywallRevision{
 			ID:        NewID(),
 			ProjectID: projectID,
-			Paywall:   string(raw),
+			Paywall:   raw,
 			CreatedAt: h.now(),
 		}
 		err = h.store.SetProjectPaywall(ctx, rev, p.PaywallRevisionID)
@@ -193,10 +193,10 @@ func (h *PaywallHandler) mutatePaywall(ctx context.Context, projectID string, mu
 // the built-in default (never customized, reset, or — defensively — a corrupt
 // stored document).
 func currentPaywall(p store.Project) (paywall.Config, bool) {
-	if p.Paywall == "" {
+	if len(p.Paywall) == 0 {
 		return paywall.Default(), true
 	}
-	c, err := paywall.Parse([]byte(p.Paywall))
+	c, err := paywall.Parse(p.Paywall)
 	if err != nil {
 		return paywall.Default(), true
 	}

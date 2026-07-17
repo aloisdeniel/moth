@@ -19,10 +19,10 @@ const DefaultThemeRevision = "default"
 // identifying it: the stored theme, or the built-in default (with
 // DefaultThemeRevision) when the project never customized anything.
 func ProjectTheme(p store.Project) (theme.Theme, string) {
-	if p.Theme == "" {
+	if len(p.Theme) == 0 {
 		return theme.Default(), DefaultThemeRevision
 	}
-	t, err := theme.Parse([]byte(p.Theme))
+	t, err := theme.Parse(p.Theme)
 	if err != nil {
 		// Stored themes were validated at write time; treat corruption as
 		// "no theme" rather than breaking every login surface.

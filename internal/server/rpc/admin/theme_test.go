@@ -71,7 +71,7 @@ func TestUploadLogoRetriesLostRace(t *testing.T) {
 	racing := &racingStore{
 		Store: st,
 		competing: store.ThemeRevision{
-			ID: "rev-concurrent", ProjectID: "p1", Theme: string(raw), CreatedAt: now,
+			ID: "rev-concurrent", ProjectID: "p1", Theme: raw, CreatedAt: now,
 		},
 	}
 

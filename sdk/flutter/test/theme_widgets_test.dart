@@ -203,7 +203,10 @@ void main() {
             referenceTheme.colors.primary,
         reason: 'server theme to apply',
       );
-      expect((await settle(tester, cache.loadTheme()))!.revisionId, 'rev-1');
+      expect(
+        (await settle(tester, cache.loadTheme()))!.theme.revisionId,
+        'rev-1',
+      );
 
       await stop(tester);
     });

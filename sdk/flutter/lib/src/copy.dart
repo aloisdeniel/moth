@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'gen/moth/auth/v1/config.pb.dart' as pb;
 import 'i18n/bundled_copy.dart';
 import 'locale.dart';
 
@@ -19,6 +20,7 @@ class MothCopy {
     required this.locale,
     required this.revisionId,
     required this.messages,
+    this.source,
   });
 
   /// The bundled-only floor for [locale]: no server messages yet, so [value]
@@ -26,7 +28,8 @@ class MothCopy {
   /// The starting value before the first `GetProjectConfig`.
   const MothCopy.bundled(this.locale)
     : revisionId = '',
-      messages = const <String, String>{};
+      messages = const <String, String>{},
+      source = null;
 
   /// The negotiated locale this copy is for (from the server, echoed even
   /// when its `messages` were omitted).
@@ -39,6 +42,12 @@ class MothCopy {
   /// Server-delivered message key → localized string; empty for the bundled
   /// floor.
   final Map<String, String> messages;
+
+  /// The wire message this copy was mapped from — the raw payload the
+  /// on-device config cache persists, so cache and wire share one schema.
+  /// Null for the bundled floor and hand-built copy. Derivation metadata
+  /// only; not part of equality.
+  final pb.Copy? source;
 
   static final RegExp _placeholder = RegExp(r'\{([a-zA-Z][a-zA-Z0-9_]*)\}');
 
@@ -91,6 +100,7 @@ class MothCopyUpdate {
     required this.locale,
     required this.revisionId,
     this.messages,
+    this.source,
   });
 
   final Locale locale;
@@ -99,4 +109,8 @@ class MothCopyUpdate {
   /// Resolved key → string when the revision changed (or on first fetch); null
   /// when unchanged.
   final Map<String, String>? messages;
+
+  /// The wire message this update was mapped from, handed through to the
+  /// on-device config cache as its persisted payload.
+  final pb.Copy? source;
 }

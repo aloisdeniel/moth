@@ -62,7 +62,7 @@ The defining idea: **one moth server carries your entire portfolio of independen
 ## Data model (sketch)
 
 - `admins` — operators of the moth instance.
-- `projects` — one per mobile app: name, slug, publishable key, secret key, provider config (Google/Apple credentials), theme JSON, settings.
+- `projects` — one per mobile app: name, slug, publishable key, secret key, provider config (Google/Apple credentials), theme, settings. Config blobs (theme, paywall, copy) are stored as serialized protos (`moth.storage.v1`) — the same schema language as the wire, no parallel JSON.
 - `project_keys` — per-project ES256 signing keypairs (private key encrypted at rest, public part served via the project JWKS); multiple rows per project to support rotation.
 - `users` — scoped by `project_id`; email, password hash (nullable for social-only), verification state, custom claims (roles/permissions embedded in the JWT).
 - `identities` — links a user to a provider (`password`, `google`, `apple`) with provider subject ID; enables account linking.

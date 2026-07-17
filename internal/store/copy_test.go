@@ -1,6 +1,7 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -15,12 +16,17 @@ import (
 func newCopyID() string { return uuid.Must(uuid.NewV7()).String() }
 
 // copyRev builds a revision whose lexical id order matches n, mirroring
-// UUIDv7 behavior.
+// UUIDv7 behavior. The document is a real StoredCopy encoding because the
+// read-modify-write mutators parse it.
 func copyRev(projectID string, n int, base time.Time) CopyRevision {
+	doc, err := encodeCopyOverrides(CopyOverrides{"en": {"sign_in.title": fmt.Sprintf("v%d", n)}})
+	if err != nil {
+		panic(err)
+	}
 	return CopyRevision{
 		ID:        fmt.Sprintf("rev-%03d", n),
 		ProjectID: projectID,
-		Copy:      fmt.Sprintf(`{"en":{"sign_in.title":"v%d"}}`, n),
+		Copy:      doc,
 		CreatedAt: base.Add(time.Duration(n) * time.Second),
 	}
 }
@@ -61,7 +67,7 @@ func TestSetProjectCopy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Copy != rev1.Copy || got.CopyRevisionID != rev1.ID {
+	if !bytes.Equal(got.Copy, rev1.Copy) || got.CopyRevisionID != rev1.ID {
 		t.Errorf("project copy = %q / %q, want %q / %q", got.Copy, got.CopyRevisionID, rev1.Copy, rev1.ID)
 	}
 
@@ -80,7 +86,7 @@ func TestSetProjectCopy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if stored.Copy != rev1.Copy || !stored.CreatedAt.Equal(rev1.CreatedAt) {
+	if !bytes.Equal(stored.Copy, rev1.Copy) || !stored.CreatedAt.Equal(rev1.CreatedAt) {
 		t.Errorf("revision round trip mismatch: %+v", stored)
 	}
 }
@@ -169,7 +175,7 @@ func TestClearProjectCopy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Copy != "" || got.CopyRevisionID != "" {
+	if len(got.Copy) != 0 || got.CopyRevisionID != "" {
 		t.Errorf("copy not cleared: %q / %q", got.Copy, got.CopyRevisionID)
 	}
 	// History survives a reset so the old copy stays restorable.
@@ -335,7 +341,7 @@ func TestResetCopyToDefaultClears(t *testing.T) {
 		t.Errorf("resetting the last override should clear to default (empty revision), got %q", rev)
 	}
 	got, _ := s.GetProject(ctx, "p1")
-	if got.Copy != "" || got.CopyRevisionID != "" {
+	if len(got.Copy) != 0 || got.CopyRevisionID != "" {
 		t.Errorf("project not cleared: %q / %q", got.Copy, got.CopyRevisionID)
 	}
 }

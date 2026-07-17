@@ -20,6 +20,10 @@ pb.Copy serverCopy(
   messages: (messages ?? {'sign_in.title': 'Copy $revision'}).entries,
 );
 
+/// A cache fetch time safely outside the default one-hour download-once TTL,
+/// so seeded caches still trigger the revalidation round-trip under test.
+DateTime stale() => DateTime.now().toUtc().subtract(const Duration(hours: 2));
+
 void main() {
   late FakeMoth moth;
   late MothClient client;
@@ -76,7 +80,7 @@ void main() {
       expect(controller.value.value('sign_in.title'), 'FR1');
       // First call carries no known revision, and the copy got cached.
       expect(moth.config.lastRequest!.knownCopyRevision, '');
-      expect((await cache.load(const Locale('fr')))!.revisionId, 'c1');
+      expect((await cache.load(const Locale('fr')))!.copy.revisionId, 'c1');
     });
 
     test('stale-while-revalidate: cached copy renders first, refresh swaps '
@@ -88,6 +92,7 @@ void main() {
           revisionId: 'c1',
           messages: {'sign_in.title': 'FR1'},
         ),
+        fetchedAt: stale(),
       );
       moth.config.response.copy = serverCopy(
         'c2',
@@ -122,7 +127,7 @@ void main() {
       expect(controller.value.value('sign_in.title'), 'FR2');
       // The refresh echoed the cached revision, and the cache was replaced.
       expect(moth.config.lastRequest!.knownCopyRevision, 'c1');
-      expect((await cache.load(const Locale('fr')))!.revisionId, 'c2');
+      expect((await cache.load(const Locale('fr')))!.copy.revisionId, 'c2');
     });
 
     test(
@@ -135,6 +140,7 @@ void main() {
             revisionId: 'c1',
             messages: {'sign_in.title': 'FR1'},
           ),
+          fetchedAt: stale(),
         );
         moth.config.response.copy = serverCopy(
           'c1',
@@ -191,7 +197,7 @@ void main() {
       expect(controller.value.value('sign_in.title'), 'DE');
       // New locale had no cache, so the refetch sent an empty known revision.
       expect(moth.config.lastRequest!.knownCopyRevision, '');
-      expect((await cache.load(const Locale('de')))!.revisionId, 'de1');
+      expect((await cache.load(const Locale('de')))!.copy.revisionId, 'de1');
     });
 
     test(
@@ -220,8 +226,8 @@ void main() {
         // work and a full-tag one would miss.
         final reloaded = await cache.load(const Locale('en', 'US'));
         expect(reloaded, isNotNull);
-        expect(reloaded!.revisionId, 'e1');
-        expect(reloaded.value('sign_in.title'), 'EN1');
+        expect(reloaded!.copy.revisionId, 'e1');
+        expect(reloaded.copy.value('sign_in.title'), 'EN1');
       },
     );
 
@@ -267,6 +273,187 @@ void main() {
         expect(controller.value.value('sign_in.title'), 'DE');
       },
     );
+
+    test('download-once TTL: a fresh cache serves with zero config '
+        'RPCs', () async {
+      moth.config.response.copy = serverCopy(
+        'c2',
+        messages: {'sign_in.title': 'FR2'},
+      );
+      final cache = MothMemoryCopyCache();
+      await cache.save(
+        const MothCopy(
+          locale: Locale('fr'),
+          revisionId: 'c1',
+          messages: {'sign_in.title': 'FR1'},
+        ),
+        fetchedAt: DateTime.now().toUtc(),
+      );
+      final controller = MothCopyController(
+        client: client,
+        cache: cache,
+        localeOf: () => const Locale('fr'),
+      );
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      // Within the TTL the cached copy is served as-is, no revalidation.
+      expect(controller.value.revisionId, 'c1');
+      expect(controller.value.value('sign_in.title'), 'FR1');
+      expect(moth.config.calls, 0);
+    });
+
+    test('download-once TTL: an expired cache revalidates once; the omitted '
+        'messages refresh fetched_at so the next launch is quiet '
+        'again', () async {
+      moth.config.response.copy = serverCopy(
+        'c1',
+        messages: {'sign_in.title': 'FR1'},
+      );
+      final cache = MothMemoryCopyCache();
+      await cache.save(
+        const MothCopy(
+          locale: Locale('fr'),
+          revisionId: 'c1',
+          messages: {'sign_in.title': 'FR1'},
+        ),
+        fetchedAt: stale(),
+      );
+
+      final first = MothCopyController(
+        client: client,
+        cache: cache,
+        localeOf: () => const Locale('fr'),
+      );
+      addTearDown(first.dispose);
+      await first.start();
+      // Expired: exactly one cheap revalidation, echoing the revision (the
+      // server omits the unchanged messages).
+      expect(moth.config.calls, 1);
+      expect(moth.config.lastRequest!.knownCopyRevision, 'c1');
+      // The omitted-body match re-stamped fetched_at...
+      final entry = await cache.load(const Locale('fr'));
+      expect(
+        DateTime.now().toUtc().difference(entry!.fetchedAt),
+        lessThan(const Duration(minutes: 1)),
+      );
+
+      // ...so a second launch is quiet: cache only, no config RPC.
+      final second = MothCopyController(
+        client: client,
+        cache: cache,
+        localeOf: () => const Locale('fr'),
+      );
+      addTearDown(second.dispose);
+      await second.start();
+      expect(moth.config.calls, 1);
+      expect(second.value.revisionId, 'c1');
+    });
+
+    test('download-once TTL: explicit refresh() with an unchanged locale '
+        'forces a fetch', () async {
+      moth.config.response.copy = serverCopy(
+        'c2',
+        messages: {'sign_in.title': 'FR2'},
+      );
+      final cache = MothMemoryCopyCache();
+      await cache.save(
+        const MothCopy(
+          locale: Locale('fr'),
+          revisionId: 'c1',
+          messages: {'sign_in.title': 'FR1'},
+        ),
+        fetchedAt: DateTime.now().toUtc(),
+      );
+      final controller = MothCopyController(
+        client: client,
+        cache: cache,
+        localeOf: () => const Locale('fr'),
+      );
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      expect(moth.config.calls, 0);
+      await controller.refresh();
+      expect(moth.config.calls, 1);
+      expect(controller.value.revisionId, 'c2');
+    });
+
+    test('locale change to a locale with a fresh envelope serves from the '
+        'cache, no fetch', () async {
+      var locale = const Locale('fr');
+      final cache = MothMemoryCopyCache();
+      final now = DateTime.now().toUtc();
+      await cache.save(
+        const MothCopy(
+          locale: Locale('fr'),
+          revisionId: 'fr1',
+          messages: {'sign_in.title': 'FR'},
+        ),
+        fetchedAt: now,
+      );
+      await cache.save(
+        const MothCopy(
+          locale: Locale('de'),
+          revisionId: 'de1',
+          messages: {'sign_in.title': 'DE'},
+        ),
+        fetchedAt: now,
+      );
+      final controller = MothCopyController(
+        client: client,
+        cache: cache,
+        localeOf: () => locale,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      expect(moth.config.calls, 0);
+
+      // The new locale's envelope is fresh: the TTL is not bypassed.
+      locale = const Locale('de');
+      await controller.refresh();
+      expect(moth.config.calls, 0);
+      expect(controller.value.locale.languageCode, 'de');
+      expect(controller.value.value('sign_in.title'), 'DE');
+    });
+
+    test('locale change to a locale without a fresh envelope bypasses the '
+        'TTL and fetches', () async {
+      var locale = const Locale('fr');
+      final cache = MothMemoryCopyCache();
+      await cache.save(
+        const MothCopy(
+          locale: Locale('fr'),
+          revisionId: 'fr1',
+          messages: {'sign_in.title': 'FR'},
+        ),
+        fetchedAt: DateTime.now().toUtc(),
+      );
+      final controller = MothCopyController(
+        client: client,
+        cache: cache,
+        localeOf: () => locale,
+      );
+      addTearDown(controller.dispose);
+
+      await controller.start();
+      expect(moth.config.calls, 0); // fr envelope is fresh
+
+      // de has no envelope at all: the switch must fetch despite fr's
+      // freshness.
+      locale = const Locale('de');
+      moth.config.response.copy = serverCopy(
+        'de1',
+        locale: 'de',
+        messages: {'sign_in.title': 'DE'},
+      );
+      await controller.refresh();
+      expect(moth.config.calls, 1);
+      expect(controller.value.locale.languageCode, 'de');
+      expect(controller.value.value('sign_in.title'), 'DE');
+      expect((await cache.load(const Locale('de')))!.copy.revisionId, 'de1');
+    });
 
     test('offline start keeps the bundled localized floor', () async {
       await moth.shutdown(); // nothing listening anymore
