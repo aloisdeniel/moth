@@ -127,6 +127,45 @@ language — in the admin's Design → Paywall editor. Building blocks
 custom paywalls. Your backend can verify entitlements server-side via
 `moth.server.v1.EntitlementService/GetUserEntitlements` with the secret key.
 
+## Push notifications
+
+Same pattern as billing: this package stays pure Dart and gains only an
+interface. Add `moth_push` — moth's first-party plugin (APNs on iOS, FCM on
+Android), served from the same instance's `/pub` at the same version — and
+pass `MothNativePush()`; apps with their own push stack (an existing
+`firebase_messaging` setup, say) implement `MothPushAdapter` themselves.
+
+```dart
+MothApp(
+  config: MothConfig(endpoint: ..., publishableKey: 'pk_...'),
+  pushAdapter: MothNativePush(), // from package:moth_push
+  child: const MyApp(),
+);
+```
+
+Wiring the adapter is the whole opt-in: while a user is signed in the SDK
+keeps the server's device registry current — `RegisterDevice` on every
+launch, token rotation, and permission change (the registry's upsert
+semantics make this carefree), `UnregisterDevice` on sign-out, before the
+session drops. All of it is non-fatal by design: auth never blocks on push,
+and failures retry on the next launch. No adapter, no push — nothing else
+changes.
+
+The SDK never shows the OS permission prompt on its own; that stays an
+explicit app call, for a settings toggle or onboarding step:
+
+```dart
+final scope = MothScope.of(context);
+final permission = await scope.requestPushPermission(); // the only prompt path
+scope.pushStatus; // available / permission / registered, rebuilds dependents
+```
+
+A denied device still registers (flagged `denied` — data pushes may still
+work); granting later just updates the registration. **moth registers; your
+server sends**: your backend reads the registry via
+`moth.server.v1.PushService/ListUserPushDevices` with the secret key and
+delivers through APNs/FCM/Web Push itself — see the push guide in the docs.
+
 ## Localization
 
 The built-in screens (`MothLoginScreen` sign-in and sign-up, `MothPaywallScreen`)

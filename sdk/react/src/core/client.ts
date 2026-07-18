@@ -8,6 +8,7 @@ import {
 } from '../gen/moth/auth/v1/auth_pb.js'
 import { ConfigService } from '../gen/moth/auth/v1/config_pb.js'
 import { BillingService } from '../gen/moth/billing/v1/billing_pb.js'
+import { PushService } from '../gen/moth/push/v1/push_pb.js'
 import { currentLocaleOf, type MothConfig } from './config.js'
 import { copyUpdateFromProto } from './copy.js'
 import { MothCustomerInfo } from './customerInfo.js'
@@ -29,6 +30,13 @@ import {
 } from './offering.js'
 import type { MothProjectConfig } from './projectConfig.js'
 import { checkoutReturnParam, type MothPurchaseResult } from './purchase.js'
+import {
+  pushPermissionToProto,
+  pushTargetToProto,
+  type MothPushDeviceMetadata,
+  type MothPushPermission,
+  type MothPushTarget,
+} from './push.js'
 import { themeFromProto } from './theme.js'
 import { createTokenStore, type StoredSession, type TokenStore } from './tokenStore.js'
 import { createMothTransport, withMothHeaders } from './transport.js'
@@ -101,6 +109,7 @@ export class MothClient {
   readonly #auth: Client<typeof AuthService>
   readonly #projectConfig: Client<typeof ConfigService>
   readonly #billing: Client<typeof BillingService>
+  readonly #push: Client<typeof PushService>
 
   #state: MothAuthState = mothAuthLoading
   #session: StoredSession | null = null
@@ -120,6 +129,7 @@ export class MothClient {
 
   #stateListeners = new Set<(state: MothAuthState) => void>()
   #infoListeners = new Set<(info: MothCustomerInfo) => void>()
+  #beforeSignOutHooks = new Set<() => void | Promise<void>>()
 
   constructor(config: MothConfig, options: MothClientOptions = {}) {
     this.config = config
@@ -140,6 +150,7 @@ export class MothClient {
     this.#auth = createClient(AuthService, transport)
     this.#projectConfig = createClient(ConfigService, transport)
     this.#billing = createClient(BillingService, transport)
+    this.#push = createClient(PushService, transport)
   }
 
   // ---------------------------------------------------------------- state
@@ -171,6 +182,18 @@ export class MothClient {
     this.#stateListeners.add(listener)
     listener(this.#state)
     return () => this.#stateListeners.delete(listener)
+  }
+
+  /**
+   * Registers work that must run at the start of {@link signOut}, while the
+   * session (and its Bearer token) is still valid — e.g. the push
+   * controller revoking this installation's device registration. Hooks are
+   * awaited best-effort: a failing hook never blocks the sign-out. Returns
+   * the unsubscribe function.
+   */
+  onBeforeSignOut(hook: () => void | Promise<void>): Unsubscribe {
+    this.#beforeSignOutHooks.add(hook)
+    return () => this.#beforeSignOutHooks.delete(hook)
   }
 
   // -------------------------------------------------------- entitlements
@@ -335,6 +358,15 @@ export class MothClient {
     if (session === null) {
       this.#setState(mothSignedOut)
       return
+    }
+    // Pre-sign-out hooks (push unregistration) run while the session is
+    // still live — they need the Bearer token — and are non-fatal.
+    for (const hook of [...this.#beforeSignOutHooks]) {
+      try {
+        await hook()
+      } catch {
+        // Best effort; the sign-out proceeds regardless.
+      }
     }
     try {
       await this.#auth.signOut({
@@ -585,9 +617,15 @@ export class MothClient {
       if (iosClientId !== undefined) google.iosClientId = iosClientId
       const androidClientId = blank(resp.google?.androidClientId)
       if (androidClientId !== undefined) google.androidClientId = androidClientId
+      const push: MothProjectConfig['push'] = {
+        enabled: resp.push?.enabled ?? false,
+      }
+      const vapidKey = blank(resp.push?.webpushVapidPublicKey)
+      if (vapidKey !== undefined) push.webpushVapidPublicKey = vapidKey
       const config: MothProjectConfig = {
         google,
         apple: { enabled: resp.apple?.enabled ?? false },
+        push,
         passwordMinLength: resp.passwordMinLength,
         signUpOpen: resp.signUpOpen,
       }
@@ -792,6 +830,53 @@ export class MothClient {
     return { status: 'pending' }
   }
 
+  // ----------------------------------------------------------------- push
+
+  /**
+   * Upserts this installation's push registration
+   * (`moth.push.v1.PushService.RegisterDevice`). Idempotent by design —
+   * call it on every launch, token rotation and permission change with the
+   * same stable `deviceId`; the registry replaces the row. Throws when
+   * signed out (registrations always hang off the signed-in user).
+   */
+  async registerPushDevice(params: {
+    target: MothPushTarget
+    /**
+     * The push credential: APNs/FCM token or the serialized Web Push
+     * subscription (JSON with endpoint + keys).
+     */
+    token: string
+    /** Client-generated stable installation id. */
+    deviceId: string
+    permission?: MothPushPermission
+    metadata?: MothPushDeviceMetadata
+  }): Promise<void> {
+    await this.#authed(() =>
+      this.#push.registerDevice({
+        target: pushTargetToProto(params.target),
+        token: params.token,
+        deviceId: params.deviceId,
+        permission: pushPermissionToProto(params.permission ?? 'unknown'),
+        metadata: {
+          platform: params.metadata?.platform ?? '',
+          model: params.metadata?.model ?? '',
+          osVersion: params.metadata?.osVersion ?? '',
+          appVersion: params.metadata?.appVersion ?? '',
+          locale: params.metadata?.locale ?? '',
+        },
+      }),
+    )
+  }
+
+  /**
+   * Revokes this installation's push registration (`signed_out`).
+   * Idempotent: unknown or already-revoked device ids succeed. Throws when
+   * signed out — call it *before* dropping the session.
+   */
+  async unregisterPushDevice(deviceId: string): Promise<void> {
+    await this.#authed(() => this.#push.unregisterDevice({ deviceId }))
+  }
+
   /**
    * Drops every subscription. Re-entrant: subscribing again afterwards
    * works (React StrictMode mounts effects twice), so this is a reset, not
@@ -800,6 +885,7 @@ export class MothClient {
   dispose(): void {
     this.#stateListeners.clear()
     this.#infoListeners.clear()
+    this.#beforeSignOutHooks.clear()
   }
 
   // ------------------------------------------------------------ internals

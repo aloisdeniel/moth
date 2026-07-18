@@ -67,7 +67,7 @@ func TestPubVersionListing(t *testing.T) {
 
 	// Every served package is listed, fetchable and stamped with the same
 	// version — the SDK-lockstep discipline of plan/19.
-	for _, pkg := range []string{"moth_auth", "moth_billing"} {
+	for _, pkg := range []string{"moth_auth", "moth_billing", "moth_push"} {
 		resp, err := e.client.Get(e.url + "/pub/api/packages/" + pkg)
 		if err != nil {
 			t.Fatal(err)
@@ -225,6 +225,60 @@ func TestPubBillingArchiveContents(t *testing.T) {
 	}
 }
 
+func TestPubPushArchiveContents(t *testing.T) {
+	e := newTestEnv(t, "")
+	files := untarPub(t, fetchPubTarball(t, e, "moth_push"))
+
+	devVersion := devPubVersion(t)
+	pubspec, ok := files["pubspec.yaml"]
+	if !ok {
+		t.Fatal("tarball has no pubspec.yaml")
+	}
+	if !strings.Contains(pubspec, "\nversion: "+devVersion+"\n") {
+		t.Fatalf("pubspec version not stamped:\n%s", pubspec)
+	}
+	// The placeholder moth_auth hosted dependency is rewritten to this
+	// instance's /pub (config BaseURL) at the served moth_auth version, so
+	// the two packages resolve in lockstep.
+	wantDep := "  moth_auth:\n" +
+		"    hosted: http://localhost:8080/pub\n" +
+		"    version: " + devVersion + "\n"
+	if !strings.Contains(pubspec, wantDep) {
+		t.Fatalf("moth_auth dependency not rewritten:\n%s", pubspec)
+	}
+	if strings.Contains(pubspec, "moth.invalid") {
+		t.Fatalf("placeholder host leaked:\n%s", pubspec)
+	}
+	// The plugin's Dart and native sources ship in the tarball, including
+	// the manifest-merged FirebaseMessagingService registration the token
+	// rotation path depends on.
+	for _, want := range []string{
+		"lib/moth_push.dart",
+		"lib/src/moth_native_push.dart",
+		"ios/moth_push.podspec",
+		"ios/Classes/MothPushPlugin.swift",
+		"android/build.gradle",
+		"android/settings.gradle",
+		"android/src/main/AndroidManifest.xml",
+		"android/src/main/kotlin/io/moth/push/MothPushPlugin.kt",
+		"android/src/main/kotlin/io/moth/push/MothPushMessagingService.kt",
+		"README.md", "LICENSE", "CHANGELOG.md",
+	} {
+		if _, ok := files[want]; !ok {
+			t.Errorf("tarball misses %s", want)
+		}
+	}
+	// pubspec_overrides.yaml is the local-dev path override to ../flutter:
+	// serving it would shadow the hosted moth_auth dependency.
+	for name := range files {
+		if strings.HasPrefix(name, "example/") || strings.HasPrefix(name, "test/") ||
+			strings.HasPrefix(name, "build/") || name == "pubspec.lock" ||
+			name == "pubspec_overrides.yaml" {
+			t.Errorf("tarball leaks %s", name)
+		}
+	}
+}
+
 func TestPubVersionMapping(t *testing.T) {
 	const hash = "1a2b3c4d5e6f7788"
 	for in, want := range map[string]string{
@@ -352,6 +406,7 @@ func TestPubNotFound(t *testing.T) {
 		"/pub/packages/moth_auth/versions/9.9.9.tar.gz",
 		"/pub/packages/moth_auth/versions/" + devVersion + ".zip",
 		"/pub/packages/moth_billing/versions/9.9.9.tar.gz",
+		"/pub/packages/moth_push/versions/9.9.9.tar.gz",
 	} {
 		resp, err := e.client.Get(e.url + path)
 		if err != nil {
@@ -456,6 +511,9 @@ dependencies:
   moth_billing:
     hosted: ` + baseURL + `/pub
     version: ` + version + `
+  moth_push:
+    hosted: ` + baseURL + `/pub
+    version: ` + version + `
 `
 	if err := os.WriteFile(filepath.Join(app, "pubspec.yaml"), []byte(pubspec), 0o644); err != nil {
 		t.Fatal(err)
@@ -489,7 +547,7 @@ dependencies:
 	}
 	resolved := map[string]bool{}
 	for _, p := range cfg.Packages {
-		if p.Name != "moth_auth" && p.Name != "moth_billing" {
+		if p.Name != "moth_auth" && p.Name != "moth_billing" && p.Name != "moth_push" {
 			continue
 		}
 		// rootUri is a percent-encoded file URI into the pub cache.
@@ -506,7 +564,7 @@ dependencies:
 		}
 		resolved[p.Name] = true
 	}
-	if !resolved["moth_auth"] || !resolved["moth_billing"] {
+	if !resolved["moth_auth"] || !resolved["moth_billing"] || !resolved["moth_push"] {
 		t.Fatalf("packages missing from package_config.json (got %v):\n%s", resolved, raw)
 	}
 }

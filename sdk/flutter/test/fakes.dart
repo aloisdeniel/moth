@@ -20,6 +20,7 @@ import 'package:moth_auth/src/gen/moth/auth/v1/auth.pbgrpc.dart';
 import 'package:moth_auth/src/gen/moth/auth/v1/config.pbgrpc.dart';
 import 'package:moth_auth/src/gen/moth/billing/v1/billing.pbgrpc.dart'
     as billing;
+import 'package:moth_auth/src/gen/moth/push/v1/push.pbgrpc.dart' as push;
 
 /// A syntactically valid JWT with [payload] and a fake signature — the SDK
 /// only ever decodes the payload.
@@ -75,6 +76,11 @@ class FakeAuthService extends AuthServiceBase {
   /// Client metadata of the most recent call, per method name.
   final metadataByMethod = <String, Map<String, String>>{};
 
+  /// When set (by [startFakeMoth]), every method appends its name here —
+  /// shared with [FakePushService] for cross-service ordering assertions
+  /// (e.g. UnregisterDevice before SignOut).
+  List<String>? callLog;
+
   /// Thrown once by the next RPC (any method), then cleared.
   GrpcError? nextError;
 
@@ -122,6 +128,7 @@ class FakeAuthService extends AuthServiceBase {
 
   void _enter(String method, ServiceCall call) {
     metadataByMethod[method] = Map.of(call.clientMetadata ?? const {});
+    callLog?.add(method);
     final err = nextError;
     if (err != null) {
       nextError = null;
@@ -311,6 +318,7 @@ class FakeConfigService extends ConfigServiceBase {
     apple: AppleConfig(enabled: false),
     passwordMinLength: 10,
     signUpOpen: true,
+    push: PushConfig(enabled: true),
   );
 
   @override
@@ -485,6 +493,125 @@ class FakeBillingService extends billing.BillingServiceBase {
   }
 }
 
+/// In-process fake for moth.push.v1. Records every RegisterDevice request
+/// and drives failure paths via [registerError] / [nextError].
+class FakePushService extends push.PushServiceBase {
+  final metadataByMethod = <String, Map<String, String>>{};
+
+  /// Shared cross-service call log; see [FakeAuthService.callLog].
+  List<String>? callLog;
+
+  /// Thrown once by the next RPC (any method), then cleared.
+  GrpcError? nextError;
+
+  /// Thrown by every RegisterDevice call while set.
+  GrpcError? registerError;
+
+  final registerRequests = <push.RegisterDeviceRequest>[];
+  push.RegisterDeviceRequest? lastRegister;
+  push.UnregisterDeviceRequest? lastUnregister;
+  int registerCalls = 0;
+  int unregisterCalls = 0;
+
+  void _enter(String method, ServiceCall call) {
+    metadataByMethod[method] = Map.of(call.clientMetadata ?? const {});
+    callLog?.add(method);
+    final err = nextError;
+    if (err != null) {
+      nextError = null;
+      throw err;
+    }
+  }
+
+  @override
+  Future<push.RegisterDeviceResponse> registerDevice(
+    ServiceCall call,
+    push.RegisterDeviceRequest request,
+  ) async {
+    _enter('RegisterDevice', call);
+    registerCalls++;
+    lastRegister = request;
+    registerRequests.add(request);
+    final err = registerError;
+    if (err != null) throw err;
+    return push.RegisterDeviceResponse(
+      device: push.PushDevice(
+        id: 'pd-$registerCalls',
+        target: request.target,
+        deviceId: request.deviceId,
+        permission: request.permission,
+        metadata: request.metadata,
+      ),
+    );
+  }
+
+  @override
+  Future<push.UnregisterDeviceResponse> unregisterDevice(
+    ServiceCall call,
+    push.UnregisterDeviceRequest request,
+  ) async {
+    _enter('UnregisterDevice', call);
+    unregisterCalls++;
+    lastUnregister = request;
+    // Unknown/already-revoked ids succeed, like the real server (idempotent).
+    return push.UnregisterDeviceResponse();
+  }
+}
+
+/// A [MothPushAdapter] whose native outcomes are set by the test: a fixed
+/// [token] (null = no credential yet), a [permission] state,
+/// [requestPermission] flipping to [requestResult], and [rotate] pushing a
+/// new token through [onTokenRefresh].
+class FakePushAdapter implements MothPushAdapter {
+  MothPushToken? token = const MothPushToken(
+    target: MothPushTarget.fcm,
+    token: 'fcm-token-1',
+  );
+  MothPushPermission permission = MothPushPermission.granted;
+  MothPushPermission requestResult = MothPushPermission.granted;
+  Object? throwOnGetToken;
+  MothPushDeviceMetadata metadata = const MothPushDeviceMetadata();
+
+  final tokenRefreshes = StreamController<MothPushToken>.broadcast();
+
+  int requestPermissionCalls = 0;
+  int getTokenCalls = 0;
+
+  @override
+  Future<MothPushPermission> requestPermission() async {
+    requestPermissionCalls++;
+    permission = requestResult;
+    return permission;
+  }
+
+  @override
+  Future<MothPushPermission> permissionStatus() async => permission;
+
+  @override
+  Future<MothPushToken?> getToken() async {
+    getTokenCalls++;
+    final err = throwOnGetToken;
+    if (err != null) throw err;
+    return token;
+  }
+
+  @override
+  Stream<MothPushToken> get onTokenRefresh => tokenRefreshes.stream;
+
+  @override
+  Future<MothPushDeviceMetadata> deviceMetadata() async => metadata;
+
+  /// Simulates the platform rotating the credential.
+  void rotate(String newToken) {
+    final rotated = MothPushToken(
+      target: token?.target ?? MothPushTarget.fcm,
+      token: newToken,
+    );
+    token = rotated;
+    tokenRefreshes.add(rotated);
+  }
+}
+
 /// A [MothBillingAdapter] whose native outcomes are set by the test: returns
 /// [nextReceipt] (a signed Apple transaction by default), null when [cancel]
 /// is set, or throws [throwOnPurchase].
@@ -542,12 +669,24 @@ class FakeBillingAdapter implements MothBillingAdapter {
 }
 
 class FakeMoth {
-  FakeMoth(this.server, this.auth, this.config, this.billing);
+  FakeMoth(
+    this.server,
+    this.auth,
+    this.config,
+    this.billing,
+    this.push,
+    this.callLog,
+  );
 
   final Server server;
   final FakeAuthService auth;
   final FakeConfigService config;
   final FakeBillingService billing;
+  final FakePushService push;
+
+  /// Method names of auth + push calls in arrival order, for cross-service
+  /// ordering assertions.
+  final List<String> callLog;
 
   int get port => server.port!;
 
@@ -558,9 +697,15 @@ Future<FakeMoth> startFakeMoth() async {
   final auth = FakeAuthService();
   final config = FakeConfigService();
   final billingService = FakeBillingService();
-  final server = Server.create(services: [auth, config, billingService]);
+  final pushService = FakePushService();
+  final callLog = <String>[];
+  auth.callLog = callLog;
+  pushService.callLog = callLog;
+  final server = Server.create(
+    services: [auth, config, billingService, pushService],
+  );
   await server.serve(address: 'localhost', port: 0);
-  return FakeMoth(server, auth, config, billingService);
+  return FakeMoth(server, auth, config, billingService, pushService, callLog);
 }
 
 MothClient newClient(

@@ -44,6 +44,26 @@ const AppleConfig$json = {
 final $typed_data.Uint8List appleConfigDescriptor = $convert
     .base64Decode('CgtBcHBsZUNvbmZpZxIYCgdlbmFibGVkGAEgASgIUgdlbmFibGVk');
 
+@$core.Deprecated('Use pushConfigDescriptor instead')
+const PushConfig$json = {
+  '1': 'PushConfig',
+  '2': [
+    {'1': 'enabled', '3': 1, '4': 1, '5': 8, '10': 'enabled'},
+    {
+      '1': 'webpush_vapid_public_key',
+      '3': 2,
+      '4': 1,
+      '5': 9,
+      '10': 'webpushVapidPublicKey'
+    },
+  ],
+};
+
+/// Descriptor for `PushConfig`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List pushConfigDescriptor = $convert.base64Decode(
+    'CgpQdXNoQ29uZmlnEhgKB2VuYWJsZWQYASABKAhSB2VuYWJsZWQSNwoYd2VicHVzaF92YXBpZF'
+    '9wdWJsaWNfa2V5GAIgASgJUhV3ZWJwdXNoVmFwaWRQdWJsaWNLZXk=');
+
 @$core.Deprecated('Use themeDescriptor instead')
 const Theme$json = {
   '1': 'Theme',
@@ -218,6 +238,14 @@ const GetProjectConfigResponse$json = {
       '6': '.moth.auth.v1.Copy',
       '10': 'copy'
     },
+    {
+      '1': 'push',
+      '3': 7,
+      '4': 1,
+      '5': 11,
+      '6': '.moth.auth.v1.PushConfig',
+      '10': 'push'
+    },
   ],
 };
 
@@ -228,4 +256,5 @@ final $typed_data.Uint8List getProjectConfigResponseDescriptor = $convert.base64
     'cGxlQ29uZmlnUgVhcHBsZRIuChNwYXNzd29yZF9taW5fbGVuZ3RoGAMgASgFUhFwYXNzd29yZE'
     '1pbkxlbmd0aBIgCgxzaWduX3VwX29wZW4YBCABKAhSCnNpZ25VcE9wZW4SKQoFdGhlbWUYBSAB'
     'KAsyEy5tb3RoLmF1dGgudjEuVGhlbWVSBXRoZW1lEiYKBGNvcHkYBiABKAsyEi5tb3RoLmF1dG'
-    'gudjEuQ29weVIEY29weQ==');
+    'gudjEuQ29weVIEY29weRIsCgRwdXNoGAcgASgLMhgubW90aC5hdXRoLnYxLlB1c2hDb25maWdS'
+    'BHB1c2g=');

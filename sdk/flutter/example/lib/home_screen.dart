@@ -119,6 +119,8 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 16),
           _PremiumCard(scope: scope),
           const SizedBox(height: 16),
+          _PushCard(scope: scope),
+          const SizedBox(height: 16),
           FilledButton.icon(
             icon: const Icon(Icons.cloud),
             label: const Text('Call my backend'),
@@ -222,6 +224,90 @@ class _PremiumCard extends StatelessWidget {
               },
               child: const Text('Restore purchases'),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The push settings row: a toggle backed by [MothScope.pushStatus] and
+/// [MothScope.requestPushPermission] — the explicit app call that is the only
+/// way the SDK ever shows the OS permission prompt. Registration itself is
+/// automatic (moth_push is wired into MothApp in main.dart); this card only
+/// surfaces the state and owns the permission UX.
+class _PushCard extends StatelessWidget {
+  const _PushCard({required this.scope});
+
+  final MothScope scope;
+
+  Future<void> _toggle(BuildContext context, bool enable) async {
+    if (!enable) {
+      // Notification permission is granted at the OS level; the app cannot
+      // withdraw it — point at the system settings instead.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Turn notifications off in the system settings.'),
+        ),
+      );
+      return;
+    }
+    final permission = await scope.requestPushPermission();
+    if (!context.mounted || permission != MothPushPermission.denied) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Notifications are denied — enable them in the system settings, '
+          'then return to the app.',
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // Rebuilds via MothScope.of in HomeScreen whenever the status changes
+    // (permission reported, registration reaching the server, ...).
+    final status = scope.pushStatus;
+    final enabled = switch (status.permission) {
+      MothPushPermission.granted || MothPushPermission.provisional => true,
+      MothPushPermission.denied || MothPushPermission.unknown => false,
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Push notifications', style: theme.textTheme.labelMedium),
+            if (!status.available)
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(
+                  'Unavailable — push is disabled for this project '
+                  '(enable it in the moth admin, Settings tab).',
+                ),
+              )
+            else ...[
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(switch (status.permission) {
+                  MothPushPermission.granted => 'Enabled',
+                  MothPushPermission.provisional => 'Enabled (provisional)',
+                  MothPushPermission.denied => 'Denied',
+                  MothPushPermission.unknown => 'Not asked yet',
+                }),
+                subtitle: Text(
+                  status.registered
+                      ? 'This device is registered — see the Devices panel '
+                            'in the moth admin.'
+                      : 'Not registered with the server yet.',
+                ),
+                value: enabled,
+                onChanged: (value) => _toggle(context, value),
+              ),
+            ],
           ],
         ),
       ),

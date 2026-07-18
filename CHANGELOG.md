@@ -21,6 +21,30 @@ regenerated from conventional-commit history by `git cliff` (see
   present `moth_billing` as the default purchase path; a custom
   `MothBillingAdapter` remains the escape hatch.
 
+### Push notifications
+
+- Per-project push-device registry: signed-in devices register their APNs /
+  FCM / Web Push credentials with an honest permission state via
+  `moth.push.v1`; the developer's backend reads them (and reports dead
+  credentials back) over `moth.server.v1.PushService` — moth registers,
+  your server sends. Sign-out, feedback, staleness and admin revocation
+  keep the registry self-healing; the admin gains a per-user Devices panel
+  and per-project push settings (enable switch + Web Push VAPID public
+  key).
+- `moth_push`: a first-party Flutter plugin implementing `moth_auth`'s new
+  `MothPushAdapter` with APNs (Swift) on iOS and Firebase Cloud Messaging
+  (Kotlin) on Android, served from `/pub` alongside `moth_auth` and
+  `moth_billing`. Wiring `MothApp(pushAdapter: MothNativePush())` is the
+  whole opt-in: register on launch/rotation, unregister on sign-out, all
+  non-fatal; the OS permission prompt stays behind an explicit
+  `MothScope.requestPushPermission()`.
+- `@moth/react` gains `useMothPush()`: Web Push subscription against the
+  project's VAPID public key with feature detection and typed
+  `unavailable`/`unsupported` states; the app supplies its own service
+  worker (a minimal `sw.js` is documented).
+- Examples, setup tab, docs (a new push guide) and `moth skill export`
+  cover the full loop from registration to a backend send.
+
 ### Release engineering
 
 - GoReleaser pipeline producing CGO-free binaries for darwin/linux/windows ×

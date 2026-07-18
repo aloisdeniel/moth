@@ -5,6 +5,7 @@ import { MothCustomerInfo } from './customerInfo.js';
 import { MothOffering, type MothOfferingProduct, type MothPaywall } from './offering.js';
 import type { MothProjectConfig } from './projectConfig.js';
 import { type MothPurchaseResult } from './purchase.js';
+import { type MothPushDeviceMetadata, type MothPushPermission, type MothPushTarget } from './push.js';
 import { type MothAuthState, type MothUser } from './user.js';
 /** A social sign-in provider supported by moth. */
 export type MothOAuthProvider = 'google' | 'apple';
@@ -75,6 +76,14 @@ export declare class MothClient {
      * is delivered. Returns the unsubscribe function.
      */
     onAuthStateChanged(listener: (state: MothAuthState) => void): Unsubscribe;
+    /**
+     * Registers work that must run at the start of {@link signOut}, while the
+     * session (and its Bearer token) is still valid — e.g. the push
+     * controller revoking this installation's device registration. Hooks are
+     * awaited best-effort: a failing hook never blocks the sign-out. Returns
+     * the unsubscribe function.
+     */
+    onBeforeSignOut(hook: () => void | Promise<void>): Unsubscribe;
     /**
      * The signed-in user's current subscription state. Always valid — an
      * empty {@link MothCustomerInfo} (the free `none` tier) until the first
@@ -315,6 +324,31 @@ export declare class MothClient {
      * Returns null when the current URL carries no checkout-return marker.
      */
     handleCheckoutReturn(): Promise<MothPurchaseResult | null>;
+    /**
+     * Upserts this installation's push registration
+     * (`moth.push.v1.PushService.RegisterDevice`). Idempotent by design —
+     * call it on every launch, token rotation and permission change with the
+     * same stable `deviceId`; the registry replaces the row. Throws when
+     * signed out (registrations always hang off the signed-in user).
+     */
+    registerPushDevice(params: {
+        target: MothPushTarget;
+        /**
+         * The push credential: APNs/FCM token or the serialized Web Push
+         * subscription (JSON with endpoint + keys).
+         */
+        token: string;
+        /** Client-generated stable installation id. */
+        deviceId: string;
+        permission?: MothPushPermission;
+        metadata?: MothPushDeviceMetadata;
+    }): Promise<void>;
+    /**
+     * Revokes this installation's push registration (`signed_out`).
+     * Idempotent: unknown or already-revoked device ids succeed. Throws when
+     * signed out — call it *before* dropping the session.
+     */
+    unregisterPushDevice(deviceId: string): Promise<void>;
     /**
      * Drops every subscription. Re-entrant: subscribing again afterwards
      * works (React StrictMode mounts effects twice), so this is a reset, not

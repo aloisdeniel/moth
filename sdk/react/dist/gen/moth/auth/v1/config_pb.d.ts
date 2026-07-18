@@ -54,6 +54,36 @@ export type AppleConfig = Message<"moth.auth.v1.AppleConfig"> & {
  */
 export declare const AppleConfigSchema: GenMessage<AppleConfig>;
 /**
+ * PushConfig is the public part of a project's push-notification
+ * configuration (milestone 20): everything the SDK needs to register the
+ * device with moth's push registry. Public values only — the Web Push VAPID
+ * public key is designed to be embedded in clients; the matching private key
+ * stays with the developer's sender and never touches moth.
+ *
+ * @generated from message moth.auth.v1.PushConfig
+ */
+export type PushConfig = Message<"moth.auth.v1.PushConfig"> & {
+    /**
+     * Whether the project accepts device registrations (moth.push.v1).
+     *
+     * @generated from field: bool enabled = 1;
+     */
+    enabled: boolean;
+    /**
+     * VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+     * passes as `applicationServerKey` when subscribing; empty when the
+     * project does not use Web Push.
+     *
+     * @generated from field: string webpush_vapid_public_key = 2;
+     */
+    webpushVapidPublicKey: string;
+};
+/**
+ * Describes the message moth.auth.v1.PushConfig.
+ * Use `create(PushConfigSchema)` to create a new message.
+ */
+export declare const PushConfigSchema: GenMessage<PushConfig>;
+/**
  * Theme is the public, fully resolved form of the project's design system,
  * ready to render: dark colors are already derived server-side, asset
  * references are absolute URLs. Binary assets (logo images, font files)
@@ -305,6 +335,13 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
      * @generated from field: moth.auth.v1.Copy copy = 6;
      */
     copy?: Copy | undefined;
+    /**
+     * The project's public push configuration. Always present; enabled=false
+     * when the project never configured push.
+     *
+     * @generated from field: moth.auth.v1.PushConfig push = 7;
+     */
+    push?: PushConfig | undefined;
 };
 /**
  * Describes the message moth.auth.v1.GetProjectConfigResponse.

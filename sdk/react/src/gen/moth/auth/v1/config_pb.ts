@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/auth/v1/config.proto.
  */
 export const file_moth_auth_v1_config: GenFile = /*@__PURE__*/
-  fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgitgIKBVRoZW1lEhMKC3JldmlzaW9uX2lkGAEgASgJEikKBmNvbG9ycxgCIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxIuCgtkYXJrX2NvbG9ycxgDIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxITCgtmb250X2ZhbWlseRgEIAEoCRIQCghmb250X3VybBgFIAEoCRISCgpmb250X3NjYWxlGAYgASgBEhQKDHNwYWNpbmdfdW5pdBgHIAEoBRIVCg1jb3JuZXJfcmFkaXVzGAggASgFEhYKDmxvZ29fbGlnaHRfdXJsGAkgASgJEhUKDWxvZ29fZGFya191cmwYCiABKAkSEQoJdGVybXNfdXJsGAsgASgJEhMKC3ByaXZhY3lfdXJsGAwgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKSAQoEQ29weRIVCg1jb3B5X3JldmlzaW9uGAEgASgJEg4KBmxvY2FsZRgCIAEoCRIyCghtZXNzYWdlcxgDIAMoCzIgLm1vdGguYXV0aC52MS5Db3B5Lk1lc3NhZ2VzRW50cnkaLwoNTWVzc2FnZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlQKF0dldFByb2plY3RDb25maWdSZXF1ZXN0EhwKFGtub3duX3RoZW1lX3JldmlzaW9uGAEgASgJEhsKE2tub3duX2NvcHlfcmV2aXNpb24YAiABKAki6QEKGEdldFByb2plY3RDb25maWdSZXNwb25zZRIqCgZnb29nbGUYASABKAsyGi5tb3RoLmF1dGgudjEuR29vZ2xlQ29uZmlnEigKBWFwcGxlGAIgASgLMhkubW90aC5hdXRoLnYxLkFwcGxlQ29uZmlnEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYAyABKAUSFAoMc2lnbl91cF9vcGVuGAQgASgIEiIKBXRoZW1lGAUgASgLMhMubW90aC5hdXRoLnYxLlRoZW1lEiAKBGNvcHkYBiABKAsyEi5tb3RoLmF1dGgudjEuQ29weTJyCg1Db25maWdTZXJ2aWNlEmEKEEdldFByb2plY3RDb25maWcSJS5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QaJi5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlQjVaM2dpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hdXRoL3YxO2F1dGh2MWIGcHJvdG8z");
+  fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgiPwoKUHVzaENvbmZpZxIPCgdlbmFibGVkGAEgASgIEiAKGHdlYnB1c2hfdmFwaWRfcHVibGljX2tleRgCIAEoCSK2AgoFVGhlbWUSEwoLcmV2aXNpb25faWQYASABKAkSKQoGY29sb3JzGAIgASgLMhkubW90aC5hdXRoLnYxLlRoZW1lQ29sb3JzEi4KC2RhcmtfY29sb3JzGAMgASgLMhkubW90aC5hdXRoLnYxLlRoZW1lQ29sb3JzEhMKC2ZvbnRfZmFtaWx5GAQgASgJEhAKCGZvbnRfdXJsGAUgASgJEhIKCmZvbnRfc2NhbGUYBiABKAESFAoMc3BhY2luZ191bml0GAcgASgFEhUKDWNvcm5lcl9yYWRpdXMYCCABKAUSFgoObG9nb19saWdodF91cmwYCSABKAkSFQoNbG9nb19kYXJrX3VybBgKIAEoCRIRCgl0ZXJtc191cmwYCyABKAkSEwoLcHJpdmFjeV91cmwYDCABKAkiowEKC1RoZW1lQ29sb3JzEg8KB3ByaW1hcnkYASABKAkSEgoKb25fcHJpbWFyeRgCIAEoCRISCgpiYWNrZ3JvdW5kGAMgASgJEhUKDW9uX2JhY2tncm91bmQYBCABKAkSDwoHc3VyZmFjZRgFIAEoCRISCgpvbl9zdXJmYWNlGAYgASgJEg0KBWVycm9yGAcgASgJEhAKCG9uX2Vycm9yGAggASgJIpIBCgRDb3B5EhUKDWNvcHlfcmV2aXNpb24YASABKAkSDgoGbG9jYWxlGAIgASgJEjIKCG1lc3NhZ2VzGAMgAygLMiAubW90aC5hdXRoLnYxLkNvcHkuTWVzc2FnZXNFbnRyeRovCg1NZXNzYWdlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiVAoXR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QSHAoUa25vd25fdGhlbWVfcmV2aXNpb24YASABKAkSGwoTa25vd25fY29weV9yZXZpc2lvbhgCIAEoCSKRAgoYR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlEioKBmdvb2dsZRgBIAEoCzIaLm1vdGguYXV0aC52MS5Hb29nbGVDb25maWcSKAoFYXBwbGUYAiABKAsyGS5tb3RoLmF1dGgudjEuQXBwbGVDb25maWcSGwoTcGFzc3dvcmRfbWluX2xlbmd0aBgDIAEoBRIUCgxzaWduX3VwX29wZW4YBCABKAgSIgoFdGhlbWUYBSABKAsyEy5tb3RoLmF1dGgudjEuVGhlbWUSIAoEY29weRgGIAEoCzISLm1vdGguYXV0aC52MS5Db3B5EiYKBHB1c2gYByABKAsyGC5tb3RoLmF1dGgudjEuUHVzaENvbmZpZzJyCg1Db25maWdTZXJ2aWNlEmEKEEdldFByb2plY3RDb25maWcSJS5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QaJi5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlQjVaM2dpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hdXRoL3YxO2F1dGh2MWIGcHJvdG8z");
 
 /**
  * GoogleConfig is the public part of a project's Sign in with Google
@@ -69,6 +69,40 @@ export type AppleConfig = Message<"moth.auth.v1.AppleConfig"> & {
  */
 export const AppleConfigSchema: GenMessage<AppleConfig> = /*@__PURE__*/
   messageDesc(file_moth_auth_v1_config, 1);
+
+/**
+ * PushConfig is the public part of a project's push-notification
+ * configuration (milestone 20): everything the SDK needs to register the
+ * device with moth's push registry. Public values only — the Web Push VAPID
+ * public key is designed to be embedded in clients; the matching private key
+ * stays with the developer's sender and never touches moth.
+ *
+ * @generated from message moth.auth.v1.PushConfig
+ */
+export type PushConfig = Message<"moth.auth.v1.PushConfig"> & {
+  /**
+   * Whether the project accepts device registrations (moth.push.v1).
+   *
+   * @generated from field: bool enabled = 1;
+   */
+  enabled: boolean;
+
+  /**
+   * VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+   * passes as `applicationServerKey` when subscribing; empty when the
+   * project does not use Web Push.
+   *
+   * @generated from field: string webpush_vapid_public_key = 2;
+   */
+  webpushVapidPublicKey: string;
+};
+
+/**
+ * Describes the message moth.auth.v1.PushConfig.
+ * Use `create(PushConfigSchema)` to create a new message.
+ */
+export const PushConfigSchema: GenMessage<PushConfig> = /*@__PURE__*/
+  messageDesc(file_moth_auth_v1_config, 2);
 
 /**
  * Theme is the public, fully resolved form of the project's design system,
@@ -169,7 +203,7 @@ export type Theme = Message<"moth.auth.v1.Theme"> & {
  * Use `create(ThemeSchema)` to create a new message.
  */
 export const ThemeSchema: GenMessage<Theme> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 2);
+  messageDesc(file_moth_auth_v1_config, 3);
 
 /**
  * ThemeColors is a complete palette: each color role and its "on"
@@ -225,7 +259,7 @@ export type ThemeColors = Message<"moth.auth.v1.ThemeColors"> & {
  * Use `create(ThemeColorsSchema)` to create a new message.
  */
 export const ThemeColorsSchema: GenMessage<ThemeColors> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 3);
+  messageDesc(file_moth_auth_v1_config, 4);
 
 /**
  * Copy is the resolved, localized copy for the negotiated locale: the message
@@ -271,7 +305,7 @@ export type Copy = Message<"moth.auth.v1.Copy"> & {
  * Use `create(CopySchema)` to create a new message.
  */
 export const CopySchema: GenMessage<Copy> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 4);
+  messageDesc(file_moth_auth_v1_config, 5);
 
 /**
  * @generated from message moth.auth.v1.GetProjectConfigRequest
@@ -308,7 +342,7 @@ export type GetProjectConfigRequest = Message<"moth.auth.v1.GetProjectConfigRequ
  * Use `create(GetProjectConfigRequestSchema)` to create a new message.
  */
 export const GetProjectConfigRequestSchema: GenMessage<GetProjectConfigRequest> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 5);
+  messageDesc(file_moth_auth_v1_config, 6);
 
 /**
  * @generated from message moth.auth.v1.GetProjectConfigResponse
@@ -358,6 +392,14 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
    * @generated from field: moth.auth.v1.Copy copy = 6;
    */
   copy?: Copy | undefined;
+
+  /**
+   * The project's public push configuration. Always present; enabled=false
+   * when the project never configured push.
+   *
+   * @generated from field: moth.auth.v1.PushConfig push = 7;
+   */
+  push?: PushConfig | undefined;
 };
 
 /**
@@ -365,7 +407,7 @@ export type GetProjectConfigResponse = Message<"moth.auth.v1.GetProjectConfigRes
  * Use `create(GetProjectConfigResponseSchema)` to create a new message.
  */
 export const GetProjectConfigResponseSchema: GenMessage<GetProjectConfigResponse> = /*@__PURE__*/
-  messageDesc(file_moth_auth_v1_config, 6);
+  messageDesc(file_moth_auth_v1_config, 7);
 
 /**
  * ConfigService exposes a project's public, non-secret configuration to the

@@ -39,6 +39,7 @@ type pubPackageSpec struct {
 var pubPackages = []pubPackageSpec{
 	{name: "moth_auth", dir: "flutter", versionDart: true},
 	{name: "moth_billing", dir: "flutter_billing", mothAuthDep: true},
+	{name: "moth_push", dir: "flutter_push", mothAuthDep: true},
 }
 
 // pubContentType is the media type of the pub hosted repository API v2.

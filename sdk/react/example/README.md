@@ -4,7 +4,10 @@ A tiny Vite app against a local moth instance: login-gated home (user info,
 sign out), a call to the sample backend (`scripts/example_backend` at the
 repo root, which verifies the moth JWT against the project JWKS), and a
 "Pro area" page behind `<MothGate entitlement="pro">` demonstrating
-paywall → Stripe test-mode Checkout → unlock.
+paywall → Stripe test-mode Checkout → unlock. The home page also carries a
+Web Push toggle (`useMothPush()` + the minimal `public/sw.js` from the SDK
+README) — enable push with a VAPID key in the admin's Settings tab and the
+browser shows up under the user's push devices in the admin.
 
 ```sh
 # 1. a moth instance with a project (see the repo README)

@@ -144,6 +144,56 @@ instant on launch. Apps with store needs beyond auto-renewing
 subscriptions implement `moth_auth`'s `MothBillingAdapter` interface
 themselves instead of depending on `moth_billing`.
 
+## 7. Push notifications (optional)
+
+moth registers devices; **your server sends**. With push registration
+enabled in the project's Settings tab, add `moth_push` — moth's
+first-party push plugin (APNs on iOS, FCM on Android), served from the
+same `/pub` at the same version — and pass its adapter:
+
+```yaml
+dependencies:
+  moth_push:
+    hosted: {{.Endpoint}}/pub
+    version: {{.SDKVersion}}
+```
+
+```dart
+import 'package:moth_push/moth_push.dart';
+
+MothApp(
+  config: MothConfig(
+    endpoint: Uri.parse('{{.Endpoint}}'),
+    publishableKey: '{{.PublishableKey}}',
+  ),
+  pushAdapter: MothNativePush(),
+  child: const MyApp(),
+);
+```
+
+Wiring the adapter is the whole opt-in: while signed in the SDK registers
+the device's push credential on every launch and token rotation, and
+unregisters on sign-out — non-fatally, auth never blocks on push. The OS
+permission prompt only ever appears from an explicit app call:
+
+```dart
+final permission = await MothScope.of(context).requestPushPermission();
+MothScope.of(context).pushStatus; // available / permission / registered
+```
+
+Platform setup: iOS needs the Push Notifications capability; Android FCM
+needs the app's own Firebase config (`google-services.json` +
+`com.google.gms.google-services` Gradle plugin) — the one piece of setup
+moth cannot absorb; a missing config surfaces as a
+`firebase-not-initialized` debug log, never an auth failure. Apps with
+their own push stack implement `moth_auth`'s `MothPushAdapter` interface
+instead of depending on `moth_push`.
+
+Sending is the backend's job: list a user's active devices with
+`moth.server.v1.PushService/ListUserPushDevices` (secret key), deliver via
+APNs/FCM/Web Push directly, and report dead credentials back with
+`RevokePushDevice`.
+
 ## Local development
 
 - `http://` endpoints work (e.g. `http://localhost:8080`). Android

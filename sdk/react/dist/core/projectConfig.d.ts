@@ -8,6 +8,7 @@ import type { MothTheme } from './theme.js';
 export interface MothProjectConfig {
     google: MothGoogleConfig;
     apple: MothAppleConfig;
+    push: MothPushConfig;
     /** Minimum accepted password length. */
     passwordMinLength: number;
     /** Whether the public sign-up RPC is open. */
@@ -37,4 +38,15 @@ export interface MothGoogleConfig {
 /** Public part of the project's Sign in with Apple configuration. */
 export interface MothAppleConfig {
     enabled: boolean;
+}
+/**
+ * Public part of the project's push configuration. The VAPID *public* key is
+ * a public value (it goes into `PushManager.subscribe`); the private half
+ * never leaves the developer's sending backend.
+ */
+export interface MothPushConfig {
+    /** Whether the project accepts device registrations (moth.push.v1). */
+    enabled: boolean;
+    /** The Web Push VAPID public key (base64url), when configured. */
+    webpushVapidPublicKey?: string;
 }

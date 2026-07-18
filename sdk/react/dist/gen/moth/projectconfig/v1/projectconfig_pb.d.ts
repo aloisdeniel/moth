@@ -296,6 +296,42 @@ export type StoredPaywall = Message<"moth.projectconfig.v1.StoredPaywall"> & {
  */
 export declare const StoredPaywallSchema: GenMessage<StoredPaywall>;
 /**
+ * StoredPush is one project's push settings as persisted on the project row
+ * (milestone 20). Plain config, no secrets: only the Web Push VAPID PUBLIC
+ * key ever lives here — the private key stays with the developer's sender
+ * and never touches moth. Delivered to clients through the public
+ * moth.auth.v1.GetProjectConfig response.
+ *
+ * @generated from message moth.projectconfig.v1.StoredPush
+ */
+export type StoredPush = Message<"moth.projectconfig.v1.StoredPush"> & {
+    /**
+     * version is the document schema version (internal/push.SchemaVersion).
+     *
+     * @generated from field: int32 version = 1;
+     */
+    version: number;
+    /**
+     * Master switch for the push registry; when false the client-facing
+     * moth.push.v1 RPCs refuse registrations.
+     *
+     * @generated from field: bool enabled = 2;
+     */
+    enabled: boolean;
+    /**
+     * VAPID public key (base64url, uncompressed P-256 point) browser clients
+     * subscribe with; empty when the project does not use Web Push.
+     *
+     * @generated from field: string webpush_vapid_public_key = 3;
+     */
+    webpushVapidPublicKey: string;
+};
+/**
+ * Describes the message moth.projectconfig.v1.StoredPush.
+ * Use `create(StoredPushSchema)` to create a new message.
+ */
+export declare const StoredPushSchema: GenMessage<StoredPush>;
+/**
  * CopyLocaleMessages is one locale's copy overrides: catalog message key
  * (e.g. "sign_in.title") to the operator-customized string.
  *

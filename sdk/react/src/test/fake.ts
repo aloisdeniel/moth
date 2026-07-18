@@ -32,6 +32,10 @@ import {
   type Offering,
   type Paywall,
 } from '../gen/moth/billing/v1/billing_pb.js'
+import {
+  PushService,
+  type RegisterDeviceRequest,
+} from '../gen/moth/push/v1/push_pb.js'
 import { MothClient, type MothClientOptions } from '../core/client.js'
 import type { MothConfig } from '../core/config.js'
 import { encodeErrorInfo, mothErrorDomain } from '../core/errors.js'
@@ -107,6 +111,10 @@ export interface FakeMoth {
     lastCheckoutRequest: { productIdentifier: string; successUrl: string; cancelUrl: string } | null
     /** Refresh tokens that are still valid. */
     validRefreshTokens: Set<string>
+    /** The last RegisterDevice request, verbatim. */
+    lastRegisterDevice: RegisterDeviceRequest | null
+    /** The device id of the last UnregisterDevice request. */
+    lastUnregisterDeviceId: string | null
   }
   issueTokens(): TokenPair
 }
@@ -180,6 +188,8 @@ export function fakeMoth(options: FakeMothOptions = {}): FakeMoth {
       portalUrl: 'https://billing.stripe.test/portal',
       lastCheckoutRequest: null,
       validRefreshTokens: new Set(),
+      lastRegisterDevice: null,
+      lastUnregisterDeviceId: null,
     },
     issueTokens,
   }
@@ -366,6 +376,26 @@ export function fakeMoth(options: FakeMothOptions = {}): FakeMoth {
       createBillingPortalSession(_req, ctx) {
         track('createBillingPortalSession', ctx.requestHeader)
         return { url: fake.state.portalUrl }
+      },
+    })
+    service(PushService, {
+      registerDevice(req, ctx) {
+        track('registerDevice', ctx.requestHeader)
+        fake.state.lastRegisterDevice = req
+        return {
+          device: {
+            id: 'pd-1',
+            target: req.target,
+            deviceId: req.deviceId,
+            permission: req.permission,
+            metadata: req.metadata,
+          },
+        }
+      },
+      unregisterDevice(req, ctx) {
+        track('unregisterDevice', ctx.requestHeader)
+        fake.state.lastUnregisterDeviceId = req.deviceId
+        return {}
       },
     })
   })

@@ -255,6 +255,46 @@ MothApp(
 
   const cliBilling = `moth setup billing --project ${project.slug}`;
 
+  const pubspecPush = `dependencies:
+  moth_push:
+    hosted: ${base}/pub
+    version: ${versionConstraint}`;
+
+  const pushDart = `import 'package:moth_push/moth_push.dart';
+
+MothApp(
+  config: MothConfig(
+    endpoint: Uri.parse('${base}'),
+    publishableKey: '${project.publishableKey}',
+  ),
+  // moth's native push registration (APNs on iOS, FCM on Android): while a
+  // user is signed in the SDK keeps this project's device registry current.
+  // The OS permission prompt only appears when your app calls
+  // MothScope.of(context).requestPushPermission().
+  pushAdapter: MothNativePush(),
+  child: const MyApp(),
+);`;
+
+  const pushReact = `import { useMothPush } from '@moth/react'
+
+// Once at startup — the app owns its service worker (display and click
+// handling); the SDK only manages the subscription. See the SDK README
+// for a minimal sw.js.
+navigator.serviceWorker.register('/sw.js')
+
+function PushToggle() {
+  const { status, subscribe, unsubscribe } = useMothPush()
+  if (status === 'unavailable' || status === 'unsupported') return null
+  if (status === 'denied') return <p>Notifications are blocked in the browser.</p>
+  return status === 'subscribed' ? (
+    <button onClick={() => void unsubscribe()}>Disable notifications</button>
+  ) : (
+    <button onClick={() => void subscribe()}>Enable notifications</button>
+  )
+}`;
+
+  const vapidGen = `npx web-push generate-vapid-keys`;
+
   return (
     <div className="stack-32" style={{ maxWidth: 720 }}>
       <div className="seg" role="group" aria-label="Client SDK">
@@ -463,6 +503,54 @@ MothApp(
         )}
       </section>
 
+      <section className="stack-12">
+        <h2>7 · Push notifications (optional)</h2>
+        <p className="caption">
+          moth registers devices; your backend sends. Enable push registration
+          under the <span className="body-strong">Settings</span> tab, and
+          every signed-in device registers its push credential (APNs, FCM or
+          Web Push) with an honest permission state. Your server reads the
+          registry through{" "}
+          <span className="inline-code">
+            moth.server.v1.PushService/ListUserPushDevices
+          </span>{" "}
+          and delivers with the push services' own APIs — moth never sends,
+          and sender credentials never touch it.
+        </p>
+        {platform === "flutter" ? (
+          <>
+            <p className="caption">
+              Add <span className="inline-code">moth_push</span> — moth's
+              first-party APNs / FCM plugin, served from this instance's{" "}
+              <span className="inline-code">/pub</span> at the same version as{" "}
+              <span className="inline-code">moth_auth</span> — and pass its
+              adapter. Registration is automatic while signed in; the OS
+              permission prompt stays an explicit app call.
+            </p>
+            <p className="caption body-strong">pubspec.yaml</p>
+            <CodeBlock code={pubspecPush} />
+            <p className="caption body-strong">lib/main.dart</p>
+            <CodeBlock code={pushDart} />
+            <p className="caption">
+              On Android, FCM needs your app's own Firebase config
+              (google-services.json) — the one piece of setup moth cannot
+              absorb. iOS needs the Push Notifications capability in Xcode.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="caption">
+              Web Push additionally needs a VAPID keypair — generate one,
+              paste the <span className="body-strong">public</span> key under
+              the <span className="body-strong">Settings</span> tab and keep
+              the private key in your sender (it never touches moth):
+            </p>
+            <CodeBlock code={vapidGen} />
+            <p className="caption body-strong">src/App.tsx</p>
+            <CodeBlock code={pushReact} />
+          </>
+        )}
+      </section>
     </div>
   );
 }

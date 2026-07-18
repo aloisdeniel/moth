@@ -13,6 +13,7 @@ export { customClaimsOf, decodeJwtPayload } from './core/jwt.js';
 export { MothCustomerInfo, subscriptionStatusIsActive, } from './core/customerInfo.js';
 export { MothOffering, productHasTrial, } from './core/offering.js';
 export { checkoutReturnParam } from './core/purchase.js';
+export { MothPushController } from './core/pushController.js';
 export { contrastRatio, deriveDarkColors, fallbackTheme, themeCssVars, themeFromProto, } from './core/theme.js';
 export { MothCopy } from './core/copy.js';
 export { bundledCopy, mothBundledLocales } from './core/i18n/bundledCopy.js';
@@ -23,7 +24,7 @@ export { loadPaywall } from './core/paywallLoader.js';
 export { mapConnectError, mothErrorDomain, MothBillingNotConfiguredError, MothEmailAlreadyExistsError, MothEmailDomainNotAllowedError, MothEmailNotVerifiedError, MothError, MothInvalidAccessTokenError, MothInvalidCredentialsError, MothInvalidEmailError, MothInvalidOAuthCodeError, MothInvalidProviderTokenError, MothInvalidReceiptError, MothInvalidRedirectError, MothInvalidRefreshTokenError, MothInvalidTokenError, MothLastLoginMethodError, MothNetworkError, MothNoBillingHistoryError, MothProductNotOnStoreError, MothProviderDisabledError, MothRateLimitedError, MothRefreshTokenReusedError, MothSignUpClosedError, MothStoreUnavailableError, MothUserDisabledError, MothWeakPasswordError, } from './core/errors.js';
 // React layer.
 export { MothProvider, MothSurface, useMothContext, useMothCopy, useMothTheme, } from './react/context.js';
-export { useMoth, useMothCustomerInfo, useMothEntitlement, useMothUser, } from './react/hooks.js';
+export { useMoth, useMothCustomerInfo, useMothEntitlement, useMothPush, useMothUser, } from './react/hooks.js';
 export { MothGate } from './react/MothGate.js';
 export { MothLoginScreen, } from './react/MothLoginScreen.js';
 export { MothPaywallHeader, MothPaywallScreen, MothPurchaseButton, MothTierCard, priceLabel, } from './react/MothPaywallScreen.js';

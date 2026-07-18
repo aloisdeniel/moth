@@ -12,6 +12,14 @@ import { App } from './App.js'
 const endpoint = import.meta.env.VITE_MOTH_ENDPOINT ?? 'http://localhost:8080'
 const publishableKey = import.meta.env.VITE_MOTH_PUBLISHABLE_KEY ?? ''
 
+// The app owns its service worker (public/sw.js — display and click
+// handling); the SDK subscribes its PushManager when the user opts in via
+// useMothPush().subscribe(). Registering it once at startup also lets the
+// launch sync re-register an existing subscription.
+if ('serviceWorker' in navigator) {
+  void navigator.serviceWorker.register('/sw.js')
+}
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MothProvider

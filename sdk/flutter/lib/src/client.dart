@@ -16,6 +16,7 @@ import 'exceptions.dart';
 import 'gen/moth/auth/v1/auth.pbgrpc.dart' as pb;
 import 'gen/moth/auth/v1/config.pbgrpc.dart' as pbconfig;
 import 'gen/moth/billing/v1/billing.pbgrpc.dart' as pbbilling;
+import 'gen/moth/push/v1/push.pbgrpc.dart' as pbpush;
 import 'jwt.dart';
 import 'locale.dart';
 import 'offering.dart';
@@ -23,6 +24,7 @@ import 'platform/platform_stub.dart'
     if (dart.library.io) 'platform/platform_io.dart'
     if (dart.library.js_interop) 'platform/platform_web.dart';
 import 'project_config.dart';
+import 'push.dart';
 import 'theme.dart';
 import 'token_store.dart';
 import 'transport/grpc.dart' show GrpcError;
@@ -98,6 +100,11 @@ class MothClient {
       options: options,
       interceptors: interceptors,
     );
+    _push = pbpush.PushServiceClient(
+      _channel,
+      options: options,
+      interceptors: interceptors,
+    );
   }
 
   final MothConfig config;
@@ -111,6 +118,7 @@ class MothClient {
   late final pb.AuthServiceClient _auth;
   late final pbconfig.ConfigServiceClient _projectConfig;
   late final pbbilling.BillingServiceClient _billing;
+  late final pbpush.PushServiceClient _push;
 
   MothAuthState _state = const MothAuthLoading();
   final _states = StreamController<MothAuthState>.broadcast();
@@ -119,6 +127,8 @@ class MothClient {
 
   MothCustomerInfo _customerInfo = const MothCustomerInfo.free();
   final _customerInfos = StreamController<MothCustomerInfo>.broadcast();
+
+  MothPushConfig? _pushConfig;
 
   /// Bumped on every sign-out so an in-flight refresh that completes
   /// afterwards can tell the session it started from is gone and must not
@@ -497,6 +507,13 @@ class MothClient {
       ),
     );
     String? blank(String s) => s.isEmpty ? null : s;
+    // Cache the push section for the registration flow: enabled gates
+    // RegisterDevice, the VAPID public key is the Web Push subscribe input.
+    final push = MothPushConfig(
+      enabled: resp.push.enabled,
+      webpushVapidPublicKey: blank(resp.push.webpushVapidPublicKey),
+    );
+    _pushConfig = push;
     return MothProjectConfig(
       google: MothGoogleConfig(
         enabled: resp.google.enabled,
@@ -507,6 +524,7 @@ class MothClient {
       apple: MothAppleConfig(enabled: resp.apple.enabled),
       passwordMinLength: resp.passwordMinLength,
       signUpOpen: resp.signUpOpen,
+      push: push,
       theme: resp.hasTheme() ? MothTheme.fromProto(resp.theme) : null,
       copy: resp.hasCopy() ? _copyUpdate(resp.copy) : null,
     );
@@ -603,6 +621,63 @@ class MothClient {
     );
     return _applyCustomerInfo(resp.customerInfo);
   });
+
+  // ------------------------------------------------------------------ push
+
+  /// The push section of the last fetched project config, or null before the
+  /// first [getProjectConfig] of this client's lifetime.
+  MothPushConfig? get currentPushConfig => _pushConfig;
+
+  /// The project's public push configuration, cached from the last
+  /// [getProjectConfig] (fetched on demand otherwise). `enabled` gates the
+  /// registration flow; the VAPID public key is for Web Push subscribes.
+  /// Refreshed whenever any caller fetches the project config — a flipped
+  /// switch is picked up on the next launch at the latest.
+  Future<MothPushConfig> getPushConfig() async {
+    final cached = _pushConfig;
+    if (cached != null) return cached;
+    await getProjectConfig();
+    return _pushConfig ?? const MothPushConfig(enabled: false);
+  }
+
+  /// Upserts the signed-in user's push registration for this installation.
+  /// Idempotent by design — call it on every launch/rotation/permission
+  /// change without bookkeeping; the newest owner of a token wins. Prefer
+  /// wiring a [MothPushAdapter] into [MothApp], which calls this
+  /// automatically at the right moments. Throws [StateError] when signed
+  /// out.
+  Future<void> registerPushDevice({
+    required MothPushTarget target,
+    required String token,
+    required String deviceId,
+    MothPushPermission permission = MothPushPermission.unknown,
+    MothPushDeviceMetadata metadata = const MothPushDeviceMetadata(),
+  }) => _authed(
+    () => _push.registerDevice(
+      pbpush.RegisterDeviceRequest(
+        target: target.proto,
+        token: token,
+        deviceId: deviceId,
+        permission: permission.proto,
+        metadata: pbpush.PushDeviceMetadata(
+          platform: metadata.platform,
+          model: metadata.model,
+          osVersion: metadata.osVersion,
+          appVersion: metadata.appVersion,
+          locale: metadata.locale,
+        ),
+      ),
+    ),
+  );
+
+  /// Revokes the signed-in user's registration for [deviceId]
+  /// (`signed_out`). Unknown or already-revoked ids succeed — safe to
+  /// repeat. Called by the SDK's sign-out flow before the session drops.
+  Future<void> unregisterPushDevice({required String deviceId}) => _authed(
+    () => _push.unregisterDevice(
+      pbpush.UnregisterDeviceRequest(deviceId: deviceId),
+    ),
+  );
 
   /// Shuts down the channel and closes [authStateChanges].
   Future<void> dispose() async {

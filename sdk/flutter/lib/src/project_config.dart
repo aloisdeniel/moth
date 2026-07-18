@@ -10,6 +10,7 @@ class MothProjectConfig {
     required this.apple,
     required this.passwordMinLength,
     required this.signUpOpen,
+    this.push = const MothPushConfig(enabled: false),
     this.theme,
     this.copy,
   });
@@ -22,6 +23,10 @@ class MothProjectConfig {
 
   /// Whether the public sign-up RPC is open.
   final bool signUpOpen;
+
+  /// The project's public push configuration; disabled when the project
+  /// never configured push (or the server predates it).
+  final MothPushConfig push;
 
   /// The project's design system, or null when the server confirmed the
   /// `knownThemeRevision` passed to `getProjectConfig` is still current
@@ -56,4 +61,19 @@ class MothAppleConfig {
   const MothAppleConfig({required this.enabled});
 
   final bool enabled;
+}
+
+/// Public part of the project's push-notification configuration
+/// (`moth.push.v1`). Public values only — the Web Push VAPID **private** key
+/// stays with the developer's sender and never touches moth.
+class MothPushConfig {
+  const MothPushConfig({required this.enabled, this.webpushVapidPublicKey});
+
+  /// Whether the project accepts device registrations; the SDK's push
+  /// machinery gates on this before ever calling `RegisterDevice`.
+  final bool enabled;
+
+  /// The VAPID public key browsers need to subscribe for Web Push, or null
+  /// when the project does not use Web Push. Unused on io platforms.
+  final String? webpushVapidPublicKey;
 }

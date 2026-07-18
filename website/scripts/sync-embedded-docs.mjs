@@ -40,6 +40,7 @@ const pages = [
   ['guides/apple', join(contentRoot, 'guides', 'apple.md')],
   ['guides/theming', join(contentRoot, 'guides', 'theming.md')],
   ['guides/monetization', join(contentRoot, 'guides', 'monetization.md')],
+  ['guides/push', join(contentRoot, 'guides', 'push.md')],
   ['guides/analytics', join(contentRoot, 'guides', 'analytics.md')],
   ['guides/backups', join(contentRoot, 'guides', 'backups.md')],
   ['guides/migration', join(contentRoot, 'guides', 'migration.md')],

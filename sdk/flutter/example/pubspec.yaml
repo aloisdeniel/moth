@@ -28,6 +28,10 @@ dependencies:
   # served by its moth instance, like moth_auth above.
   moth_billing:
     path: ../../flutter_billing
+  # moth's first-party native push registration (APNs / FCM) — same deal:
+  # a dependency of the app, served by the moth instance in a real app.
+  moth_push:
+    path: ../../flutter_push
 
 dev_dependencies:
   flutter_test:

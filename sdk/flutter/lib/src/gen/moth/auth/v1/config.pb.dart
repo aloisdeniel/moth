@@ -166,6 +166,81 @@ class AppleConfig extends $pb.GeneratedMessage {
   void clearEnabled() => $_clearField(1);
 }
 
+/// PushConfig is the public part of a project's push-notification
+/// configuration (milestone 20): everything the SDK needs to register the
+/// device with moth's push registry. Public values only — the Web Push VAPID
+/// public key is designed to be embedded in clients; the matching private key
+/// stays with the developer's sender and never touches moth.
+class PushConfig extends $pb.GeneratedMessage {
+  factory PushConfig({
+    $core.bool? enabled,
+    $core.String? webpushVapidPublicKey,
+  }) {
+    final result = create();
+    if (enabled != null) result.enabled = enabled;
+    if (webpushVapidPublicKey != null)
+      result.webpushVapidPublicKey = webpushVapidPublicKey;
+    return result;
+  }
+
+  PushConfig._();
+
+  factory PushConfig.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory PushConfig.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'PushConfig',
+      package: const $pb.PackageName(_omitMessageNames ? '' : 'moth.auth.v1'),
+      createEmptyInstance: create)
+    ..aOB(1, _omitFieldNames ? '' : 'enabled')
+    ..aOS(2, _omitFieldNames ? '' : 'webpushVapidPublicKey')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PushConfig clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  PushConfig copyWith(void Function(PushConfig) updates) =>
+      super.copyWith((message) => updates(message as PushConfig)) as PushConfig;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static PushConfig create() => PushConfig._();
+  @$core.override
+  PushConfig createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static PushConfig getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<PushConfig>(create);
+  static PushConfig? _defaultInstance;
+
+  /// Whether the project accepts device registrations (moth.push.v1).
+  @$pb.TagNumber(1)
+  $core.bool get enabled => $_getBF(0);
+  @$pb.TagNumber(1)
+  set enabled($core.bool value) => $_setBool(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasEnabled() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearEnabled() => $_clearField(1);
+
+  /// VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+  /// passes as `applicationServerKey` when subscribing; empty when the
+  /// project does not use Web Push.
+  @$pb.TagNumber(2)
+  $core.String get webpushVapidPublicKey => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set webpushVapidPublicKey($core.String value) => $_setString(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasWebpushVapidPublicKey() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearWebpushVapidPublicKey() => $_clearField(2);
+}
+
 /// Theme is the public, fully resolved form of the project's design system,
 /// ready to render: dark colors are already derived server-side, asset
 /// references are absolute URLs. Binary assets (logo images, font files)
@@ -695,6 +770,7 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     $core.bool? signUpOpen,
     Theme? theme,
     Copy? copy,
+    PushConfig? push,
   }) {
     final result = create();
     if (google != null) result.google = google;
@@ -703,6 +779,7 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     if (signUpOpen != null) result.signUpOpen = signUpOpen;
     if (theme != null) result.theme = theme;
     if (copy != null) result.copy = copy;
+    if (push != null) result.push = push;
     return result;
   }
 
@@ -727,6 +804,8 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
     ..aOB(4, _omitFieldNames ? '' : 'signUpOpen')
     ..aOM<Theme>(5, _omitFieldNames ? '' : 'theme', subBuilder: Theme.create)
     ..aOM<Copy>(6, _omitFieldNames ? '' : 'copy', subBuilder: Copy.create)
+    ..aOM<PushConfig>(7, _omitFieldNames ? '' : 'push',
+        subBuilder: PushConfig.create)
     ..hasRequiredFields = false;
 
   @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
@@ -821,6 +900,19 @@ class GetProjectConfigResponse extends $pb.GeneratedMessage {
   void clearCopy() => $_clearField(6);
   @$pb.TagNumber(6)
   Copy ensureCopy() => $_ensure(5);
+
+  /// The project's public push configuration. Always present; enabled=false
+  /// when the project never configured push.
+  @$pb.TagNumber(7)
+  PushConfig get push => $_getN(6);
+  @$pb.TagNumber(7)
+  set push(PushConfig value) => $_setField(7, value);
+  @$pb.TagNumber(7)
+  $core.bool hasPush() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearPush() => $_clearField(7);
+  @$pb.TagNumber(7)
+  PushConfig ensurePush() => $_ensure(6);
 }
 
 const $core.bool _omitFieldNames =

@@ -1,4 +1,4 @@
-# Local development only: moth_billing's pubspec pins
+# Local development only: moth_billing's and moth_push's pubspecs pin
 # moth_auth to a hosted /pub source; override it to the sibling source tree
 # so `pub get` resolves without a running moth instance.
 dependency_overrides:

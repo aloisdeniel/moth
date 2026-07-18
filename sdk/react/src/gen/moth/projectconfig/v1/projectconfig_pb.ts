@@ -20,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/projectconfig/v1/projectconfig.proto.
  */
 export const file_moth_projectconfig_v1_projectconfig: GenFile = /*@__PURE__*/
-  fileDesc("Ciltb3RoL3Byb2plY3Rjb25maWcvdjEvcHJvamVjdGNvbmZpZy5wcm90bxIVbW90aC5wcm9qZWN0Y29uZmlnLnYxIjQKCkxlZ2FsTGlua3MSEQoJdGVybXNfdXJsGAEgASgJEhMKC3ByaXZhY3lfdXJsGAIgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKrAQoTVGhlbWVDb2xvck92ZXJyaWRlcxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSI1Cg9UaGVtZVR5cG9ncmFwaHkSEwoLZm9udF9mYW1pbHkYASABKAkSDQoFc2NhbGUYAiABKAEiHAoMVGhlbWVTcGFjaW5nEgwKBHVuaXQYASABKAUiIwoKVGhlbWVTaGFwZRIVCg1jb3JuZXJfcmFkaXVzGAEgASgFIigKCVRoZW1lTG9nbxINCgVsaWdodBgBIAEoCRIMCgRkYXJrGAIgASgJIpkDCgtTdG9yZWRUaGVtZRIPCgd2ZXJzaW9uGAEgASgFEjIKBmNvbG9ycxgCIAEoCzIiLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9ycxI/CgtkYXJrX2NvbG9ycxgDIAEoCzIqLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9yT3ZlcnJpZGVzEjoKCnR5cG9ncmFwaHkYBCABKAsyJi5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVUeXBvZ3JhcGh5EjQKB3NwYWNpbmcYBSABKAsyIy5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVTcGFjaW5nEjAKBXNoYXBlGAYgASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLlRoZW1lU2hhcGUSLgoEbG9nbxgHIAEoCzIgLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUxvZ28SMAoFbGVnYWwYCCABKAsyIS5tb3RoLnByb2plY3Rjb25maWcudjEuTGVnYWxMaW5rcyLKAQoNU3RvcmVkUGF5d2FsbBIPCgd2ZXJzaW9uGAEgASgFEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEh4KFmhpZ2hsaWdodGVkX2lkZW50aWZpZXIYBiABKAkSDgoGbGF5b3V0GAcgASgJEjAKBWxlZ2FsGAggASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLkxlZ2FsTGlua3MikAEKEkNvcHlMb2NhbGVNZXNzYWdlcxJJCghtZXNzYWdlcxgBIAMoCzI3Lm1vdGgucHJvamVjdGNvbmZpZy52MS5Db3B5TG9jYWxlTWVzc2FnZXMuTWVzc2FnZXNFbnRyeRovCg1NZXNzYWdlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiqAEKClN0b3JlZENvcHkSPwoHbG9jYWxlcxgBIAMoCzIuLm1vdGgucHJvamVjdGNvbmZpZy52MS5TdG9yZWRDb3B5LkxvY2FsZXNFbnRyeRpZCgxMb2NhbGVzRW50cnkSCwoDa2V5GAEgASgJEjgKBXZhbHVlGAIgASgLMikubW90aC5wcm9qZWN0Y29uZmlnLnYxLkNvcHlMb2NhbGVNZXNzYWdlczoCOAEiXgoNQ2FjaGVFbnZlbG9wZRIPCgdwYXlsb2FkGAEgASgMEhAKCHJldmlzaW9uGAIgASgJEg4KBmxvY2FsZRgDIAEoCRIaChJmZXRjaGVkX2F0X3VuaXhfbXMYBCABKANCR1pFZ2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL3Byb2plY3Rjb25maWcvdjE7cHJvamVjdGNvbmZpZ3YxYgZwcm90bzM");
+  fileDesc("Ciltb3RoL3Byb2plY3Rjb25maWcvdjEvcHJvamVjdGNvbmZpZy5wcm90bxIVbW90aC5wcm9qZWN0Y29uZmlnLnYxIjQKCkxlZ2FsTGlua3MSEQoJdGVybXNfdXJsGAEgASgJEhMKC3ByaXZhY3lfdXJsGAIgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKrAQoTVGhlbWVDb2xvck92ZXJyaWRlcxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSI1Cg9UaGVtZVR5cG9ncmFwaHkSEwoLZm9udF9mYW1pbHkYASABKAkSDQoFc2NhbGUYAiABKAEiHAoMVGhlbWVTcGFjaW5nEgwKBHVuaXQYASABKAUiIwoKVGhlbWVTaGFwZRIVCg1jb3JuZXJfcmFkaXVzGAEgASgFIigKCVRoZW1lTG9nbxINCgVsaWdodBgBIAEoCRIMCgRkYXJrGAIgASgJIpkDCgtTdG9yZWRUaGVtZRIPCgd2ZXJzaW9uGAEgASgFEjIKBmNvbG9ycxgCIAEoCzIiLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9ycxI/CgtkYXJrX2NvbG9ycxgDIAEoCzIqLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9yT3ZlcnJpZGVzEjoKCnR5cG9ncmFwaHkYBCABKAsyJi5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVUeXBvZ3JhcGh5EjQKB3NwYWNpbmcYBSABKAsyIy5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVTcGFjaW5nEjAKBXNoYXBlGAYgASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLlRoZW1lU2hhcGUSLgoEbG9nbxgHIAEoCzIgLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUxvZ28SMAoFbGVnYWwYCCABKAsyIS5tb3RoLnByb2plY3Rjb25maWcudjEuTGVnYWxMaW5rcyLKAQoNU3RvcmVkUGF5d2FsbBIPCgd2ZXJzaW9uGAEgASgFEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEh4KFmhpZ2hsaWdodGVkX2lkZW50aWZpZXIYBiABKAkSDgoGbGF5b3V0GAcgASgJEjAKBWxlZ2FsGAggASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLkxlZ2FsTGlua3MiUAoKU3RvcmVkUHVzaBIPCgd2ZXJzaW9uGAEgASgFEg8KB2VuYWJsZWQYAiABKAgSIAoYd2VicHVzaF92YXBpZF9wdWJsaWNfa2V5GAMgASgJIpABChJDb3B5TG9jYWxlTWVzc2FnZXMSSQoIbWVzc2FnZXMYASADKAsyNy5tb3RoLnByb2plY3Rjb25maWcudjEuQ29weUxvY2FsZU1lc3NhZ2VzLk1lc3NhZ2VzRW50cnkaLwoNTWVzc2FnZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIqgBCgpTdG9yZWRDb3B5Ej8KB2xvY2FsZXMYASADKAsyLi5tb3RoLnByb2plY3Rjb25maWcudjEuU3RvcmVkQ29weS5Mb2NhbGVzRW50cnkaWQoMTG9jYWxlc0VudHJ5EgsKA2tleRgBIAEoCRI4CgV2YWx1ZRgCIAEoCzIpLm1vdGgucHJvamVjdGNvbmZpZy52MS5Db3B5TG9jYWxlTWVzc2FnZXM6AjgBIl4KDUNhY2hlRW52ZWxvcGUSDwoHcGF5bG9hZBgBIAEoDBIQCghyZXZpc2lvbhgCIAEoCRIOCgZsb2NhbGUYAyABKAkSGgoSZmV0Y2hlZF9hdF91bml4X21zGAQgASgDQkdaRWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9wcm9qZWN0Y29uZmlnL3YxO3Byb2plY3Rjb25maWd2MWIGcHJvdG8z");
 
 /**
  * LegalLinks are the optional legal URLs rendered near signup and on the
@@ -372,6 +372,47 @@ export const StoredPaywallSchema: GenMessage<StoredPaywall> = /*@__PURE__*/
   messageDesc(file_moth_projectconfig_v1_projectconfig, 8);
 
 /**
+ * StoredPush is one project's push settings as persisted on the project row
+ * (milestone 20). Plain config, no secrets: only the Web Push VAPID PUBLIC
+ * key ever lives here — the private key stays with the developer's sender
+ * and never touches moth. Delivered to clients through the public
+ * moth.auth.v1.GetProjectConfig response.
+ *
+ * @generated from message moth.projectconfig.v1.StoredPush
+ */
+export type StoredPush = Message<"moth.projectconfig.v1.StoredPush"> & {
+  /**
+   * version is the document schema version (internal/push.SchemaVersion).
+   *
+   * @generated from field: int32 version = 1;
+   */
+  version: number;
+
+  /**
+   * Master switch for the push registry; when false the client-facing
+   * moth.push.v1 RPCs refuse registrations.
+   *
+   * @generated from field: bool enabled = 2;
+   */
+  enabled: boolean;
+
+  /**
+   * VAPID public key (base64url, uncompressed P-256 point) browser clients
+   * subscribe with; empty when the project does not use Web Push.
+   *
+   * @generated from field: string webpush_vapid_public_key = 3;
+   */
+  webpushVapidPublicKey: string;
+};
+
+/**
+ * Describes the message moth.projectconfig.v1.StoredPush.
+ * Use `create(StoredPushSchema)` to create a new message.
+ */
+export const StoredPushSchema: GenMessage<StoredPush> = /*@__PURE__*/
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 9);
+
+/**
  * CopyLocaleMessages is one locale's copy overrides: catalog message key
  * (e.g. "sign_in.title") to the operator-customized string.
  *
@@ -389,7 +430,7 @@ export type CopyLocaleMessages = Message<"moth.projectconfig.v1.CopyLocaleMessag
  * Use `create(CopyLocaleMessagesSchema)` to create a new message.
  */
 export const CopyLocaleMessagesSchema: GenMessage<CopyLocaleMessages> = /*@__PURE__*/
-  messageDesc(file_moth_projectconfig_v1_projectconfig, 9);
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 10);
 
 /**
  * StoredCopy is one project's localization overrides as persisted on the
@@ -411,7 +452,7 @@ export type StoredCopy = Message<"moth.projectconfig.v1.StoredCopy"> & {
  * Use `create(StoredCopySchema)` to create a new message.
  */
 export const StoredCopySchema: GenMessage<StoredCopy> = /*@__PURE__*/
-  messageDesc(file_moth_projectconfig_v1_projectconfig, 10);
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 11);
 
 /**
  * CacheEnvelope wraps a config payload the Flutter SDK persists on device
@@ -461,5 +502,5 @@ export type CacheEnvelope = Message<"moth.projectconfig.v1.CacheEnvelope"> & {
  * Use `create(CacheEnvelopeSchema)` to create a new message.
  */
 export const CacheEnvelopeSchema: GenMessage<CacheEnvelope> = /*@__PURE__*/
-  messageDesc(file_moth_projectconfig_v1_projectconfig, 11);
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 12);
 

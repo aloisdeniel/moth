@@ -5,6 +5,8 @@ import '../client.dart';
 import '../customer_info.dart';
 import '../offering.dart';
 import '../purchase.dart';
+import '../push.dart';
+import '../push_controller.dart';
 import '../user.dart';
 import 'billing_adapter.dart';
 import 'oauth_adapter.dart';
@@ -32,6 +34,8 @@ class MothScope extends InheritedWidget {
     this.customerInfo = const MothCustomerInfo.free(),
     this.oauthAdapter,
     this.billingAdapter,
+    this.pushController,
+    this.pushStatus = MothPushStatus.unavailable,
     required super.child,
   });
 
@@ -55,6 +59,17 @@ class MothScope extends InheritedWidget {
   /// consumed by [purchase] / [restorePurchases] and [MothPaywallScreen].
   final MothBillingAdapter? billingAdapter;
 
+  /// The push registration machinery [MothApp] creates when given a
+  /// `pushAdapter`; null when no adapter is wired (push is then off).
+  /// Consumed by [requestPushPermission] and the sign-out flow.
+  final MothPushController? pushController;
+
+  /// The push machinery's state at the time of the last change, for
+  /// settings screens: unavailable (no adapter wired, or the project has
+  /// push disabled), the OS permission, and whether this installation's
+  /// registration reached the server.
+  final MothPushStatus pushStatus;
+
   /// The signed-in user, or null while loading / signed out.
   MothUser? get user => switch (state) {
     MothSignedIn(:final user) => user,
@@ -73,8 +88,16 @@ class MothScope extends InheritedWidget {
 
   /// Signs out (server-side revocation is best effort; the local session
   /// always ends). With [allDevices] every session of the user is revoked.
-  Future<void> signOut({bool allDevices = false}) =>
-      client.signOut(allDevices: allDevices);
+  ///
+  /// When a push adapter is wired, this installation's push registration is
+  /// revoked **before** the session drops (the RPC needs the still-live
+  /// Bearer token) — best effort, sign-out never blocks on push. Calling
+  /// `client.signOut` directly skips that revocation; the server's takeover
+  /// and staleness sweeps then reclaim the registration lazily.
+  Future<void> signOut({bool allDevices = false}) async {
+    await pushController?.unregisterForSignOut();
+    await client.signOut(allDevices: allDevices);
+  }
 
   /// Re-fetches the profile from the server; dependents rebuild with the
   /// fresh user.
@@ -87,12 +110,28 @@ class MothScope extends InheritedWidget {
   /// who only sign in with Google/Apple leave it empty and may get a typed
   /// error asking for a recent sign-in. [showMothDeleteAccountDialog]
   /// wraps this in a ready-made Material prompt.
-  Future<void> deleteAccount({String password = ''}) =>
-      client.deleteAccount(password: password);
+  Future<void> deleteAccount({String password = ''}) async {
+    // As in signOut: revoke the push registration while the session can
+    // still authenticate the call (best effort, never blocking).
+    await pushController?.unregisterForSignOut();
+    await client.deleteAccount(password: password);
+  }
 
   /// Re-fetches the subscription state from the server; dependents rebuild
   /// with the fresh entitlements. Throws when signed out.
   Future<MothCustomerInfo> refreshCustomerInfo() => client.getCustomerInfo();
+
+  /// Shows the OS notification-permission prompt and returns the resulting
+  /// state; while signed in the SDK then re-registers so the server sees the
+  /// new permission. This is the **only** way the SDK ever prompts —
+  /// permission UX is a product decision, so it stays an explicit app call
+  /// (a settings toggle, an onboarding step), never an SDK side effect.
+  /// Returns [MothPushPermission.unknown] when no push adapter is wired.
+  Future<MothPushPermission> requestPushPermission() async {
+    final controller = pushController;
+    if (controller == null) return MothPushPermission.unknown;
+    return controller.requestPermission();
+  }
 
   /// Buys [product]: runs the native store purchase through the
   /// [billingAdapter], forwards the receipt to moth for validation, and — on
@@ -148,5 +187,7 @@ class MothScope extends InheritedWidget {
       customerInfo != oldWidget.customerInfo ||
       client != oldWidget.client ||
       oauthAdapter != oldWidget.oauthAdapter ||
-      billingAdapter != oldWidget.billingAdapter;
+      billingAdapter != oldWidget.billingAdapter ||
+      pushController != oldWidget.pushController ||
+      pushStatus != oldWidget.pushStatus;
 }

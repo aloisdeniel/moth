@@ -927,6 +927,95 @@ class StoredPaywall extends $pb.GeneratedMessage {
   LegalLinks ensureLegal() => $_ensure(7);
 }
 
+/// StoredPush is one project's push settings as persisted on the project row
+/// (milestone 20). Plain config, no secrets: only the Web Push VAPID PUBLIC
+/// key ever lives here — the private key stays with the developer's sender
+/// and never touches moth. Delivered to clients through the public
+/// moth.auth.v1.GetProjectConfig response.
+class StoredPush extends $pb.GeneratedMessage {
+  factory StoredPush({
+    $core.int? version,
+    $core.bool? enabled,
+    $core.String? webpushVapidPublicKey,
+  }) {
+    final result = create();
+    if (version != null) result.version = version;
+    if (enabled != null) result.enabled = enabled;
+    if (webpushVapidPublicKey != null)
+      result.webpushVapidPublicKey = webpushVapidPublicKey;
+    return result;
+  }
+
+  StoredPush._();
+
+  factory StoredPush.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory StoredPush.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StoredPush',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'version')
+    ..aOB(2, _omitFieldNames ? '' : 'enabled')
+    ..aOS(3, _omitFieldNames ? '' : 'webpushVapidPublicKey')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StoredPush clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StoredPush copyWith(void Function(StoredPush) updates) =>
+      super.copyWith((message) => updates(message as StoredPush)) as StoredPush;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static StoredPush create() => StoredPush._();
+  @$core.override
+  StoredPush createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static StoredPush getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StoredPush>(create);
+  static StoredPush? _defaultInstance;
+
+  /// version is the document schema version (internal/push.SchemaVersion).
+  @$pb.TagNumber(1)
+  $core.int get version => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set version($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasVersion() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearVersion() => $_clearField(1);
+
+  /// Master switch for the push registry; when false the client-facing
+  /// moth.push.v1 RPCs refuse registrations.
+  @$pb.TagNumber(2)
+  $core.bool get enabled => $_getBF(1);
+  @$pb.TagNumber(2)
+  set enabled($core.bool value) => $_setBool(1, value);
+  @$pb.TagNumber(2)
+  $core.bool hasEnabled() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEnabled() => $_clearField(2);
+
+  /// VAPID public key (base64url, uncompressed P-256 point) browser clients
+  /// subscribe with; empty when the project does not use Web Push.
+  @$pb.TagNumber(3)
+  $core.String get webpushVapidPublicKey => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set webpushVapidPublicKey($core.String value) => $_setString(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasWebpushVapidPublicKey() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearWebpushVapidPublicKey() => $_clearField(3);
+}
+
 /// CopyLocaleMessages is one locale's copy overrides: catalog message key
 /// (e.g. "sign_in.title") to the operator-customized string.
 class CopyLocaleMessages extends $pb.GeneratedMessage {

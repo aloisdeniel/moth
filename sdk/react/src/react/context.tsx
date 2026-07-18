@@ -13,6 +13,7 @@ import type { MothConfig } from '../core/config.js'
 import { MothConfigController } from '../core/configController.js'
 import type { MothCopy } from '../core/copy.js'
 import { MothCustomerInfo } from '../core/customerInfo.js'
+import { MothPushController } from '../core/pushController.js'
 import { MothSubscriptionController } from '../core/subscriptionController.js'
 import { ensureThemeFont, themeCssVars, type MothTheme } from '../core/theme.js'
 import type { MothAuthState } from '../core/user.js'
@@ -24,6 +25,7 @@ export interface MothContextValue {
   state: MothAuthState
   customerInfo: MothCustomerInfo
   configController: MothConfigController
+  pushController: MothPushController
 }
 
 const MothContext = createContext<MothContextValue | null>(null)
@@ -85,14 +87,16 @@ export function MothProvider(props: MothProviderProps) {
   // provider (config/client are fixed, as on MothApp in Flutter).
   const [owned] = useState(() => {
     const client = externalClient ?? new MothClient(config!)
+    const configController = new MothConfigController(client)
     return {
       client,
       ownsClient: externalClient === undefined,
-      configController: new MothConfigController(client),
+      configController,
       subscriptions: new MothSubscriptionController(client),
+      pushController: new MothPushController(client, configController),
     }
   })
-  const { client, configController } = owned
+  const { client, configController, pushController } = owned
 
   const [state, setState] = useState<MothAuthState>(client.currentState)
   const [customerInfo, setCustomerInfo] = useState<MothCustomerInfo>(
@@ -107,6 +111,10 @@ export function MothProvider(props: MothProviderProps) {
       configController.subscribe(() => setConfigTick((t) => t + 1)),
     ]
     owned.subscriptions.start()
+    // Before restore(): the push controller's sign-in listener must see the
+    // restored session's transition so a signed-in launch re-registers an
+    // existing subscription (upsert semantics keep this carefree).
+    pushController.start()
     void configController.start()
     if (client.currentState.status === 'loading') {
       // Failures surface through the state stream (restore keeps or clears
@@ -132,6 +140,7 @@ export function MothProvider(props: MothProviderProps) {
       window.removeEventListener('languagechange', onLanguageChange)
       for (const unsubscribe of unsubscribers) unsubscribe()
       owned.subscriptions.dispose()
+      pushController.dispose()
       configController.dispose()
       if (owned.ownsClient) client.dispose()
     }
@@ -139,8 +148,8 @@ export function MothProvider(props: MothProviderProps) {
   }, [owned])
 
   const value = useMemo<MothContextValue>(
-    () => ({ client, state, customerInfo, configController }),
-    [client, state, customerInfo, configController],
+    () => ({ client, state, customerInfo, configController, pushController }),
+    [client, state, customerInfo, configController, pushController],
   )
 
   let body: ReactNode

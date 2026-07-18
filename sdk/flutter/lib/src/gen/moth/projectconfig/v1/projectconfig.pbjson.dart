@@ -239,6 +239,28 @@ final $typed_data.Uint8List storedPaywallDescriptor = $convert.base64Decode(
     'KAlSBmxheW91dBI3CgVsZWdhbBgIIAEoCzIhLm1vdGgucHJvamVjdGNvbmZpZy52MS5MZWdhbE'
     'xpbmtzUgVsZWdhbA==');
 
+@$core.Deprecated('Use storedPushDescriptor instead')
+const StoredPush$json = {
+  '1': 'StoredPush',
+  '2': [
+    {'1': 'version', '3': 1, '4': 1, '5': 5, '10': 'version'},
+    {'1': 'enabled', '3': 2, '4': 1, '5': 8, '10': 'enabled'},
+    {
+      '1': 'webpush_vapid_public_key',
+      '3': 3,
+      '4': 1,
+      '5': 9,
+      '10': 'webpushVapidPublicKey'
+    },
+  ],
+};
+
+/// Descriptor for `StoredPush`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List storedPushDescriptor = $convert.base64Decode(
+    'CgpTdG9yZWRQdXNoEhgKB3ZlcnNpb24YASABKAVSB3ZlcnNpb24SGAoHZW5hYmxlZBgCIAEoCF'
+    'IHZW5hYmxlZBI3Chh3ZWJwdXNoX3ZhcGlkX3B1YmxpY19rZXkYAyABKAlSFXdlYnB1c2hWYXBp'
+    'ZFB1YmxpY0tleQ==');
+
 @$core.Deprecated('Use copyLocaleMessagesDescriptor instead')
 const CopyLocaleMessages$json = {
   '1': 'CopyLocaleMessages',

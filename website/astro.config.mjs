@@ -57,6 +57,7 @@ export default defineConfig({
             { label: 'Sign in with Apple', slug: 'docs/guides/apple' },
             { label: 'Theming the login screen', slug: 'docs/guides/theming' },
             { label: 'Subscriptions & paywall', slug: 'docs/guides/monetization' },
+            { label: 'Push notifications', slug: 'docs/guides/push' },
             { label: 'Analytics', slug: 'docs/guides/analytics' },
             { label: 'Backups', slug: 'docs/guides/backups' },
             { label: 'Migration import & export', slug: 'docs/guides/migration' },

@@ -2,6 +2,7 @@ import { jsx as _jsx, Fragment as _Fragment } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useInsertionEffect, useMemo, useState, } from 'react';
 import { MothClient } from '../core/client.js';
 import { MothConfigController } from '../core/configController.js';
+import { MothPushController } from '../core/pushController.js';
 import { MothSubscriptionController } from '../core/subscriptionController.js';
 import { ensureThemeFont, themeCssVars } from '../core/theme.js';
 import { MothLoginScreen } from './MothLoginScreen.js';
@@ -48,14 +49,16 @@ export function MothProvider(props) {
     // provider (config/client are fixed, as on MothApp in Flutter).
     const [owned] = useState(() => {
         const client = externalClient ?? new MothClient(config);
+        const configController = new MothConfigController(client);
         return {
             client,
             ownsClient: externalClient === undefined,
-            configController: new MothConfigController(client),
+            configController,
             subscriptions: new MothSubscriptionController(client),
+            pushController: new MothPushController(client, configController),
         };
     });
-    const { client, configController } = owned;
+    const { client, configController, pushController } = owned;
     const [state, setState] = useState(client.currentState);
     const [customerInfo, setCustomerInfo] = useState(client.currentCustomerInfo);
     const [, setConfigTick] = useState(0);
@@ -66,6 +69,10 @@ export function MothProvider(props) {
             configController.subscribe(() => setConfigTick((t) => t + 1)),
         ];
         owned.subscriptions.start();
+        // Before restore(): the push controller's sign-in listener must see the
+        // restored session's transition so a signed-in launch re-registers an
+        // existing subscription (upsert semantics keep this carefree).
+        pushController.start();
         void configController.start();
         if (client.currentState.status === 'loading') {
             // Failures surface through the state stream (restore keeps or clears
@@ -93,13 +100,14 @@ export function MothProvider(props) {
             for (const unsubscribe of unsubscribers)
                 unsubscribe();
             owned.subscriptions.dispose();
+            pushController.dispose();
             configController.dispose();
             if (owned.ownsClient)
                 client.dispose();
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [owned]);
-    const value = useMemo(() => ({ client, state, customerInfo, configController }), [client, state, customerInfo, configController]);
+    const value = useMemo(() => ({ client, state, customerInfo, configController, pushController }), [client, state, customerInfo, configController, pushController]);
     let body;
     let ownSurface = false;
     if (requireAuth) {

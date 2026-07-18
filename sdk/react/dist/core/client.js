@@ -9,12 +9,13 @@ var __classPrivateFieldGet = (this && this.__classPrivateFieldGet) || function (
     if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
     return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
 };
-var _MothClient_instances, _MothClient_store, _MothClient_refreshSkewMs, _MothClient_now, _MothClient_checkoutPollAttempts, _MothClient_checkoutPollIntervalMs, _MothClient_navigateFn, _MothClient_auth, _MothClient_projectConfig, _MothClient_billing, _MothClient_state, _MothClient_session, _MothClient_refreshing, _MothClient_generation, _MothClient_customerInfo, _MothClient_stateListeners, _MothClient_infoListeners, _MothClient_lastRawConfig, _MothClient_lastRawPaywall, _MothClient_run, _MothClient_authed, _MothClient_expiresSoon, _MothClient_refresh, _MothClient_settleRefresh, _MothClient_doRefresh, _MothClient_openSession, _MothClient_startSession, _MothClient_updateUser, _MothClient_persist, _MothClient_clearSession, _MothClient_applyCustomerInfo, _MothClient_setCustomerInfo, _MothClient_emitCustomerInfo, _MothClient_setState, _MothClient_logStorageFailure, _MothClient_returnUrl, _MothClient_currentHref, _MothClient_navigate, _MothClient_sleep;
+var _MothClient_instances, _MothClient_store, _MothClient_refreshSkewMs, _MothClient_now, _MothClient_checkoutPollAttempts, _MothClient_checkoutPollIntervalMs, _MothClient_navigateFn, _MothClient_auth, _MothClient_projectConfig, _MothClient_billing, _MothClient_push, _MothClient_state, _MothClient_session, _MothClient_refreshing, _MothClient_generation, _MothClient_customerInfo, _MothClient_stateListeners, _MothClient_infoListeners, _MothClient_beforeSignOutHooks, _MothClient_lastRawConfig, _MothClient_lastRawPaywall, _MothClient_run, _MothClient_authed, _MothClient_expiresSoon, _MothClient_refresh, _MothClient_settleRefresh, _MothClient_doRefresh, _MothClient_openSession, _MothClient_startSession, _MothClient_updateUser, _MothClient_persist, _MothClient_clearSession, _MothClient_applyCustomerInfo, _MothClient_setCustomerInfo, _MothClient_emitCustomerInfo, _MothClient_setState, _MothClient_logStorageFailure, _MothClient_returnUrl, _MothClient_currentHref, _MothClient_navigate, _MothClient_sleep;
 import { createClient } from '@connectrpc/connect';
 import { timestampDate } from '@bufbuild/protobuf/wkt';
 import { AuthService, OAuthProvider, } from '../gen/moth/auth/v1/auth_pb.js';
 import { ConfigService } from '../gen/moth/auth/v1/config_pb.js';
 import { BillingService } from '../gen/moth/billing/v1/billing_pb.js';
+import { PushService } from '../gen/moth/push/v1/push_pb.js';
 import { currentLocaleOf } from './config.js';
 import { copyUpdateFromProto } from './copy.js';
 import { MothCustomerInfo } from './customerInfo.js';
@@ -22,6 +23,7 @@ import { mapConnectError, MothError, MothInvalidAccessTokenError, MothInvalidRef
 import { customClaimsOf } from './jwt.js';
 import { MothOffering, paywallFromProto, } from './offering.js';
 import { checkoutReturnParam } from './purchase.js';
+import { pushPermissionToProto, pushTargetToProto, } from './push.js';
 import { themeFromProto } from './theme.js';
 import { createTokenStore } from './tokenStore.js';
 import { createMothTransport, withMothHeaders } from './transport.js';
@@ -56,6 +58,7 @@ export class MothClient {
         _MothClient_auth.set(this, void 0);
         _MothClient_projectConfig.set(this, void 0);
         _MothClient_billing.set(this, void 0);
+        _MothClient_push.set(this, void 0);
         _MothClient_state.set(this, mothAuthLoading);
         _MothClient_session.set(this, null);
         _MothClient_refreshing.set(this, null
@@ -80,6 +83,7 @@ export class MothClient {
         _MothClient_customerInfo.set(this, MothCustomerInfo.free());
         _MothClient_stateListeners.set(this, new Set());
         _MothClient_infoListeners.set(this, new Set());
+        _MothClient_beforeSignOutHooks.set(this, new Set());
         _MothClient_lastRawConfig.set(this, null
         // -------------------------------------------------------------- billing
         /**
@@ -108,6 +112,7 @@ export class MothClient {
         __classPrivateFieldSet(this, _MothClient_auth, createClient(AuthService, transport), "f");
         __classPrivateFieldSet(this, _MothClient_projectConfig, createClient(ConfigService, transport), "f");
         __classPrivateFieldSet(this, _MothClient_billing, createClient(BillingService, transport), "f");
+        __classPrivateFieldSet(this, _MothClient_push, createClient(PushService, transport), "f");
     }
     // ---------------------------------------------------------------- state
     /** The current auth state (`loading` until {@link restore} completes). */
@@ -134,6 +139,17 @@ export class MothClient {
         __classPrivateFieldGet(this, _MothClient_stateListeners, "f").add(listener);
         listener(__classPrivateFieldGet(this, _MothClient_state, "f"));
         return () => __classPrivateFieldGet(this, _MothClient_stateListeners, "f").delete(listener);
+    }
+    /**
+     * Registers work that must run at the start of {@link signOut}, while the
+     * session (and its Bearer token) is still valid — e.g. the push
+     * controller revoking this installation's device registration. Hooks are
+     * awaited best-effort: a failing hook never blocks the sign-out. Returns
+     * the unsubscribe function.
+     */
+    onBeforeSignOut(hook) {
+        __classPrivateFieldGet(this, _MothClient_beforeSignOutHooks, "f").add(hook);
+        return () => __classPrivateFieldGet(this, _MothClient_beforeSignOutHooks, "f").delete(hook);
     }
     // -------------------------------------------------------- entitlements
     /**
@@ -282,6 +298,16 @@ export class MothClient {
         if (session === null) {
             __classPrivateFieldGet(this, _MothClient_instances, "m", _MothClient_setState).call(this, mothSignedOut);
             return;
+        }
+        // Pre-sign-out hooks (push unregistration) run while the session is
+        // still live — they need the Bearer token — and are non-fatal.
+        for (const hook of [...__classPrivateFieldGet(this, _MothClient_beforeSignOutHooks, "f")]) {
+            try {
+                await hook();
+            }
+            catch {
+                // Best effort; the sign-out proceeds regardless.
+            }
         }
         try {
             await __classPrivateFieldGet(this, _MothClient_auth, "f").signOut({
@@ -486,9 +512,16 @@ export class MothClient {
             const androidClientId = blank(resp.google?.androidClientId);
             if (androidClientId !== undefined)
                 google.androidClientId = androidClientId;
+            const push = {
+                enabled: resp.push?.enabled ?? false,
+            };
+            const vapidKey = blank(resp.push?.webpushVapidPublicKey);
+            if (vapidKey !== undefined)
+                push.webpushVapidPublicKey = vapidKey;
             const config = {
                 google,
                 apple: { enabled: resp.apple?.enabled ?? false },
+                push,
                 passwordMinLength: resp.passwordMinLength,
                 signUpOpen: resp.signUpOpen,
             };
@@ -665,6 +698,37 @@ export class MothClient {
         // The webhook has not landed yet; entitlements flip when it does.
         return { status: 'pending' };
     }
+    // ----------------------------------------------------------------- push
+    /**
+     * Upserts this installation's push registration
+     * (`moth.push.v1.PushService.RegisterDevice`). Idempotent by design —
+     * call it on every launch, token rotation and permission change with the
+     * same stable `deviceId`; the registry replaces the row. Throws when
+     * signed out (registrations always hang off the signed-in user).
+     */
+    async registerPushDevice(params) {
+        await __classPrivateFieldGet(this, _MothClient_instances, "m", _MothClient_authed).call(this, () => __classPrivateFieldGet(this, _MothClient_push, "f").registerDevice({
+            target: pushTargetToProto(params.target),
+            token: params.token,
+            deviceId: params.deviceId,
+            permission: pushPermissionToProto(params.permission ?? 'unknown'),
+            metadata: {
+                platform: params.metadata?.platform ?? '',
+                model: params.metadata?.model ?? '',
+                osVersion: params.metadata?.osVersion ?? '',
+                appVersion: params.metadata?.appVersion ?? '',
+                locale: params.metadata?.locale ?? '',
+            },
+        }));
+    }
+    /**
+     * Revokes this installation's push registration (`signed_out`).
+     * Idempotent: unknown or already-revoked device ids succeed. Throws when
+     * signed out — call it *before* dropping the session.
+     */
+    async unregisterPushDevice(deviceId) {
+        await __classPrivateFieldGet(this, _MothClient_instances, "m", _MothClient_authed).call(this, () => __classPrivateFieldGet(this, _MothClient_push, "f").unregisterDevice({ deviceId }));
+    }
     /**
      * Drops every subscription. Re-entrant: subscribing again afterwards
      * works (React StrictMode mounts effects twice), so this is a reset, not
@@ -673,9 +737,10 @@ export class MothClient {
     dispose() {
         __classPrivateFieldGet(this, _MothClient_stateListeners, "f").clear();
         __classPrivateFieldGet(this, _MothClient_infoListeners, "f").clear();
+        __classPrivateFieldGet(this, _MothClient_beforeSignOutHooks, "f").clear();
     }
 }
-_MothClient_store = new WeakMap(), _MothClient_refreshSkewMs = new WeakMap(), _MothClient_now = new WeakMap(), _MothClient_checkoutPollAttempts = new WeakMap(), _MothClient_checkoutPollIntervalMs = new WeakMap(), _MothClient_navigateFn = new WeakMap(), _MothClient_auth = new WeakMap(), _MothClient_projectConfig = new WeakMap(), _MothClient_billing = new WeakMap(), _MothClient_state = new WeakMap(), _MothClient_session = new WeakMap(), _MothClient_refreshing = new WeakMap(), _MothClient_generation = new WeakMap(), _MothClient_customerInfo = new WeakMap(), _MothClient_stateListeners = new WeakMap(), _MothClient_infoListeners = new WeakMap(), _MothClient_lastRawConfig = new WeakMap(), _MothClient_lastRawPaywall = new WeakMap(), _MothClient_instances = new WeakSet(), _MothClient_run = 
+_MothClient_store = new WeakMap(), _MothClient_refreshSkewMs = new WeakMap(), _MothClient_now = new WeakMap(), _MothClient_checkoutPollAttempts = new WeakMap(), _MothClient_checkoutPollIntervalMs = new WeakMap(), _MothClient_navigateFn = new WeakMap(), _MothClient_auth = new WeakMap(), _MothClient_projectConfig = new WeakMap(), _MothClient_billing = new WeakMap(), _MothClient_push = new WeakMap(), _MothClient_state = new WeakMap(), _MothClient_session = new WeakMap(), _MothClient_refreshing = new WeakMap(), _MothClient_generation = new WeakMap(), _MothClient_customerInfo = new WeakMap(), _MothClient_stateListeners = new WeakMap(), _MothClient_infoListeners = new WeakMap(), _MothClient_beforeSignOutHooks = new WeakMap(), _MothClient_lastRawConfig = new WeakMap(), _MothClient_lastRawPaywall = new WeakMap(), _MothClient_instances = new WeakSet(), _MothClient_run = 
 // ------------------------------------------------------------ internals
 /** Maps transport errors to the typed {@link MothError} hierarchy. */
 async function _MothClient_run(fn) {

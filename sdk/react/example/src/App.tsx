@@ -1,4 +1,4 @@
-import { createMothFetch, MothGate, useMoth } from '@moth/react'
+import { createMothFetch, MothGate, useMoth, useMothPush } from '@moth/react'
 import { useMemo, useState } from 'react'
 
 const backendUrl = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8081'
@@ -95,6 +95,7 @@ function Home() {
         <button onClick={() => void manageBilling()}>Manage billing</button>{' '}
         <button onClick={() => void signOut()}>Sign out</button>
       </p>
+      <PushToggle />
       {accessStatus !== '' && <p data-testid="access-status">Access: {accessStatus}</p>}
       {backendReply !== '' && (
         <pre style={{ background: '#f5f5f5', padding: 12, overflowX: 'auto' }}>
@@ -102,6 +103,45 @@ function Home() {
         </pre>
       )}
     </main>
+  )
+}
+
+/**
+ * The Web Push settings row: `useMothPush()` as a toggle. The service worker
+ * (public/sw.js, registered in main.tsx) owns display and click handling;
+ * moth manages the subscription and the device-registry row. Environment
+ * problems are states, never exceptions — a project without a VAPID key
+ * reports `unavailable`, a browser without the Push API `unsupported`.
+ */
+function PushToggle() {
+  const { status, permission, subscribe, unsubscribe } = useMothPush()
+  if (status === 'unavailable' || status === 'unsupported') {
+    return (
+      <p data-testid="push-status">
+        Push notifications: {status}
+        {status === 'unavailable' &&
+          ' — enable push (with a VAPID key) in the admin’s Settings tab.'}
+      </p>
+    )
+  }
+  return (
+    <p data-testid="push-status">
+      Push notifications:{' '}
+      {status === 'denied' ? (
+        // The browser remembers the denial; only the user can lift it.
+        <>blocked — allow notifications for this site in the browser.</>
+      ) : status === 'subscribed' ? (
+        <button onClick={() => void unsubscribe()}>Disable</button>
+      ) : (
+        // Prompts for permission (an explicit user action, never an SDK
+        // side effect), subscribes the service worker's PushManager and
+        // registers this browser in the project's device registry.
+        <button onClick={() => void subscribe()}>Enable</button>
+      )}{' '}
+      <small>
+        (permission: {permission}, status: {status})
+      </small>
+    </p>
   )
 }
 

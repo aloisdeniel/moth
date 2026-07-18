@@ -63,3 +63,21 @@ export function useMothEntitlement(identifier) {
         result.entitlement = entitlement;
     return result;
 }
+/**
+ * Web Push subscription state and actions — a settings-screen toggle in one
+ * hook. Re-renders on every push status/permission change; while signed in
+ * an existing subscription is re-registered on every launch, and sign-out
+ * revokes it automatically. The app owns its service worker (display and
+ * click handling); see the README for a minimal `sw.js`.
+ */
+export function useMothPush() {
+    const { pushController } = useMothContext();
+    const [, setTick] = useState(0);
+    useEffect(() => pushController.onChange(() => setTick((t) => t + 1)), [pushController]);
+    return {
+        status: pushController.status,
+        permission: pushController.permission,
+        subscribe: () => pushController.subscribe(),
+        unsubscribe: () => pushController.unsubscribe(),
+    };
+}

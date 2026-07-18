@@ -5,7 +5,7 @@ import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2
 /**
  * Describes the file moth/auth/v1/config.proto.
  */
-export const file_moth_auth_v1_config = /*@__PURE__*/ fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgitgIKBVRoZW1lEhMKC3JldmlzaW9uX2lkGAEgASgJEikKBmNvbG9ycxgCIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxIuCgtkYXJrX2NvbG9ycxgDIAEoCzIZLm1vdGguYXV0aC52MS5UaGVtZUNvbG9ycxITCgtmb250X2ZhbWlseRgEIAEoCRIQCghmb250X3VybBgFIAEoCRISCgpmb250X3NjYWxlGAYgASgBEhQKDHNwYWNpbmdfdW5pdBgHIAEoBRIVCg1jb3JuZXJfcmFkaXVzGAggASgFEhYKDmxvZ29fbGlnaHRfdXJsGAkgASgJEhUKDWxvZ29fZGFya191cmwYCiABKAkSEQoJdGVybXNfdXJsGAsgASgJEhMKC3ByaXZhY3lfdXJsGAwgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKSAQoEQ29weRIVCg1jb3B5X3JldmlzaW9uGAEgASgJEg4KBmxvY2FsZRgCIAEoCRIyCghtZXNzYWdlcxgDIAMoCzIgLm1vdGguYXV0aC52MS5Db3B5Lk1lc3NhZ2VzRW50cnkaLwoNTWVzc2FnZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIlQKF0dldFByb2plY3RDb25maWdSZXF1ZXN0EhwKFGtub3duX3RoZW1lX3JldmlzaW9uGAEgASgJEhsKE2tub3duX2NvcHlfcmV2aXNpb24YAiABKAki6QEKGEdldFByb2plY3RDb25maWdSZXNwb25zZRIqCgZnb29nbGUYASABKAsyGi5tb3RoLmF1dGgudjEuR29vZ2xlQ29uZmlnEigKBWFwcGxlGAIgASgLMhkubW90aC5hdXRoLnYxLkFwcGxlQ29uZmlnEhsKE3Bhc3N3b3JkX21pbl9sZW5ndGgYAyABKAUSFAoMc2lnbl91cF9vcGVuGAQgASgIEiIKBXRoZW1lGAUgASgLMhMubW90aC5hdXRoLnYxLlRoZW1lEiAKBGNvcHkYBiABKAsyEi5tb3RoLmF1dGgudjEuQ29weTJyCg1Db25maWdTZXJ2aWNlEmEKEEdldFByb2plY3RDb25maWcSJS5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QaJi5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlQjVaM2dpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hdXRoL3YxO2F1dGh2MWIGcHJvdG8z");
+export const file_moth_auth_v1_config = /*@__PURE__*/ fileDesc("Chltb3RoL2F1dGgvdjEvY29uZmlnLnByb3RvEgxtb3RoLmF1dGgudjEiaAoMR29vZ2xlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgSFQoNd2ViX2NsaWVudF9pZBgCIAEoCRIVCg1pb3NfY2xpZW50X2lkGAMgASgJEhkKEWFuZHJvaWRfY2xpZW50X2lkGAQgASgJIh4KC0FwcGxlQ29uZmlnEg8KB2VuYWJsZWQYASABKAgiPwoKUHVzaENvbmZpZxIPCgdlbmFibGVkGAEgASgIEiAKGHdlYnB1c2hfdmFwaWRfcHVibGljX2tleRgCIAEoCSK2AgoFVGhlbWUSEwoLcmV2aXNpb25faWQYASABKAkSKQoGY29sb3JzGAIgASgLMhkubW90aC5hdXRoLnYxLlRoZW1lQ29sb3JzEi4KC2RhcmtfY29sb3JzGAMgASgLMhkubW90aC5hdXRoLnYxLlRoZW1lQ29sb3JzEhMKC2ZvbnRfZmFtaWx5GAQgASgJEhAKCGZvbnRfdXJsGAUgASgJEhIKCmZvbnRfc2NhbGUYBiABKAESFAoMc3BhY2luZ191bml0GAcgASgFEhUKDWNvcm5lcl9yYWRpdXMYCCABKAUSFgoObG9nb19saWdodF91cmwYCSABKAkSFQoNbG9nb19kYXJrX3VybBgKIAEoCRIRCgl0ZXJtc191cmwYCyABKAkSEwoLcHJpdmFjeV91cmwYDCABKAkiowEKC1RoZW1lQ29sb3JzEg8KB3ByaW1hcnkYASABKAkSEgoKb25fcHJpbWFyeRgCIAEoCRISCgpiYWNrZ3JvdW5kGAMgASgJEhUKDW9uX2JhY2tncm91bmQYBCABKAkSDwoHc3VyZmFjZRgFIAEoCRISCgpvbl9zdXJmYWNlGAYgASgJEg0KBWVycm9yGAcgASgJEhAKCG9uX2Vycm9yGAggASgJIpIBCgRDb3B5EhUKDWNvcHlfcmV2aXNpb24YASABKAkSDgoGbG9jYWxlGAIgASgJEjIKCG1lc3NhZ2VzGAMgAygLMiAubW90aC5hdXRoLnYxLkNvcHkuTWVzc2FnZXNFbnRyeRovCg1NZXNzYWdlc0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiVAoXR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QSHAoUa25vd25fdGhlbWVfcmV2aXNpb24YASABKAkSGwoTa25vd25fY29weV9yZXZpc2lvbhgCIAEoCSKRAgoYR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlEioKBmdvb2dsZRgBIAEoCzIaLm1vdGguYXV0aC52MS5Hb29nbGVDb25maWcSKAoFYXBwbGUYAiABKAsyGS5tb3RoLmF1dGgudjEuQXBwbGVDb25maWcSGwoTcGFzc3dvcmRfbWluX2xlbmd0aBgDIAEoBRIUCgxzaWduX3VwX29wZW4YBCABKAgSIgoFdGhlbWUYBSABKAsyEy5tb3RoLmF1dGgudjEuVGhlbWUSIAoEY29weRgGIAEoCzISLm1vdGguYXV0aC52MS5Db3B5EiYKBHB1c2gYByABKAsyGC5tb3RoLmF1dGgudjEuUHVzaENvbmZpZzJyCg1Db25maWdTZXJ2aWNlEmEKEEdldFByb2plY3RDb25maWcSJS5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1JlcXVlc3QaJi5tb3RoLmF1dGgudjEuR2V0UHJvamVjdENvbmZpZ1Jlc3BvbnNlQjVaM2dpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9hdXRoL3YxO2F1dGh2MWIGcHJvdG8z");
 /**
  * Describes the message moth.auth.v1.GoogleConfig.
  * Use `create(GoogleConfigSchema)` to create a new message.
@@ -17,30 +17,35 @@ export const GoogleConfigSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_co
  */
 export const AppleConfigSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 1);
 /**
+ * Describes the message moth.auth.v1.PushConfig.
+ * Use `create(PushConfigSchema)` to create a new message.
+ */
+export const PushConfigSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 2);
+/**
  * Describes the message moth.auth.v1.Theme.
  * Use `create(ThemeSchema)` to create a new message.
  */
-export const ThemeSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 2);
+export const ThemeSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 3);
 /**
  * Describes the message moth.auth.v1.ThemeColors.
  * Use `create(ThemeColorsSchema)` to create a new message.
  */
-export const ThemeColorsSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 3);
+export const ThemeColorsSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 4);
 /**
  * Describes the message moth.auth.v1.Copy.
  * Use `create(CopySchema)` to create a new message.
  */
-export const CopySchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 4);
+export const CopySchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 5);
 /**
  * Describes the message moth.auth.v1.GetProjectConfigRequest.
  * Use `create(GetProjectConfigRequestSchema)` to create a new message.
  */
-export const GetProjectConfigRequestSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 5);
+export const GetProjectConfigRequestSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 6);
 /**
  * Describes the message moth.auth.v1.GetProjectConfigResponse.
  * Use `create(GetProjectConfigResponseSchema)` to create a new message.
  */
-export const GetProjectConfigResponseSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 6);
+export const GetProjectConfigResponseSchema = /*@__PURE__*/ messageDesc(file_moth_auth_v1_config, 7);
 /**
  * ConfigService exposes a project's public, non-secret configuration to the
  * mobile SDK, so the login screen can render exactly the sign-in methods

@@ -4,6 +4,7 @@ import type { MothConfig } from '../core/config.js';
 import { MothConfigController } from '../core/configController.js';
 import type { MothCopy } from '../core/copy.js';
 import { MothCustomerInfo } from '../core/customerInfo.js';
+import { MothPushController } from '../core/pushController.js';
 import { type MothTheme } from '../core/theme.js';
 import type { MothAuthState } from '../core/user.js';
 export interface MothContextValue {
@@ -11,6 +12,7 @@ export interface MothContextValue {
     state: MothAuthState;
     customerInfo: MothCustomerInfo;
     configController: MothConfigController;
+    pushController: MothPushController;
 }
 /** The provider's context value; throws outside a `MothProvider`. */
 export declare function useMothContext(): MothContextValue;

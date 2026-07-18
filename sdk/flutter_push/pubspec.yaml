@@ -1,0 +1,41 @@
+name: moth_push
+description: >-
+  First-party native push registration for moth: implements moth_auth's
+  MothPushAdapter with APNs (UNUserNotificationCenter) on iOS and Firebase
+  Cloud Messaging on Android, producing exactly the device credential the
+  moth server stores in RegisterDevice.
+# Placeholder version: the moth server stamps the real release version into
+# the tarball it serves at /pub — the SDK version tracks the server version.
+version: 0.1.0
+homepage: https://github.com/aloisdeniel/moth
+publish_to: none # served by the moth binary at /pub, never pub.dev
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Placeholder hosted dependency: the moth server rewrites the url to the
+  # serving instance's /pub and the version to its own stamped release at
+  # serve time, so moth_push always resolves the moth_auth it was built
+  # against. Local development overrides this via pubspec_overrides.yaml
+  # (which must never be embedded or served).
+  moth_auth:
+    hosted: https://moth.invalid/pub
+    version: 0.1.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: io.moth.push
+        pluginClass: MothPushPlugin
+      ios:
+        pluginClass: MothPushPlugin

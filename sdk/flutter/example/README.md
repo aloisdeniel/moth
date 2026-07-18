@@ -113,3 +113,36 @@ configuration or sandbox products on iOS, a Play Billing test track on
 Android) before real purchases work; without it the purchase surfaces a
 typed error rather than crashing.
 
+## Push notifications
+
+The "Push notifications" card on the home screen is the milestone-21 loop
+end to end: `main.dart` passes `MothNativePush()` (from `moth_push`, moth's
+first-party APNs/FCM plugin — a dependency of this example only, not of
+`moth_auth`) to `MothApp`, and the card drives the toggle off
+`MothScope.of(context).pushStatus` and `requestPushPermission()` — the only
+way the SDK ever shows the OS prompt.
+
+To see a device row appear in the admin:
+
+1. Enable **push registration** in the project's Settings tab (the card
+   shows "Unavailable" until you do).
+2. Run the app on a device or simulator, sign in, and flip the toggle to
+   grant permission.
+3. Open the user in the admin's Users tab — the **Devices** panel shows the
+   registration (target `apns`/`fcm`, model, permission, last seen).
+   Signing out in the app revokes it (`signed_out`).
+
+Platform caveats, same as any real app:
+
+- **Android** — FCM needs this app's own Firebase config: create a Firebase
+  project, add an Android app with the example's application id, and drop
+  `google-services.json` into `android/app/`. This is the one piece of
+  setup moth cannot absorb (the Firebase project is your sender identity);
+  without it registration fails with an actionable
+  `firebase-not-initialized` debug log while auth keeps working.
+- **iOS** — add the Push Notifications capability; the iOS **simulator**
+  has no real APNs, so expect a registration on device only.
+
+Even a device that denies permission registers (flagged `denied`); sending
+stays your backend's job — read the registry via
+`moth.server.v1.PushService` with the project secret key.

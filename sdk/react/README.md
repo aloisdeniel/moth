@@ -55,6 +55,8 @@ never touched.
   checkout returns.
 - `useMothEntitlement('pro')` — `{ active, entitlement }`; re-renders when
   the entitlement flips, including at its expiry.
+- `useMothPush()` — `{ status, permission, subscribe, unsubscribe }` for
+  Web Push registration; see below.
 
 ## Components
 
@@ -95,8 +97,11 @@ flow; the default redirect is the current URL without its fragment),
 `requestEmailChange`/`confirmEmailChange`, `getProjectConfig`,
 `getCustomerInfo`, `getOfferings`, `getPaywall`, `createCheckoutSession`,
 `createBillingPortalSession`, `purchase`, `manageBilling`,
-`handleCheckoutReturn`, plus `onAuthStateChanged` / `onEntitlementsChanged`
-subscriptions that replay the current value to every new subscriber.
+`handleCheckoutReturn`, `registerPushDevice`, `unregisterPushDevice`, plus
+`onAuthStateChanged` / `onEntitlementsChanged` subscriptions that replay
+the current value to every new subscriber and `onBeforeSignOut` hooks that
+run while the session is still valid (how push unregistration rides along
+with `signOut`).
 
 Errors are typed by the server's stable `ErrorInfo` reasons
 (`MothInvalidCredentialsError`, `MothEmailNotVerifiedError`,
@@ -127,6 +132,65 @@ return URL carries a `moth_checkout` marker; the provider consumes it on
 load and briefly polls `GetCustomerInfo` to absorb webhook latency, so the
 gated page unlocks without a manual refresh. `client.manageBilling()`
 opens the Stripe Billing Portal the same way.
+
+## Web Push
+
+`useMothPush()` turns the project's Web Push configuration (a VAPID public
+key, set in the admin's Settings tab) into a settings-screen toggle:
+
+```tsx
+import { useMothPush } from '@moth/react'
+
+function PushToggle() {
+  const { status, subscribe, unsubscribe } = useMothPush()
+  if (status === 'unavailable' || status === 'unsupported') return null
+  if (status === 'denied') return <p>Notifications are blocked in the browser.</p>
+  return status === 'subscribed' ? (
+    <button onClick={() => void unsubscribe()}>Disable notifications</button>
+  ) : (
+    <button onClick={() => void subscribe()}>Enable notifications</button>
+  )
+}
+```
+
+`subscribe()` requests the browser notification permission, subscribes the
+app's service worker's `PushManager` with the project's VAPID public key
+(read from the public project config) and registers the serialized
+subscription with the moth device registry (`target: webpush`, a stable
+per-installation id persisted in `localStorage`). While signed in, an
+existing subscription is re-registered on every launch — the registry's
+upsert semantics are the retry policy — and sign-out revokes the
+registration before the session drops. Environment problems are states,
+never exceptions: a project without a VAPID key reports
+`status: 'unavailable'`, a browser without the Push API (feature-detected)
+reports `'unsupported'`, and `subscribe()` is a typed no-op in both.
+
+The app owns its service worker — display and click handling are app code,
+moth only manages the subscription and the registry row. A minimal `sw.js`
+(served from your app's origin, e.g. `public/sw.js`, and registered once at
+startup with `navigator.serviceWorker.register('/sw.js')`):
+
+```js
+// sw.js — payload shape is yours; this expects { title, body, url }.
+self.addEventListener('push', (event) => {
+  const data = event.data?.json() ?? {}
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? 'Notification', {
+      body: data.body,
+      data,
+    }),
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  event.waitUntil(self.clients.openWindow(event.notification.data?.url ?? '/'))
+})
+```
+
+Sending stays your backend's job: fetch the registered devices over
+`moth.server.v1` and deliver with any Web Push library (e.g. `web-push`
+with the same VAPID key pair). moth registers; your server sends.
 
 ## Session storage trade-off
 

@@ -11,6 +11,8 @@ sdk/flutter/build/
 sdk/flutter/pubspec.lock
 sdk/flutter_billing/build/
 sdk/flutter_billing/pubspec.lock
+sdk/flutter_push/build/
+sdk/flutter_push/pubspec.lock
 web/admin/test-results/
 web/admin/playwright-report/
 web/admin/e2e/preview/

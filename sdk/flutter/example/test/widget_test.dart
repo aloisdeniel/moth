@@ -41,9 +41,23 @@ void main() {
     expect(find.text('jane@example.com'), findsOneWidget);
     expect(find.text('verified'), findsOneWidget);
     expect(find.text('role: admin'), findsOneWidget);
-    expect(find.text('Call my backend'), findsOneWidget);
     // The subscription card reads the (free by default) entitlement state.
     expect(find.text('Free tier'), findsOneWidget);
+    // No push controller in this bare scope, so the push card reports the
+    // unavailable state instead of a toggle.
+    await tester.scrollUntilVisible(
+      find.textContaining('Unavailable'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.textContaining('push is disabled'), findsOneWidget);
+    // "Call my backend" sits below the fold of the lazy ListView.
+    await tester.scrollUntilVisible(
+      find.text('Call my backend'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Call my backend'), findsOneWidget);
     // "Delete account" sits below the fold of the lazy ListView.
     await tester.scrollUntilVisible(
       find.text('Delete account'),

@@ -12,6 +12,9 @@ import '../customer_info.dart';
 import '../entitlement_cache.dart';
 import '../i18n/localizations.dart';
 import '../purchase.dart';
+import '../push.dart';
+import '../push_controller.dart';
+import '../push_device_id.dart';
 import '../subscription_controller.dart';
 import '../theme.dart';
 import '../theme_cache.dart';
@@ -25,6 +28,7 @@ import 'moth_scope.dart';
 import 'moth_theme_scope.dart';
 import 'oauth_adapter.dart';
 import 'purchase_flow.dart';
+import 'push_adapter.dart';
 
 /// Top-level widget that owns a [MothClient] and gates [child] behind
 /// authentication:
@@ -71,6 +75,8 @@ class MothApp extends StatefulWidget {
     this.entitlementCache,
     this.oauthAdapter,
     this.billingAdapter,
+    this.pushAdapter,
+    this.pushDeviceIdStore,
     this.theme,
     this.themeCache,
     this.copyCache,
@@ -95,6 +101,10 @@ class MothApp extends StatefulWidget {
        assert(
          theme == null || themeCache == null,
          'themeCache only applies when the server theme is used.',
+       ),
+       assert(
+         pushAdapter != null || pushDeviceIdStore == null,
+         'pushDeviceIdStore only applies when a pushAdapter is wired.',
        ),
        assert(
          requiresEntitlement == null || requireAuth,
@@ -128,6 +138,19 @@ class MothApp extends StatefulWidget {
   /// confirming, renewal) for validation, so deferred purchases complete
   /// without app code.
   final MothBillingAdapter? billingAdapter;
+
+  /// Turns on push-device registration: while a user is signed in the SDK
+  /// obtains the push credential from this adapter and keeps the project's
+  /// device registry current (register on launch/sign-in/token rotation,
+  /// unregister on sign-out) — see [MothPushController]. No adapter, no
+  /// push; nothing else changes. The OS permission prompt stays an explicit
+  /// app call ([MothScope.requestPushPermission]) — wiring the adapter
+  /// never prompts. Fixed for the lifetime of the widget.
+  final MothPushAdapter? pushAdapter;
+
+  /// Persistence override for the stable push installation id (defaults to
+  /// a device file store; useful for tests).
+  final MothPushDeviceIdStore? pushDeviceIdStore;
 
   /// Fixed theme for the moth screens; wins over the server-configured
   /// project theme (which is then neither fetched nor cached).
@@ -175,6 +198,8 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
   StreamSubscription<MothAuthState>? _subscription;
   StreamSubscription<MothPurchaseReceipt>? _billingUpdates;
   MothSubscriptionController? _subs;
+  MothPushController? _push;
+  MothPushStatus _pushStatus = MothPushStatus.unavailable;
   MothThemeController? _theme;
   MothCopyController? _copy;
 
@@ -202,6 +227,22 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
     _customerInfo = subs.value;
     unawaited(subs.start());
     _listenForBillingUpdates();
+    final pushAdapter = widget.pushAdapter;
+    if (pushAdapter != null) {
+      // Push registration: register while signed in (every launch — the
+      // server upserts), re-register on token rotation, unregister through
+      // the scope's sign-out. Never prompts; requestPushPermission is the
+      // app's explicit call.
+      final push = MothPushController(
+        client: _client,
+        adapter: pushAdapter,
+        deviceIdStore: widget.pushDeviceIdStore,
+      );
+      push.addListener(_onPushChanged);
+      _push = push;
+      _pushStatus = push.value;
+      unawaited(push.start());
+    }
     if (_state is MothAuthLoading) {
       // Failures surface through the state stream (restore keeps or clears
       // the session itself); nothing to await here.
@@ -273,12 +314,17 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
     if (mounted) setState(() => _customerInfo = _subs!.value);
   }
 
+  void _onPushChanged() {
+    if (mounted) setState(() => _pushStatus = _push!.value);
+  }
+
   @override
   void dispose() {
     if (_copy != null) WidgetsBinding.instance.removeObserver(this);
     _subscription?.cancel();
     _billingUpdates?.cancel();
     _subs?.dispose();
+    _push?.dispose();
     _theme?.dispose();
     _copy?.dispose();
     if (_ownsClient) unawaited(_client.dispose());
@@ -356,6 +402,8 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
       customerInfo: _customerInfo,
       oauthAdapter: widget.oauthAdapter,
       billingAdapter: widget.billingAdapter,
+      pushController: _push,
+      pushStatus: _pushStatus,
       child: body,
     );
   }

@@ -1,5 +1,6 @@
 version: v2
-# Dart stubs for the Flutter SDK (moth.auth.v1 + moth.billing.v1) — run via
+# Dart stubs for the Flutter SDK (moth.auth.v1 + moth.billing.v1 +
+# moth.push.v1) — run via
 # `make proto-dart` and commit the output. Kept out of buf.gen.yaml on purpose:
 # CI's proto job has no Dart toolchain. Needs protoc-gen-dart on PATH
 # (`dart pub global activate protoc_plugin`).
@@ -9,6 +10,7 @@ inputs:
     paths:
       - proto/moth/auth/v1
       - proto/moth/billing/v1
+      - proto/moth/push/v1
       # projectconfig/v1 ships only CacheEnvelope to the SDK (the on-device config
       # cache wrapper); the Stored* messages are server-side but harmless.
       - proto/moth/projectconfig/v1

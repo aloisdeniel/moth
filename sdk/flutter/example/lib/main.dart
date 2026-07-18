@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moth_auth/moth_auth.dart';
 import 'package:moth_billing/moth_billing.dart';
+import 'package:moth_push/moth_push.dart';
 
 import 'home_screen.dart';
 import 'oauth_adapter.dart';
@@ -58,6 +59,13 @@ class _ExampleAppState extends State<ExampleApp> {
   // frame.
   final _billingAdapter = MothStoreBilling();
 
+  // moth's first-party push registration (APNs / FCM). Wiring the adapter is
+  // the whole opt-in: while signed in the SDK keeps the server's device
+  // registry current; the OS permission prompt still only appears when the
+  // app calls requestPushPermission() (see the notifications card on the
+  // home screen). Fixed for the MothApp's lifetime.
+  final _pushAdapter = MothNativePush();
+
   /// The language shown on the moth screens. `null` follows the device; the
   /// switcher below overrides it via [MothConfig.locale] so you can see the
   /// login and paywall screens re-localize live — the project's custom copy
@@ -83,6 +91,7 @@ class _ExampleAppState extends State<ExampleApp> {
   @override
   void dispose() {
     _billingAdapter.dispose();
+    _pushAdapter.dispose();
     super.dispose();
   }
 
@@ -121,6 +130,10 @@ class _ExampleAppState extends State<ExampleApp> {
         // moth_billing runs the native store purchase for MothScope.purchase
         // and the paywall; the server validates the resulting receipt.
         billingAdapter: _billingAdapter,
+        // moth_push keeps the push-device registry current for the signed-in
+        // user (register on launch and token rotation, unregister on
+        // sign-out). No adapter, no push — nothing else changes.
+        pushAdapter: _pushAdapter,
         // Signed out -> the SDK's default MothLoginScreen; signed in -> child.
         child: const HomeScreen(),
       ),
