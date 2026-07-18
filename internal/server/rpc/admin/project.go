@@ -422,11 +422,11 @@ func signingKeyProto(k store.ProjectKey) *adminv1.SigningKey {
 // settingsProto builds the admin view of the settings. Stored provider
 // secrets are never returned; only their presence is reported (has_*).
 func (h *ProjectHandler) settingsProto(ctx context.Context, projectID string, s store.ProjectSettings) (*adminv1.ProjectSettings, error) {
-	hasGoogleSecret, err := h.hasProviderSecret(ctx, projectID, store.ProviderSecretGoogleWebClientSecret)
+	hasGoogleSecret, err := providerSecretPresent(ctx, h.store, projectID, store.ProviderSecretGoogleWebClientSecret)
 	if err != nil {
 		return nil, err
 	}
-	hasAppleKey, err := h.hasProviderSecret(ctx, projectID, store.ProviderSecretApplePrivateKey)
+	hasAppleKey, err := providerSecretPresent(ctx, h.store, projectID, store.ProviderSecretApplePrivateKey)
 	if err != nil {
 		return nil, err
 	}
@@ -438,34 +438,24 @@ func (h *ProjectHandler) settingsProto(ctx context.Context, projectID string, s 
 		EnumerationSafeSignup:    s.EnumerationSafeSignup,
 		AccessTokenTtlSeconds:    int32(s.AccessTokenTTLSeconds),
 		RefreshTokenTtlDays:      int32(s.RefreshTokenTTLDays),
-		Google: &adminv1.GoogleProviderConfig{
-			Enabled:            s.Google.Enabled,
-			WebClientId:        s.Google.WebClientID,
-			IosClientId:        s.Google.IOSClientID,
-			AndroidClientId:    s.Google.AndroidClientID,
-			HasWebClientSecret: hasGoogleSecret,
-		},
-		Apple: &adminv1.AppleProviderConfig{
-			Enabled:       s.Apple.Enabled,
-			ServicesId:    s.Apple.ServicesID,
-			TeamId:        s.Apple.TeamID,
-			KeyId:         s.Apple.KeyID,
-			HasPrivateKey: hasAppleKey,
-			BundleIds:     s.Apple.BundleIDs,
-		},
-		AutoLinkVerifiedEmail:  &autoLink,
-		RedirectSchemes:        s.RedirectSchemes,
-		RedirectOrigins:        s.RedirectOrigins,
-		AnalyticsRetentionDays: int32(s.AnalyticsRetentionDays),
-		RollupTimezone:         s.RollupTimezone,
-		SignupEmailAllowlist:   s.SignupEmailAllowlist,
-		SignupEmailBlocklist:   s.SignupEmailBlocklist,
-		CaptchaVerifyUrl:       s.CaptchaVerifyURL,
+		Google:                   googleProviderProto(s.Google, hasGoogleSecret),
+		Apple:                    appleProviderProto(s.Apple, hasAppleKey),
+		AutoLinkVerifiedEmail:    &autoLink,
+		RedirectSchemes:          s.RedirectSchemes,
+		RedirectOrigins:          s.RedirectOrigins,
+		AnalyticsRetentionDays:   int32(s.AnalyticsRetentionDays),
+		RollupTimezone:           s.RollupTimezone,
+		SignupEmailAllowlist:     s.SignupEmailAllowlist,
+		SignupEmailBlocklist:     s.SignupEmailBlocklist,
+		CaptchaVerifyUrl:         s.CaptchaVerifyURL,
 	}, nil
 }
 
-func (h *ProjectHandler) hasProviderSecret(ctx context.Context, projectID, name string) (bool, error) {
-	_, err := h.store.GetProviderSecret(ctx, projectID, name)
+// providerSecretPresent reports whether the project stores the named
+// provider secret, without ever loading it into a response. Shared by the
+// project settings view and the setup-status checklist.
+func providerSecretPresent(ctx context.Context, st Store, projectID, name string) (bool, error) {
+	_, err := st.GetProviderSecret(ctx, projectID, name)
 	if errors.Is(err, store.ErrNotFound) {
 		return false, nil
 	}
@@ -473,6 +463,31 @@ func (h *ProjectHandler) hasProviderSecret(ctx context.Context, projectID, name 
 		return false, err
 	}
 	return true, nil
+}
+
+// googleProviderProto builds the admin view of the Google provider config;
+// the stored web client secret is never returned, only its presence.
+func googleProviderProto(s store.GoogleProviderSettings, hasSecret bool) *adminv1.GoogleProviderConfig {
+	return &adminv1.GoogleProviderConfig{
+		Enabled:            s.Enabled,
+		WebClientId:        s.WebClientID,
+		IosClientId:        s.IOSClientID,
+		AndroidClientId:    s.AndroidClientID,
+		HasWebClientSecret: hasSecret,
+	}
+}
+
+// appleProviderProto builds the admin view of the Apple provider config; the
+// stored .p8 private key is never returned, only its presence.
+func appleProviderProto(s store.AppleProviderSettings, hasKey bool) *adminv1.AppleProviderConfig {
+	return &adminv1.AppleProviderConfig{
+		Enabled:       s.Enabled,
+		ServicesId:    s.ServicesID,
+		TeamId:        s.TeamID,
+		KeyId:         s.KeyID,
+		HasPrivateKey: hasKey,
+		BundleIds:     s.BundleIDs,
+	}
 }
 
 // redirectSchemeRE matches a valid URL scheme (RFC 3986), lowercased.

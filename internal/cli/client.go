@@ -24,6 +24,8 @@ type Client struct {
 	Products     adminv1connect.ProductServiceClient
 	Monetization adminv1connect.MonetizationServiceClient
 	BillingCreds adminv1connect.BillingCredentialsServiceClient
+	Push         adminv1connect.PushServiceClient
+	Profiles     adminv1connect.ProfileServiceClient
 }
 
 // New builds the admin clients for the server at baseURL, sending
@@ -47,6 +49,8 @@ func New(baseURL, pat string) *Client {
 		Products:     adminv1connect.NewProductServiceClient(hc, base),
 		Monetization: adminv1connect.NewMonetizationServiceClient(hc, base),
 		BillingCreds: adminv1connect.NewBillingCredentialsServiceClient(hc, base),
+		Push:         adminv1connect.NewPushServiceClient(hc, base),
+		Profiles:     adminv1connect.NewProfileServiceClient(hc, base),
 	}
 }
 

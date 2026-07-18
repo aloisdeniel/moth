@@ -1,5 +1,27 @@
 import { PushPermission, PushRevokeReason, PushTarget } from "../gen/moth/admin/v1/push_pb";
 
+// vapidKeyError mirrors the server-side shape check so a typo surfaces
+// before the save round-trip: base64url (no padding) decoding to an
+// uncompressed P-256 public point (65 bytes starting 0x04). Empty is valid —
+// the project simply does not use Web Push. Shared by the Settings tab's
+// push section and the creation wizard's push step.
+export function vapidKeyError(key: string): string {
+  if (key === "") return "";
+  if (!/^[A-Za-z0-9_-]+$/.test(key)) {
+    return "Must be base64url without padding (A–Z a–z 0–9 - _).";
+  }
+  let raw: string;
+  try {
+    raw = atob(key.replace(/-/g, "+").replace(/_/g, "/"));
+  } catch {
+    return "Not valid base64url.";
+  }
+  if (raw.length !== 65 || raw.charCodeAt(0) !== 0x04) {
+    return "Not an uncompressed P-256 public key (expected 65 bytes starting with 0x04).";
+  }
+  return "";
+}
+
 // pushTargetLabel renders the push-target enum for display: which service
 // the credential belongs to (which API the sender must call), not the OS.
 export function pushTargetLabel(t: PushTarget): string {

@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
 import { ErrorNote, Field, Loading, Status, StringListField } from "../components/ui";
+import { ProfilePlatform, ProfileService } from "../gen/moth/admin/v1/profile_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { PushService } from "../gen/moth/admin/v1/push_pb";
 import { InstanceSettingsService, SmtpSource } from "../gen/moth/admin/v1/settings_pb";
+import { vapidKeyError } from "../lib/push";
 
 // ProjectSettings edits the per-project auth policy (the milestone-02
 // settings JSON, as a form).
@@ -255,29 +257,182 @@ export function ProjectSettings({ project }: { project: Project }) {
       </div>
     </form>
     <PushSection project={project} />
+    <ProfileSection project={project} />
     </>
   );
 }
 
-// vapidKeyError mirrors the server-side shape check so a typo surfaces
-// before the save round-trip: base64url (no padding) decoding to an
-// uncompressed P-256 public point (65 bytes starting 0x04). Empty is valid —
-// the project simply does not use Web Push.
-function vapidKeyError(key: string): string {
-  if (key === "") return "";
-  if (!/^[A-Za-z0-9_-]+$/.test(key)) {
-    return "Must be base64url without padding (A–Z a–z 0–9 - _).";
+// ProfileSection edits the project's setup profile (milestone 22): the
+// platforms and feature intents the wizard recorded. The setup tab and the
+// overview checklist adapt to it; a pre-wizard project has none until one is
+// saved here. UpdateProfile is a full replacement — platforms must stay
+// non-empty, mirrored client-side.
+function ProfileSection({ project }: { project: Project }) {
+  const current = useQuery(ProfileService.method.getProfile, { projectId: project.id });
+  const [platforms, setPlatforms] = useState<ProfilePlatform[]>([]);
+  const [google, setGoogle] = useState(false);
+  const [apple, setApple] = useState(false);
+  const [sells, setSells] = useState(false);
+  const [pushes, setPushes] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    const p = current.data?.profile;
+    setPlatforms(p?.platforms ?? []);
+    setGoogle(p?.googleSignIn ?? false);
+    setApple(p?.appleSignIn ?? false);
+    setSells(p?.sellsSubscriptions ?? false);
+    setPushes(p?.sendsPushes ?? false);
+    setDismissed(p?.checklistDismissed ?? false);
+  }, [current.data]);
+
+  const update = useMutation(ProfileService.method.updateProfile, {
+    onSuccess: () => {
+      invalidate(
+        ProfileService.method.getProfile,
+        ProfileService.method.getProjectSetupStatus,
+      );
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    },
+  });
+
+  function toggle(p: ProfilePlatform) {
+    setPlatforms((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
   }
-  let raw: string;
-  try {
-    raw = atob(key.replace(/-/g, "+").replace(/_/g, "/"));
-  } catch {
-    return "Not valid base64url.";
-  }
-  if (raw.length !== 65 || raw.charCodeAt(0) !== 0x04) {
-    return "Not an uncompressed P-256 public key (expected 65 bytes starting with 0x04).";
-  }
-  return "";
+
+  const options: { value: ProfilePlatform; label: string }[] = [
+    { value: ProfilePlatform.IOS, label: "iOS" },
+    { value: ProfilePlatform.ANDROID, label: "Android" },
+    { value: ProfilePlatform.WEB, label: "Web" },
+  ];
+
+  return (
+    <form
+      className="stack-24"
+      style={{ maxWidth: 640 }}
+      onSubmit={(e) => {
+        e.preventDefault();
+        update.mutate({
+          projectId: project.id,
+          profile: {
+            platforms,
+            googleSignIn: google,
+            appleSignIn: apple,
+            sellsSubscriptions: sells,
+            sendsPushes: pushes,
+            checklistDismissed: dismissed,
+          },
+        });
+      }}
+    >
+      <section className="card card--pad stack-16">
+        <h3 className="card__title">Project profile</h3>
+        <p className="caption">
+          What this app intends: platforms and features. The setup tab and the
+          overview checklist adapt to it — it records intent only, never
+          configuration.
+        </p>
+        {current.isPending && <Loading />}
+        {current.isError && <ErrorNote message={errorMessage(current.error)} />}
+        {current.data && (
+          <>
+            {!current.data.hasProfile && (
+              <p className="caption">
+                This project has no profile yet (it predates the creation
+                wizard) — its setup tab shows everything. Save one to tailor
+                it.
+              </p>
+            )}
+            <div className="stack-8">
+              <span className="field__label">Platforms</span>
+              {options.map((o) => (
+                <label className="check" key={o.value}>
+                  <input
+                    type="checkbox"
+                    checked={platforms.includes(o.value)}
+                    onChange={() => toggle(o.value)}
+                  />
+                  <span>{o.label}</span>
+                </label>
+              ))}
+              {platforms.length === 0 && (
+                <span className="field__error">Pick at least one platform.</span>
+              )}
+            </div>
+            <div className="stack-8">
+              <span className="field__label">Features</span>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={google}
+                  onChange={(e) => setGoogle(e.target.checked)}
+                />
+                <span>Google sign-in</span>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={apple}
+                  onChange={(e) => setApple(e.target.checked)}
+                />
+                <span>Apple sign-in</span>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={sells}
+                  onChange={(e) => setSells(e.target.checked)}
+                />
+                <span>Sells subscriptions</span>
+              </label>
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={pushes}
+                  onChange={(e) => setPushes(e.target.checked)}
+                />
+                <span>Sends push notifications</span>
+              </label>
+            </div>
+            {current.data.hasProfile && dismissed && (
+              <label className="check">
+                <input
+                  type="checkbox"
+                  checked={dismissed}
+                  onChange={(e) => setDismissed(e.target.checked)}
+                />
+                <span>
+                  Checklist dismissed
+                  <span className="caption" style={{ display: "block" }}>
+                    Untick to bring the overview checklist card back.
+                  </span>
+                </span>
+              </label>
+            )}
+            <div className="row-12">
+              <button
+                type="submit"
+                className="btn btn--primary"
+                disabled={update.isPending || platforms.length === 0}
+              >
+                {update.isPending
+                  ? "Saving…"
+                  : current.data.hasProfile
+                    ? "Save profile"
+                    : "Create profile"}
+              </button>
+              {saved && <span className="caption text-success">Saved.</span>}
+              {update.isError && (
+                <span className="field__error">{errorMessage(update.error)}</span>
+              )}
+            </div>
+          </>
+        )}
+      </section>
+    </form>
+  );
 }
 
 // PushSection edits the per-project push settings (milestone 20): the

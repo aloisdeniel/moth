@@ -66,6 +66,9 @@ const (
 	// Milestone 20 — push device registry.
 	ActionPushSettingsUpdate = "push.settings.update"
 	ActionPushDeviceRevoke   = "push.device.revoke"
+
+	// Milestone 22 — setup profile (the creation wizard's answers).
+	ActionProfileUpdate = "profile.update"
 )
 
 type clientIPCtxKey struct{}

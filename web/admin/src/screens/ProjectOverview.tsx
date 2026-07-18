@@ -13,6 +13,7 @@ import {
   Status,
 } from "../components/ui";
 import { AnalyticsService } from "../gen/moth/admin/v1/analytics_pb";
+import { ProfileService } from "../gen/moth/admin/v1/profile_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { failuresElevated, loginAttempts7d } from "../lib/failures";
@@ -22,11 +23,100 @@ export function ProjectOverview({ project }: { project: Project }) {
   return (
     <div className="stack-24">
       <FailureBanner project={project} />
+      <SetupChecklistCard project={project} />
       <PublishableKeyCard project={project} />
       <SecretKeyCard project={project} />
       <SigningKeyCard project={project} />
       <DangerZone project={project} />
     </div>
+  );
+}
+
+// SetupChecklistCard renders the derived setup checklist (milestone 22): the
+// outstanding items GetProjectSetupStatus recomputes from live config on
+// every view. Each item links to the tab (or names the CLI command) that
+// finishes it and disappears the moment the underlying config exists.
+// Dismissing hides the card via the profile flag — it never fakes
+// completeness, and the items come back if the profile is edited to
+// un-dismiss. Projects without a profile (pre-wizard) show no card.
+function SetupChecklistCard({ project }: { project: Project }) {
+  const status = useQuery(ProfileService.method.getProjectSetupStatus, {
+    projectId: project.id,
+  });
+  const profile = useQuery(ProfileService.method.getProfile, { projectId: project.id });
+  const dismiss = useMutation(ProfileService.method.updateProfile, {
+    onSuccess: () => {
+      invalidate(
+        ProfileService.method.getProjectSetupStatus,
+        ProfileService.method.getProfile,
+      );
+    },
+  });
+
+  const s = status.data;
+  if (!s || !s.hasProfile || s.items.length === 0 || s.checklistDismissed) {
+    return null;
+  }
+
+  function onDismiss() {
+    // Full-replacement update: carry the stored answers, flip the flag.
+    const p = profile.data?.profile;
+    if (!p) return;
+    dismiss.mutate({
+      projectId: project.id,
+      profile: {
+        platforms: p.platforms,
+        googleSignIn: p.googleSignIn,
+        appleSignIn: p.appleSignIn,
+        sellsSubscriptions: p.sellsSubscriptions,
+        sendsPushes: p.sendsPushes,
+        checklistDismissed: true,
+      },
+    });
+  }
+
+  return (
+    <section className="card card--pad stack-16">
+      <div className="page__header">
+        <h3 className="card__title">Finish setting up</h3>
+        <button
+          type="button"
+          className="btn btn--ghost btn--compact"
+          disabled={dismiss.isPending || profile.data?.profile === undefined}
+          onClick={onDismiss}
+        >
+          {dismiss.isPending ? "Dismissing…" : "Dismiss"}
+        </button>
+      </div>
+      <p className="caption">
+        Derived from the project's live configuration — each item disappears
+        the moment it is configured, whether from here, the CLI or a teammate's
+        session.
+      </p>
+      <div className="stack-12">
+        {s.items.map((item) => (
+          <div key={item.id} className="stack-8" style={{ gap: 4 }}>
+            <span className="body-strong">
+              {item.title}
+              {" — "}
+              {item.tab !== "" ? (
+                <Link to={`/projects/${project.id}/${item.tab}`}>open the {item.tab} tab</Link>
+              ) : (
+                <Link to="/settings">open instance settings</Link>
+              )}
+            </span>
+            <span className="caption">{item.detail}</span>
+            {item.cliCommand !== "" && (
+              <span className="caption">
+                Or from the terminal:{" "}
+                <span className="inline-code">{item.cliCommand}</span>
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+      {dismiss.isError && <ErrorNote message={errorMessage(dismiss.error)} />}
+    </section>
   );
 }
 

@@ -24,6 +24,7 @@ func newProjectCmd() *cobra.Command {
 	addClientFlags(cmd, &opts)
 	cmd.AddCommand(
 		newProjectCreateCmd(&opts),
+		newProjectInitCmd(&opts),
 		newProjectListCmd(&opts),
 		newProjectGetCmd(&opts),
 		newProjectUpdateCmd(&opts),

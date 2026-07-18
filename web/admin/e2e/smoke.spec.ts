@@ -45,30 +45,68 @@ test("log out and back in", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in to moth" })).toBeVisible();
 });
 
-test("create a project and see its keys", async ({ page }) => {
+test("create a project through the wizard and see its keys", async ({ page }) => {
   await page.goto("/admin/login");
   await page.getByLabel("Email").fill(admin.email);
   await page.getByLabel("Password").fill(admin.password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  // "Create project" opens the full-screen wizard (milestone 22).
   await page.getByRole("button", { name: "Create project" }).click();
-  await page.getByLabel("Name").fill("Birdwatch");
-  await expect(page.getByText("Slug: birdwatch")).toBeVisible();
-  await page.getByRole("dialog").getByRole("button", { name: "Create project" }).click();
 
-  // The creation dialog shows both keys; the secret exactly once.
-  await expect(page.getByText("Birdwatch is ready")).toBeVisible();
+  // Step 1 — basics: name, derived editable slug, platforms.
+  await page.getByLabel(/^Name/).fill("Birdwatch");
+  await expect(page.getByLabel(/^Slug/)).toHaveValue("birdwatch");
+  await page.getByLabel("iOS").check();
+  await page.getByLabel("Android").check();
+  await page.getByLabel("Web", { exact: true }).check();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  // Step 2 — sign-in: keep the prefilled defaults.
+  await expect(page.getByLabel("Open sign-up")).toBeChecked();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  // Step 3 — monetization: yes, catalog defined later in the tab.
+  await page
+    .getByRole("group", { name: "Sells subscriptions" })
+    .getByRole("button", { name: "Yes" })
+    .click();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  // Step 4 — push: yes, VAPID key deferred (the snippet is offered).
+  await page
+    .getByRole("group", { name: "Sends pushes" })
+    .getByRole("button", { name: "Yes" })
+    .click();
+  await expect(page.getByText("npx web-push generate-vapid-keys")).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  // Step 5 — branding: skip.
+  await page.getByRole("button", { name: "Continue" }).click();
+
+  // Step 6 — review & create.
+  await expect(page.getByText("Nothing has been created yet", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Create project" }).click();
+
+  // The keys finale shows both keys; the secret exactly once.
+  await expect(page.getByRole("heading", { name: "Birdwatch is ready" })).toBeVisible();
   await expect(page.getByText(/pk_[A-Za-z0-9_-]+/)).toBeVisible();
   await expect(page.getByText(/sk_[A-Za-z0-9_-]+/)).toBeVisible();
   await expect(page.getByText("You won't see this key again", { exact: false })).toBeVisible();
 
-  await page.getByRole("button", { name: "Open project" }).click();
+  await page.getByRole("button", { name: "Continue to setup" }).click();
+  await expect(page.getByRole("heading", { name: "1 · Add the SDK" })).toBeVisible();
 
   // Project overview: publishable key visible, secret masked, JWKS URL.
-  await expect(page.getByRole("heading", { name: "Birdwatch" })).toBeVisible();
-  await expect(page.getByText(/pk_[A-Za-z0-9_-]+/)).toBeVisible();
+  await page.getByRole("tab", { name: "Overview" }).click();
+  await expect(page.getByRole("heading", { name: "Publishable key" })).toBeVisible();
+  await expect(page.getByText(/pk_[A-Za-z0-9_-]+/).first()).toBeVisible();
   await expect(page.getByText("sk_••••", { exact: false })).toBeVisible();
   await expect(page.getByText(/\/p\/birdwatch\/\.well-known\/jwks\.json/)).toBeVisible();
+
+  // The derived checklist card is on the overview (profile written by the
+  // wizard, config still outstanding).
+  await expect(page.getByRole("heading", { name: "Finish setting up" })).toBeVisible();
 });
 
 test("setup instructions render real values", async ({ page }) => {
@@ -80,7 +118,8 @@ test("setup instructions render real values", async ({ page }) => {
   await page.getByText("Birdwatch").first().click();
   await page.getByRole("tab", { name: "Setup" }).click();
 
-  await expect(page.getByText("hosted: http://127.0.0.1:8990/pub")).toBeVisible();
+  // Three pubspec snippets carry the hosted line (auth, billing, push).
+  await expect(page.getByText("hosted: http://127.0.0.1:8990/pub").first()).toBeVisible();
   // The pk_ snippet renders twice: the MothApp wrap (step 2) and the
   // monetization gate (step 6).
   await expect(page.getByText(/publishableKey: 'pk_[A-Za-z0-9_-]+'/).first()).toBeVisible();
@@ -164,7 +203,7 @@ test("monetization: create an entitlement and a product, and show the store URLs
   const prodDialog = page.getByRole("dialog");
   await prodDialog.getByLabel("Identifier").fill("monthly");
   await prodDialog.getByLabel("Display name").fill("Monthly Pro");
-  await prodDialog.getByLabel("Price").fill("9.99");
+  await prodDialog.getByLabel("Price", { exact: true }).fill("9.99");
   await prodDialog.getByRole("checkbox").first().check();
   await prodDialog.getByRole("button", { name: "Add product" }).click();
   // The product now appears in both the Products card and the default-offering

@@ -46,7 +46,13 @@ type Project struct {
 	// (moth.projectconfig.v1.StoredPush, see internal/push); empty means push
 	// was never configured (disabled). Plain config with no revision history,
 	// written through SetProjectPush, never UpdateProject.
-	Push      []byte
+	Push []byte
+	// Profile is the raw setup-profile protobuf document
+	// (moth.projectconfig.v1.StoredProfile, see internal/profile); empty means
+	// the project has no profile (created before the milestone-22 wizard).
+	// Plain config with no revision history, written through
+	// SetProjectProfile, never UpdateProject.
+	Profile   []byte
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -114,7 +120,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme_pb, theme_revision, paywall_pb, paywall_revision, copy_pb, copy_revision, push_pb, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme_pb, theme_revision, paywall_pb, paywall_revision, copy_pb, copy_revision, push_pb, profile_pb, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
@@ -190,6 +196,20 @@ func (s *Store) SetProjectPush(ctx context.Context, projectID string, push []byt
 		push, formatTime(now), projectID)
 	if err != nil {
 		return fmt.Errorf("set project push: %w", err)
+	}
+	return requireRow(res)
+}
+
+// SetProjectProfile installs profile as the project's stored setup-profile
+// document (a moth.projectconfig.v1.StoredProfile protobuf, see
+// internal/profile). Plain config: a full replacement with no revision
+// history, exactly like the push settings.
+func (s *Store) SetProjectProfile(ctx context.Context, projectID string, profile []byte, now time.Time) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE projects SET profile_pb = ?, updated_at = ? WHERE id = ?`,
+		profile, formatTime(now), projectID)
+	if err != nil {
+		return fmt.Errorf("set project profile: %w", err)
 	}
 	return requireRow(res)
 }
@@ -390,7 +410,7 @@ func scanProjectRow(row rowScanner) (Project, error) {
 	var settings, createdAt, updatedAt string
 	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.PublishableKey, &p.SecretKeyHash,
 		&settings, &p.Theme, &p.ThemeRevisionID, &p.Paywall, &p.PaywallRevisionID,
-		&p.Copy, &p.CopyRevisionID, &p.Push, &createdAt, &updatedAt)
+		&p.Copy, &p.CopyRevisionID, &p.Push, &p.Profile, &createdAt, &updatedAt)
 	if err != nil {
 		return Project{}, err
 	}

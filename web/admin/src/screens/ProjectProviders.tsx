@@ -2,14 +2,21 @@ import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { useState } from "react";
 
 import { errorMessage, invalidate } from "../api";
-import { Badge, Field, KeyWell, PasswordInput, StringListField } from "../components/ui";
+import {
+  AppleCredentialFields,
+  GoogleCredentialFields,
+  type AppleDraft,
+  type GoogleDraft,
+} from "../components/providerFields";
+import { Badge, KeyWell, StringListField } from "../components/ui";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService } from "../gen/moth/admin/v1/settings_pb";
 
 // ProjectProviders configures social sign-in (Google & Apple) with the
 // step-by-step console walkthroughs inline — the exact redirect URIs and
-// where each pasted value comes from.
+// where each pasted value comes from. The credential fields themselves are
+// shared with the creation wizard (components/providerFields).
 export function ProjectProviders({ project }: { project: Project }) {
   const s = project.settings;
   const g = s?.google;
@@ -17,18 +24,22 @@ export function ProjectProviders({ project }: { project: Project }) {
 
   // Google
   const [googleEnabled, setGoogleEnabled] = useState(g?.enabled ?? false);
-  const [webClientId, setWebClientId] = useState(g?.webClientId ?? "");
-  const [webClientSecret, setWebClientSecret] = useState("");
-  const [iosClientId, setIosClientId] = useState(g?.iosClientId ?? "");
-  const [androidClientId, setAndroidClientId] = useState(g?.androidClientId ?? "");
+  const [google, setGoogle] = useState<GoogleDraft>({
+    webClientId: g?.webClientId ?? "",
+    webClientSecret: "",
+    iosClientId: g?.iosClientId ?? "",
+    androidClientId: g?.androidClientId ?? "",
+  });
 
   // Apple
   const [appleEnabled, setAppleEnabled] = useState(a?.enabled ?? false);
-  const [servicesId, setServicesId] = useState(a?.servicesId ?? "");
-  const [teamId, setTeamId] = useState(a?.teamId ?? "");
-  const [keyId, setKeyId] = useState(a?.keyId ?? "");
-  const [privateKeyP8, setPrivateKeyP8] = useState("");
-  const [bundleIds, setBundleIds] = useState<string[]>(a?.bundleIds ?? []);
+  const [apple, setApple] = useState<AppleDraft>({
+    servicesId: a?.servicesId ?? "",
+    teamId: a?.teamId ?? "",
+    keyId: a?.keyId ?? "",
+    privateKeyP8: "",
+    bundleIds: a?.bundleIds ?? [],
+  });
 
   // Shared
   const [autoLink, setAutoLink] = useState(s?.autoLinkVerifiedEmail ?? true);
@@ -45,8 +56,8 @@ export function ProjectProviders({ project }: { project: Project }) {
       invalidate(ProjectService.method.getProject, ProjectService.method.listProjects);
       // The secrets were consumed server-side; blank the fields so the
       // "stored" placeholders take over.
-      setWebClientSecret("");
-      setPrivateKeyP8("");
+      setGoogle((d) => ({ ...d, webClientSecret: "" }));
+      setApple((d) => ({ ...d, privateKeyP8: "" }));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     },
@@ -66,19 +77,19 @@ export function ProjectProviders({ project }: { project: Project }) {
         refreshTokenTtlDays: s?.refreshTokenTtlDays ?? 30,
         google: {
           enabled: googleEnabled,
-          webClientId: webClientId.trim(),
-          iosClientId: iosClientId.trim(),
-          androidClientId: androidClientId.trim(),
+          webClientId: google.webClientId.trim(),
+          iosClientId: google.iosClientId.trim(),
+          androidClientId: google.androidClientId.trim(),
           // Write-only: empty keeps the stored secret.
-          webClientSecret,
+          webClientSecret: google.webClientSecret,
         },
         apple: {
           enabled: appleEnabled,
-          servicesId: servicesId.trim(),
-          teamId: teamId.trim(),
-          keyId: keyId.trim(),
-          privateKeyP8: privateKeyP8.trim(),
-          bundleIds,
+          servicesId: apple.servicesId.trim(),
+          teamId: apple.teamId.trim(),
+          keyId: apple.keyId.trim(),
+          privateKeyP8: apple.privateKeyP8.trim(),
+          bundleIds: apple.bundleIds,
         },
         autoLinkVerifiedEmail: autoLink,
         redirectSchemes,
@@ -137,85 +148,52 @@ export function ProjectProviders({ project }: { project: Project }) {
           </p>
         </div>
 
-        <div className="stack-8">
-          <p className="body-strong">2 · Create a Web application client</p>
-          <p className="caption">
-            <strong>Create credentials → OAuth client ID → Web application</strong>.
-            Under <strong>Authorized redirect URIs</strong>, add exactly:
-          </p>
-          {base && <KeyWell value={`${base}/oauth/google/callback`} />}
-          <p className="caption">
-            Google shows a <strong>Client ID</strong> (ends in{" "}
-            <span className="inline-code">.apps.googleusercontent.com</span>)
-            and a <strong>Client secret</strong> — paste both here. The web
-            client also serves as the server-side audience for the redirect
-            fallback flow.
-          </p>
-        </div>
-        <Field label="Web client ID">
-          <input
-            className="input input--mono"
-            value={webClientId}
-            onChange={(e) => setWebClientId(e.target.value)}
-            placeholder="1234567890-abc.apps.googleusercontent.com"
-            spellCheck={false}
-          />
-        </Field>
-        <Field
-          label="Web client secret"
-          help={
-            g?.hasWebClientSecret
-              ? "A secret is stored (encrypted). Leave blank to keep it; paste a new value to replace it."
-              : "Needed only for the web-redirect fallback flow. Stored encrypted, never shown again."
+        <GoogleCredentialFields
+          draft={google}
+          onChange={setGoogle}
+          hasStoredSecret={g?.hasWebClientSecret ?? false}
+          beforeWeb={
+            <div className="stack-8">
+              <p className="body-strong">2 · Create a Web application client</p>
+              <p className="caption">
+                <strong>Create credentials → OAuth client ID → Web application</strong>.
+                Under <strong>Authorized redirect URIs</strong>, add exactly:
+              </p>
+              {base && <KeyWell value={`${base}/oauth/google/callback`} />}
+              <p className="caption">
+                Google shows a <strong>Client ID</strong> (ends in{" "}
+                <span className="inline-code">.apps.googleusercontent.com</span>)
+                and a <strong>Client secret</strong> — paste both here. The web
+                client also serves as the server-side audience for the redirect
+                fallback flow.
+              </p>
+            </div>
           }
-        >
-          <PasswordInput
-            value={webClientSecret}
-            onChange={setWebClientSecret}
-            placeholder={g?.hasWebClientSecret ? "•••••••• (stored)" : "GOCSPX-…"}
-            autoComplete="off"
-          />
-        </Field>
-
-        <div className="stack-8">
-          <p className="body-strong">3 · Create an iOS client</p>
-          <p className="caption">
-            <strong>Create credentials → OAuth client ID → iOS</strong>, enter
-            your app's bundle ID. Paste the resulting client ID here — native
-            Google sign-in on iOS mints tokens with this audience.
-          </p>
-        </div>
-        <Field label="iOS client ID">
-          <input
-            className="input input--mono"
-            value={iosClientId}
-            onChange={(e) => setIosClientId(e.target.value)}
-            placeholder="1234567890-ios.apps.googleusercontent.com"
-            spellCheck={false}
-          />
-        </Field>
-
-        <div className="stack-8">
-          <p className="body-strong">4 · Create an Android client</p>
-          <p className="caption">
-            <strong>Create credentials → OAuth client ID → Android</strong>,
-            enter the package name and the SHA-1 of your signing certificate
-            (debug and release each need their own client;{" "}
-            <span className="inline-code">./gradlew signingReport</span> prints
-            the fingerprints). Note: Google's Android sign-in issues ID tokens
-            with the <em>web</em> client ID as audience, so fill in step 2 even
-            for Android-only apps.
-          </p>
-        </div>
-        <Field label="Android client ID">
-          <input
-            className="input input--mono"
-            value={androidClientId}
-            onChange={(e) => setAndroidClientId(e.target.value)}
-            placeholder="1234567890-android.apps.googleusercontent.com"
-            spellCheck={false}
-          />
-        </Field>
+          beforeIos={
+            <div className="stack-8">
+              <p className="body-strong">3 · Create an iOS client</p>
+              <p className="caption">
+                <strong>Create credentials → OAuth client ID → iOS</strong>, enter
+                your app's bundle ID. Paste the resulting client ID here — native
+                Google sign-in on iOS mints tokens with this audience.
+              </p>
+            </div>
+          }
+          beforeAndroid={
+            <div className="stack-8">
+              <p className="body-strong">4 · Create an Android client</p>
+              <p className="caption">
+                <strong>Create credentials → OAuth client ID → Android</strong>,
+                enter the package name and the SHA-1 of your signing certificate
+                (debug and release each need their own client;{" "}
+                <span className="inline-code">./gradlew signingReport</span> prints
+                the fingerprints). Note: Google's Android sign-in issues ID tokens
+                with the <em>web</em> client ID as audience, so fill in step 2 even
+                for Android-only apps.
+              </p>
+            </div>
+          }
+        />
       </section>
 
       <section className="card card--pad stack-16">
@@ -239,137 +217,85 @@ export function ProjectProviders({ project }: { project: Project }) {
           </span>
         </label>
 
-        <div className="stack-8">
-          <p className="body-strong">1 · Add the capability to your App ID</p>
-          <p className="caption">
-            In{" "}
-            <a
-              href="https://developer.apple.com/account/resources/identifiers/list"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Apple Developer → Certificates, Identifiers &amp; Profiles →
-              Identifiers
-            </a>
-            , open your app's <strong>App ID</strong> and tick{" "}
-            <strong>Sign in with Apple</strong> under Capabilities (then
-            regenerate provisioning profiles). List every bundle ID that will
-            sign in natively — tokens from the iOS app carry the bundle ID as
-            audience:
-          </p>
-          <StringListField
-            label="Bundle IDs"
-            values={bundleIds}
-            onChange={setBundleIds}
-            placeholder="com.example.birdwatch"
-          />
-        </div>
-
-        <div className="stack-8">
-          <p className="body-strong">2 · Create a Services ID (web &amp; Android)</p>
-          <p className="caption">
-            Still under Identifiers, create a new identifier of type{" "}
-            <strong>Services IDs</strong> — the convention is your bundle ID
-            plus a suffix, e.g.{" "}
-            <span className="inline-code">com.example.birdwatch.signin</span>.
-            Enable <strong>Sign in with Apple</strong> on it, click{" "}
-            <strong>Configure</strong>, pick your App ID as the primary, then
-            register the domain and return URL:
-          </p>
-          {base && (
-            <>
-              <div className="stack-8">
-                <span className="field__label">Domain</span>
-                <KeyWell value={host} />
-              </div>
-              <div className="stack-8">
-                <span className="field__label">Return URL</span>
-                <KeyWell value={`${base}/oauth/apple/callback`} />
-              </div>
-            </>
-          )}
-          <p className="caption">
-            Apple requires the domain to be publicly reachable over HTTPS for
-            production use.
-          </p>
-        </div>
-        <Field label="Services ID">
-          <input
-            className="input input--mono"
-            value={servicesId}
-            onChange={(e) => setServicesId(e.target.value)}
-            placeholder="com.example.birdwatch.signin"
-            spellCheck={false}
-          />
-        </Field>
-
-        <div className="stack-8">
-          <p className="body-strong">3 · Create a private key</p>
-          <p className="caption">
-            Go to{" "}
-            <a
-              href="https://developer.apple.com/account/resources/authkeys/list"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Keys
-            </a>
-            , create a key with <strong>Sign in with Apple</strong> enabled and
-            your App ID as its primary. Download the{" "}
-            <span className="inline-code">.p8</span> file —{" "}
-            <strong>Apple lets you download it exactly once</strong> — and note
-            the <strong>Key ID</strong> shown next to it. Your{" "}
-            <strong>Team ID</strong> is in the top-right of the developer
-            account (or under Membership). moth signs Apple's required client
-            secret from this key and rotates it automatically.
-          </p>
-        </div>
-        <div className="row-16" style={{ alignItems: "flex-start" }}>
-          <div style={{ flex: 1 }}>
-            <Field label="Team ID">
-              <input
-                className="input input--mono"
-                value={teamId}
-                onChange={(e) => setTeamId(e.target.value)}
-                placeholder="AB12CD34EF"
-                spellCheck={false}
-              />
-            </Field>
-          </div>
-          <div style={{ flex: 1 }}>
-            <Field label="Key ID">
-              <input
-                className="input input--mono"
-                value={keyId}
-                onChange={(e) => setKeyId(e.target.value)}
-                placeholder="XYZ987WV65"
-                spellCheck={false}
-              />
-            </Field>
-          </div>
-        </div>
-        <Field
-          label="Private key (.p8)"
-          help={
-            a?.hasPrivateKey
-              ? "Leave blank to keep the stored key; paste a new one to replace it."
-              : "Paste the full contents of the downloaded .p8 file. Stored encrypted, never shown again."
+        <AppleCredentialFields
+          draft={apple}
+          onChange={setApple}
+          hasStoredKey={a?.hasPrivateKey ?? false}
+          beforeBundleIds={
+            <div className="stack-8">
+              <p className="body-strong">1 · Add the capability to your App ID</p>
+              <p className="caption">
+                In{" "}
+                <a
+                  href="https://developer.apple.com/account/resources/identifiers/list"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Apple Developer → Certificates, Identifiers &amp; Profiles →
+                  Identifiers
+                </a>
+                , open your app's <strong>App ID</strong> and tick{" "}
+                <strong>Sign in with Apple</strong> under Capabilities (then
+                regenerate provisioning profiles). List every bundle ID that will
+                sign in natively — tokens from the iOS app carry the bundle ID as
+                audience:
+              </p>
+            </div>
           }
-        >
-          <textarea
-            className="input input--mono"
-            rows={6}
-            value={privateKeyP8}
-            onChange={(e) => setPrivateKeyP8(e.target.value)}
-            placeholder={
-              a?.hasPrivateKey
-                ? "Private key stored (encrypted)"
-                : "-----BEGIN PRIVATE KEY-----\n…\n-----END PRIVATE KEY-----"
-            }
-            spellCheck={false}
-          />
-        </Field>
-        {a?.hasPrivateKey && <Badge tone="success">Private key stored</Badge>}
+          beforeServicesId={
+            <div className="stack-8">
+              <p className="body-strong">2 · Create a Services ID (web &amp; Android)</p>
+              <p className="caption">
+                Still under Identifiers, create a new identifier of type{" "}
+                <strong>Services IDs</strong> — the convention is your bundle ID
+                plus a suffix, e.g.{" "}
+                <span className="inline-code">com.example.birdwatch.signin</span>.
+                Enable <strong>Sign in with Apple</strong> on it, click{" "}
+                <strong>Configure</strong>, pick your App ID as the primary, then
+                register the domain and return URL:
+              </p>
+              {base && (
+                <>
+                  <div className="stack-8">
+                    <span className="field__label">Domain</span>
+                    <KeyWell value={host} />
+                  </div>
+                  <div className="stack-8">
+                    <span className="field__label">Return URL</span>
+                    <KeyWell value={`${base}/oauth/apple/callback`} />
+                  </div>
+                </>
+              )}
+              <p className="caption">
+                Apple requires the domain to be publicly reachable over HTTPS for
+                production use.
+              </p>
+            </div>
+          }
+          beforeKey={
+            <div className="stack-8">
+              <p className="body-strong">3 · Create a private key</p>
+              <p className="caption">
+                Go to{" "}
+                <a
+                  href="https://developer.apple.com/account/resources/authkeys/list"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Keys
+                </a>
+                , create a key with <strong>Sign in with Apple</strong> enabled and
+                your App ID as its primary. Download the{" "}
+                <span className="inline-code">.p8</span> file —{" "}
+                <strong>Apple lets you download it exactly once</strong> — and note
+                the <strong>Key ID</strong> shown next to it. Your{" "}
+                <strong>Team ID</strong> is in the top-right of the developer
+                account (or under Membership). moth signs Apple's required client
+                secret from this key and rotates it automatically.
+              </p>
+            </div>
+          }
+        />
       </section>
 
       <section className="card card--pad stack-16">

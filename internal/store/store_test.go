@@ -145,6 +145,53 @@ func TestProjectCRUD(t *testing.T) {
 	}
 }
 
+func TestSetProjectProfile(t *testing.T) {
+	s := openTestStore(t)
+	ctx := context.Background()
+
+	p1, k1 := testProject("p1", "my-app")
+	if err := s.CreateProject(ctx, p1, k1); err != nil {
+		t.Fatal(err)
+	}
+	p2, k2 := testProject("p2", "other-app")
+	if err := s.CreateProject(ctx, p2, k2); err != nil {
+		t.Fatal(err)
+	}
+
+	// A fresh project has no profile document.
+	got, err := s.GetProject(ctx, "p1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Profile) != 0 {
+		t.Fatalf("fresh project carries a profile: %v", got.Profile)
+	}
+
+	doc := []byte{0x08, 0x01} // any opaque bytes; the store never parses them
+	if err := s.SetProjectProfile(ctx, "p1", doc, time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	if got, err = s.GetProject(ctx, "p1"); err != nil {
+		t.Fatal(err)
+	}
+	if string(got.Profile) != string(doc) {
+		t.Fatalf("profile not round-tripped: %v", got.Profile)
+	}
+
+	// Cross-project isolation: p2 is untouched.
+	other, err := s.GetProject(ctx, "p2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(other.Profile) != 0 {
+		t.Fatalf("profile leaked to another project: %v", other.Profile)
+	}
+
+	if err := s.SetProjectProfile(ctx, "missing", doc, time.Now()); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("missing project: want ErrNotFound, got %v", err)
+	}
+}
+
 func TestCreateProjectIsAtomic(t *testing.T) {
 	s := openTestStore(t)
 	ctx := context.Background()

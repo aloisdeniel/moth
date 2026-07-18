@@ -113,6 +113,10 @@ type ProjectStore interface {
 	// SetProjectPush installs the serialized moth.projectconfig.v1.StoredPush
 	// document as the project's push settings (full replacement, no revisions).
 	SetProjectPush(ctx context.Context, projectID string, push []byte, now time.Time) error
+	// SetProjectProfile installs the serialized
+	// moth.projectconfig.v1.StoredProfile document as the project's setup
+	// profile (full replacement, no revisions).
+	SetProjectProfile(ctx context.Context, projectID string, profile []byte, now time.Time) error
 	UpdateProjectSecretKey(ctx context.Context, id, secretKeyHash string, now time.Time) error
 	// ResetProjectSigningKey retires all keys, installs k and revokes the
 	// project's refresh tokens in one transaction.

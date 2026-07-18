@@ -376,6 +376,32 @@ Flags:
       --yes           skip the confirmation prompt
 ```
 
+## moth project init
+
+Init walks the milestone-22 wizard in the terminal: platforms, sign-in
+(email/password defaults, Google/Apple with credentials entered in-flow or
+deferred to 'moth setup google|apple'), monetization (the first entitlement
+and its tiers; store credentials always deferred to 'moth setup billing')
+and push notifications. Nothing is written until the final confirmation —
+abandoning at any prompt creates nothing.
+
+After creation the pk_/sk_ keys are printed exactly once, followed by the
+derived setup checklist (whatever was deferred) and a ready-to-commit
+'moth project apply' spec of what was just built.
+
+Interactive only: with piped stdin it refuses and points at the scriptable
+'moth project create' and 'moth project apply' instead.
+
+```
+moth project init [flags]
+```
+
+Flags:
+
+```
+      --spec-out string   write the emitted 'moth project apply' spec YAML to this file instead of printing it
+```
+
 ## moth project keys
 
 Manage a project's signing and secret keys

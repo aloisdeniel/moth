@@ -109,6 +109,23 @@ func FromProto(msg *projectconfigv1.StoredPush) Config {
 	}
 }
 
+// ValidateVAPIDPublicKey checks a non-empty VAPID public key for shape:
+// base64url without padding, decoding to an uncompressed P-256 public point
+// (65 bytes starting 0x04) — what the browser's `applicationServerKey`
+// requires. It is the single server-side rule; Config.Validate and any
+// prompt-time validation (the CLI wizard, `moth setup`) call it so a typo is
+// caught the same way everywhere.
+func ValidateVAPIDPublicKey(key string) error {
+	raw, err := base64.RawURLEncoding.DecodeString(key)
+	if err != nil {
+		return fmt.Errorf("not base64url: %w", err)
+	}
+	if len(raw) != vapidPublicKeyLen || raw[0] != 0x04 {
+		return fmt.Errorf("must decode to a %d-byte uncompressed P-256 point (got %d bytes)", vapidPublicKeyLen, len(raw))
+	}
+	return nil
+}
+
 // Validate checks the config and returns the first violation. The VAPID key
 // is validated for shape only (base64url, uncompressed P-256 point) — moth
 // never uses it to send, so a key the browser would reject is the only
@@ -120,12 +137,8 @@ func (c Config) Validate() error {
 	if c.WebPushVAPIDPublicKey == "" {
 		return nil
 	}
-	raw, err := base64.RawURLEncoding.DecodeString(c.WebPushVAPIDPublicKey)
-	if err != nil {
-		return fmt.Errorf("webpushVapidPublicKey: not base64url: %w", err)
-	}
-	if len(raw) != vapidPublicKeyLen || raw[0] != 0x04 {
-		return fmt.Errorf("webpushVapidPublicKey: must decode to a %d-byte uncompressed P-256 point (got %d bytes)", vapidPublicKeyLen, len(raw))
+	if err := ValidateVAPIDPublicKey(c.WebPushVAPIDPublicKey); err != nil {
+		return fmt.Errorf("webpushVapidPublicKey: %w", err)
 	}
 	return nil
 }

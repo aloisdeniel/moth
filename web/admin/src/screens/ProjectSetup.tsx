@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 
 import { errorMessage } from "../api";
 import { CodeBlock, ErrorNote, KeyWell, Loading } from "../components/ui";
+import { ProfilePlatform, ProfileService } from "../gen/moth/admin/v1/profile_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService } from "../gen/moth/admin/v1/settings_pb";
@@ -53,24 +54,51 @@ function useNpmSdkVersion(): string | null | undefined {
 }
 
 // ProjectSetup renders copy-paste instructions with this project's real
-// values — the setup page is the product.
+// values — the setup page is the product. With a setup profile (milestone
+// 22) it adapts to the wizard's answers: the SDK picker is limited to the
+// chosen platforms and the monetization/push sections only render when the
+// profile intends them. Without a profile (pre-wizard project) everything
+// shows, exactly as before.
 export function ProjectSetup({ project }: { project: Project }) {
   const instance = useQuery(InstanceSettingsService.method.getInstanceSettings);
   const signing = useQuery(ProjectService.method.getSigningKey, { projectId: project.id });
+  const profileQ = useQuery(ProfileService.method.getProfile, { projectId: project.id });
   const sdkVersion = useSdkVersion();
   const npmVersion = useNpmSdkVersion();
-  const [platform, setPlatform] = useState<"flutter" | "react">("flutter");
+  const [platformChoice, setPlatformChoice] = useState<"flutter" | "react" | null>(null);
 
   if (
     instance.isPending ||
     signing.isPending ||
+    profileQ.isPending ||
     sdkVersion === undefined ||
     npmVersion === undefined
   )
     return <Loading />;
   if (instance.isError) return <ErrorNote message={errorMessage(instance.error)} />;
   if (signing.isError) return <ErrorNote message={errorMessage(signing.error)} />;
+  if (profileQ.isError) return <ErrorNote message={errorMessage(profileQ.error)} />;
   if (sdkVersion === null) return <ErrorNote message="could not load the served SDK version from /pub" />;
+
+  // The profile filters, never invents: no profile → all platforms and
+  // sections, today's behavior.
+  const profile = profileQ.data.hasProfile ? profileQ.data.profile : undefined;
+  const profilePlatforms = profile?.platforms ?? [];
+  const hasNative =
+    profile === undefined ||
+    profilePlatforms.includes(ProfilePlatform.IOS) ||
+    profilePlatforms.includes(ProfilePlatform.ANDROID);
+  const hasWeb = profile === undefined || profilePlatforms.includes(ProfilePlatform.WEB);
+  const showMonetization = profile === undefined || profile.sellsSubscriptions;
+  const showPush = profile === undefined || profile.sendsPushes;
+  const platform: "flutter" | "react" =
+    platformChoice !== null && (platformChoice === "flutter" ? hasNative : hasWeb)
+      ? platformChoice
+      : hasNative
+        ? "flutter"
+        : "react";
+  const monetizeSection = 6;
+  const pushSection = showMonetization ? 7 : 6;
 
   const base = instance.data.baseUrl;
   const host = base.replace(/^https?:\/\//, "");
@@ -297,24 +325,26 @@ function PushToggle() {
 
   return (
     <div className="stack-32" style={{ maxWidth: 720 }}>
-      <div className="seg" role="group" aria-label="Client SDK">
-        <button
-          type="button"
-          className="seg__btn"
-          aria-pressed={platform === "flutter"}
-          onClick={() => setPlatform("flutter")}
-        >
-          Flutter
-        </button>
-        <button
-          type="button"
-          className="seg__btn"
-          aria-pressed={platform === "react"}
-          onClick={() => setPlatform("react")}
-        >
-          React
-        </button>
-      </div>
+      {hasNative && hasWeb && (
+        <div className="seg" role="group" aria-label="Client SDK">
+          <button
+            type="button"
+            className="seg__btn"
+            aria-pressed={platform === "flutter"}
+            onClick={() => setPlatformChoice("flutter")}
+          >
+            Flutter
+          </button>
+          <button
+            type="button"
+            className="seg__btn"
+            aria-pressed={platform === "react"}
+            onClick={() => setPlatformChoice("react")}
+          >
+            React
+          </button>
+        </div>
+      )}
 
       {platform === "flutter" ? (
         <>
@@ -457,8 +487,9 @@ function PushToggle() {
         <CodeBlock code={cliSetup} />
       </section>
 
+      {showMonetization && (
       <section className="stack-12">
-        <h2>6 · Monetize (optional)</h2>
+        <h2>{monetizeSection} · Monetize (optional)</h2>
         <p className="caption">
           Sell subscriptions without a billing SaaS: define an entitlement
           (e.g. <span className="inline-code">pro</span>) and your tiers under
@@ -502,9 +533,11 @@ function PushToggle() {
           </>
         )}
       </section>
+      )}
 
+      {showPush && (
       <section className="stack-12">
-        <h2>7 · Push notifications (optional)</h2>
+        <h2>{pushSection} · Push notifications (optional)</h2>
         <p className="caption">
           moth registers devices; your backend sends. Enable push registration
           under the <span className="body-strong">Settings</span> tab, and
@@ -551,6 +584,7 @@ function PushToggle() {
           </>
         )}
       </section>
+      )}
     </div>
   );
 }

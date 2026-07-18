@@ -281,13 +281,12 @@ func (d *Doctor) checkGoogle(ctx context.Context, rep *Report, g *adminv1.Google
 		{"iOS", g.IosClientId, reversedClientScheme(g.IosClientId) + ":/oauth2redirect"},
 		{"Android", g.AndroidClientId, reversedClientScheme(g.AndroidClientId) + ":/oauth2redirect"},
 	}
-	configuredAny := false
+	configuredAny := GoogleProviderHasClientID(g)
 	for _, c := range ids {
 		checkName := fmt.Sprintf("project: Google %s client ID resolves", c.platform)
 		if c.id == "" {
 			continue
 		}
-		configuredAny = true
 		if _, err := ValidateGoogleClientID(c.id); err != nil {
 			rep.Fail(checkName, err.Error(), "fix the client ID in the project settings")
 			continue
@@ -327,19 +326,7 @@ func (d *Doctor) checkApple(ctx context.Context, rep *Report, a *adminv1.ApplePr
 		rep.Skip(name, "provider disabled")
 		return
 	}
-	var missing []string
-	if a.TeamId == "" {
-		missing = append(missing, "team ID")
-	}
-	if a.KeyId == "" {
-		missing = append(missing, "key ID")
-	}
-	if !a.HasPrivateKey {
-		missing = append(missing, "private key")
-	}
-	if a.ServicesId == "" && len(a.BundleIds) == 0 {
-		missing = append(missing, "services ID or bundle ID")
-	}
+	missing := AppleProviderMissing(a)
 	if len(missing) > 0 {
 		rep.Fail(name, "enabled but incomplete: missing "+strings.Join(missing, ", "),
 			"run `moth setup apple --project "+d.Slug+"`")
@@ -407,19 +394,7 @@ func (d *Doctor) checkBilling(ctx context.Context, rep *Report, projectID string
 
 func (d *Doctor) checkAppleBilling(ctx context.Context, rep *Report, a *adminv1.AppleBillingConfig) {
 	const name = "project: Apple billing credentials"
-	var missing []string
-	if !a.GetHasIapKey() {
-		missing = append(missing, "In-App-Purchase .p8")
-	}
-	if a.GetIapKeyId() == "" {
-		missing = append(missing, "key id")
-	}
-	if a.GetIapIssuerId() == "" {
-		missing = append(missing, "issuer id")
-	}
-	if a.GetBundleId() == "" {
-		missing = append(missing, "bundle id")
-	}
+	missing := AppleBillingMissing(a)
 	if len(missing) > 0 {
 		rep.Fail(name, "incomplete: missing "+strings.Join(missing, ", "),
 			"run `moth setup billing --project "+d.Slug+"`")
@@ -460,13 +435,7 @@ func (d *Doctor) checkAppleBilling(ctx context.Context, rep *Report, a *adminv1.
 
 func (d *Doctor) checkGoogleBilling(ctx context.Context, rep *Report, projectID string, g *adminv1.GoogleBillingConfig) {
 	const name = "project: Google billing credentials"
-	var missing []string
-	if !g.GetHasServiceAccount() {
-		missing = append(missing, "service-account JSON")
-	}
-	if g.GetPackageName() == "" {
-		missing = append(missing, "package name")
-	}
+	missing := GoogleBillingMissing(g)
 	if len(missing) > 0 {
 		rep.Fail(name, "incomplete: missing "+strings.Join(missing, ", "),
 			"run `moth setup billing --project "+d.Slug+"`")
@@ -562,7 +531,7 @@ func (d *Doctor) checkGoogleCatalogLive(ctx context.Context, rep *Report, projec
 // in-hand-credential pattern.
 func (d *Doctor) checkStripeBilling(ctx context.Context, rep *Report, sc *adminv1.StripeBillingConfig) {
 	const name = "project: Stripe billing credentials"
-	if !sc.GetHasSecretKey() {
+	if len(StripeBillingMissing(sc)) > 0 {
 		rep.Fail(name, "no secret key stored",
 			"run `moth setup billing --project "+d.Slug+" --stripe-secret-key <key>`")
 	} else {

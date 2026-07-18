@@ -338,6 +338,10 @@ func New(o Options) (*Server, error) {
 	adminPushPath, adminPushHandler := adminv1connect.NewPushServiceHandler(
 		adminrpc.NewPushHandler(o.Store, auditor, o.Now), adminInterceptors)
 	mux.Handle(adminPushPath, adminPushHandler)
+	// moth.admin.v1 setup profile + derived checklist (milestone 22).
+	profilePath, profileHandler := adminv1connect.NewProfileServiceHandler(
+		adminrpc.NewProfileHandler(o.Store, auditor, settingsHandler.SMTPConfigured, o.Now), adminInterceptors)
+	mux.Handle(profilePath, profileHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -390,6 +394,7 @@ func New(o Options) (*Server, error) {
 		adminv1connect.SubscriptionServiceName,
 		adminv1connect.BillingCredentialsServiceName,
 		adminv1connect.PushServiceName,
+		adminv1connect.ProfileServiceName,
 		serverv1connect.TokenServiceName,
 		serverv1connect.UserServiceName,
 		serverv1connect.EntitlementServiceName,

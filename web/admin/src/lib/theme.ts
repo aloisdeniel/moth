@@ -101,7 +101,8 @@ function blendHex(hex: string, toward: RGB, t: number): string {
 
 // bestOn picks black or white, whichever contrasts more with hex — always
 // at least sqrt(21) ≈ 4.58, so derived on* colors are AA by construction.
-function bestOn(hex: string): string {
+// Exported for the creation wizard's brand-color seeding.
+export function bestOn(hex: string): string {
   return contrastRatio(hex, "#FFFFFF") >= contrastRatio(hex, "#000000") ? "#FFFFFF" : "#000000";
 }
 

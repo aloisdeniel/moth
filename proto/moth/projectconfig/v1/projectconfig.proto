@@ -123,6 +123,42 @@ message StoredPush {
   string webpush_vapid_public_key = 3;
 }
 
+// Platform is an app platform a project ships on — the wizard's platform
+// multi-select (milestone 22). Platforms drive which setup surfaces, wizard
+// branches and checklist items apply to the project.
+enum Platform {
+  PLATFORM_UNSPECIFIED = 0;
+  PLATFORM_IOS = 1;
+  PLATFORM_ANDROID = 2;
+  PLATFORM_WEB = 3;
+}
+
+// StoredProfile is one project's setup profile as persisted on the project
+// row (milestone 22): the creation wizard's answers — platforms, sign-in
+// intent, monetization and push intent. It records what the app *intends*,
+// so surfaces can tell "doesn't want Apple sign-in" apart from "hasn't
+// configured it yet"; it is never a second source of config truth. Absent
+// (empty column) on projects created before the wizard, where surfaces
+// behave exactly as before.
+message StoredProfile {
+  // version is the document schema version (internal/profile.SchemaVersion).
+  int32 version = 1;
+  // platforms the app ships on. Non-empty in every valid profile; drives
+  // every platform branch (store credentials, VAPID, setup snippets).
+  repeated Platform platforms = 2;
+  // google_sign_in / apple_sign_in record the social sign-in intent.
+  // Email/password is always on and needs no flag.
+  bool google_sign_in = 3;
+  bool apple_sign_in = 4;
+  // sells_subscriptions records the monetization intent (milestones 11/12).
+  bool sells_subscriptions = 5;
+  // sends_pushes records the push intent (milestone 20).
+  bool sends_pushes = 6;
+  // checklist_dismissed hides the overview checklist card; it never fakes
+  // completeness — the derived items stay computable either way.
+  bool checklist_dismissed = 7;
+}
+
 // CopyLocaleMessages is one locale's copy overrides: catalog message key
 // (e.g. "sign_in.title") to the operator-customized string.
 message CopyLocaleMessages {

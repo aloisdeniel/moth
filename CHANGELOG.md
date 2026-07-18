@@ -8,6 +8,29 @@ regenerated from conventional-commit history by `git cliff` (see
 
 ## [Unreleased]
 
+### Guided project creation
+
+- The admin's create-project dialog is now an adaptive multi-step wizard:
+  pick platforms and needs (sign-in providers, subscriptions, push,
+  branding, languages) and the steps branch accordingly — a web-only free
+  app never sees store credentials or native provider fields. Everything
+  configurable in-flow is written on the final review step (abandoning
+  creates nothing); credentials that need a console round-trip are
+  deferred honestly.
+- A derived setup checklist on the project overview lists exactly what
+  remains (provider credentials, billing credentials + catalog sync,
+  VAPID key, default theme, instance SMTP), each item linking to the tab
+  or CLI command that finishes it, recomputed from live config on every
+  view — and vanishing as `moth setup ...` or the tabs complete it.
+- A stored per-project setup profile (platforms + chosen features) keeps
+  the setup-instructions tab filtered to what the project actually uses;
+  editable later from Settings, absent on existing projects (which behave
+  exactly as before).
+- `moth project init` runs the same ask-configure-defer flow in the
+  terminal and finishes with the keys, the checklist, and a
+  ready-to-commit `moth project apply` spec. `moth project create` is
+  unchanged.
+
 ### Native billing
 
 - `moth_billing`: a first-party Flutter plugin implementing `moth_auth`'s

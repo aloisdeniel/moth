@@ -156,6 +156,14 @@ Phase 4 is dependency-ordered like the others: 17 extends the milestone-11 billi
 
 Phase 5 is dependency-ordered: 19 stands alone on the milestone-13 adapter interface and teaches `/pub` multi-package serving; 20 is the server registry; 21 rides both — the 19 plugin-delivery model for its native halves and the 20 RPCs for its lifecycle. 19 and 20 are independent and can proceed in parallel; 21 closes the phase.
 
+### Phase 6 — Onboarding (post-v1.4, ships as v1.5)
+
+| # | Milestone | Outcome |
+|---|---|---|
+| [22](22-project-creation-wizard.md) | Guided project creation | The create dialog becomes an adaptive multi-step wizard: ask platforms and needs (sign-in, monetization, push, branding), branch the steps accordingly, configure inline what can be configured and defer the rest to a derived setup checklist on the project overview; a stored setup profile keeps the setup tab adapted forever after; `moth project init` is the same flow in the terminal. |
+
+Phase 6 has a single milestone: 22 composes the existing admin RPCs and `moth doctor`/`moth setup` probes from milestones 03–21 into a guided front door — it adds a profile blob and a derived-status RPC, and no new write path.
+
 ## Non-goals (v1)
 
 - Other providers (GitHub, Facebook, phone/SMS, magic links) — architecture leaves room via the `identities` table.
