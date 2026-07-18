@@ -32,6 +32,14 @@ abstract class MothBillingAdapter {
   /// paywall then renders the catalog price/period from [offering].
   Future<List<MothStoreProduct>> productsFor(MothOffering offering) async =>
       const [];
+
+  /// Receipts for purchases that complete outside a [purchase] call: an Ask
+  /// to Buy approval, a pending payment confirming, a renewal delivered by
+  /// the store. [MothApp] subscribes to the adapter it is given and forwards
+  /// every receipt to `SubmitPurchase`, so a deferred purchase flips
+  /// entitlements without any app code. Optional: adapters without
+  /// out-of-band events keep the default empty stream.
+  Stream<MothPurchaseReceipt> get transactionUpdates => const Stream.empty();
 }
 
 /// A native store product's localized display fields, as read from the store

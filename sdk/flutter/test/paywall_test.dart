@@ -160,6 +160,53 @@ void main() {
   );
 
   testWidgets(
+    'an out-of-band receipt on the adapter update stream completes through '
+    'MothApp: submitted to SubmitPurchase, entitlement flips, gate opens',
+    (tester) async {
+      moth = await runReal(tester, startFakeMoth);
+      moth.billing.offering = _offeringWithTiers();
+      moth.billing.paywall = _paywall();
+      client = newClient(moth);
+      final adapter = FakeBillingAdapter();
+      await runReal(
+        tester,
+        () => client.signIn(email: 'jane@example.com', password: 'pw'),
+      );
+
+      await tester.pumpWidget(
+        MothApp(
+          client: client,
+          billingAdapter: adapter,
+          requiresEntitlement: 'pro',
+          paywall: const MothPaywallScreen(),
+          child: const MaterialApp(
+            home: Scaffold(body: Text('SECRET CONTENT')),
+          ),
+        ),
+      );
+      await pumpUntilFound(tester, find.byKey(MothPaywallScreen.headlineKey));
+
+      // The store approves a deferred (Ask to Buy) purchase: the receipt
+      // arrives on the adapter's update stream with no app code involved.
+      // MothApp must submit it for validation and hand the user through.
+      moth.billing.customerInfoAfterPurchase = _proInfo();
+      adapter.updates.add(
+        const MothPurchaseReceipt(
+          store: MothStore.apple,
+          productIdentifier: 'monthly',
+          appleJwsTransaction: 'jws-deferred',
+        ),
+      );
+      await pumpUntilFound(tester, find.text('SECRET CONTENT'));
+      expect(moth.billing.lastSubmit?.productIdentifier, 'monthly');
+      expect(moth.billing.lastSubmit?.appleJwsTransaction, 'jws-deferred');
+
+      await settle(tester, client.dispose());
+      await settle(tester, moth.shutdown());
+    },
+  );
+
+  testWidgets(
     'gating on an entitlement no product grants never blocks the child',
     (tester) async {
       moth = await runReal(tester, startFakeMoth);

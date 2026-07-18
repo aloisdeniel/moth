@@ -87,11 +87,14 @@ restart. A hot restart keeps the entitlement (cached and revalidated in the
 background), and "Restore purchases" re-links a prior purchase on a fresh
 install.
 
-Native billing lives in `lib/billing_adapter.dart`, an implementation of
-`MothBillingAdapter` backed by `in_app_purchase` (a dependency of this
-example only, not of `moth_auth`, mirroring the OAuth adapter). It runs the
-StoreKit / Play Billing purchase; the SDK forwards the resulting receipt to
-moth's `SubmitPurchase` for server-side validation.
+Native billing comes from `moth_billing`, moth's first-party plugin
+(StoreKit 2 on iOS, the Play Billing Library on Android; a dependency of
+this example only, not of `moth_auth`) — `main.dart` passes
+`MothStoreBilling()` to `MothApp` and there is no adapter code to write.
+It runs the native purchase; the SDK forwards the resulting receipt to
+moth's `SubmitPurchase` for server-side validation. Apps with exotic store
+needs can still implement `MothBillingAdapter` themselves, mirroring the
+OAuth adapter in `lib/oauth_adapter.dart`.
 
 To try a sandbox purchase you need milestone-11/12 store credentials
 configured for the project and the tier(s) defined in the admin catalog:
@@ -105,11 +108,8 @@ configured for the project and the tier(s) defined in the admin catalog:
 
 A project with **no** products still runs: the paywall renders a graceful
 "nothing to purchase" state and gating on an entitlement no product grants
-never blocks. `in_app_purchase` needs its usual platform setup (StoreKit
-configuration / Play Billing) before real purchases work; without it the
-purchase surfaces a typed error rather than crashing.
+never blocks. Store purchases need the usual platform setup (a StoreKit
+configuration or sandbox products on iOS, a Play Billing test track on
+Android) before real purchases work; without it the purchase surfaces a
+typed error rather than crashing.
 
-> Caveat: `in_app_purchase` surfaces StoreKit 1 receipts on iOS, while moth's
-> `SubmitPurchase` expects a StoreKit 2 signed transaction (JWS). The wiring
-> is complete on Android; an iOS production app should forward a StoreKit 2
-> transaction. See the note in `lib/billing_adapter.dart`.

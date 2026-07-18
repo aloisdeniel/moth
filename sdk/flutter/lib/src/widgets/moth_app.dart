@@ -11,6 +11,7 @@ import '../copy_controller.dart';
 import '../customer_info.dart';
 import '../entitlement_cache.dart';
 import '../i18n/localizations.dart';
+import '../purchase.dart';
 import '../subscription_controller.dart';
 import '../theme.dart';
 import '../theme_cache.dart';
@@ -23,6 +24,7 @@ import 'moth_paywall_screen.dart';
 import 'moth_scope.dart';
 import 'moth_theme_scope.dart';
 import 'oauth_adapter.dart';
+import 'purchase_flow.dart';
 
 /// Top-level widget that owns a [MothClient] and gates [child] behind
 /// authentication:
@@ -120,7 +122,11 @@ class MothApp extends StatefulWidget {
   final MothOAuthAdapter? oauthAdapter;
 
   /// Runs native store purchases for [MothScope.purchase] / the paywall;
-  /// exposed to descendants via [MothScope.billingAdapter].
+  /// exposed to descendants via [MothScope.billingAdapter]. The widget also
+  /// listens to the adapter's [MothBillingAdapter.transactionUpdates] and
+  /// submits every out-of-band receipt (Ask to Buy approval, pending payment
+  /// confirming, renewal) for validation, so deferred purchases complete
+  /// without app code.
   final MothBillingAdapter? billingAdapter;
 
   /// Fixed theme for the moth screens; wins over the server-configured
@@ -167,6 +173,7 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
   late MothAuthState _state;
   late MothCustomerInfo _customerInfo;
   StreamSubscription<MothAuthState>? _subscription;
+  StreamSubscription<MothPurchaseReceipt>? _billingUpdates;
   MothSubscriptionController? _subs;
   MothThemeController? _theme;
   MothCopyController? _copy;
@@ -194,6 +201,7 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
     _subs = subs;
     _customerInfo = subs.value;
     unawaited(subs.start());
+    _listenForBillingUpdates();
     if (_state is MothAuthLoading) {
       // Failures surface through the state stream (restore keeps or clears
       // the session itself); nothing to await here.
@@ -223,6 +231,29 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
     }
   }
 
+  /// Forwards receipts that complete outside a purchase call (Ask to Buy
+  /// approvals, pending payments confirming, store renewals) to
+  /// `SubmitPurchase`. This is what completes a deferred purchase with no app
+  /// code: validation re-derives entitlements and the subscription controller
+  /// picks them up through the client's customer-info stream.
+  /// submitMothReceipt never throws — a failure (offline, signed out, receipt
+  /// rejected) leaves the store transaction unfinished/unacknowledged, so the
+  /// store redelivers it or a restore recovers it.
+  void _listenForBillingUpdates() {
+    _billingUpdates = widget.billingAdapter?.transactionUpdates.listen(
+      (receipt) => unawaited(submitMothReceipt(_client, receipt)),
+    );
+  }
+
+  @override
+  void didUpdateWidget(MothApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.billingAdapter != oldWidget.billingAdapter) {
+      _billingUpdates?.cancel();
+      _listenForBillingUpdates();
+    }
+  }
+
   void _onThemeChanged() {
     if (mounted) setState(() {});
   }
@@ -246,6 +277,7 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
   void dispose() {
     if (_copy != null) WidgetsBinding.instance.removeObserver(this);
     _subscription?.cancel();
+    _billingUpdates?.cancel();
     _subs?.dispose();
     _theme?.dispose();
     _copy?.dispose();

@@ -112,9 +112,10 @@ type Server struct {
 	billing    *billingrpc.Handler
 	setupToken atomic.Value // string; "" once setup is complete
 	handler    http.Handler
-	// pub is the embedded moth_auth Flutter package, built once so the
-	// sha256 in the /pub version listing always matches the served bytes.
-	pub *pubArchive
+	// pub holds the embedded Flutter packages served at /pub, keyed by
+	// package name and built once so the sha256 in the version listing
+	// always matches the served bytes.
+	pub map[string]*pubArchive
 	// npm is the embedded @moth/react package, built once so the integrity
 	// hashes in the /npm packument always match the served bytes.
 	npm *npmArchive
@@ -184,9 +185,11 @@ func New(o Options) (*Server, error) {
 	s.health = &healthCache{now: nowFn, probe: s.runHealthProbe}
 	s.setupToken.Store(o.SetupToken)
 
-	// The moth_auth Flutter SDK served at /pub; its version tracks the
-	// binary's own build version.
-	pub, err := buildPubArchive(version.Version)
+	// The Flutter SDK packages (moth_auth + companions) served at /pub;
+	// their shared version tracks the binary's own build version, and the
+	// base URL is baked into companion pubspecs so moth_billing's moth_auth
+	// dependency resolves against this instance.
+	pub, err := buildPubArchives(version.Version, o.Config.BaseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -395,8 +398,8 @@ func New(o Options) (*Server, error) {
 	mux.Handle("GET /docs", docsHandler)
 	mux.Handle("GET /docs/", docsHandler)
 
-	// The pub hosted repository serving the moth_auth Flutter SDK
-	// (`dart pub` speaks plain HTTP; see plan/05).
+	// The pub hosted repository serving the Flutter SDK packages
+	// (`dart pub` speaks plain HTTP; see plan/05 and plan/19).
 	mux.HandleFunc("GET /pub/api/packages/{package}", s.handlePubVersions)
 	mux.HandleFunc("GET /pub/packages/{package}/versions/{file}", s.handlePubArchive)
 

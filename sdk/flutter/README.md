@@ -95,16 +95,19 @@ Google client IDs to initialize them with.
 
 ## Subscriptions & paywall
 
-Native billing stays out of this package's dependencies: your app supplies a
-`MothBillingAdapter` (the example wires one built on `in_app_purchase`), and
-moth handles everything after the native purchase — the receipt is validated
-server-side against the store and comes back as **entitlements**. Every user
-always has a valid state; never-paid users are simply on the free tier.
+Native billing stays out of this package's dependencies: add `moth_billing`
+— moth's first-party plugin (StoreKit 2 on iOS, Play Billing on Android),
+served from the same instance's `/pub` at the same version — and pass
+`MothStoreBilling()`; apps with exotic store needs implement
+`MothBillingAdapter` themselves instead. moth handles everything after the
+native purchase — the receipt is validated server-side against the store and
+comes back as **entitlements**. Every user always has a valid state;
+never-paid users are simply on the free tier.
 
 ```dart
 MothApp(
   config: MothConfig(endpoint: ..., publishableKey: 'pk_...'),
-  billingAdapter: MyBillingAdapter(),
+  billingAdapter: MothStoreBilling(), // from package:moth_billing
   requiresEntitlement: 'pro',            // free users see the paywall
   paywall: const MothPaywallScreen(),
   child: const MyApp(),

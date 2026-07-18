@@ -9,6 +9,8 @@ node_modules/
 .dart_tool/
 sdk/flutter/build/
 sdk/flutter/pubspec.lock
+sdk/flutter_billing/build/
+sdk/flutter_billing/pubspec.lock
 web/admin/test-results/
 web/admin/playwright-report/
 web/admin/e2e/preview/

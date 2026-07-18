@@ -8,6 +8,19 @@ regenerated from conventional-commit history by `git cliff` (see
 
 ## [Unreleased]
 
+### Native billing
+
+- `moth_billing`: a first-party Flutter plugin implementing `moth_auth`'s
+  `MothBillingAdapter` with StoreKit 2 (Swift) on iOS and the Play Billing
+  Library (Kotlin) on Android — no third-party billing plugin, no adapter
+  code to write.
+- `/pub` now serves a package set: `moth_billing` ships alongside
+  `moth_auth`, both stamped with the server version, with `moth_billing`'s
+  `moth_auth` dependency pinned to that exact version at serve time.
+- The example app, setup-instructions tab, docs and `moth skill export`
+  present `moth_billing` as the default purchase path; a custom
+  `MothBillingAdapter` remains the escape hatch.
+
 ### Release engineering
 
 - GoReleaser pipeline producing CGO-free binaries for darwin/linux/windows ×

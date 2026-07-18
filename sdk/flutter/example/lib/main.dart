@@ -6,8 +6,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:moth_auth/moth_auth.dart';
+import 'package:moth_billing/moth_billing.dart';
 
-import 'billing_adapter.dart';
 import 'home_screen.dart';
 import 'oauth_adapter.dart';
 
@@ -52,9 +52,11 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _ExampleAppState extends State<ExampleApp> {
-  // The store billing adapter subscribes to the purchase stream for its
-  // lifetime, so own it here rather than rebuilding it every frame.
-  final _billingAdapter = ExampleBillingAdapter();
+  // moth's first-party billing (StoreKit 2 / Play Billing) owns the native
+  // method-channel handler for its lifetime (MothApp subscribes to its
+  // transaction updates), so own it here rather than rebuilding it every
+  // frame.
+  final _billingAdapter = MothStoreBilling();
 
   /// The language shown on the moth screens. `null` follows the device; the
   /// switcher below overrides it via [MothConfig.locale] so you can see the
@@ -116,7 +118,8 @@ class _ExampleAppState extends State<ExampleApp> {
           appName: 'moth example',
         ),
         oauthAdapter: ExampleOAuthAdapter(),
-        // Runs native store purchases for MothScope.purchase and the paywall.
+        // moth_billing runs the native store purchase for MothScope.purchase
+        // and the paywall; the server validates the resulting receipt.
         billingAdapter: _billingAdapter,
         // Signed out -> the SDK's default MothLoginScreen; signed in -> child.
         child: const HomeScreen(),

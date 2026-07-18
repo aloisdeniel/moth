@@ -18,6 +18,8 @@ The defining idea: **one moth server carries your entire portfolio of independen
 - **Agent-ready** — `moth skill export` emits an Agent Skills package (optionally interpolated with a project's real config) that teaches coding agents both how to integrate moth into an app and how to administer an instance through the CLI.
 - **Served Flutter package** — the server exposes a pub-compatible repository so developers reference the SDK directly from their moth instance in `pubspec.yaml`. The SDK provides a wrapper widget for the whole app and exposes auth state through an `InheritedWidget`.
 - **Served React SDK** (post-v1.2) — the same model for the web: an npm-compatible registry serves `@moth/react` from the binary; a provider component gates the app, hooks expose auth and entitlement state, and a themed paywall sells web subscriptions through Stripe Checkout — with the project's theme and localized copy applied.
+- **Native billing plugin** (post-v1.3) — `moth_billing`, a first-party Flutter plugin served from `/pub` (StoreKit 2 on iOS, Play Billing Library on Android) implementing the milestone-13 billing adapter, so a native purchase needs one dependency and zero adapter code.
+- **Push device registry** (post-v1.3) — moth registers every signed-in device's push identity (APNs / FCM token, Web Push subscription) with permission state and invalidation; the developer's backend reads the live set via `moth.server.v1` and sends through the push services itself. `moth_push` (Flutter) and `useMothPush()` (React) populate the registry automatically.
 
 ## Architecture decisions
 
@@ -49,6 +51,8 @@ The defining idea: **one moth server carries your entire portfolio of independen
 │                     token introspection, user management, entitlements    │
 │  moth.billing.v1.*→ subscription gRPC services (publishable key + JWT):    │
 │                     customer info, submit/restore purchase (post-v1.0)     │
+│  moth.push.v1.*   → push device registration (publishable key + JWT,       │
+│                     post-v1.3); read side lives in moth.server.v1          │
 │  /pub/*           → pub repository API (HTTP) serving moth_auth           │
 │  /npm/*           → npm registry API (HTTP) serving @moth/react (post-v1.2)│
 │  /p/*, /assets/*  → hosted pages & project assets (HTTP)                  │
@@ -87,6 +91,10 @@ Subscriptions (post-v1.0) add:
 Web billing (post-v1.2) adds:
 
 - `stripe_customers` — per-project per-user mapping to the Stripe customer id; `products` gain a `stripe_price_id` and `subscriptions`/`billing_credentials` accept `stripe` as a third store.
+
+Push registration (post-v1.3) adds:
+
+- `push_devices` — per-project per-user device registrations: target (`apns` | `fcm` | `webpush`), push credential, stable device id, permission state, device metadata, last-seen, and revocation (reason-coded, never hard-deleted). Project config gains a push section (Web Push VAPID public key).
 
 Localization (post-v1.1) adds:
 
@@ -137,6 +145,16 @@ Phase 3 is dependency-ordered: 15 delivers the server negotiation, the copy mode
 | [18](18-react-sdk.md) | React SDK + npm serving | `@moth/react` served from the binary via an embedded npm registry; `MothProvider` + hooks + a batteries-included login screen, themed (06) and localized (15) from day one; entitlement gating and a themed web paywall selling through Stripe Checkout (17) — the milestone-05 + 13 developer experience for the web. |
 
 Phase 4 is dependency-ordered like the others: 17 extends the milestone-11 billing engine server-side (same status enum, derivation matrix, notifications table, and analytics stream — Stripe is a new `store` value, not a parallel system), and 18 packages the whole stack for the browser the way 05 did for Flutter — the auth protos already speak gRPC-Web (the admin SPA proves it), milestone 04 built the web OAuth flows, theme + copy delivery exist, and the milestone-13 paywall config now drives a web paywall too. The React SDK's auth story stands alone, so 18's login-facing work can proceed in parallel with 17; its billing surface lands once 17 does.
+
+### Phase 5 — Native platform services (post-v1.3, ships as v1.4)
+
+| # | Milestone | Outcome |
+|---|---|---|
+| [19](19-native-billing.md) | Native billing plugin | `moth_billing` served from `/pub`: first-party StoreKit 2 (Swift) + Play Billing Library (Kotlin) implementation of the milestone-13 `MothBillingAdapter` — one dependency, zero adapter code, receipts in lockstep with the server's validation; `/pub` learns to serve a package set. |
+| [20](20-push-registration.md) | Push device registry (server) | `moth.push.v1` + `push_devices`: signed-in devices register their APNs / FCM / Web Push credential with permission state; upsert/rotation/staleness/feedback invalidation; `moth.server.v1` hands the live set to the developer's backend, which sends the pushes itself; admin Devices panel + per-project VAPID public key. |
+| [21](21-push-sdks.md) | Push in the SDKs | `moth_push` plugin (native APNs + FCM token acquisition) and the `MothScope` lifecycle — register on sign-in, re-register on rotation, unregister on sign-out; `useMothPush()` Web Push subscription in `@moth/react`; permission prompts stay explicit app calls. |
+
+Phase 5 is dependency-ordered: 19 stands alone on the milestone-13 adapter interface and teaches `/pub` multi-package serving; 20 is the server registry; 21 rides both — the 19 plugin-delivery model for its native halves and the 20 RPCs for its lifecycle. 19 and 20 are independent and can proceed in parallel; 21 closes the phase.
 
 ## Non-goals (v1)
 

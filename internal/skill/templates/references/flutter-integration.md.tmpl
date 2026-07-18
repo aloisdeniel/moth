@@ -109,6 +109,41 @@ All SDK errors extend `MothException`; catch the specific ones:
 `MothEmailTaken`, `MothRateLimited`, `MothInvalidProviderToken`;
 transport failures are `MothNetworkError`.
 
+## 6. Sell subscriptions (optional)
+
+Projects with paid tiers add `moth_billing`, moth's first-party billing
+plugin — StoreKit 2 on iOS, the Play Billing Library on Android — served
+from the same `/pub` at the same version as `moth_auth`, so the receipts
+it produces are exactly what the server validates:
+
+```yaml
+dependencies:
+  moth_billing:
+    hosted: {{.Endpoint}}/pub
+    version: {{.SDKVersion}}
+```
+
+```dart
+import 'package:moth_billing/moth_billing.dart';
+
+MothApp(
+  config: MothConfig(
+    endpoint: Uri.parse('{{.Endpoint}}'),
+    publishableKey: '{{.PublishableKey}}',
+  ),
+  billingAdapter: MothStoreBilling(), // runs the native store purchase
+  requiresEntitlement: 'pro',         // free users see the paywall
+  paywall: const MothPaywallScreen(),
+  child: const MyApp(),
+);
+```
+
+Receipts are validated server-side and come back as entitlements —
+`MothScope.of(context).hasEntitlement('pro')` is cached on device and
+instant on launch. Apps with store needs beyond auto-renewing
+subscriptions implement `moth_auth`'s `MothBillingAdapter` interface
+themselves instead of depending on `moth_billing`.
+
 ## Local development
 
 - `http://` endpoints work (e.g. `http://localhost:8080`). Android

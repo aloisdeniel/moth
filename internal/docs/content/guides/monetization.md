@@ -78,16 +78,26 @@ instead of pretending to edit in place.
 
 ## 3 · Sell from the app
 
-Native billing stays out of the SDK's dependencies: the app supplies a
-`MothBillingAdapter` (the example app ships one built on `in_app_purchase`),
-and moth handles everything after the native purchase — the receipt goes to
-the server, is validated against the store, and comes back as entitlements.
+Add `moth_billing` next to `moth_auth` — moth's first-party billing plugin,
+StoreKit 2 on iOS and the Play Billing Library on Android, served from your
+instance's own `/pub` at the server's version so the receipts it produces
+are exactly what the server validates. No third-party billing plugin, no
+adapter code to write:
+
+```yaml
+dependencies:
+  moth_billing:
+    hosted: https://auth.example.com/pub
+    version: ^1.0.0
+```
 
 ```dart
+import 'package:moth_billing/moth_billing.dart';
+
 // Gate a screen behind an entitlement; free users see the paywall.
 MothApp(
   config: MothConfig(endpoint: ..., publishableKey: 'pk_...'),
-  billingAdapter: MyBillingAdapter(),
+  billingAdapter: MothStoreBilling(),
   requiresEntitlement: 'pro',
   paywall: const MothPaywallScreen(),
   child: const MyApp(),
@@ -99,6 +109,13 @@ if (!scope.hasEntitlement('pro')) { /* show MothPaywallScreen */ }
 await scope.purchase(product);        // typed result: purchased/pending/…
 await scope.restorePurchases();       // new device / reinstall
 ```
+
+moth handles everything after the native purchase: the StoreKit 2 signed
+transaction (Apple) or Play Billing purchase token (Google) goes to the
+server, is validated against the store, and comes back as entitlements.
+`moth_auth` itself stays pure Dart and never depends on the plugin — apps
+with exotic store needs implement its `MothBillingAdapter` interface
+themselves instead of using `moth_billing`.
 
 `MothPaywallScreen` renders the offering with the project theme; its
 headline, benefit bullets, layout, and highlighted tier are edited — per

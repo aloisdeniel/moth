@@ -23,9 +23,11 @@ dependencies:
   # lib/oauth_adapter.dart bridges them to the SDK's login screen.
   google_sign_in: ^7.2.0
   sign_in_with_apple: ^8.1.0
-  # Store billing plugin is a dependency of the app, not of moth_auth —
-  # lib/billing_adapter.dart bridges it to the SDK's paywall + purchase flow.
-  in_app_purchase: ^3.2.0
+  # moth's first-party native billing (StoreKit 2 / Play Billing) — a
+  # dependency of the app, not of moth_auth. A real app depends on the copy
+  # served by its moth instance, like moth_auth above.
+  moth_billing:
+    path: ../../flutter_billing
 
 dev_dependencies:
   flutter_test:

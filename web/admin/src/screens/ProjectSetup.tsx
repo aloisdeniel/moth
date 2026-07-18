@@ -217,14 +217,22 @@ moth setup google --project ${project.slug}
 moth setup apple --project ${project.slug}
 moth doctor --project ${project.slug}`;
 
-  const paywallDart = `MothApp(
+  const pubspecBilling = `dependencies:
+  moth_billing:
+    hosted: ${base}/pub
+    version: ${versionConstraint}`;
+
+  const paywallDart = `import 'package:moth_billing/moth_billing.dart';
+
+MothApp(
   config: MothConfig(
     endpoint: Uri.parse('${base}'),
     publishableKey: '${project.publishableKey}',
   ),
-  // Your adapter over in_app_purchase runs the native store purchase;
-  // moth validates the receipt server-side and derives entitlements.
-  billingAdapter: MyBillingAdapter(),
+  // moth's native billing (StoreKit 2 / Play Billing) runs the store
+  // purchase; moth validates the receipt server-side and derives
+  // entitlements. Custom stores implement MothBillingAdapter instead.
+  billingAdapter: MothStoreBilling(),
   requiresEntitlement: 'pro', // free users see the paywall
   paywall: const MothPaywallScreen(),
   child: const MyApp(),
@@ -434,6 +442,16 @@ moth doctor --project ${project.slug}`;
         </p>
         {platform === "flutter" ? (
           <>
+            <p className="caption">
+              Add <span className="inline-code">moth_billing</span> — moth's
+              first-party StoreKit 2 / Play Billing plugin, served from this
+              instance's <span className="inline-code">/pub</span> at the same
+              version as <span className="inline-code">moth_auth</span> — and
+              pass its adapter. No billing plugin to wire, no adapter code to
+              write.
+            </p>
+            <p className="caption body-strong">pubspec.yaml</p>
+            <CodeBlock code={pubspecBilling} />
             <p className="caption body-strong">lib/main.dart</p>
             <CodeBlock code={paywallDart} />
           </>
@@ -444,6 +462,7 @@ moth doctor --project ${project.slug}`;
           </>
         )}
       </section>
+
     </div>
   );
 }

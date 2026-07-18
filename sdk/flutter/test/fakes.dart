@@ -462,6 +462,27 @@ class FakeBillingService extends billing.BillingServiceBase {
     }
     return resp;
   }
+
+  // The Stripe web-billing RPCs (milestone 17/18) exist on the generated
+  // base but have no Flutter SDK surface; the fake only needs them to
+  // compile.
+  @override
+  Future<billing.CreateCheckoutSessionResponse> createCheckoutSession(
+    ServiceCall call,
+    billing.CreateCheckoutSessionRequest request,
+  ) async {
+    _enter('CreateCheckoutSession', call);
+    return billing.CreateCheckoutSessionResponse();
+  }
+
+  @override
+  Future<billing.CreateBillingPortalSessionResponse> createBillingPortalSession(
+    ServiceCall call,
+    billing.CreateBillingPortalSessionRequest request,
+  ) async {
+    _enter('CreateBillingPortalSession', call);
+    return billing.CreateBillingPortalSessionResponse();
+  }
 }
 
 /// A [MothBillingAdapter] whose native outcomes are set by the test: returns
@@ -478,6 +499,11 @@ class FakeBillingAdapter implements MothBillingAdapter {
 
   /// Store products returned by [productsFor] (empty = not implemented).
   List<MothStoreProduct> storeProducts = const [];
+
+  /// Out-of-band receipts (Ask to Buy approvals, renewals) pushed by tests
+  /// via `updates.add(...)`; surfaced on [transactionUpdates].
+  final StreamController<MothPurchaseReceipt> updates =
+      StreamController<MothPurchaseReceipt>.broadcast();
 
   MothOfferingProduct? lastProduct;
   int purchaseCalls = 0;
@@ -510,6 +536,9 @@ class FakeBillingAdapter implements MothBillingAdapter {
     productsForCalls++;
     return storeProducts;
   }
+
+  @override
+  Stream<MothPurchaseReceipt> get transactionUpdates => updates.stream;
 }
 
 class FakeMoth {

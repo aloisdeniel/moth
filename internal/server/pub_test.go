@@ -45,7 +45,9 @@ type pubVersionTJ struct {
 }
 
 // devPubVersion returns the version a dev build (no release ldflags, i.e.
-// every test binary) stamps on the served package.
+// every test binary) stamps on the served package, for the testEnv base URL:
+// the version carries a discriminator for the /pub URL baked into companion
+// tarballs (see pubVersionForURL).
 func devPubVersion(t *testing.T) string {
 	t.Helper()
 	hash, err := sdkTreeHash()
@@ -56,61 +58,64 @@ func devPubVersion(t *testing.T) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return v
+	return pubVersionForURL(v, "http://localhost:8080/pub")
 }
 
 func TestPubVersionListing(t *testing.T) {
 	e := newTestEnv(t, "")
 	devVersion := devPubVersion(t)
 
-	resp, err := e.client.Get(e.url + "/pub/api/packages/moth_auth")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("listing: %d", resp.StatusCode)
-	}
-	if ct := resp.Header.Get("Content-Type"); ct != "application/vnd.pub.v2+json" {
-		t.Fatalf("content type: %s", ct)
-	}
-	var listing pubListing
-	if err := json.NewDecoder(resp.Body).Decode(&listing); err != nil {
-		t.Fatal(err)
-	}
-	if listing.Name != "moth_auth" || len(listing.Versions) != 1 {
-		t.Fatalf("listing: %+v", listing)
-	}
-	v := listing.Versions[0]
-	// The test binary is a dev build (no release ldflags).
-	if v.Version != devVersion || listing.Latest.Version != v.Version {
-		t.Fatalf("version: %q (latest %q), want %q", v.Version, listing.Latest.Version, devVersion)
-	}
-	// archive_url is absolute, rooted at the configured base URL (the
-	// testEnv config, not the httptest listener).
-	wantURL := "http://localhost:8080/pub/packages/moth_auth/versions/" + devVersion + ".tar.gz"
-	if v.ArchiveURL != wantURL {
-		t.Fatalf("archive_url: %q, want %q", v.ArchiveURL, wantURL)
-	}
-	if name := v.Pubspec["name"]; name != "moth_auth" {
-		t.Fatalf("pubspec.name: %v", name)
-	}
-	if got := v.Pubspec["version"]; got != v.Version {
-		t.Fatalf("pubspec.version: %v, want %s", got, v.Version)
-	}
+	// Every served package is listed, fetchable and stamped with the same
+	// version — the SDK-lockstep discipline of plan/19.
+	for _, pkg := range []string{"moth_auth", "moth_billing"} {
+		resp, err := e.client.Get(e.url + "/pub/api/packages/" + pkg)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s listing: %d", pkg, resp.StatusCode)
+		}
+		if ct := resp.Header.Get("Content-Type"); ct != "application/vnd.pub.v2+json" {
+			t.Fatalf("%s content type: %s", pkg, ct)
+		}
+		var listing pubListing
+		if err := json.NewDecoder(resp.Body).Decode(&listing); err != nil {
+			t.Fatal(err)
+		}
+		if listing.Name != pkg || len(listing.Versions) != 1 {
+			t.Fatalf("%s listing: %+v", pkg, listing)
+		}
+		v := listing.Versions[0]
+		// The test binary is a dev build (no release ldflags).
+		if v.Version != devVersion || listing.Latest.Version != v.Version {
+			t.Fatalf("%s version: %q (latest %q), want %q", pkg, v.Version, listing.Latest.Version, devVersion)
+		}
+		// archive_url is absolute, rooted at the configured base URL (the
+		// testEnv config, not the httptest listener).
+		wantURL := "http://localhost:8080/pub/packages/" + pkg + "/versions/" + devVersion + ".tar.gz"
+		if v.ArchiveURL != wantURL {
+			t.Fatalf("archive_url: %q, want %q", v.ArchiveURL, wantURL)
+		}
+		if name := v.Pubspec["name"]; name != pkg {
+			t.Fatalf("pubspec.name: %v", name)
+		}
+		if got := v.Pubspec["version"]; got != v.Version {
+			t.Fatalf("pubspec.version: %v, want %s", got, v.Version)
+		}
 
-	// The advertised sha256 matches the served tarball bytes.
-	tarball := fetchPubTarball(t, e)
-	sum := sha256.Sum256(tarball)
-	if hex.EncodeToString(sum[:]) != v.ArchiveSHA256 {
-		t.Fatal("archive_sha256 does not match the served tarball")
+		// The advertised sha256 matches the served tarball bytes.
+		tarball := fetchPubTarball(t, e, pkg)
+		sum := sha256.Sum256(tarball)
+		if hex.EncodeToString(sum[:]) != v.ArchiveSHA256 {
+			t.Fatalf("%s archive_sha256 does not match the served tarball", pkg)
+		}
 	}
 }
 
-func TestPubArchiveContents(t *testing.T) {
-	e := newTestEnv(t, "")
-	tarball := fetchPubTarball(t, e)
-
+// untarPub extracts a fetched package tarball into a path → content map.
+func untarPub(t *testing.T, tarball []byte) map[string]string {
+	t.Helper()
 	gz, err := gzip.NewReader(bytes.NewReader(tarball))
 	if err != nil {
 		t.Fatal(err)
@@ -131,6 +136,12 @@ func TestPubArchiveContents(t *testing.T) {
 		}
 		files[hdr.Name] = string(raw)
 	}
+	return files
+}
+
+func TestPubArchiveContents(t *testing.T) {
+	e := newTestEnv(t, "")
+	files := untarPub(t, fetchPubTarball(t, e, "moth_auth"))
 
 	devVersion := devPubVersion(t)
 	pubspec, ok := files["pubspec.yaml"]
@@ -157,6 +168,58 @@ func TestPubArchiveContents(t *testing.T) {
 	for name := range files {
 		if strings.HasPrefix(name, "example/") || strings.HasPrefix(name, "test/") ||
 			strings.HasPrefix(name, "build/") || name == "pubspec.lock" {
+			t.Errorf("tarball leaks %s", name)
+		}
+	}
+}
+
+func TestPubBillingArchiveContents(t *testing.T) {
+	e := newTestEnv(t, "")
+	files := untarPub(t, fetchPubTarball(t, e, "moth_billing"))
+
+	devVersion := devPubVersion(t)
+	pubspec, ok := files["pubspec.yaml"]
+	if !ok {
+		t.Fatal("tarball has no pubspec.yaml")
+	}
+	if !strings.Contains(pubspec, "\nversion: "+devVersion+"\n") {
+		t.Fatalf("pubspec version not stamped:\n%s", pubspec)
+	}
+	// The placeholder moth_auth hosted dependency is rewritten to this
+	// instance's /pub (config BaseURL) at the served moth_auth version, so
+	// the two packages resolve in lockstep.
+	wantDep := "  moth_auth:\n" +
+		"    hosted: http://localhost:8080/pub\n" +
+		"    version: " + devVersion + "\n"
+	if !strings.Contains(pubspec, wantDep) {
+		t.Fatalf("moth_auth dependency not rewritten:\n%s", pubspec)
+	}
+	if strings.Contains(pubspec, "moth.invalid") {
+		t.Fatalf("placeholder host leaked:\n%s", pubspec)
+	}
+	// The plugin's Dart and native sources ship in the tarball (plan/19: CI
+	// asserts the embedded FS contains the native sources).
+	for _, want := range []string{
+		"lib/moth_billing.dart",
+		"lib/src/moth_store_billing.dart",
+		"ios/moth_billing.podspec",
+		"ios/Classes/MothBillingPlugin.swift",
+		"android/build.gradle",
+		"android/settings.gradle",
+		"android/src/main/AndroidManifest.xml",
+		"android/src/main/kotlin/io/moth/billing/MothBillingPlugin.kt",
+		"README.md", "LICENSE", "CHANGELOG.md",
+	} {
+		if _, ok := files[want]; !ok {
+			t.Errorf("tarball misses %s", want)
+		}
+	}
+	// pubspec_overrides.yaml is the local-dev path override to ../flutter:
+	// serving it would shadow the hosted moth_auth dependency.
+	for name := range files {
+		if strings.HasPrefix(name, "example/") || strings.HasPrefix(name, "test/") ||
+			strings.HasPrefix(name, "build/") || name == "pubspec.lock" ||
+			name == "pubspec_overrides.yaml" {
 			t.Errorf("tarball leaks %s", name)
 		}
 	}
@@ -190,30 +253,93 @@ func TestPubVersionMapping(t *testing.T) {
 	}
 }
 
-// TestPubArchiveReproducible verifies the determinism the advertised
-// archive_sha256 depends on: two builds from the same embedded tree must be
-// byte-identical (replicas built from the same source advertise the same
-// hash, and pubspec.lock content hashes stay valid across restarts).
-func TestPubArchiveReproducible(t *testing.T) {
-	a, err := buildPubArchive("dev")
-	if err != nil {
-		t.Fatal(err)
+func TestPubVersionForURL(t *testing.T) {
+	// Different pub URLs must never share a version: the URL is baked into
+	// companion tarballs, and pub's cache and pubspec.lock archive_sha256
+	// key on (name, version).
+	a := pubVersionForURL("1.2.3", "https://a.example/pub")
+	b := pubVersionForURL("1.2.3", "https://b.example/pub")
+	if a == b {
+		t.Fatalf("same version %q for different pub URLs", a)
 	}
-	b, err := buildPubArchive("dev")
-	if err != nil {
-		t.Fatal(err)
+	for _, v := range []string{a, b} {
+		if !semverRe.MatchString(v) {
+			t.Errorf("pubVersionForURL produced invalid semver %q", v)
+		}
+		if !strings.HasPrefix(v, "1.2.3+u") {
+			t.Errorf("version %q does not carry the URL discriminator as build metadata", v)
+		}
 	}
-	if a.sha256 != b.sha256 || !bytes.Equal(a.tarball, b.tarball) {
-		t.Fatalf("archive not reproducible: %s != %s", a.sha256, b.sha256)
+	// Existing build metadata gains a dot identifier, never a second '+'.
+	c := pubVersionForURL("1.2.3+42", "https://a.example/pub")
+	if strings.Count(c, "+") != 1 || !strings.HasPrefix(c, "1.2.3+42.u") || !semverRe.MatchString(c) {
+		t.Errorf("pubVersionForURL(1.2.3+42) = %q", c)
+	}
+	// The same URL always maps to the same version (determinism).
+	if again := pubVersionForURL("1.2.3", "https://a.example/pub"); again != a {
+		t.Errorf("pubVersionForURL not deterministic: %q then %q", a, again)
 	}
 }
 
-// TestBuildPubArchiveRejectsBadVersion covers the release-build guard: an
+// TestPubArchivesVaryWithBaseURL is the regression test for the base_url
+// staleness class: moth_billing's tarball bakes the instance's /pub URL into
+// its moth_auth hosted dependency, so two base URLs must never serve
+// different bytes under the same (name, version).
+func TestPubArchivesVaryWithBaseURL(t *testing.T) {
+	for _, mothVersion := range []string{"dev", "v1.2.3"} {
+		a, err := buildPubArchives(mothVersion, "https://a.example")
+		if err != nil {
+			t.Fatal(err)
+		}
+		b, err := buildPubArchives(mothVersion, "https://b.example")
+		if err != nil {
+			t.Fatal(err)
+		}
+		for name := range a {
+			if a[name].version == b[name].version {
+				t.Errorf("%s %s: same version %q for different base URLs", mothVersion, name, a[name].version)
+			}
+		}
+		// The moth_billing bytes really do differ between the two base URLs
+		// (the reason the version must): a same-version check above with
+		// identical bytes would be vacuous.
+		if a["moth_billing"].sha256 == b["moth_billing"].sha256 {
+			t.Errorf("%s: moth_billing bytes unexpectedly identical across base URLs", mothVersion)
+		}
+	}
+}
+
+// TestPubArchiveReproducible verifies the determinism the advertised
+// archive_sha256 depends on: two builds from the same embedded trees and
+// base URL must be byte-identical (replicas built from the same source and
+// config advertise the same hash, and pubspec.lock content hashes stay
+// valid across restarts).
+func TestPubArchiveReproducible(t *testing.T) {
+	a, err := buildPubArchives("dev", "http://localhost:8080")
+	if err != nil {
+		t.Fatal(err)
+	}
+	b, err := buildPubArchives("dev", "http://localhost:8080")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(a) != len(pubPackages) {
+		t.Fatalf("built %d archives, want %d", len(a), len(pubPackages))
+	}
+	for name, av := range a {
+		bv := b[name]
+		if bv == nil || av.sha256 != bv.sha256 || !bytes.Equal(av.tarball, bv.tarball) {
+			t.Fatalf("%s archive not reproducible", name)
+		}
+	}
+}
+
+// TestBuildPubArchivesRejectsBadVersion covers the release-build guard: an
 // unparsable version must fail archive construction (and with it server
-// startup) rather than mis-stamp the package.
-func TestBuildPubArchiveRejectsBadVersion(t *testing.T) {
-	if _, err := buildPubArchive("release-1.2.3"); err == nil {
-		t.Fatal("buildPubArchive accepted an invalid release version")
+// startup) rather than mis-stamp the packages.
+func TestBuildPubArchivesRejectsBadVersion(t *testing.T) {
+	if _, err := buildPubArchives("release-1.2.3", "http://localhost:8080"); err == nil {
+		t.Fatal("buildPubArchives accepted an invalid release version")
 	}
 }
 
@@ -225,6 +351,7 @@ func TestPubNotFound(t *testing.T) {
 		"/pub/packages/other_package/versions/" + devVersion + ".tar.gz",
 		"/pub/packages/moth_auth/versions/9.9.9.tar.gz",
 		"/pub/packages/moth_auth/versions/" + devVersion + ".zip",
+		"/pub/packages/moth_billing/versions/9.9.9.tar.gz",
 	} {
 		resp, err := e.client.Get(e.url + path)
 		if err != nil {
@@ -316,6 +443,9 @@ func TestFlutterPubGet(t *testing.T) {
 
 	// A minimal consumer app pinning the exact served version (a dev build
 	// serves a 0.0.0-dev.* pre-release, which ranges would not match).
+	// moth_auth resolves transitively through the companions' rewritten
+	// hosted dependencies — the plan/19 lockstep path.
+	version := srv.pub["moth_auth"].version
 	app := t.TempDir()
 	pubspec := `name: pubtest
 environment:
@@ -323,9 +453,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  moth_auth:
+  moth_billing:
     hosted: ` + baseURL + `/pub
-    version: ` + srv.pub.version + `
+    version: ` + version + `
 `
 	if err := os.WriteFile(filepath.Join(app, "pubspec.yaml"), []byte(pubspec), 0o644); err != nil {
 		t.Fatal(err)
@@ -343,7 +473,7 @@ dependencies:
 		t.Fatalf("flutter pub get: %v\n%s", err, out)
 	}
 
-	// The resolved package really is ours, with the stamped version.
+	// Both resolved packages really are ours, with the stamped version.
 	raw, err := os.ReadFile(filepath.Join(app, ".dart_tool", "package_config.json"))
 	if err != nil {
 		t.Fatal(err)
@@ -357,8 +487,9 @@ dependencies:
 	if err := json.Unmarshal(raw, &cfg); err != nil {
 		t.Fatal(err)
 	}
+	resolved := map[string]bool{}
 	for _, p := range cfg.Packages {
-		if p.Name != "moth_auth" {
+		if p.Name != "moth_auth" && p.Name != "moth_billing" {
 			continue
 		}
 		// rootUri is a percent-encoded file URI into the pub cache.
@@ -370,17 +501,19 @@ dependencies:
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !strings.Contains(string(got), "version: "+srv.pub.version) {
-			t.Fatalf("downloaded pubspec version not stamped:\n%s", got)
+		if !strings.Contains(string(got), "version: "+version) {
+			t.Fatalf("downloaded %s pubspec version not stamped:\n%s", p.Name, got)
 		}
-		return
+		resolved[p.Name] = true
 	}
-	t.Fatalf("moth_auth missing from package_config.json:\n%s", raw)
+	if !resolved["moth_auth"] || !resolved["moth_billing"] {
+		t.Fatalf("packages missing from package_config.json (got %v):\n%s", resolved, raw)
+	}
 }
 
-func fetchPubTarball(t *testing.T, e *testEnv) []byte {
+func fetchPubTarball(t *testing.T, e *testEnv, pkg string) []byte {
 	t.Helper()
-	resp, err := e.client.Get(e.url + "/pub/packages/moth_auth/versions/" + devPubVersion(t) + ".tar.gz")
+	resp, err := e.client.Get(e.url + "/pub/packages/" + pkg + "/versions/" + devPubVersion(t) + ".tar.gz")
 	if err != nil {
 		t.Fatal(err)
 	}

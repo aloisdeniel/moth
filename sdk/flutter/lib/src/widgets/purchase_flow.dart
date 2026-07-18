@@ -33,6 +33,18 @@ Future<MothPurchaseResult> runMothPurchase(
     return MothPurchaseError('The purchase could not be completed: $err');
   }
   if (receipt == null) return const MothPurchaseCancelled();
+  return submitMothReceipt(client, receipt);
+}
+
+/// Validates [receipt] with `SubmitPurchase`: the server half of
+/// [runMothPurchase], also run on its own by `MothApp` for receipts that
+/// complete out of band ([MothBillingAdapter.transactionUpdates] — Ask to Buy
+/// approvals, pending payments confirming, renewals). Never throws — a
+/// validation failure comes back as a typed [MothPurchaseError].
+Future<MothPurchaseResult> submitMothReceipt(
+  MothClient client,
+  MothPurchaseReceipt receipt,
+) async {
   try {
     await client.submitPurchase(
       store: receipt.store,
@@ -45,11 +57,12 @@ Future<MothPurchaseResult> runMothPurchase(
   } on MothException catch (err) {
     return MothPurchaseError(err.message, reason: err.reason);
   } on Object catch (err) {
-    // Symmetric with the adapter call above: a non-MothException must never
-    // escape (e.g. a StateError from accessToken() when the session was
-    // cleared under the store dialog). The store already charged and returned
-    // a receipt, so surface it as an error the caller can retry/report rather
-    // than stranding the paywall busy and silently dropping the receipt.
+    // Symmetric with the adapter call in runMothPurchase: a non-MothException
+    // must never escape (e.g. a StateError from accessToken() when the
+    // session was cleared under the store dialog). The store already charged
+    // and returned a receipt, so surface it as an error the caller can
+    // retry/report rather than stranding the paywall busy and silently
+    // dropping the receipt.
     return MothPurchaseError('The purchase could not be completed: $err');
   }
 }
