@@ -159,6 +159,36 @@ func (s *Store) GetUser(ctx context.Context, projectID, id string) (User, error)
 		`SELECT `+userColumns+` FROM users WHERE project_id = ? AND id = ?`, projectID, id))
 }
 
+// UserEmails resolves a batch of user ids to their emails in one query,
+// project-scoped. Ids from other projects (or unknown ids) are simply absent
+// from the result — callers render a fallback rather than failing the page.
+func (s *Store) UserEmails(ctx context.Context, projectID string, ids []string) (map[string]string, error) {
+	emails := make(map[string]string, len(ids))
+	if len(ids) == 0 {
+		return emails, nil
+	}
+	q := `SELECT id, email FROM users WHERE project_id = ? AND id IN (?` +
+		strings.Repeat(", ?", len(ids)-1) + `)`
+	args := make([]any, 0, len(ids)+1)
+	args = append(args, projectID)
+	for _, id := range ids {
+		args = append(args, id)
+	}
+	rows, err := s.db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("user emails: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var id, email string
+		if err := rows.Scan(&id, &email); err != nil {
+			return nil, fmt.Errorf("user emails: %w", err)
+		}
+		emails[id] = email
+	}
+	return emails, rows.Err()
+}
+
 func (s *Store) GetUserByEmail(ctx context.Context, projectID, email string) (User, error) {
 	return scanUser(s.db.QueryRowContext(ctx,
 		`SELECT `+userColumns+` FROM users WHERE project_id = ? AND email = ?`, projectID, email))

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file moth/admin/v1/push.proto.
  */
 export const file_moth_admin_v1_push: GenFile = /*@__PURE__*/
-  fileDesc("Chhtb3RoL2FkbWluL3YxL3B1c2gucHJvdG8SDW1vdGguYWRtaW4udjEibgoSUHVzaERldmljZU1ldGFkYXRhEhAKCHBsYXRmb3JtGAEgASgJEg0KBW1vZGVsGAIgASgJEhIKCm9zX3ZlcnNpb24YAyABKAkSEwoLYXBwX3ZlcnNpb24YBCABKAkSDgoGbG9jYWxlGAUgASgJIr0DCgpQdXNoRGV2aWNlEgoKAmlkGAEgASgJEikKBnRhcmdldBgCIAEoDjIZLm1vdGguYWRtaW4udjEuUHVzaFRhcmdldBIRCglkZXZpY2VfaWQYAyABKAkSMQoKcGVybWlzc2lvbhgEIAEoDjIdLm1vdGguYWRtaW4udjEuUHVzaFBlcm1pc3Npb24SMwoIbWV0YWRhdGEYBSABKAsyIS5tb3RoLmFkbWluLnYxLlB1c2hEZXZpY2VNZXRhZGF0YRIvCgtjcmVhdGVfdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjIKDmxhc3Rfc2Vlbl90aW1lGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtyZXZva2VfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNgoNcmV2b2tlX3JlYXNvbhgKIAEoDjIfLm1vdGguYWRtaW4udjEuUHVzaFJldm9rZVJlYXNvbiJBCgxQdXNoU2V0dGluZ3MSDwoHZW5hYmxlZBgBIAEoCBIgChh3ZWJwdXNoX3ZhcGlkX3B1YmxpY19rZXkYAiABKAkiLAoWR2V0UHVzaFNldHRpbmdzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIkgKF0dldFB1c2hTZXR0aW5nc1Jlc3BvbnNlEi0KCHNldHRpbmdzGAEgASgLMhsubW90aC5hZG1pbi52MS5QdXNoU2V0dGluZ3MiXgoZVXBkYXRlUHVzaFNldHRpbmdzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEi0KCHNldHRpbmdzGAIgASgLMhsubW90aC5hZG1pbi52MS5QdXNoU2V0dGluZ3MiSwoaVXBkYXRlUHVzaFNldHRpbmdzUmVzcG9uc2USLQoIc2V0dGluZ3MYASABKAsyGy5tb3RoLmFkbWluLnYxLlB1c2hTZXR0aW5ncyJBChpMaXN0VXNlclB1c2hEZXZpY2VzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiSQobTGlzdFVzZXJQdXNoRGV2aWNlc1Jlc3BvbnNlEioKB2RldmljZXMYASADKAsyGS5tb3RoLmFkbWluLnYxLlB1c2hEZXZpY2UiRQoXUmV2b2tlUHVzaERldmljZVJlcXVlc3QSEgoKcHJvamVjdF9pZBgBIAEoCRIWCg5wdXNoX2RldmljZV9pZBgCIAEoCSJFChhSZXZva2VQdXNoRGV2aWNlUmVzcG9uc2USKQoGZGV2aWNlGAEgASgLMhkubW90aC5hZG1pbi52MS5QdXNoRGV2aWNlKm0KClB1c2hUYXJnZXQSGwoXUFVTSF9UQVJHRVRfVU5TUEVDSUZJRUQQABIUChBQVVNIX1RBUkdFVF9BUE5TEAESEwoPUFVTSF9UQVJHRVRfRkNNEAISFwoTUFVTSF9UQVJHRVRfV0VCUFVTSBADKqgBCg5QdXNoUGVybWlzc2lvbhIfChtQVVNIX1BFUk1JU1NJT05fVU5TUEVDSUZJRUQQABIbChdQVVNIX1BFUk1JU1NJT05fR1JBTlRFRBABEh8KG1BVU0hfUEVSTUlTU0lPTl9QUk9WSVNJT05BTBACEhoKFlBVU0hfUEVSTUlTU0lPTl9ERU5JRUQQAxIbChdQVVNIX1BFUk1JU1NJT05fVU5LTk9XThAEKt8BChBQdXNoUmV2b2tlUmVhc29uEiIKHlBVU0hfUkVWT0tFX1JFQVNPTl9VTlNQRUNJRklFRBAAEiEKHVBVU0hfUkVWT0tFX1JFQVNPTl9TSUdORURfT1VUEAESJwojUFVTSF9SRVZPS0VfUkVBU09OX1JFUE9SVEVEX0lOVkFMSUQQAhIcChhQVVNIX1JFVk9LRV9SRUFTT05fU1RBTEUQAxIfChtQVVNIX1JFVk9LRV9SRUFTT05fUkVQTEFDRUQQBBIcChhQVVNIX1JFVk9LRV9SRUFTT05fQURNSU4QBTKtAwoLUHVzaFNlcnZpY2USYAoPR2V0UHVzaFNldHRpbmdzEiUubW90aC5hZG1pbi52MS5HZXRQdXNoU2V0dGluZ3NSZXF1ZXN0GiYubW90aC5hZG1pbi52MS5HZXRQdXNoU2V0dGluZ3NSZXNwb25zZRJpChJVcGRhdGVQdXNoU2V0dGluZ3MSKC5tb3RoLmFkbWluLnYxLlVwZGF0ZVB1c2hTZXR0aW5nc1JlcXVlc3QaKS5tb3RoLmFkbWluLnYxLlVwZGF0ZVB1c2hTZXR0aW5nc1Jlc3BvbnNlEmwKE0xpc3RVc2VyUHVzaERldmljZXMSKS5tb3RoLmFkbWluLnYxLkxpc3RVc2VyUHVzaERldmljZXNSZXF1ZXN0GioubW90aC5hZG1pbi52MS5MaXN0VXNlclB1c2hEZXZpY2VzUmVzcG9uc2USYwoQUmV2b2tlUHVzaERldmljZRImLm1vdGguYWRtaW4udjEuUmV2b2tlUHVzaERldmljZVJlcXVlc3QaJy5tb3RoLmFkbWluLnYxLlJldm9rZVB1c2hEZXZpY2VSZXNwb25zZUI3WjVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvYWRtaW4vdjE7YWRtaW52MWIGcHJvdG8z", [file_google_protobuf_timestamp]);
+  fileDesc("Chhtb3RoL2FkbWluL3YxL3B1c2gucHJvdG8SDW1vdGguYWRtaW4udjEibgoSUHVzaERldmljZU1ldGFkYXRhEhAKCHBsYXRmb3JtGAEgASgJEg0KBW1vZGVsGAIgASgJEhIKCm9zX3ZlcnNpb24YAyABKAkSEwoLYXBwX3ZlcnNpb24YBCABKAkSDgoGbG9jYWxlGAUgASgJIr0DCgpQdXNoRGV2aWNlEgoKAmlkGAEgASgJEikKBnRhcmdldBgCIAEoDjIZLm1vdGguYWRtaW4udjEuUHVzaFRhcmdldBIRCglkZXZpY2VfaWQYAyABKAkSMQoKcGVybWlzc2lvbhgEIAEoDjIdLm1vdGguYWRtaW4udjEuUHVzaFBlcm1pc3Npb24SMwoIbWV0YWRhdGEYBSABKAsyIS5tb3RoLmFkbWluLnYxLlB1c2hEZXZpY2VNZXRhZGF0YRIvCgtjcmVhdGVfdGltZRgGIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASLwoLdXBkYXRlX3RpbWUYByABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjIKDmxhc3Rfc2Vlbl90aW1lGAggASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIvCgtyZXZva2VfdGltZRgJIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASNgoNcmV2b2tlX3JlYXNvbhgKIAEoDjIfLm1vdGguYWRtaW4udjEuUHVzaFJldm9rZVJlYXNvbiJBCgxQdXNoU2V0dGluZ3MSDwoHZW5hYmxlZBgBIAEoCBIgChh3ZWJwdXNoX3ZhcGlkX3B1YmxpY19rZXkYAiABKAkiLAoWR2V0UHVzaFNldHRpbmdzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJIkgKF0dldFB1c2hTZXR0aW5nc1Jlc3BvbnNlEi0KCHNldHRpbmdzGAEgASgLMhsubW90aC5hZG1pbi52MS5QdXNoU2V0dGluZ3MiXgoZVXBkYXRlUHVzaFNldHRpbmdzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEi0KCHNldHRpbmdzGAIgASgLMhsubW90aC5hZG1pbi52MS5QdXNoU2V0dGluZ3MiSwoaVXBkYXRlUHVzaFNldHRpbmdzUmVzcG9uc2USLQoIc2V0dGluZ3MYASABKAsyGy5tb3RoLmFkbWluLnYxLlB1c2hTZXR0aW5ncyJBChpMaXN0VXNlclB1c2hEZXZpY2VzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEg8KB3VzZXJfaWQYAiABKAkiSQobTGlzdFVzZXJQdXNoRGV2aWNlc1Jlc3BvbnNlEioKB2RldmljZXMYASADKAsyGS5tb3RoLmFkbWluLnYxLlB1c2hEZXZpY2UifgoWTGlzdFB1c2hEZXZpY2VzUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEhEKCXBhZ2Vfc2l6ZRgCIAEoBRISCgpwYWdlX3Rva2VuGAMgASgJEikKBnRhcmdldBgEIAEoDjIZLm1vdGguYWRtaW4udjEuUHVzaFRhcmdldCJjChFQcm9qZWN0UHVzaERldmljZRIpCgZkZXZpY2UYASABKAsyGS5tb3RoLmFkbWluLnYxLlB1c2hEZXZpY2USDwoHdXNlcl9pZBgCIAEoCRISCgp1c2VyX2VtYWlsGAMgASgJIqMBChdMaXN0UHVzaERldmljZXNSZXNwb25zZRIxCgdkZXZpY2VzGAEgAygLMiAubW90aC5hZG1pbi52MS5Qcm9qZWN0UHVzaERldmljZRIXCg9uZXh0X3BhZ2VfdG9rZW4YAiABKAkSEgoKYXBuc19jb3VudBgDIAEoAxIRCglmY21fY291bnQYBCABKAMSFQoNd2VicHVzaF9jb3VudBgFIAEoAyJFChdSZXZva2VQdXNoRGV2aWNlUmVxdWVzdBISCgpwcm9qZWN0X2lkGAEgASgJEhYKDnB1c2hfZGV2aWNlX2lkGAIgASgJIkUKGFJldm9rZVB1c2hEZXZpY2VSZXNwb25zZRIpCgZkZXZpY2UYASABKAsyGS5tb3RoLmFkbWluLnYxLlB1c2hEZXZpY2UqbQoKUHVzaFRhcmdldBIbChdQVVNIX1RBUkdFVF9VTlNQRUNJRklFRBAAEhQKEFBVU0hfVEFSR0VUX0FQTlMQARITCg9QVVNIX1RBUkdFVF9GQ00QAhIXChNQVVNIX1RBUkdFVF9XRUJQVVNIEAMqqAEKDlB1c2hQZXJtaXNzaW9uEh8KG1BVU0hfUEVSTUlTU0lPTl9VTlNQRUNJRklFRBAAEhsKF1BVU0hfUEVSTUlTU0lPTl9HUkFOVEVEEAESHwobUFVTSF9QRVJNSVNTSU9OX1BST1ZJU0lPTkFMEAISGgoWUFVTSF9QRVJNSVNTSU9OX0RFTklFRBADEhsKF1BVU0hfUEVSTUlTU0lPTl9VTktOT1dOEAQq3wEKEFB1c2hSZXZva2VSZWFzb24SIgoeUFVTSF9SRVZPS0VfUkVBU09OX1VOU1BFQ0lGSUVEEAASIQodUFVTSF9SRVZPS0VfUkVBU09OX1NJR05FRF9PVVQQARInCiNQVVNIX1JFVk9LRV9SRUFTT05fUkVQT1JURURfSU5WQUxJRBACEhwKGFBVU0hfUkVWT0tFX1JFQVNPTl9TVEFMRRADEh8KG1BVU0hfUkVWT0tFX1JFQVNPTl9SRVBMQUNFRBAEEhwKGFBVU0hfUkVWT0tFX1JFQVNPTl9BRE1JThAFMo8ECgtQdXNoU2VydmljZRJgCg9HZXRQdXNoU2V0dGluZ3MSJS5tb3RoLmFkbWluLnYxLkdldFB1c2hTZXR0aW5nc1JlcXVlc3QaJi5tb3RoLmFkbWluLnYxLkdldFB1c2hTZXR0aW5nc1Jlc3BvbnNlEmkKElVwZGF0ZVB1c2hTZXR0aW5ncxIoLm1vdGguYWRtaW4udjEuVXBkYXRlUHVzaFNldHRpbmdzUmVxdWVzdBopLm1vdGguYWRtaW4udjEuVXBkYXRlUHVzaFNldHRpbmdzUmVzcG9uc2USbAoTTGlzdFVzZXJQdXNoRGV2aWNlcxIpLm1vdGguYWRtaW4udjEuTGlzdFVzZXJQdXNoRGV2aWNlc1JlcXVlc3QaKi5tb3RoLmFkbWluLnYxLkxpc3RVc2VyUHVzaERldmljZXNSZXNwb25zZRJgCg9MaXN0UHVzaERldmljZXMSJS5tb3RoLmFkbWluLnYxLkxpc3RQdXNoRGV2aWNlc1JlcXVlc3QaJi5tb3RoLmFkbWluLnYxLkxpc3RQdXNoRGV2aWNlc1Jlc3BvbnNlEmMKEFJldm9rZVB1c2hEZXZpY2USJi5tb3RoLmFkbWluLnYxLlJldm9rZVB1c2hEZXZpY2VSZXF1ZXN0GicubW90aC5hZG1pbi52MS5SZXZva2VQdXNoRGV2aWNlUmVzcG9uc2VCN1o1Z2l0aHViLmNvbS9hbG9pc2RlbmllbC9tb3RoL2dlbi9tb3RoL2FkbWluL3YxO2FkbWludjFiBnByb3RvMw", [file_google_protobuf_timestamp]);
 
 /**
  * PushDeviceMetadata is the display metadata the client reported at
@@ -287,6 +287,116 @@ export const ListUserPushDevicesResponseSchema: GenMessage<ListUserPushDevicesRe
   messageDesc(file_moth_admin_v1_push, 8);
 
 /**
+ * @generated from message moth.admin.v1.ListPushDevicesRequest
+ */
+export type ListPushDevicesRequest = Message<"moth.admin.v1.ListPushDevicesRequest"> & {
+  /**
+   * @generated from field: string project_id = 1;
+   */
+  projectId: string;
+
+  /**
+   * 1–200; 0 means the default of 50.
+   *
+   * @generated from field: int32 page_size = 2;
+   */
+  pageSize: number;
+
+  /**
+   * The next_page_token of the previous response; empty for the first page.
+   *
+   * @generated from field: string page_token = 3;
+   */
+  pageToken: string;
+
+  /**
+   * PUSH_TARGET_UNSPECIFIED matches all targets.
+   *
+   * @generated from field: moth.admin.v1.PushTarget target = 4;
+   */
+  target: PushTarget;
+};
+
+/**
+ * Describes the message moth.admin.v1.ListPushDevicesRequest.
+ * Use `create(ListPushDevicesRequestSchema)` to create a new message.
+ */
+export const ListPushDevicesRequestSchema: GenMessage<ListPushDevicesRequest> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_push, 9);
+
+/**
+ * ProjectPushDevice is one active registration in the project-wide listing,
+ * carrying the owning user so the operator can tell whose device it is.
+ *
+ * @generated from message moth.admin.v1.ProjectPushDevice
+ */
+export type ProjectPushDevice = Message<"moth.admin.v1.ProjectPushDevice"> & {
+  /**
+   * @generated from field: moth.admin.v1.PushDevice device = 1;
+   */
+  device?: PushDevice | undefined;
+
+  /**
+   * @generated from field: string user_id = 2;
+   */
+  userId: string;
+
+  /**
+   * @generated from field: string user_email = 3;
+   */
+  userEmail: string;
+};
+
+/**
+ * Describes the message moth.admin.v1.ProjectPushDevice.
+ * Use `create(ProjectPushDeviceSchema)` to create a new message.
+ */
+export const ProjectPushDeviceSchema: GenMessage<ProjectPushDevice> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_push, 10);
+
+/**
+ * @generated from message moth.admin.v1.ListPushDevicesResponse
+ */
+export type ListPushDevicesResponse = Message<"moth.admin.v1.ListPushDevicesResponse"> & {
+  /**
+   * @generated from field: repeated moth.admin.v1.ProjectPushDevice devices = 1;
+   */
+  devices: ProjectPushDevice[];
+
+  /**
+   * Empty when there are no further pages.
+   *
+   * @generated from field: string next_page_token = 2;
+   */
+  nextPageToken: string;
+
+  /**
+   * Project-wide active-registration totals per target, independent of the
+   * request's target filter and page.
+   *
+   * @generated from field: int64 apns_count = 3;
+   */
+  apnsCount: bigint;
+
+  /**
+   * @generated from field: int64 fcm_count = 4;
+   */
+  fcmCount: bigint;
+
+  /**
+   * @generated from field: int64 webpush_count = 5;
+   */
+  webpushCount: bigint;
+};
+
+/**
+ * Describes the message moth.admin.v1.ListPushDevicesResponse.
+ * Use `create(ListPushDevicesResponseSchema)` to create a new message.
+ */
+export const ListPushDevicesResponseSchema: GenMessage<ListPushDevicesResponse> = /*@__PURE__*/
+  messageDesc(file_moth_admin_v1_push, 11);
+
+/**
  * @generated from message moth.admin.v1.RevokePushDeviceRequest
  */
 export type RevokePushDeviceRequest = Message<"moth.admin.v1.RevokePushDeviceRequest"> & {
@@ -308,7 +418,7 @@ export type RevokePushDeviceRequest = Message<"moth.admin.v1.RevokePushDeviceReq
  * Use `create(RevokePushDeviceRequestSchema)` to create a new message.
  */
 export const RevokePushDeviceRequestSchema: GenMessage<RevokePushDeviceRequest> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_push, 9);
+  messageDesc(file_moth_admin_v1_push, 12);
 
 /**
  * @generated from message moth.admin.v1.RevokePushDeviceResponse
@@ -327,7 +437,7 @@ export type RevokePushDeviceResponse = Message<"moth.admin.v1.RevokePushDeviceRe
  * Use `create(RevokePushDeviceResponseSchema)` to create a new message.
  */
 export const RevokePushDeviceResponseSchema: GenMessage<RevokePushDeviceResponse> = /*@__PURE__*/
-  messageDesc(file_moth_admin_v1_push, 10);
+  messageDesc(file_moth_admin_v1_push, 13);
 
 /**
  * PushTarget says which push service a registration's credential belongs to
@@ -513,6 +623,19 @@ export const PushService: GenService<{
     methodKind: "unary";
     input: typeof ListUserPushDevicesRequestSchema;
     output: typeof ListUserPushDevicesResponseSchema;
+  },
+  /**
+   * ListPushDevices returns the project's ACTIVE registrations for the Push
+   * tab, newest first with keyset pagination and an optional target filter —
+   * each with the owning user's id and email, never the tokens. Per-target
+   * totals for the whole project ride along on every page.
+   *
+   * @generated from rpc moth.admin.v1.PushService.ListPushDevices
+   */
+  listPushDevices: {
+    methodKind: "unary";
+    input: typeof ListPushDevicesRequestSchema;
+    output: typeof ListPushDevicesResponseSchema;
   },
   /**
    * RevokePushDevice revokes one registration (`admin` reason, audit-logged);

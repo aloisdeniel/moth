@@ -124,7 +124,7 @@ way the SDK ever shows the OS prompt.
 
 To see a device row appear in the admin:
 
-1. Enable **push registration** in the project's Settings tab (the card
+1. Enable **push registration** in the project's Push tab (the card
    shows "Unavailable" until you do).
 2. Run the app on a device or simulator, sign in, and flip the toggle to
    grant permission.

@@ -23,7 +23,7 @@ installs (90 days by default).
 
 ## 1 · Enable push for the project
 
-In the project's **Settings** tab, under **Push notifications**, switch on
+In the project's **Push** tab, under **Push notifications**, switch on
 push registration. For Web Push, also paste your **VAPID public key** (see
 [step 3](#3--generate-a-vapid-keypair-web-push)); mobile-only projects
 leave it empty. Both
@@ -208,10 +208,12 @@ operator can revoke from the admin (`admin`, audit-logged).
 
 ## Watching the registry
 
-Each user's detail page in the admin has a **Devices** panel — target,
-platform/model, permission, app version, last seen, with a revoke action —
-and the project overview counts registered devices per target. The panel
-never shows tokens.
+The project's **Push** tab lists every registered device — owning user,
+target, platform/model, permission, app version, last seen — newest first,
+with per-target totals, a target filter, and a revoke action. Each user's
+detail drawer keeps a per-user **Devices** panel that also shows recently
+revoked registrations and why. Neither surface ever shows tokens — those
+stay on the secret-key API your sender uses.
 
 ## Out of scope
 

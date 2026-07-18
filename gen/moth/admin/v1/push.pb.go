@@ -752,6 +752,218 @@ func (x *ListUserPushDevicesResponse) GetDevices() []*PushDevice {
 	return nil
 }
 
+type ListPushDevicesRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	ProjectId string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
+	// 1–200; 0 means the default of 50.
+	PageSize int32 `protobuf:"varint,2,opt,name=page_size,json=pageSize,proto3" json:"page_size,omitempty"`
+	// The next_page_token of the previous response; empty for the first page.
+	PageToken string `protobuf:"bytes,3,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`
+	// PUSH_TARGET_UNSPECIFIED matches all targets.
+	Target        PushTarget `protobuf:"varint,4,opt,name=target,proto3,enum=moth.admin.v1.PushTarget" json:"target,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPushDevicesRequest) Reset() {
+	*x = ListPushDevicesRequest{}
+	mi := &file_moth_admin_v1_push_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPushDevicesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPushDevicesRequest) ProtoMessage() {}
+
+func (x *ListPushDevicesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_push_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPushDevicesRequest.ProtoReflect.Descriptor instead.
+func (*ListPushDevicesRequest) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *ListPushDevicesRequest) GetProjectId() string {
+	if x != nil {
+		return x.ProjectId
+	}
+	return ""
+}
+
+func (x *ListPushDevicesRequest) GetPageSize() int32 {
+	if x != nil {
+		return x.PageSize
+	}
+	return 0
+}
+
+func (x *ListPushDevicesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListPushDevicesRequest) GetTarget() PushTarget {
+	if x != nil {
+		return x.Target
+	}
+	return PushTarget_PUSH_TARGET_UNSPECIFIED
+}
+
+// ProjectPushDevice is one active registration in the project-wide listing,
+// carrying the owning user so the operator can tell whose device it is.
+type ProjectPushDevice struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Device        *PushDevice            `protobuf:"bytes,1,opt,name=device,proto3" json:"device,omitempty"`
+	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	UserEmail     string                 `protobuf:"bytes,3,opt,name=user_email,json=userEmail,proto3" json:"user_email,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ProjectPushDevice) Reset() {
+	*x = ProjectPushDevice{}
+	mi := &file_moth_admin_v1_push_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ProjectPushDevice) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ProjectPushDevice) ProtoMessage() {}
+
+func (x *ProjectPushDevice) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_push_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ProjectPushDevice.ProtoReflect.Descriptor instead.
+func (*ProjectPushDevice) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *ProjectPushDevice) GetDevice() *PushDevice {
+	if x != nil {
+		return x.Device
+	}
+	return nil
+}
+
+func (x *ProjectPushDevice) GetUserId() string {
+	if x != nil {
+		return x.UserId
+	}
+	return ""
+}
+
+func (x *ProjectPushDevice) GetUserEmail() string {
+	if x != nil {
+		return x.UserEmail
+	}
+	return ""
+}
+
+type ListPushDevicesResponse struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Devices []*ProjectPushDevice   `protobuf:"bytes,1,rep,name=devices,proto3" json:"devices,omitempty"`
+	// Empty when there are no further pages.
+	NextPageToken string `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"`
+	// Project-wide active-registration totals per target, independent of the
+	// request's target filter and page.
+	ApnsCount     int64 `protobuf:"varint,3,opt,name=apns_count,json=apnsCount,proto3" json:"apns_count,omitempty"`
+	FcmCount      int64 `protobuf:"varint,4,opt,name=fcm_count,json=fcmCount,proto3" json:"fcm_count,omitempty"`
+	WebpushCount  int64 `protobuf:"varint,5,opt,name=webpush_count,json=webpushCount,proto3" json:"webpush_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListPushDevicesResponse) Reset() {
+	*x = ListPushDevicesResponse{}
+	mi := &file_moth_admin_v1_push_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListPushDevicesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListPushDevicesResponse) ProtoMessage() {}
+
+func (x *ListPushDevicesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_admin_v1_push_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListPushDevicesResponse.ProtoReflect.Descriptor instead.
+func (*ListPushDevicesResponse) Descriptor() ([]byte, []int) {
+	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *ListPushDevicesResponse) GetDevices() []*ProjectPushDevice {
+	if x != nil {
+		return x.Devices
+	}
+	return nil
+}
+
+func (x *ListPushDevicesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
+func (x *ListPushDevicesResponse) GetApnsCount() int64 {
+	if x != nil {
+		return x.ApnsCount
+	}
+	return 0
+}
+
+func (x *ListPushDevicesResponse) GetFcmCount() int64 {
+	if x != nil {
+		return x.FcmCount
+	}
+	return 0
+}
+
+func (x *ListPushDevicesResponse) GetWebpushCount() int64 {
+	if x != nil {
+		return x.WebpushCount
+	}
+	return 0
+}
+
 type RevokePushDeviceRequest struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId string                 `protobuf:"bytes,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
@@ -763,7 +975,7 @@ type RevokePushDeviceRequest struct {
 
 func (x *RevokePushDeviceRequest) Reset() {
 	*x = RevokePushDeviceRequest{}
-	mi := &file_moth_admin_v1_push_proto_msgTypes[9]
+	mi := &file_moth_admin_v1_push_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -775,7 +987,7 @@ func (x *RevokePushDeviceRequest) String() string {
 func (*RevokePushDeviceRequest) ProtoMessage() {}
 
 func (x *RevokePushDeviceRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_push_proto_msgTypes[9]
+	mi := &file_moth_admin_v1_push_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -788,7 +1000,7 @@ func (x *RevokePushDeviceRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokePushDeviceRequest.ProtoReflect.Descriptor instead.
 func (*RevokePushDeviceRequest) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{9}
+	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *RevokePushDeviceRequest) GetProjectId() string {
@@ -815,7 +1027,7 @@ type RevokePushDeviceResponse struct {
 
 func (x *RevokePushDeviceResponse) Reset() {
 	*x = RevokePushDeviceResponse{}
-	mi := &file_moth_admin_v1_push_proto_msgTypes[10]
+	mi := &file_moth_admin_v1_push_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -827,7 +1039,7 @@ func (x *RevokePushDeviceResponse) String() string {
 func (*RevokePushDeviceResponse) ProtoMessage() {}
 
 func (x *RevokePushDeviceResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_admin_v1_push_proto_msgTypes[10]
+	mi := &file_moth_admin_v1_push_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -840,7 +1052,7 @@ func (x *RevokePushDeviceResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RevokePushDeviceResponse.ProtoReflect.Descriptor instead.
 func (*RevokePushDeviceResponse) Descriptor() ([]byte, []int) {
-	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{10}
+	return file_moth_admin_v1_push_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *RevokePushDeviceResponse) GetDevice() *PushDevice {
@@ -900,7 +1112,26 @@ const file_moth_admin_v1_push_proto_rawDesc = "" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"R\n" +
 	"\x1bListUserPushDevicesResponse\x123\n" +
-	"\adevices\x18\x01 \x03(\v2\x19.moth.admin.v1.PushDeviceR\adevices\"^\n" +
+	"\adevices\x18\x01 \x03(\v2\x19.moth.admin.v1.PushDeviceR\adevices\"\xa6\x01\n" +
+	"\x16ListPushDevicesRequest\x12\x1d\n" +
+	"\n" +
+	"project_id\x18\x01 \x01(\tR\tprojectId\x12\x1b\n" +
+	"\tpage_size\x18\x02 \x01(\x05R\bpageSize\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x03 \x01(\tR\tpageToken\x121\n" +
+	"\x06target\x18\x04 \x01(\x0e2\x19.moth.admin.v1.PushTargetR\x06target\"~\n" +
+	"\x11ProjectPushDevice\x121\n" +
+	"\x06device\x18\x01 \x01(\v2\x19.moth.admin.v1.PushDeviceR\x06device\x12\x17\n" +
+	"\auser_id\x18\x02 \x01(\tR\x06userId\x12\x1d\n" +
+	"\n" +
+	"user_email\x18\x03 \x01(\tR\tuserEmail\"\xde\x01\n" +
+	"\x17ListPushDevicesResponse\x12:\n" +
+	"\adevices\x18\x01 \x03(\v2 .moth.admin.v1.ProjectPushDeviceR\adevices\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\x12\x1d\n" +
+	"\n" +
+	"apns_count\x18\x03 \x01(\x03R\tapnsCount\x12\x1b\n" +
+	"\tfcm_count\x18\x04 \x01(\x03R\bfcmCount\x12#\n" +
+	"\rwebpush_count\x18\x05 \x01(\x03R\fwebpushCount\"^\n" +
 	"\x17RevokePushDeviceRequest\x12\x1d\n" +
 	"\n" +
 	"project_id\x18\x01 \x01(\tR\tprojectId\x12$\n" +
@@ -925,11 +1156,12 @@ const file_moth_admin_v1_push_proto_rawDesc = "" +
 	"#PUSH_REVOKE_REASON_REPORTED_INVALID\x10\x02\x12\x1c\n" +
 	"\x18PUSH_REVOKE_REASON_STALE\x10\x03\x12\x1f\n" +
 	"\x1bPUSH_REVOKE_REASON_REPLACED\x10\x04\x12\x1c\n" +
-	"\x18PUSH_REVOKE_REASON_ADMIN\x10\x052\xad\x03\n" +
+	"\x18PUSH_REVOKE_REASON_ADMIN\x10\x052\x8f\x04\n" +
 	"\vPushService\x12`\n" +
 	"\x0fGetPushSettings\x12%.moth.admin.v1.GetPushSettingsRequest\x1a&.moth.admin.v1.GetPushSettingsResponse\x12i\n" +
 	"\x12UpdatePushSettings\x12(.moth.admin.v1.UpdatePushSettingsRequest\x1a).moth.admin.v1.UpdatePushSettingsResponse\x12l\n" +
-	"\x13ListUserPushDevices\x12).moth.admin.v1.ListUserPushDevicesRequest\x1a*.moth.admin.v1.ListUserPushDevicesResponse\x12c\n" +
+	"\x13ListUserPushDevices\x12).moth.admin.v1.ListUserPushDevicesRequest\x1a*.moth.admin.v1.ListUserPushDevicesResponse\x12`\n" +
+	"\x0fListPushDevices\x12%.moth.admin.v1.ListPushDevicesRequest\x1a&.moth.admin.v1.ListPushDevicesResponse\x12c\n" +
 	"\x10RevokePushDevice\x12&.moth.admin.v1.RevokePushDeviceRequest\x1a'.moth.admin.v1.RevokePushDeviceResponseB7Z5github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1b\x06proto3"
 
 var (
@@ -945,7 +1177,7 @@ func file_moth_admin_v1_push_proto_rawDescGZIP() []byte {
 }
 
 var file_moth_admin_v1_push_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_moth_admin_v1_push_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_moth_admin_v1_push_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_moth_admin_v1_push_proto_goTypes = []any{
 	(PushTarget)(0),                     // 0: moth.admin.v1.PushTarget
 	(PushPermission)(0),                 // 1: moth.admin.v1.PushPermission
@@ -959,37 +1191,45 @@ var file_moth_admin_v1_push_proto_goTypes = []any{
 	(*UpdatePushSettingsResponse)(nil),  // 9: moth.admin.v1.UpdatePushSettingsResponse
 	(*ListUserPushDevicesRequest)(nil),  // 10: moth.admin.v1.ListUserPushDevicesRequest
 	(*ListUserPushDevicesResponse)(nil), // 11: moth.admin.v1.ListUserPushDevicesResponse
-	(*RevokePushDeviceRequest)(nil),     // 12: moth.admin.v1.RevokePushDeviceRequest
-	(*RevokePushDeviceResponse)(nil),    // 13: moth.admin.v1.RevokePushDeviceResponse
-	(*timestamppb.Timestamp)(nil),       // 14: google.protobuf.Timestamp
+	(*ListPushDevicesRequest)(nil),      // 12: moth.admin.v1.ListPushDevicesRequest
+	(*ProjectPushDevice)(nil),           // 13: moth.admin.v1.ProjectPushDevice
+	(*ListPushDevicesResponse)(nil),     // 14: moth.admin.v1.ListPushDevicesResponse
+	(*RevokePushDeviceRequest)(nil),     // 15: moth.admin.v1.RevokePushDeviceRequest
+	(*RevokePushDeviceResponse)(nil),    // 16: moth.admin.v1.RevokePushDeviceResponse
+	(*timestamppb.Timestamp)(nil),       // 17: google.protobuf.Timestamp
 }
 var file_moth_admin_v1_push_proto_depIdxs = []int32{
 	0,  // 0: moth.admin.v1.PushDevice.target:type_name -> moth.admin.v1.PushTarget
 	1,  // 1: moth.admin.v1.PushDevice.permission:type_name -> moth.admin.v1.PushPermission
 	3,  // 2: moth.admin.v1.PushDevice.metadata:type_name -> moth.admin.v1.PushDeviceMetadata
-	14, // 3: moth.admin.v1.PushDevice.create_time:type_name -> google.protobuf.Timestamp
-	14, // 4: moth.admin.v1.PushDevice.update_time:type_name -> google.protobuf.Timestamp
-	14, // 5: moth.admin.v1.PushDevice.last_seen_time:type_name -> google.protobuf.Timestamp
-	14, // 6: moth.admin.v1.PushDevice.revoke_time:type_name -> google.protobuf.Timestamp
+	17, // 3: moth.admin.v1.PushDevice.create_time:type_name -> google.protobuf.Timestamp
+	17, // 4: moth.admin.v1.PushDevice.update_time:type_name -> google.protobuf.Timestamp
+	17, // 5: moth.admin.v1.PushDevice.last_seen_time:type_name -> google.protobuf.Timestamp
+	17, // 6: moth.admin.v1.PushDevice.revoke_time:type_name -> google.protobuf.Timestamp
 	2,  // 7: moth.admin.v1.PushDevice.revoke_reason:type_name -> moth.admin.v1.PushRevokeReason
 	5,  // 8: moth.admin.v1.GetPushSettingsResponse.settings:type_name -> moth.admin.v1.PushSettings
 	5,  // 9: moth.admin.v1.UpdatePushSettingsRequest.settings:type_name -> moth.admin.v1.PushSettings
 	5,  // 10: moth.admin.v1.UpdatePushSettingsResponse.settings:type_name -> moth.admin.v1.PushSettings
 	4,  // 11: moth.admin.v1.ListUserPushDevicesResponse.devices:type_name -> moth.admin.v1.PushDevice
-	4,  // 12: moth.admin.v1.RevokePushDeviceResponse.device:type_name -> moth.admin.v1.PushDevice
-	6,  // 13: moth.admin.v1.PushService.GetPushSettings:input_type -> moth.admin.v1.GetPushSettingsRequest
-	8,  // 14: moth.admin.v1.PushService.UpdatePushSettings:input_type -> moth.admin.v1.UpdatePushSettingsRequest
-	10, // 15: moth.admin.v1.PushService.ListUserPushDevices:input_type -> moth.admin.v1.ListUserPushDevicesRequest
-	12, // 16: moth.admin.v1.PushService.RevokePushDevice:input_type -> moth.admin.v1.RevokePushDeviceRequest
-	7,  // 17: moth.admin.v1.PushService.GetPushSettings:output_type -> moth.admin.v1.GetPushSettingsResponse
-	9,  // 18: moth.admin.v1.PushService.UpdatePushSettings:output_type -> moth.admin.v1.UpdatePushSettingsResponse
-	11, // 19: moth.admin.v1.PushService.ListUserPushDevices:output_type -> moth.admin.v1.ListUserPushDevicesResponse
-	13, // 20: moth.admin.v1.PushService.RevokePushDevice:output_type -> moth.admin.v1.RevokePushDeviceResponse
-	17, // [17:21] is the sub-list for method output_type
-	13, // [13:17] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	0,  // 12: moth.admin.v1.ListPushDevicesRequest.target:type_name -> moth.admin.v1.PushTarget
+	4,  // 13: moth.admin.v1.ProjectPushDevice.device:type_name -> moth.admin.v1.PushDevice
+	13, // 14: moth.admin.v1.ListPushDevicesResponse.devices:type_name -> moth.admin.v1.ProjectPushDevice
+	4,  // 15: moth.admin.v1.RevokePushDeviceResponse.device:type_name -> moth.admin.v1.PushDevice
+	6,  // 16: moth.admin.v1.PushService.GetPushSettings:input_type -> moth.admin.v1.GetPushSettingsRequest
+	8,  // 17: moth.admin.v1.PushService.UpdatePushSettings:input_type -> moth.admin.v1.UpdatePushSettingsRequest
+	10, // 18: moth.admin.v1.PushService.ListUserPushDevices:input_type -> moth.admin.v1.ListUserPushDevicesRequest
+	12, // 19: moth.admin.v1.PushService.ListPushDevices:input_type -> moth.admin.v1.ListPushDevicesRequest
+	15, // 20: moth.admin.v1.PushService.RevokePushDevice:input_type -> moth.admin.v1.RevokePushDeviceRequest
+	7,  // 21: moth.admin.v1.PushService.GetPushSettings:output_type -> moth.admin.v1.GetPushSettingsResponse
+	9,  // 22: moth.admin.v1.PushService.UpdatePushSettings:output_type -> moth.admin.v1.UpdatePushSettingsResponse
+	11, // 23: moth.admin.v1.PushService.ListUserPushDevices:output_type -> moth.admin.v1.ListUserPushDevicesResponse
+	14, // 24: moth.admin.v1.PushService.ListPushDevices:output_type -> moth.admin.v1.ListPushDevicesResponse
+	16, // 25: moth.admin.v1.PushService.RevokePushDevice:output_type -> moth.admin.v1.RevokePushDeviceResponse
+	21, // [21:26] is the sub-list for method output_type
+	16, // [16:21] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_moth_admin_v1_push_proto_init() }
@@ -1003,7 +1243,7 @@ func file_moth_admin_v1_push_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_admin_v1_push_proto_rawDesc), len(file_moth_admin_v1_push_proto_rawDesc)),
 			NumEnums:      3,
-			NumMessages:   11,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

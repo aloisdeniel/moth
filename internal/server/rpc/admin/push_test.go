@@ -267,3 +267,130 @@ func TestAdminRevokePushDevice(t *testing.T) {
 		t.Fatalf("device_id as row id: want NotFound, got %v", err)
 	}
 }
+
+// TestAdminListPushDevices covers the Push tab's project-wide listing:
+// active-only, newest first, keyset pagination, target filter, user emails
+// resolved, project-wide counts, and no token anywhere in the response type.
+func TestAdminListPushDevices(t *testing.T) {
+	f := newPushAdminFixture(t)
+	ctx := context.Background()
+
+	// A second user shows the email resolution is per row, not per page.
+	u2 := store.User{ID: NewID(), ProjectID: f.project.ID, Email: "second@demo.test",
+		CustomClaims: "{}", CreatedAt: f.now, UpdatedAt: f.now}
+	if err := f.st.CreateUser(ctx, u2); err != nil {
+		t.Fatal(err)
+	}
+	d1 := f.seedDevice("dev-1", "tok-1", f.now.Add(-2*time.Hour))
+	if _, err := f.st.UpsertPushDevice(ctx, store.PushDevice{
+		ID: NewID(), ProjectID: f.project.ID, UserID: u2.ID,
+		Target: store.PushTargetAPNs, Token: "tok-2", DeviceID: "dev-2",
+		Permission: store.PushPermissionDenied, Platform: "ios", Model: "iPhone16,1",
+		CreatedAt: f.now.Add(-time.Hour), UpdatedAt: f.now.Add(-time.Hour), LastSeenAt: f.now.Add(-time.Hour),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	// A revoked row must never surface in the project listing.
+	revoked := f.seedDevice("dev-3", "tok-3", f.now)
+	if err := f.st.RevokePushDevice(ctx, f.project.ID, revoked.ID, store.PushRevokeReasonAdmin, f.now); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := f.h.ListPushDevices(ctx, connect.NewRequest(&adminv1.ListPushDevicesRequest{
+		ProjectId: f.project.ID,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Msg.Devices) != 2 || resp.Msg.NextPageToken != "" {
+		t.Fatalf("want 2 active devices and no next page, got %d %q", len(resp.Msg.Devices), resp.Msg.NextPageToken)
+	}
+	// Newest first by row id (UUIDv7): dev-2 was inserted after dev-1.
+	first, second := resp.Msg.Devices[0], resp.Msg.Devices[1]
+	if first.Device.DeviceId != "dev-2" || second.Device.DeviceId != "dev-1" {
+		t.Fatalf("want newest first (dev-2, dev-1), got (%s, %s)", first.Device.DeviceId, second.Device.DeviceId)
+	}
+	if first.UserEmail != "second@demo.test" || second.UserEmail != "u@demo.test" {
+		t.Fatalf("emails not resolved: %q %q", first.UserEmail, second.UserEmail)
+	}
+	if first.UserId != u2.ID || second.UserId != f.user.ID {
+		t.Fatal("user ids not carried")
+	}
+	if resp.Msg.ApnsCount != 1 || resp.Msg.FcmCount != 1 || resp.Msg.WebpushCount != 0 {
+		t.Fatalf("counts wrong: apns=%d fcm=%d webpush=%d", resp.Msg.ApnsCount, resp.Msg.FcmCount, resp.Msg.WebpushCount)
+	}
+
+	// Target filter narrows the page but never the project-wide counts.
+	apns, err := f.h.ListPushDevices(ctx, connect.NewRequest(&adminv1.ListPushDevicesRequest{
+		ProjectId: f.project.ID, Target: adminv1.PushTarget_PUSH_TARGET_APNS,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(apns.Msg.Devices) != 1 || apns.Msg.Devices[0].Device.DeviceId != "dev-2" {
+		t.Fatalf("target filter wrong: %v", apns.Msg.Devices)
+	}
+	if apns.Msg.FcmCount != 1 {
+		t.Fatal("counts must stay project-wide under a target filter")
+	}
+
+	// Keyset pagination: page size 1 walks dev-2 then dev-1.
+	page1, err := f.h.ListPushDevices(ctx, connect.NewRequest(&adminv1.ListPushDevicesRequest{
+		ProjectId: f.project.ID, PageSize: 1,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page1.Msg.Devices) != 1 || page1.Msg.NextPageToken == "" {
+		t.Fatal("want a full first page with a next token")
+	}
+	page2, err := f.h.ListPushDevices(ctx, connect.NewRequest(&adminv1.ListPushDevicesRequest{
+		ProjectId: f.project.ID, PageSize: 1, PageToken: page1.Msg.NextPageToken,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(page2.Msg.Devices) != 1 || page2.Msg.Devices[0].Device.DeviceId != "dev-1" ||
+		page2.Msg.NextPageToken != "" {
+		t.Fatalf("second page wrong: %v next=%q", page2.Msg.Devices, page2.Msg.NextPageToken)
+	}
+	_ = d1
+
+	// Unknown project → NotFound, like every project-scoped admin RPC.
+	if _, err := f.h.ListPushDevices(ctx, connect.NewRequest(&adminv1.ListPushDevicesRequest{
+		ProjectId: NewID(),
+	})); connect.CodeOf(err) != connect.CodeNotFound {
+		t.Fatalf("want NotFound for unknown project, got %v", err)
+	}
+}
+
+// TestAdminListPushDevicesCrossProject asserts a project's listing never
+// leaks another project's registrations or user emails.
+func TestAdminListPushDevicesCrossProject(t *testing.T) {
+	f := newPushAdminFixture(t)
+	ctx := context.Background()
+	f.seedDevice("dev-1", "tok-1", f.now)
+
+	other := store.Project{
+		ID: NewID(), Name: "Other", Slug: "other",
+		PublishableKey: "pk_" + NewID(), SecretKeyHash: "hash2",
+		Settings: store.DefaultProjectSettings(), CreatedAt: f.now, UpdatedAt: f.now,
+	}
+	k := store.ProjectKey{
+		ID: NewID(), ProjectID: other.ID, Kid: "kid2", Algorithm: "ES256",
+		PublicKeyPEM: "PEM", PrivateKeyEnc: []byte{1},
+		Status: store.ProjectKeyStatusActive, CreatedAt: f.now,
+	}
+	if err := f.st.CreateProject(ctx, other, k); err != nil {
+		t.Fatal(err)
+	}
+	resp, err := f.h.ListPushDevices(ctx, connect.NewRequest(&adminv1.ListPushDevicesRequest{
+		ProjectId: other.ID,
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resp.Msg.Devices) != 0 || resp.Msg.FcmCount != 0 {
+		t.Fatalf("other project must see nothing, got %d devices fcm=%d", len(resp.Msg.Devices), resp.Msg.FcmCount)
+	}
+}

@@ -42,6 +42,9 @@ const (
 	// PushServiceListUserPushDevicesProcedure is the fully-qualified name of the PushService's
 	// ListUserPushDevices RPC.
 	PushServiceListUserPushDevicesProcedure = "/moth.admin.v1.PushService/ListUserPushDevices"
+	// PushServiceListPushDevicesProcedure is the fully-qualified name of the PushService's
+	// ListPushDevices RPC.
+	PushServiceListPushDevicesProcedure = "/moth.admin.v1.PushService/ListPushDevices"
 	// PushServiceRevokePushDeviceProcedure is the fully-qualified name of the PushService's
 	// RevokePushDevice RPC.
 	PushServiceRevokePushDeviceProcedure = "/moth.admin.v1.PushService/RevokePushDevice"
@@ -60,6 +63,11 @@ type PushServiceClient interface {
 	// Devices panel, most recently seen first — active and revoked (revocation
 	// is auditable, not a delete), never the tokens.
 	ListUserPushDevices(context.Context, *connect.Request[v1.ListUserPushDevicesRequest]) (*connect.Response[v1.ListUserPushDevicesResponse], error)
+	// ListPushDevices returns the project's ACTIVE registrations for the Push
+	// tab, newest first with keyset pagination and an optional target filter —
+	// each with the owning user's id and email, never the tokens. Per-target
+	// totals for the whole project ride along on every page.
+	ListPushDevices(context.Context, *connect.Request[v1.ListPushDevicesRequest]) (*connect.Response[v1.ListPushDevicesResponse], error)
 	// RevokePushDevice revokes one registration (`admin` reason, audit-logged);
 	// the sender surface stops serving it immediately. Idempotent: revoking an
 	// already-revoked registration succeeds and keeps the original reason.
@@ -95,6 +103,12 @@ func NewPushServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(pushServiceMethods.ByName("ListUserPushDevices")),
 			connect.WithClientOptions(opts...),
 		),
+		listPushDevices: connect.NewClient[v1.ListPushDevicesRequest, v1.ListPushDevicesResponse](
+			httpClient,
+			baseURL+PushServiceListPushDevicesProcedure,
+			connect.WithSchema(pushServiceMethods.ByName("ListPushDevices")),
+			connect.WithClientOptions(opts...),
+		),
 		revokePushDevice: connect.NewClient[v1.RevokePushDeviceRequest, v1.RevokePushDeviceResponse](
 			httpClient,
 			baseURL+PushServiceRevokePushDeviceProcedure,
@@ -109,6 +123,7 @@ type pushServiceClient struct {
 	getPushSettings     *connect.Client[v1.GetPushSettingsRequest, v1.GetPushSettingsResponse]
 	updatePushSettings  *connect.Client[v1.UpdatePushSettingsRequest, v1.UpdatePushSettingsResponse]
 	listUserPushDevices *connect.Client[v1.ListUserPushDevicesRequest, v1.ListUserPushDevicesResponse]
+	listPushDevices     *connect.Client[v1.ListPushDevicesRequest, v1.ListPushDevicesResponse]
 	revokePushDevice    *connect.Client[v1.RevokePushDeviceRequest, v1.RevokePushDeviceResponse]
 }
 
@@ -125,6 +140,11 @@ func (c *pushServiceClient) UpdatePushSettings(ctx context.Context, req *connect
 // ListUserPushDevices calls moth.admin.v1.PushService.ListUserPushDevices.
 func (c *pushServiceClient) ListUserPushDevices(ctx context.Context, req *connect.Request[v1.ListUserPushDevicesRequest]) (*connect.Response[v1.ListUserPushDevicesResponse], error) {
 	return c.listUserPushDevices.CallUnary(ctx, req)
+}
+
+// ListPushDevices calls moth.admin.v1.PushService.ListPushDevices.
+func (c *pushServiceClient) ListPushDevices(ctx context.Context, req *connect.Request[v1.ListPushDevicesRequest]) (*connect.Response[v1.ListPushDevicesResponse], error) {
+	return c.listPushDevices.CallUnary(ctx, req)
 }
 
 // RevokePushDevice calls moth.admin.v1.PushService.RevokePushDevice.
@@ -145,6 +165,11 @@ type PushServiceHandler interface {
 	// Devices panel, most recently seen first — active and revoked (revocation
 	// is auditable, not a delete), never the tokens.
 	ListUserPushDevices(context.Context, *connect.Request[v1.ListUserPushDevicesRequest]) (*connect.Response[v1.ListUserPushDevicesResponse], error)
+	// ListPushDevices returns the project's ACTIVE registrations for the Push
+	// tab, newest first with keyset pagination and an optional target filter —
+	// each with the owning user's id and email, never the tokens. Per-target
+	// totals for the whole project ride along on every page.
+	ListPushDevices(context.Context, *connect.Request[v1.ListPushDevicesRequest]) (*connect.Response[v1.ListPushDevicesResponse], error)
 	// RevokePushDevice revokes one registration (`admin` reason, audit-logged);
 	// the sender surface stops serving it immediately. Idempotent: revoking an
 	// already-revoked registration succeeds and keeps the original reason.
@@ -176,6 +201,12 @@ func NewPushServiceHandler(svc PushServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(pushServiceMethods.ByName("ListUserPushDevices")),
 		connect.WithHandlerOptions(opts...),
 	)
+	pushServiceListPushDevicesHandler := connect.NewUnaryHandler(
+		PushServiceListPushDevicesProcedure,
+		svc.ListPushDevices,
+		connect.WithSchema(pushServiceMethods.ByName("ListPushDevices")),
+		connect.WithHandlerOptions(opts...),
+	)
 	pushServiceRevokePushDeviceHandler := connect.NewUnaryHandler(
 		PushServiceRevokePushDeviceProcedure,
 		svc.RevokePushDevice,
@@ -190,6 +221,8 @@ func NewPushServiceHandler(svc PushServiceHandler, opts ...connect.HandlerOption
 			pushServiceUpdatePushSettingsHandler.ServeHTTP(w, r)
 		case PushServiceListUserPushDevicesProcedure:
 			pushServiceListUserPushDevicesHandler.ServeHTTP(w, r)
+		case PushServiceListPushDevicesProcedure:
+			pushServiceListPushDevicesHandler.ServeHTTP(w, r)
 		case PushServiceRevokePushDeviceProcedure:
 			pushServiceRevokePushDeviceHandler.ServeHTTP(w, r)
 		default:
@@ -211,6 +244,10 @@ func (UnimplementedPushServiceHandler) UpdatePushSettings(context.Context, *conn
 
 func (UnimplementedPushServiceHandler) ListUserPushDevices(context.Context, *connect.Request[v1.ListUserPushDevicesRequest]) (*connect.Response[v1.ListUserPushDevicesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.PushService.ListUserPushDevices is not implemented"))
+}
+
+func (UnimplementedPushServiceHandler) ListPushDevices(context.Context, *connect.Request[v1.ListPushDevicesRequest]) (*connect.Response[v1.ListPushDevicesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("moth.admin.v1.PushService.ListPushDevices is not implemented"))
 }
 
 func (UnimplementedPushServiceHandler) RevokePushDevice(context.Context, *connect.Request[v1.RevokePushDeviceRequest]) (*connect.Response[v1.RevokePushDeviceResponse], error) {

@@ -128,7 +128,7 @@ authority.
 `useMothPush()` returns `{ status, permission, subscribe, unsubscribe }`.
 `subscribe()` asks for browser permission, subscribes your service
 worker's `PushManager` with the project's VAPID public key (configured in
-the admin Settings tab), and registers the subscription in the project's
+the admin Push tab), and registers the subscription in the project's
 device registry; sign-out unregisters automatically. Your backend reads
 the registry over `moth.server.v1.PushService` and sends with a Web Push
 library — moth never sends. Environments that can't do push are states,

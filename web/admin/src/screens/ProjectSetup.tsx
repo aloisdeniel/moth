@@ -540,7 +540,7 @@ function PushToggle() {
         <h2>{pushSection} · Push notifications (optional)</h2>
         <p className="caption">
           moth registers devices; your backend sends. Enable push registration
-          under the <span className="body-strong">Settings</span> tab, and
+          under the <span className="body-strong">Push</span> tab, and
           every signed-in device registers its push credential (APNs, FCM or
           Web Push) with an honest permission state. Your server reads the
           registry through{" "}
@@ -575,7 +575,7 @@ function PushToggle() {
             <p className="caption">
               Web Push additionally needs a VAPID keypair — generate one,
               paste the <span className="body-strong">public</span> key under
-              the <span className="body-strong">Settings</span> tab and keep
+              the <span className="body-strong">Push</span> tab and keep
               the private key in your sender (it never touches moth):
             </p>
             <CodeBlock code={vapidGen} />

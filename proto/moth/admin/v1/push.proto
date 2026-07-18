@@ -24,6 +24,11 @@ service PushService {
   // Devices panel, most recently seen first — active and revoked (revocation
   // is auditable, not a delete), never the tokens.
   rpc ListUserPushDevices(ListUserPushDevicesRequest) returns (ListUserPushDevicesResponse);
+  // ListPushDevices returns the project's ACTIVE registrations for the Push
+  // tab, newest first with keyset pagination and an optional target filter —
+  // each with the owning user's id and email, never the tokens. Per-target
+  // totals for the whole project ride along on every page.
+  rpc ListPushDevices(ListPushDevicesRequest) returns (ListPushDevicesResponse);
   // RevokePushDevice revokes one registration (`admin` reason, audit-logged);
   // the sender surface stops serving it immediately. Idempotent: revoking an
   // already-revoked registration succeeds and keeps the original reason.
@@ -145,6 +150,35 @@ message ListUserPushDevicesRequest {
 message ListUserPushDevicesResponse {
   // The user's registrations (active and revoked), most recently seen first.
   repeated PushDevice devices = 1;
+}
+
+message ListPushDevicesRequest {
+  string project_id = 1;
+  // 1–200; 0 means the default of 50.
+  int32 page_size = 2;
+  // The next_page_token of the previous response; empty for the first page.
+  string page_token = 3;
+  // PUSH_TARGET_UNSPECIFIED matches all targets.
+  PushTarget target = 4;
+}
+
+// ProjectPushDevice is one active registration in the project-wide listing,
+// carrying the owning user so the operator can tell whose device it is.
+message ProjectPushDevice {
+  PushDevice device = 1;
+  string user_id = 2;
+  string user_email = 3;
+}
+
+message ListPushDevicesResponse {
+  repeated ProjectPushDevice devices = 1;
+  // Empty when there are no further pages.
+  string next_page_token = 2;
+  // Project-wide active-registration totals per target, independent of the
+  // request's target filter and page.
+  int64 apns_count = 3;
+  int64 fcm_count = 4;
+  int64 webpush_count = 5;
 }
 
 message RevokePushDeviceRequest {

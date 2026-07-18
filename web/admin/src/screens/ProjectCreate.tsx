@@ -754,7 +754,7 @@ export function ProjectCreate() {
                   <span>
                     I have a VAPID keypair — paste the public key now
                     <span className="caption" style={{ display: "block" }}>
-                      Off = decide later; the checklist will point at Settings.
+                      Off = decide later; the checklist will point at the Push tab.
                     </span>
                   </span>
                 </label>

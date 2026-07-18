@@ -146,6 +146,7 @@ type UserStore interface {
 	SetIdentityProviderEmail(ctx context.Context, projectID, id, email string) error
 	GetUser(ctx context.Context, projectID, id string) (User, error)
 	GetUserByEmail(ctx context.Context, projectID, email string) (User, error)
+	UserEmails(ctx context.Context, projectID string, ids []string) (map[string]string, error)
 	ListUsers(ctx context.Context, projectID string) ([]User, error)
 	ListUsersPage(ctx context.Context, projectID string, page UserPage) ([]User, error)
 	CountUsers(ctx context.Context, projectID, query string) (int, error)

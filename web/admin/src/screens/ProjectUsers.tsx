@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@connectrpc/connect-query";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { useEffect, useState } from "react";
+import { Link } from "react-router";
 
 import { errorMessage, invalidate } from "../api";
 import {
@@ -608,6 +609,10 @@ function PushDevicesSection({ project, userId }: { project: Project; userId: str
   return (
     <div className="stack-8">
       <span className="field__label">Push devices</span>
+      <p className="caption">
+        This user's registrations, including revoked ones. The project-wide
+        list lives on the <Link to={`/projects/${project.id}/push`}>Push tab</Link>.
+      </p>
       {devices.isPending && <Loading />}
       {devices.isError && <ErrorNote message={errorMessage(devices.error)} />}
       {devices.data &&

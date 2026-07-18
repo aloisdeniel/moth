@@ -100,6 +100,85 @@ func (h *PushHandler) ListUserPushDevices(ctx context.Context, req *connect.Requ
 	return connect.NewResponse(resp), nil
 }
 
+// Page bounds for the Push tab's project-wide listing, matching the
+// secret-key surface's ListPushDevices.
+const (
+	defaultAdminPushPageSize = 50
+	maxAdminPushPageSize     = 200
+)
+
+// ListPushDevices returns the project's active registrations for the Push
+// tab, newest first with keyset pagination and an optional target filter.
+// Each row carries the owning user's id and email so the operator can tell
+// whose device it is; tokens never appear (adminv1.PushDevice has no token
+// field). Project-wide per-target totals ride along on every page.
+func (h *PushHandler) ListPushDevices(ctx context.Context, req *connect.Request[adminv1.ListPushDevicesRequest]) (*connect.Response[adminv1.ListPushDevicesResponse], error) {
+	p, err := h.store.GetProject(ctx, req.Msg.ProjectId)
+	if err != nil {
+		return nil, projectErr(err)
+	}
+	size := int(req.Msg.PageSize)
+	if size < 0 {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("pageSize must not be negative"))
+	}
+	if size == 0 {
+		size = defaultAdminPushPageSize
+	}
+	if size > maxAdminPushPageSize {
+		size = maxAdminPushPageSize
+	}
+	target := ""
+	if req.Msg.Target != adminv1.PushTarget_PUSH_TARGET_UNSPECIFIED {
+		if target, err = adminPushTargetFromProto(req.Msg.Target); err != nil {
+			return nil, err
+		}
+	}
+	// One extra row decides whether a further page exists.
+	devices, err := h.store.ListActivePushDevices(ctx, p.ID, store.PushDevicePage{
+		Target:  target,
+		AfterID: req.Msg.PageToken,
+		Limit:   size + 1,
+	})
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	next := ""
+	if len(devices) > size {
+		devices = devices[:size]
+		next = devices[len(devices)-1].ID
+	}
+	userIDs := make([]string, 0, len(devices))
+	seen := make(map[string]bool, len(devices))
+	for _, d := range devices {
+		if !seen[d.UserID] {
+			seen[d.UserID] = true
+			userIDs = append(userIDs, d.UserID)
+		}
+	}
+	emails, err := h.store.UserEmails(ctx, p.ID, userIDs)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	counts, err := h.store.CountActivePushDevicesByTarget(ctx, p.ID)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeInternal, err)
+	}
+	resp := &adminv1.ListPushDevicesResponse{
+		NextPageToken: next,
+		ApnsCount:     int64(counts[store.PushTargetAPNs]),
+		FcmCount:      int64(counts[store.PushTargetFCM]),
+		WebpushCount:  int64(counts[store.PushTargetWebPush]),
+	}
+	for _, d := range devices {
+		resp.Devices = append(resp.Devices, &adminv1.ProjectPushDevice{
+			Device:    adminPushDeviceProto(d),
+			UserId:    d.UserID,
+			UserEmail: emails[d.UserID],
+		})
+	}
+	return connect.NewResponse(resp), nil
+}
+
 // RevokePushDevice revokes one registration by its row id (`admin` reason,
 // audit-logged). Idempotent: revoking an already-revoked registration
 // succeeds, keeps the original reason and is not re-audited.
@@ -151,6 +230,19 @@ func adminPushTargetProto(t string) adminv1.PushTarget {
 		return adminv1.PushTarget_PUSH_TARGET_WEBPUSH
 	default:
 		return adminv1.PushTarget_PUSH_TARGET_UNSPECIFIED
+	}
+}
+
+func adminPushTargetFromProto(t adminv1.PushTarget) (string, error) {
+	switch t {
+	case adminv1.PushTarget_PUSH_TARGET_APNS:
+		return store.PushTargetAPNs, nil
+	case adminv1.PushTarget_PUSH_TARGET_FCM:
+		return store.PushTargetFCM, nil
+	case adminv1.PushTarget_PUSH_TARGET_WEBPUSH:
+		return store.PushTargetWebPush, nil
+	default:
+		return "", connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("unknown target %d", t))
 	}
 }
 

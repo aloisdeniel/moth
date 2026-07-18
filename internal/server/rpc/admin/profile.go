@@ -373,7 +373,7 @@ func pushItem(p store.Project, c profile.Config) *adminv1.SetupItem {
 		Id:         "push_vapid",
 		Title:      "Set up Web Push",
 		Detail:     detail,
-		Tab:        "settings",
+		Tab:        "push",
 		CliCommand: "npx web-push generate-vapid-keys",
 	}
 }

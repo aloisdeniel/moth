@@ -6,9 +6,7 @@ import { ErrorNote, Field, Loading, Status, StringListField } from "../component
 import { ProfilePlatform, ProfileService } from "../gen/moth/admin/v1/profile_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
-import { PushService } from "../gen/moth/admin/v1/push_pb";
 import { InstanceSettingsService, SmtpSource } from "../gen/moth/admin/v1/settings_pb";
-import { vapidKeyError } from "../lib/push";
 
 // ProjectSettings edits the per-project auth policy (the milestone-02
 // settings JSON, as a form).
@@ -256,7 +254,6 @@ export function ProjectSettings({ project }: { project: Project }) {
         {update.isError && <span className="field__error">{errorMessage(update.error)}</span>}
       </div>
     </form>
-    <PushSection project={project} />
     <ProfileSection project={project} />
     </>
   );
@@ -422,107 +419,6 @@ function ProfileSection({ project }: { project: Project }) {
                   : current.data.hasProfile
                     ? "Save profile"
                     : "Create profile"}
-              </button>
-              {saved && <span className="caption text-success">Saved.</span>}
-              {update.isError && (
-                <span className="field__error">{errorMessage(update.error)}</span>
-              )}
-            </div>
-          </>
-        )}
-      </section>
-    </form>
-  );
-}
-
-// PushSection edits the per-project push settings (milestone 20): the
-// registry enable switch and the Web Push VAPID public key. Plain config
-// with its own save — a full replacement via UpdatePushSettings, separate
-// from the auth-policy form above. The VAPID private key never touches moth.
-function PushSection({ project }: { project: Project }) {
-  const current = useQuery(PushService.method.getPushSettings, { projectId: project.id });
-  const [enabled, setEnabled] = useState(false);
-  const [vapidKey, setVapidKey] = useState("");
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    setEnabled(current.data?.settings?.enabled ?? false);
-    setVapidKey(current.data?.settings?.webpushVapidPublicKey ?? "");
-  }, [current.data]);
-
-  const update = useMutation(PushService.method.updatePushSettings, {
-    onSuccess: () => {
-      invalidate(PushService.method.getPushSettings);
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
-    },
-  });
-
-  const keyError = vapidKeyError(vapidKey.trim());
-
-  return (
-    <form
-      className="stack-24"
-      style={{ maxWidth: 640 }}
-      onSubmit={(e) => {
-        e.preventDefault();
-        update.mutate({
-          projectId: project.id,
-          settings: { enabled, webpushVapidPublicKey: vapidKey.trim() },
-        });
-      }}
-    >
-      <section className="card card--pad stack-16">
-        <h3 className="card__title">Push notifications</h3>
-        <p className="caption">
-          moth registers devices; your backend sends. The SDK registers each
-          signed-in device's push credential here, and your server reads the
-          registry through <span className="inline-code">moth.server.v1</span>{" "}
-          to deliver via APNs, FCM or Web Push itself.
-        </p>
-        {current.isPending && <Loading />}
-        {current.isError && <ErrorNote message={errorMessage(current.error)} />}
-        {current.data && (
-          <>
-            <label className="check">
-              <input
-                type="checkbox"
-                checked={enabled}
-                onChange={(e) => setEnabled(e.target.checked)}
-              />
-              <span>
-                Enable push registration
-                <span className="caption" style={{ display: "block" }}>
-                  Lets signed-in devices register their push credentials. Off =
-                  new registrations are refused; existing ones are kept.
-                </span>
-              </span>
-            </label>
-            <Field
-              label="Web Push VAPID public key"
-              error={keyError}
-              help={
-                "Only needed for Web Push: the public half of your VAPID keypair " +
-                "(base64url), delivered to browsers so they can subscribe. Keep the " +
-                "private key in your sender — it never touches moth."
-              }
-            >
-              <input
-                className={keyError ? "input input--mono input--error" : "input input--mono"}
-                value={vapidKey}
-                onChange={(e) => setVapidKey(e.target.value)}
-                placeholder="BPz3…"
-                spellCheck={false}
-                autoComplete="off"
-              />
-            </Field>
-            <div className="row-12">
-              <button
-                type="submit"
-                className="btn btn--primary"
-                disabled={update.isPending || keyError !== ""}
-              >
-                {update.isPending ? "Saving…" : "Save push settings"}
               </button>
               {saved && <span className="caption text-success">Saved.</span>}
               {update.isError && (

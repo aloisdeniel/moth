@@ -9,6 +9,7 @@ import { ProjectDesign } from "./ProjectDesign";
 import { ProjectMonetization } from "./ProjectMonetization";
 import { ProjectOverview } from "./ProjectOverview";
 import { ProjectProviders } from "./ProjectProviders";
+import { ProjectPush } from "./ProjectPush";
 import { ProjectSettings } from "./ProjectSettings";
 import { ProjectSetup } from "./ProjectSetup";
 import { ProjectUsers } from "./ProjectUsers";
@@ -19,6 +20,7 @@ const TABS = [
   { id: "providers", label: "Providers" },
   { id: "monetization", label: "Monetization" },
   { id: "design", label: "Design" },
+  { id: "push", label: "Push" },
   { id: "settings", label: "Settings" },
   { id: "analytics", label: "Analytics" },
   { id: "setup", label: "Setup" },
@@ -78,6 +80,7 @@ export function Project() {
       {active === "providers" && <ProjectProviders project={p} />}
       {active === "monetization" && <ProjectMonetization project={p} />}
       {active === "design" && <ProjectDesign project={p} />}
+      {active === "push" && <ProjectPush project={p} />}
       {active === "settings" && <ProjectSettings project={p} />}
       {active === "analytics" && <ProjectAnalytics project={p} />}
       {active === "setup" && <ProjectSetup project={p} />}

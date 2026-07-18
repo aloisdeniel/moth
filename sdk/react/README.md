@@ -136,7 +136,7 @@ opens the Stripe Billing Portal the same way.
 ## Web Push
 
 `useMothPush()` turns the project's Web Push configuration (a VAPID public
-key, set in the admin's Settings tab) into a settings-screen toggle:
+key, set in the admin's Push tab) into a settings-screen toggle:
 
 ```tsx
 import { useMothPush } from '@moth/react'

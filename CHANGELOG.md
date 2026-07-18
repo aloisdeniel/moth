@@ -67,6 +67,11 @@ regenerated from conventional-commit history by `git cliff` (see
   worker (a minimal `sw.js` is documented).
 - Examples, setup tab, docs (a new push guide) and `moth skill export`
   cover the full loop from registration to a backend send.
+- A dedicated **Push** tab on the admin project page lists every registered
+  device project-wide — owning user, target, permission, device metadata,
+  last seen — with per-target totals, a target filter, pagination, and
+  revocation; the push settings (enable switch + VAPID public key) moved
+  there from Settings, and the setup checklist points at it.
 
 ### Release engineering
 
