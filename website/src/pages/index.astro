@@ -71,6 +71,15 @@ const compareRows = [
       'Not offered',
     ],
   },
+  {
+    label: 'Push device registry',
+    cells: [
+      'Built in: registry + feedback; your server sends',
+      'FCM (full send pipeline)',
+      'Not offered',
+      'Not offered',
+    ],
+  },
   { group: "What moth doesn't do (v1)" },
   {
     label: 'Managed scale & SLA',
@@ -297,9 +306,11 @@ ReadWritePaths=/var/lib/moth`;
           instructions, and login theming. Ships inside the binary.
         </FeatureTile>
         <FeatureTile title="Flutter & React SDKs">
-          <code>moth_auth</code> is served from the binary's own pub repository,
-          <code>@moth/react</code> from its npm registry — the SDK version
-          always matches the server. Nothing hits pub.dev or npmjs.
+          <code>moth_auth</code> and its native companions
+          <code>moth_billing</code> and <code>moth_push</code> are served from
+          the binary's own pub repository, <code>@moth/react</code> from its
+          npm registry — the SDK version always matches the server. Nothing
+          hits pub.dev or npmjs.
         </FeatureTile>
         <FeatureTile title="Admin CLI & agents">
           The same binary drives any instance: scriptable project and user
@@ -312,13 +323,22 @@ ReadWritePaths=/var/lib/moth`;
         <FeatureTile title="Subscriptions & entitlements">
           App Store, Google Play, and Stripe validated server-side — no billing
           SaaS. Subscription state becomes entitlements like <code>pro</code>,
-          with promos and grace periods; a free tier is always built in.
+          with promos and grace periods; a free tier is always built in. On
+          device, <code>moth_billing</code> runs StoreKit 2 and Play Billing
+          first-party: one dependency, zero adapter code.
         </FeatureTile>
         <FeatureTile title="Themed paywall, mobile & web">
           <code>MothPaywallScreen</code> renders your tiers with your branding —
           copy, layout, and highlighted tier configured per language from the
           admin. One paywall config drives Flutter and React alike; on the web
           it sells through Stripe-hosted Checkout, so moth never touches a card.
+        </FeatureTile>
+        <FeatureTile title="Push device registry">
+          Every signed-in device registers its APNs, FCM, or Web Push
+          credential — permission state included — via <code>moth_push</code>
+          or <code>useMothPush()</code>. Your backend reads the live registry
+          and sends with the push services' own APIs; moth registers, your
+          server sends, and dead tokens age out through the feedback loop.
         </FeatureTile>
         <FeatureTile title="Revenue per month">
           Store-reported revenue, active subscribers, churn, and trial

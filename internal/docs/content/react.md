@@ -69,6 +69,8 @@ signed in.
   gating (the server remains the authority).
 - `useMothCustomerInfo()` / `useMothEntitlement('pro')` — subscription
   state; see [entitlements & paywall](#entitlements--paywall-stripe).
+- `useMothPush()` — Web Push subscription state and actions; see
+  [web push](#web-push).
 
 ### MothLoginScreen
 
@@ -118,6 +120,20 @@ Entitlement state is cached locally, so gating is instant on load and
 refreshes in the background; the server-derived state is always the
 authority.
 
+## Web Push
+
+`useMothPush()` returns `{ status, permission, subscribe, unsubscribe }`.
+`subscribe()` asks for browser permission, subscribes your service
+worker's `PushManager` with the project's VAPID public key (configured in
+the admin Settings tab), and registers the subscription in the project's
+device registry; sign-out unregisters automatically. Your backend reads
+the registry over `moth.server.v1.PushService` and sends with a Web Push
+library — moth never sends. Environments that can't do push are states,
+not errors: no VAPID key → `unavailable`, no `PushManager` →
+`unsupported`. The app owns its service worker; the
+[push notifications guide](../guides/push/) walks the whole loop,
+including a minimal `sw.js`.
+
 ## Client core
 
 `MothClient` is an ergonomic wrapper over the connect-web clients
@@ -150,6 +166,7 @@ Methods map one-to-one to the [auth API](../api/#mothauthv1):
 | Account | `deleteAccount({password})` (fresh re-auth required) |
 | Config | `getProjectConfig()` |
 | Billing | `getCustomerInfo()`, `getOfferings()`, `purchase(product)`, `manageBilling()`, `createCheckoutSession(...)`, `createBillingPortalSession(...)` |
+| Push | `registerPushDevice(...)`, `unregisterPushDevice(...)` (used by `useMothPush`) |
 | Tokens | `accessToken()` |
 
 The confirmation half of email verification, password reset, and email

@@ -26,7 +26,17 @@ web** through Stripe-hosted Checkout, and everything is distilled into
 **entitlements** like `pro` your app gates on, sold through a **themed
 paywall** configured from the admin, and reported as revenue per month on
 the analytics tab. A free tier is always built in, so paid subscriptions
-stay optional.
+stay optional. On device, the first-party **`moth_billing`** plugin runs
+the native purchase itself — StoreKit 2 on iOS, Play Billing on Android —
+so selling needs one dependency and zero adapter code.
+
+And it registers their devices for **push notifications**: every signed-in
+device reports its APNs / FCM / Web Push credential (with an honest
+permission state) through the `moth_push` plugin or the React
+`useMothPush()` hook, and your backend reads the live registry over
+`moth.server.v1` and sends with the push services' own APIs. moth
+registers, your server sends — sender credentials never touch it, and
+dead tokens age out through sign-out, feedback, and staleness sweeps.
 
 Every app you ship is a **project**: a sealed tenant with its own users, its
 own signing keypair, its own provider credentials, its own login branding,
@@ -34,8 +44,9 @@ its own subscription tiers, its own analytics. Adding app #10 costs what
 app #1 did — one project created in the admin, zero new infrastructure.
 
 Everything ships **inside the binary**: the SQLite database, the admin web
-console, the hosted email pages, the fonts, the `moth_auth` Flutter SDK
-(served from the instance's own pub repository), the `@moth/react` React
+console, the hosted email pages, the fonts, the Flutter SDK packages
+(`moth_auth` plus the `moth_billing` and `moth_push` native companions,
+served from the instance's own pub repository), the `@moth/react` React
 SDK (served from the instance's own npm registry), the CLI, and the
 documentation you're reading (served at `/docs`, version-matched to the
 binary). `moth serve` and you're running.

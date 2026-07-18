@@ -58,6 +58,13 @@ void main() {
   `true`.
 - `theme` — a local [`MothTheme`](#theming-hooks) overriding the theme the
   server sends.
+- `billingAdapter` — runs native store purchases for the paywall; pass
+  `MothStoreBilling()` from `moth_billing` (see
+  [companions](#companions-native-billing--push)).
+- `pushAdapter` — turns on push-device registration; pass
+  `MothNativePush()` from `moth_push`. No adapter, no push — and the OS
+  permission prompt only ever appears when your app calls
+  `MothScope.of(context).requestPushPermission()`.
 
 While the session is being restored `MothApp` shows a neutral loading
 state; it never flashes the login screen for a user who is actually
@@ -249,6 +256,29 @@ exclusively — no hardcoded styles. When the built-in screen isn't enough:
   theme, so a custom layout still matches the brand.
 - **Error-state colors are fixed** under any theme — the legibility of a
   failure message is not themable.
+
+## Companions: native billing & push
+
+Two first-party plugin packages are served from the same `/pub`
+repository at the same version as `moth_auth`; each one is a single
+dependency plus one constructor argument:
+
+- **`moth_billing`** — implements `MothBillingAdapter` with StoreKit 2 on
+  iOS and the Play Billing Library on Android. `MothScope.purchase` and
+  `MothPaywallScreen` run real store purchases with zero adapter code;
+  the server validates every receipt. See the
+  [subscriptions & paywall guide](../guides/monetization/).
+- **`moth_push`** — implements `MothPushAdapter` with APNs on iOS and
+  Firebase Cloud Messaging on Android. While a user is signed in the SDK
+  keeps the project's device registry current (register on launch and
+  token rotation, unregister on sign-out); `MothScope.pushStatus` and
+  `requestPushPermission()` drive your settings UI. Your backend reads
+  the registered devices and sends the notifications itself — see the
+  [push notifications guide](../guides/push/).
+
+Both stay optional: `moth_auth` remains pure Dart, and each adapter
+interface is the escape hatch for apps with their own store or push
+stack.
 
 ## Example app
 

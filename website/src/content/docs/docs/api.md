@@ -21,6 +21,12 @@ can reach:
 Everything is project-scoped: `pk_`/`sk_` name a project directly, and a
 token minted for one project can never be used against another.
 
+Two further end-user services ride the publishable key plus the user's
+Bearer token: `moth.billing.v1` (subscriptions — see the
+[monetization guide](../guides/monetization/)) and `moth.push.v1`
+(push-device registration — see the
+[push guide](../guides/push/)).
+
 ## moth.auth.v1
 
 The end-user surface the SDK calls, authorized by the publishable key
@@ -90,6 +96,12 @@ server-side admin SDK.
 - **`UserService`** — programmatic user management: `GetUser`,
   `ListUsers`, `CreateUser`, `UpdateUser` (including `custom_claims`),
   `DisableUser` / `EnableUser`, `DeleteUser`, `RevokeUserSessions`.
+- **`PushService`** — the read side of the
+  [push-device registry](../guides/push/): `ListUserPushDevices` /
+  `ListPushDevices` return the live push credentials your sender needs
+  (this is the only surface that ever returns tokens), and
+  `RevokePushDevice` is the feedback loop for credentials APNs/FCM/Web
+  Push report dead.
 
 A secret key names exactly one project; using another project's `sk_`
 gets `PERMISSION_DENIED`.
