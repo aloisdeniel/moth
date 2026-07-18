@@ -63,6 +63,10 @@ var throttledProcedures = map[string]bool{
 	// per-IP / per-project throttle as SubmitPurchase.
 	"/moth.billing.v1.BillingService/CreateCheckoutSession":      true,
 	"/moth.billing.v1.BillingService/CreateBillingPortalSession": true,
+	// Milestone 20 — RegisterDevice is a per-launch credential write from every
+	// client, so it carries the per-IP / per-project throttle (no account
+	// bucket: the request carries no email).
+	"/moth.push.v1.PushService/RegisterDevice": true,
 }
 
 // NewRateLimitInterceptor throttles the sensitive RPCs against the shared,

@@ -139,6 +139,67 @@ func (x *AppleConfig) GetEnabled() bool {
 	return false
 }
 
+// PushConfig is the public part of a project's push-notification
+// configuration (milestone 20): everything the SDK needs to register the
+// device with moth's push registry. Public values only — the Web Push VAPID
+// public key is designed to be embedded in clients; the matching private key
+// stays with the developer's sender and never touches moth.
+type PushConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Whether the project accepts device registrations (moth.push.v1).
+	Enabled bool `protobuf:"varint,1,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+	// passes as `applicationServerKey` when subscribing; empty when the
+	// project does not use Web Push.
+	WebpushVapidPublicKey string `protobuf:"bytes,2,opt,name=webpush_vapid_public_key,json=webpushVapidPublicKey,proto3" json:"webpush_vapid_public_key,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *PushConfig) Reset() {
+	*x = PushConfig{}
+	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PushConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PushConfig) ProtoMessage() {}
+
+func (x *PushConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PushConfig.ProtoReflect.Descriptor instead.
+func (*PushConfig) Descriptor() ([]byte, []int) {
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *PushConfig) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *PushConfig) GetWebpushVapidPublicKey() string {
+	if x != nil {
+		return x.WebpushVapidPublicKey
+	}
+	return ""
+}
+
 // Theme is the public, fully resolved form of the project's design system,
 // ready to render: dark colors are already derived server-side, asset
 // references are absolute URLs. Binary assets (logo images, font files)
@@ -177,7 +238,7 @@ type Theme struct {
 
 func (x *Theme) Reset() {
 	*x = Theme{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -189,7 +250,7 @@ func (x *Theme) String() string {
 func (*Theme) ProtoMessage() {}
 
 func (x *Theme) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[2]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -202,7 +263,7 @@ func (x *Theme) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Theme.ProtoReflect.Descriptor instead.
 func (*Theme) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{2}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *Theme) GetRevisionId() string {
@@ -308,7 +369,7 @@ type ThemeColors struct {
 
 func (x *ThemeColors) Reset() {
 	*x = ThemeColors{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -320,7 +381,7 @@ func (x *ThemeColors) String() string {
 func (*ThemeColors) ProtoMessage() {}
 
 func (x *ThemeColors) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[3]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -333,7 +394,7 @@ func (x *ThemeColors) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ThemeColors.ProtoReflect.Descriptor instead.
 func (*ThemeColors) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{3}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ThemeColors) GetPrimary() string {
@@ -418,7 +479,7 @@ type Copy struct {
 
 func (x *Copy) Reset() {
 	*x = Copy{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -430,7 +491,7 @@ func (x *Copy) String() string {
 func (*Copy) ProtoMessage() {}
 
 func (x *Copy) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[4]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -443,7 +504,7 @@ func (x *Copy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Copy.ProtoReflect.Descriptor instead.
 func (*Copy) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{4}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *Copy) GetCopyRevision() string {
@@ -490,7 +551,7 @@ type GetProjectConfigRequest struct {
 
 func (x *GetProjectConfigRequest) Reset() {
 	*x = GetProjectConfigRequest{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -502,7 +563,7 @@ func (x *GetProjectConfigRequest) String() string {
 func (*GetProjectConfigRequest) ProtoMessage() {}
 
 func (x *GetProjectConfigRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[5]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -515,7 +576,7 @@ func (x *GetProjectConfigRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectConfigRequest.ProtoReflect.Descriptor instead.
 func (*GetProjectConfigRequest) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{5}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetProjectConfigRequest) GetKnownThemeRevision() string {
@@ -550,14 +611,17 @@ type GetProjectConfigResponse struct {
 	// revision)); its `messages` map is omitted when
 	// GetProjectConfigRequest.known_copy_revision matches, present otherwise —
 	// including for projects with no copy overrides (fully bundled defaults).
-	Copy          *Copy `protobuf:"bytes,6,opt,name=copy,proto3" json:"copy,omitempty"`
+	Copy *Copy `protobuf:"bytes,6,opt,name=copy,proto3" json:"copy,omitempty"`
+	// The project's public push configuration. Always present; enabled=false
+	// when the project never configured push.
+	Push          *PushConfig `protobuf:"bytes,7,opt,name=push,proto3" json:"push,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetProjectConfigResponse) Reset() {
 	*x = GetProjectConfigResponse{}
-	mi := &file_moth_auth_v1_config_proto_msgTypes[6]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -569,7 +633,7 @@ func (x *GetProjectConfigResponse) String() string {
 func (*GetProjectConfigResponse) ProtoMessage() {}
 
 func (x *GetProjectConfigResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_auth_v1_config_proto_msgTypes[6]
+	mi := &file_moth_auth_v1_config_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -582,7 +646,7 @@ func (x *GetProjectConfigResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetProjectConfigResponse.ProtoReflect.Descriptor instead.
 func (*GetProjectConfigResponse) Descriptor() ([]byte, []int) {
-	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{6}
+	return file_moth_auth_v1_config_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *GetProjectConfigResponse) GetGoogle() *GoogleConfig {
@@ -627,6 +691,13 @@ func (x *GetProjectConfigResponse) GetCopy() *Copy {
 	return nil
 }
 
+func (x *GetProjectConfigResponse) GetPush() *PushConfig {
+	if x != nil {
+		return x.Push
+	}
+	return nil
+}
+
 var File_moth_auth_v1_config_proto protoreflect.FileDescriptor
 
 const file_moth_auth_v1_config_proto_rawDesc = "" +
@@ -638,7 +709,11 @@ const file_moth_auth_v1_config_proto_rawDesc = "" +
 	"\rios_client_id\x18\x03 \x01(\tR\viosClientId\x12*\n" +
 	"\x11android_client_id\x18\x04 \x01(\tR\x0fandroidClientId\"'\n" +
 	"\vAppleConfig\x12\x18\n" +
-	"\aenabled\x18\x01 \x01(\bR\aenabled\"\xc2\x03\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\"_\n" +
+	"\n" +
+	"PushConfig\x12\x18\n" +
+	"\aenabled\x18\x01 \x01(\bR\aenabled\x127\n" +
+	"\x18webpush_vapid_public_key\x18\x02 \x01(\tR\x15webpushVapidPublicKey\"\xc2\x03\n" +
 	"\x05Theme\x12\x1f\n" +
 	"\vrevision_id\x18\x01 \x01(\tR\n" +
 	"revisionId\x121\n" +
@@ -680,7 +755,7 @@ const file_moth_auth_v1_config_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"{\n" +
 	"\x17GetProjectConfigRequest\x120\n" +
 	"\x14known_theme_revision\x18\x01 \x01(\tR\x12knownThemeRevision\x12.\n" +
-	"\x13known_copy_revision\x18\x02 \x01(\tR\x11knownCopyRevision\"\xa4\x02\n" +
+	"\x13known_copy_revision\x18\x02 \x01(\tR\x11knownCopyRevision\"\xd2\x02\n" +
 	"\x18GetProjectConfigResponse\x122\n" +
 	"\x06google\x18\x01 \x01(\v2\x1a.moth.auth.v1.GoogleConfigR\x06google\x12/\n" +
 	"\x05apple\x18\x02 \x01(\v2\x19.moth.auth.v1.AppleConfigR\x05apple\x12.\n" +
@@ -688,7 +763,8 @@ const file_moth_auth_v1_config_proto_rawDesc = "" +
 	"\fsign_up_open\x18\x04 \x01(\bR\n" +
 	"signUpOpen\x12)\n" +
 	"\x05theme\x18\x05 \x01(\v2\x13.moth.auth.v1.ThemeR\x05theme\x12&\n" +
-	"\x04copy\x18\x06 \x01(\v2\x12.moth.auth.v1.CopyR\x04copy2r\n" +
+	"\x04copy\x18\x06 \x01(\v2\x12.moth.auth.v1.CopyR\x04copy\x12,\n" +
+	"\x04push\x18\a \x01(\v2\x18.moth.auth.v1.PushConfigR\x04push2r\n" +
 	"\rConfigService\x12a\n" +
 	"\x10GetProjectConfig\x12%.moth.auth.v1.GetProjectConfigRequest\x1a&.moth.auth.v1.GetProjectConfigResponseB5Z3github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1b\x06proto3"
 
@@ -704,32 +780,34 @@ func file_moth_auth_v1_config_proto_rawDescGZIP() []byte {
 	return file_moth_auth_v1_config_proto_rawDescData
 }
 
-var file_moth_auth_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_moth_auth_v1_config_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_moth_auth_v1_config_proto_goTypes = []any{
 	(*GoogleConfig)(nil),             // 0: moth.auth.v1.GoogleConfig
 	(*AppleConfig)(nil),              // 1: moth.auth.v1.AppleConfig
-	(*Theme)(nil),                    // 2: moth.auth.v1.Theme
-	(*ThemeColors)(nil),              // 3: moth.auth.v1.ThemeColors
-	(*Copy)(nil),                     // 4: moth.auth.v1.Copy
-	(*GetProjectConfigRequest)(nil),  // 5: moth.auth.v1.GetProjectConfigRequest
-	(*GetProjectConfigResponse)(nil), // 6: moth.auth.v1.GetProjectConfigResponse
-	nil,                              // 7: moth.auth.v1.Copy.MessagesEntry
+	(*PushConfig)(nil),               // 2: moth.auth.v1.PushConfig
+	(*Theme)(nil),                    // 3: moth.auth.v1.Theme
+	(*ThemeColors)(nil),              // 4: moth.auth.v1.ThemeColors
+	(*Copy)(nil),                     // 5: moth.auth.v1.Copy
+	(*GetProjectConfigRequest)(nil),  // 6: moth.auth.v1.GetProjectConfigRequest
+	(*GetProjectConfigResponse)(nil), // 7: moth.auth.v1.GetProjectConfigResponse
+	nil,                              // 8: moth.auth.v1.Copy.MessagesEntry
 }
 var file_moth_auth_v1_config_proto_depIdxs = []int32{
-	3, // 0: moth.auth.v1.Theme.colors:type_name -> moth.auth.v1.ThemeColors
-	3, // 1: moth.auth.v1.Theme.dark_colors:type_name -> moth.auth.v1.ThemeColors
-	7, // 2: moth.auth.v1.Copy.messages:type_name -> moth.auth.v1.Copy.MessagesEntry
+	4, // 0: moth.auth.v1.Theme.colors:type_name -> moth.auth.v1.ThemeColors
+	4, // 1: moth.auth.v1.Theme.dark_colors:type_name -> moth.auth.v1.ThemeColors
+	8, // 2: moth.auth.v1.Copy.messages:type_name -> moth.auth.v1.Copy.MessagesEntry
 	0, // 3: moth.auth.v1.GetProjectConfigResponse.google:type_name -> moth.auth.v1.GoogleConfig
 	1, // 4: moth.auth.v1.GetProjectConfigResponse.apple:type_name -> moth.auth.v1.AppleConfig
-	2, // 5: moth.auth.v1.GetProjectConfigResponse.theme:type_name -> moth.auth.v1.Theme
-	4, // 6: moth.auth.v1.GetProjectConfigResponse.copy:type_name -> moth.auth.v1.Copy
-	5, // 7: moth.auth.v1.ConfigService.GetProjectConfig:input_type -> moth.auth.v1.GetProjectConfigRequest
-	6, // 8: moth.auth.v1.ConfigService.GetProjectConfig:output_type -> moth.auth.v1.GetProjectConfigResponse
-	8, // [8:9] is the sub-list for method output_type
-	7, // [7:8] is the sub-list for method input_type
-	7, // [7:7] is the sub-list for extension type_name
-	7, // [7:7] is the sub-list for extension extendee
-	0, // [0:7] is the sub-list for field type_name
+	3, // 5: moth.auth.v1.GetProjectConfigResponse.theme:type_name -> moth.auth.v1.Theme
+	5, // 6: moth.auth.v1.GetProjectConfigResponse.copy:type_name -> moth.auth.v1.Copy
+	2, // 7: moth.auth.v1.GetProjectConfigResponse.push:type_name -> moth.auth.v1.PushConfig
+	6, // 8: moth.auth.v1.ConfigService.GetProjectConfig:input_type -> moth.auth.v1.GetProjectConfigRequest
+	7, // 9: moth.auth.v1.ConfigService.GetProjectConfig:output_type -> moth.auth.v1.GetProjectConfigResponse
+	9, // [9:10] is the sub-list for method output_type
+	8, // [8:9] is the sub-list for method input_type
+	8, // [8:8] is the sub-list for extension type_name
+	8, // [8:8] is the sub-list for extension extendee
+	0, // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_moth_auth_v1_config_proto_init() }
@@ -743,7 +821,7 @@ func file_moth_auth_v1_config_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_auth_v1_config_proto_rawDesc), len(file_moth_auth_v1_config_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

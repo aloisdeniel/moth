@@ -15,6 +15,7 @@ import {
 import { EntitlementService } from "../gen/moth/admin/v1/entitlement_pb";
 import { ProductService } from "../gen/moth/admin/v1/product_pb";
 import type { Project } from "../gen/moth/admin/v1/project_pb";
+import { PushService, type PushDevice } from "../gen/moth/admin/v1/push_pb";
 import { SubscriptionService, type Grant } from "../gen/moth/admin/v1/subscription_pb";
 import type { User } from "../gen/moth/admin/v1/user_pb";
 import { UserService } from "../gen/moth/admin/v1/user_pb";
@@ -24,7 +25,8 @@ import {
   storeLabel,
   subscriptionStatusMeta,
 } from "../lib/billing";
-import { formatDate, formatDateTime } from "../lib/format";
+import { formatDate, formatDateTime, formatRelative } from "../lib/format";
+import { pushPermissionMeta, pushRevokeReasonLabel, pushTargetLabel } from "../lib/push";
 
 const PAGE_SIZE = 25;
 
@@ -406,6 +408,8 @@ function UserDrawer({
               )}
             </div>
 
+            <PushDevicesSection project={project} userId={userId} />
+
             <div className="stack-8">
               <span className="field__label">Actions</span>
               <div className="row-8" style={{ flexWrap: "wrap" }}>
@@ -569,6 +573,104 @@ function ClaimsEditor({ project, user }: { project: Project; user: User }) {
         </button>
         {saved && <span className="caption text-success">Saved — applies to new tokens.</span>}
       </div>
+    </div>
+  );
+}
+
+// PushDevicesSection lists the user's push registrations (active and
+// revoked — revocation is auditable, not a delete) with the admin revoke
+// action. Metadata only: the admin proto never carries the push token.
+function PushDevicesSection({ project, userId }: { project: Project; userId: string }) {
+  const devices = useQuery(PushService.method.listUserPushDevices, {
+    projectId: project.id,
+    userId,
+  });
+  const [revoking, setRevoking] = useState<PushDevice>();
+
+  const revoke = useMutation(PushService.method.revokePushDevice, {
+    onSuccess: () => {
+      invalidate(PushService.method.listUserPushDevices);
+      setRevoking(undefined);
+    },
+  });
+
+  function metadataLine(d: PushDevice): string {
+    const m = d.metadata;
+    const parts = [
+      [m?.platform, m?.model].filter(Boolean).join(" "),
+      m?.osVersion ? `OS ${m.osVersion}` : "",
+      m?.appVersion ? `app ${m.appVersion}` : "",
+      m?.locale ?? "",
+    ].filter(Boolean);
+    return parts.length === 0 ? "no device metadata" : parts.join(" · ");
+  }
+
+  return (
+    <div className="stack-8">
+      <span className="field__label">Push devices</span>
+      {devices.isPending && <Loading />}
+      {devices.isError && <ErrorNote message={errorMessage(devices.error)} />}
+      {devices.data &&
+        (devices.data.devices.length === 0 ? (
+          <p className="caption">No push devices registered.</p>
+        ) : (
+          <div className="stack-8">
+            {devices.data.devices.map((d) => {
+              const perm = pushPermissionMeta(d.permission);
+              const revoked = d.revokeTime !== undefined;
+              const reason = pushRevokeReasonLabel(d.revokeReason);
+              return (
+                <div key={d.id} className="keywell" style={{ alignItems: "flex-start" }}>
+                  <div className="keywell__value stack-8" style={{ gap: 2 }}>
+                    <span className="row-8" style={{ flexWrap: "wrap" }}>
+                      <Badge>{pushTargetLabel(d.target)}</Badge>
+                      <Badge tone={revoked ? "neutral" : perm.tone}>{perm.label}</Badge>
+                      {revoked && (
+                        <Badge tone="danger">Revoked{reason && ` · ${reason}`}</Badge>
+                      )}
+                    </span>
+                    <span className="caption">{metadataLine(d)}</span>
+                    <span className="caption">
+                      last seen {formatRelative(d.lastSeenTime)}
+                      {revoked && ` · revoked ${formatDate(d.revokeTime)}`}
+                    </span>
+                  </div>
+                  {!revoked && (
+                    <button
+                      type="button"
+                      className="btn btn--ghost btn--compact"
+                      onClick={() => setRevoking(d)}
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+
+      {revoking && (
+        <ConfirmDialog
+          title="Revoke push registration"
+          open
+          onClose={() => {
+            setRevoking(undefined);
+            revoke.reset();
+          }}
+          onConfirm={() => revoke.mutate({ projectId: project.id, pushDeviceId: revoking.id })}
+          confirmLabel="Revoke registration"
+          busy={revoke.isPending}
+          error={revoke.isError ? errorMessage(revoke.error) : undefined}
+        >
+          <p>
+            The {pushTargetLabel(revoking.target)} registration of this{" "}
+            {revoking.metadata?.model || revoking.metadata?.platform || "device"} stops
+            being served to your backend immediately — it will no longer receive
+            pushes. The device re-registers on its next app launch.
+          </p>
+        </ConfirmDialog>
+      )}
     </div>
   );
 }

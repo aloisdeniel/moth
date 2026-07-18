@@ -62,6 +62,10 @@ const (
 	ActionCopyReset    = "copy.reset"
 	ActionCopyRestore  = "copy.restore"
 	ActionPaywallReset = "paywall.reset"
+
+	// Milestone 20 — push device registry.
+	ActionPushSettingsUpdate = "push.settings.update"
+	ActionPushDeviceRevoke   = "push.device.revoke"
 )
 
 type clientIPCtxKey struct{}

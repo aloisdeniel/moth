@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package moth.server.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/server/v1;serverv1";
+
+// PushService hands the project's push-device registry to the developer's
+// backend — the sender. moth never delivers a push itself: the backend reads
+// the active registrations (including the push credentials) from here, talks
+// to APNs/FCM/Web Push directly, and reports dead credentials back through
+// RevokePushDevice. Authenticated with the project secret key
+// (`x-moth-key: sk_...`); always scoped to that project. This is the only
+// surface that ever returns tokens — the client and admin APIs see metadata
+// only.
+service PushService {
+  // ListUserPushDevices returns one user's ACTIVE registrations — target,
+  // token, permission, platform, locale, last-seen: everything a sender needs
+  // to fan out to that user's devices. Revoked registrations never appear. A
+  // user with no registrations returns an empty list, not an error.
+  rpc ListUserPushDevices(ListUserPushDevicesRequest) returns (ListUserPushDevicesResponse);
+  // ListPushDevices pages through the project's ACTIVE registrations, for
+  // broadcast/segment sends; optionally filtered by target. Revoked
+  // registrations never appear.
+  rpc ListPushDevices(ListPushDevicesRequest) returns (ListPushDevicesResponse);
+  // RevokePushDevice is the feedback loop: when the sender gets
+  // `Unregistered`/`410 Gone` from APNs, `UNREGISTERED` from FCM, or a
+  // `404`/`410` from a Web Push endpoint, it reports the dead credential and
+  // moth revokes the registration (`reported_invalid`) so it never serves it
+  // again. Idempotent: unknown or already-revoked credentials succeed.
+  rpc RevokePushDevice(RevokePushDeviceRequest) returns (RevokePushDeviceResponse);
+}
+
+// PushTarget says which push service the credential belongs to — i.e. which
+// API the sender must call to reach the device. Not the platform: an iOS app
+// using FCM registers as PUSH_TARGET_FCM; the OS lives in
+// PushDeviceMetadata.platform as display metadata.
+enum PushTarget {
+  PUSH_TARGET_UNSPECIFIED = 0;
+  // Apple Push Notification service; token is the APNs device token.
+  PUSH_TARGET_APNS = 1;
+  // Firebase Cloud Messaging; token is the FCM registration token.
+  PUSH_TARGET_FCM = 2;
+  // Web Push; token is the serialized subscription (endpoint + keys).
+  PUSH_TARGET_WEBPUSH = 3;
+}
+
+// PushPermission is the OS-level notification-permission state the client
+// last reported. A DENIED registration is still listed (data pushes may
+// still work) — senders should skip alert pushes for it.
+enum PushPermission {
+  PUSH_PERMISSION_UNSPECIFIED = 0;
+  PUSH_PERMISSION_GRANTED = 1;
+  // iOS provisional authorization (quiet notifications).
+  PUSH_PERMISSION_PROVISIONAL = 2;
+  PUSH_PERMISSION_DENIED = 3;
+  // The client could not determine the permission state.
+  PUSH_PERMISSION_UNKNOWN = 4;
+}
+
+// PushDeviceMetadata is display metadata the client reported at
+// registration; useful for locale/platform targeting. All fields optional.
+message PushDeviceMetadata {
+  // OS family ("ios", "android", "web", "macos", ...).
+  string platform = 1;
+  // Device model (e.g. "iPhone16,1", "Pixel 9").
+  string model = 2;
+  // OS version (e.g. "18.2").
+  string os_version = 3;
+  // App version the registration came from (e.g. "2.4.1+87").
+  string app_version = 4;
+  // BCP-47 locale of the device (e.g. "fr-FR"), for locale targeting.
+  string locale = 5;
+}
+
+// PushDevice is one active registration as the sender sees it — including
+// the push credential. Tokens are credentials: scope them to your sender and
+// never log or re-expose them.
+message PushDevice {
+  string id = 1;
+  // The moth user the registration belongs to.
+  string user_id = 2;
+  PushTarget target = 3;
+  // The push credential to hand to the target's API: APNs device token, FCM
+  // registration token, or the serialized Web Push subscription
+  // (endpoint + keys).
+  string token = 4;
+  // Client-generated stable installation id.
+  string device_id = 5;
+  PushPermission permission = 6;
+  PushDeviceMetadata metadata = 7;
+  google.protobuf.Timestamp create_time = 8;
+  google.protobuf.Timestamp update_time = 9;
+  // Last register/heartbeat from the device.
+  google.protobuf.Timestamp last_seen_time = 10;
+}
+
+message ListUserPushDevicesRequest {
+  string user_id = 1;
+}
+
+message ListUserPushDevicesResponse {
+  // The user's active registrations, most recently seen first.
+  repeated PushDevice devices = 1;
+}
+
+message ListPushDevicesRequest {
+  // Page size, 1–200; 0 means the default (50).
+  int32 page_size = 1;
+  // next_page_token of the previous response; empty for the first page.
+  string page_token = 2;
+  // Only registrations for this target; PUSH_TARGET_UNSPECIFIED returns all.
+  PushTarget target = 3;
+}
+
+message ListPushDevicesResponse {
+  repeated PushDevice devices = 1;
+  // Empty when this is the last page.
+  string next_page_token = 2;
+}
+
+message RevokePushDeviceRequest {
+  // The dead credential, identified either by the token the push service
+  // rejected or by the installation's device_id.
+  oneof selector {
+    string token = 1;
+    string device_id = 2;
+  }
+}
+
+message RevokePushDeviceResponse {}

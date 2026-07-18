@@ -287,6 +287,14 @@ func runBackup(ctx context.Context, dataDir, destDir string) error {
 // are deleted while serving.
 const sweepExpiredInterval = time.Hour
 
+// pushStaleWindow is how long a push registration may go unseen before the
+// sweep revokes it as `stale` (milestone 20). Registrations refresh
+// last_seen_at on every app launch, so 90 days of silence means a dead
+// install. A constant, not config: no other sweep window is configurable
+// either, and the feedback loop (RevokePushDevice) is the precise
+// invalidation path — the sweep is only the slow decay behind it.
+const pushStaleWindow = 90 * 24 * time.Hour
+
 // sweepExpired deletes expired admin sessions, single-use OAuth rows and
 // personal access tokens on a ticker until ctx is done; failures are
 // logged, never fatal.
@@ -316,6 +324,13 @@ func sweepExpired(ctx context.Context, st *store.Store, log *slog.Logger) {
 			// an hour is dead weight.
 			if _, err := st.DeleteStaleRateLimits(ctx, now.Add(-time.Hour)); err != nil {
 				log.Error("sweep stale rate limits", "error", err.Error())
+			}
+			// Push registrations not seen within the window decay to revoked
+			// (`stale`) so senders stop fanning out to dead installs.
+			if n, err := st.RevokeStalePushDevices(ctx, now.Add(-pushStaleWindow), now); err != nil {
+				log.Error("sweep stale push devices", "error", err.Error())
+			} else if n > 0 {
+				log.Info("revoked stale push devices", "count", n)
 			}
 		}
 	}

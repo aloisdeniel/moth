@@ -47,6 +47,7 @@ type Store interface {
 	store.BillingCredentialStore
 	store.SubscriptionEventStore
 	store.ProductStoreSyncStore
+	store.PushDeviceStore
 }
 
 // CookieName is the admin session cookie.

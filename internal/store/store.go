@@ -110,6 +110,9 @@ type ProjectStore interface {
 	GetProjectBySecretKeyHash(ctx context.Context, keyHash string) (Project, error)
 	ListProjects(ctx context.Context) ([]Project, error)
 	UpdateProject(ctx context.Context, p Project) error
+	// SetProjectPush installs the serialized moth.projectconfig.v1.StoredPush
+	// document as the project's push settings (full replacement, no revisions).
+	SetProjectPush(ctx context.Context, projectID string, push []byte, now time.Time) error
 	UpdateProjectSecretKey(ctx context.Context, id, secretKeyHash string, now time.Time) error
 	// ResetProjectSigningKey retires all keys, installs k and revokes the
 	// project's refresh tokens in one transaction.
@@ -384,6 +387,44 @@ type ProductStoreSyncStore interface {
 	SetProductSortOrders(ctx context.Context, projectID string, orders map[string]int) error
 }
 
+// PushDeviceStore persists per-(project, user) push-notification device
+// registrations (milestone 20). Tokens are stored plaintext — senders need
+// them back, so they cannot be hashed — and rows are revoked, never deleted,
+// so invalidation is auditable and idempotent. Every revoke method is a no-op
+// on unknown or already-revoked targets.
+type PushDeviceStore interface {
+	// UpsertPushDevice registers d for its (project, user). An active row
+	// with the same (user, target, token, device_id) is refreshed in place
+	// (permission, metadata, last_seen_at; id/created_at preserved); any
+	// other active row sharing the device_id or the (target, token)
+	// credential is superseded (revoked 'replaced') and a fresh row inserted.
+	// Returns the stored row.
+	UpsertPushDevice(ctx context.Context, d PushDevice) (PushDevice, error)
+	GetPushDevice(ctx context.Context, projectID, id string) (PushDevice, error)
+	ListActivePushDevicesByUser(ctx context.Context, projectID, userID string) ([]PushDevice, error)
+	ListActivePushDevices(ctx context.Context, projectID string, page PushDevicePage) ([]PushDevice, error)
+	// ListPushDevicesForAdmin returns a user's active rows plus rows revoked
+	// after revokedSince — the admin Devices panel (metadata only; the
+	// handler never exposes Token).
+	ListPushDevicesForAdmin(ctx context.Context, projectID, userID string, revokedSince time.Time) ([]PushDevice, error)
+	// RevokePushDevice revokes by row id (admin revoke).
+	RevokePushDevice(ctx context.Context, projectID, id, reason string, now time.Time) error
+	// RevokePushDeviceByDeviceID revokes the calling user's own installation
+	// (client UnregisterDevice, reason 'signed_out').
+	RevokePushDeviceByDeviceID(ctx context.Context, projectID, userID, deviceID, reason string, now time.Time) error
+	// RevokePushDeviceByTokenOrDevice revokes by credential and/or device id,
+	// project-scoped — the secret-key feedback loop (reason
+	// 'reported_invalid'). Empty selectors match nothing.
+	RevokePushDeviceByTokenOrDevice(ctx context.Context, projectID, token, deviceID, reason string, now time.Time) error
+	// RevokeStalePushDevices revokes active rows not seen since cutoff across
+	// every project (reason 'stale') and reports how many — the background
+	// staleness sweep.
+	RevokeStalePushDevices(ctx context.Context, cutoff, now time.Time) (int64, error)
+	// CountActivePushDevicesByTarget returns active-registration counts keyed
+	// by target — the project-overview gauge.
+	CountActivePushDevicesByTarget(ctx context.Context, projectID string) (map[string]int, error)
+}
+
 // Store implements every per-domain store interface on SQLite.
 type Store struct {
 	db *sql.DB
@@ -420,13 +461,22 @@ var (
 	_ StripeCustomerStore      = (*Store)(nil)
 	_ SubscriptionEventStore   = (*Store)(nil)
 	_ ProductStoreSyncStore    = (*Store)(nil)
+	_ PushDeviceStore          = (*Store)(nil)
 )
 
 // Open opens (creating if needed) the SQLite database at path with WAL
-// mode, foreign keys and a busy timeout.
+// mode, foreign keys and a busy timeout. Transactions BEGIN IMMEDIATE
+// (_txlock): every store transaction writes, and a deferred transaction
+// that reads before writing would fail its snapshot upgrade with
+// SQLITE_BUSY/SQLITE_BUSY_SNAPSHOT under a concurrent writer — SQLite
+// skips the busy handler there, so busy_timeout never applies. Taking the
+// write lock up front makes concurrent SELECT-then-write transactions
+// (e.g. UpsertPushDevice on every app launch) queue on busy_timeout
+// instead of erroring.
 func Open(path string) (*Store, error) {
 	dsn := "file:" + path +
-		"?_pragma=journal_mode(WAL)" +
+		"?_txlock=immediate" +
+		"&_pragma=journal_mode(WAL)" +
 		"&_pragma=foreign_keys(1)" +
 		"&_pragma=busy_timeout(5000)" +
 		"&_pragma=synchronous(NORMAL)"

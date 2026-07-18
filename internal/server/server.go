@@ -23,6 +23,7 @@ import (
 	"github.com/aloisdeniel/moth/gen/moth/admin/v1/adminv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/billing/v1/billingv1connect"
+	"github.com/aloisdeniel/moth/gen/moth/push/v1/pushv1connect"
 	"github.com/aloisdeniel/moth/gen/moth/server/v1/serverv1connect"
 	"github.com/aloisdeniel/moth/internal/analytics"
 	"github.com/aloisdeniel/moth/internal/audit"
@@ -39,6 +40,7 @@ import (
 	adminrpc "github.com/aloisdeniel/moth/internal/server/rpc/admin"
 	authrpc "github.com/aloisdeniel/moth/internal/server/rpc/auth"
 	billingrpc "github.com/aloisdeniel/moth/internal/server/rpc/billing"
+	pushrpc "github.com/aloisdeniel/moth/internal/server/rpc/push"
 	"github.com/aloisdeniel/moth/internal/server/rpc/serverapi"
 	"github.com/aloisdeniel/moth/internal/store"
 	"github.com/aloisdeniel/moth/internal/version"
@@ -273,9 +275,13 @@ func New(o Options) (*Server, error) {
 		authrpc.NewRateLimitInterceptor(limiter, o.Logger),
 		newAuthMetricsInterceptor(o.Metrics))
 	serverInterceptors := chain(serverapi.NewSecretKeyInterceptor(o.Store))
-	// moth.billing.v1 rides the same publishable-key project resolution as
-	// moth.auth.v1 and carries the rate limiter (SubmitPurchase is throttled).
+	// moth.billing.v1 and moth.push.v1 ride the same publishable-key project
+	// resolution as moth.auth.v1 and carry the rate limiter (SubmitPurchase
+	// and RegisterDevice are throttled).
 	billingInterceptors := chain(
+		authrpc.NewProjectInterceptor(o.Store),
+		authrpc.NewRateLimitInterceptor(limiter, o.Logger))
+	pushInterceptors := chain(
 		authrpc.NewProjectInterceptor(o.Store),
 		authrpc.NewRateLimitInterceptor(limiter, o.Logger))
 
@@ -328,6 +334,10 @@ func New(o Options) (*Server, error) {
 		o.Store, o.Master, o.Config.BaseURL, auditor, adminrpc.NewLiveStoreSyncer(o.Master), o.Now)
 	monetizationPath, monetizationSvc := adminv1connect.NewMonetizationServiceHandler(monetizationHandler, adminInterceptors)
 	mux.Handle(monetizationPath, monetizationSvc)
+	// moth.admin.v1 push settings + device panel (milestone 20).
+	adminPushPath, adminPushHandler := adminv1connect.NewPushServiceHandler(
+		adminrpc.NewPushHandler(o.Store, auditor, o.Now), adminInterceptors)
+	mux.Handle(adminPushPath, adminPushHandler)
 
 	// moth.auth.v1 — the public end-user API (publishable-key auth).
 	authPath, authHandler := authv1connect.NewAuthServiceHandler(s.auth, authInterceptors)
@@ -339,6 +349,12 @@ func New(o Options) (*Server, error) {
 	billingPath, billingHandler := billingv1connect.NewBillingServiceHandler(s.billing, billingInterceptors)
 	mux.Handle(billingPath, billingHandler)
 
+	// moth.push.v1 — the client push-device registry (milestone 20). Reuses
+	// the auth handler for Bearer user authentication like billing.
+	pushPath, pushHandler := pushv1connect.NewPushServiceHandler(
+		pushrpc.New(pushrpc.Options{Store: o.Store, Auth: s.auth, Now: o.Now}), pushInterceptors)
+	mux.Handle(pushPath, pushHandler)
+
 	// moth.server.v1 — the developer-backend API (secret-key auth).
 	tokenPath, tokenHandler := serverv1connect.NewTokenServiceHandler(
 		serverapi.NewTokenHandler(o.Store, nil), serverInterceptors)
@@ -349,6 +365,9 @@ func New(o Options) (*Server, error) {
 	entlPath, entlHandler := serverv1connect.NewEntitlementServiceHandler(
 		serverapi.NewEntitlementHandler(o.Store, o.Now), serverInterceptors)
 	mux.Handle(entlPath, entlHandler)
+	serverPushPath, serverPushHandler := serverv1connect.NewPushServiceHandler(
+		serverapi.NewPushHandler(o.Store, o.Now), serverInterceptors)
+	mux.Handle(serverPushPath, serverPushHandler)
 
 	serviceNames := []string{
 		adminv1connect.SessionServiceName,
@@ -365,13 +384,16 @@ func New(o Options) (*Server, error) {
 		authv1connect.AuthServiceName,
 		authv1connect.ConfigServiceName,
 		billingv1connect.BillingServiceName,
+		pushv1connect.PushServiceName,
 		adminv1connect.EntitlementServiceName,
 		adminv1connect.ProductServiceName,
 		adminv1connect.SubscriptionServiceName,
 		adminv1connect.BillingCredentialsServiceName,
+		adminv1connect.PushServiceName,
 		serverv1connect.TokenServiceName,
 		serverv1connect.UserServiceName,
 		serverv1connect.EntitlementServiceName,
+		serverv1connect.PushServiceName,
 	}
 	// The gRPC health service reports live status: a broken database or a
 	// non-writable data dir flips every service to NOT_SERVING so load
@@ -561,6 +583,7 @@ func (s *Server) allowHTTP(w http.ResponseWriter, r *http.Request) bool {
 func isPublicSurface(path string) bool {
 	return strings.HasPrefix(path, "/moth.auth.v1.") ||
 		strings.HasPrefix(path, "/moth.billing.v1.") ||
+		strings.HasPrefix(path, "/moth.push.v1.") ||
 		strings.HasPrefix(path, "/pub/") ||
 		strings.HasPrefix(path, "/npm/") ||
 		strings.HasPrefix(path, "/p/") ||

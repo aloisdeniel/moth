@@ -42,8 +42,13 @@ type Project struct {
 	// CopyRevisionID identifies the revision Copy came from ("" when Copy is
 	// empty).
 	CopyRevisionID string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	// Push is the raw push-settings protobuf document
+	// (moth.projectconfig.v1.StoredPush, see internal/push); empty means push
+	// was never configured (disabled). Plain config with no revision history,
+	// written through SetProjectPush, never UpdateProject.
+	Push      []byte
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // ProjectKey is one ES256 signing keypair belonging to a project. The
@@ -109,7 +114,7 @@ func (s *Store) CreateProject(ctx context.Context, p Project, k ProjectKey) erro
 	return nil
 }
 
-const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme_pb, theme_revision, paywall_pb, paywall_revision, copy_pb, copy_revision, created_at, updated_at`
+const projectColumns = `id, name, slug, publishable_key, secret_key_hash, settings, theme_pb, theme_revision, paywall_pb, paywall_revision, copy_pb, copy_revision, push_pb, created_at, updated_at`
 
 func (s *Store) GetProject(ctx context.Context, id string) (Project, error) {
 	return scanProject(s.db.QueryRowContext(ctx,
@@ -171,6 +176,20 @@ func (s *Store) DeleteProject(ctx context.Context, id string) error {
 	res, err := s.db.ExecContext(ctx, `DELETE FROM projects WHERE id = ?`, id)
 	if err != nil {
 		return fmt.Errorf("delete project: %w", err)
+	}
+	return requireRow(res)
+}
+
+// SetProjectPush installs push as the project's stored push-settings document
+// (a moth.projectconfig.v1.StoredPush protobuf, see internal/push). Plain
+// config: a full replacement with no revision history, unlike the
+// paywall/theme documents.
+func (s *Store) SetProjectPush(ctx context.Context, projectID string, push []byte, now time.Time) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE projects SET push_pb = ?, updated_at = ? WHERE id = ?`,
+		push, formatTime(now), projectID)
+	if err != nil {
+		return fmt.Errorf("set project push: %w", err)
 	}
 	return requireRow(res)
 }
@@ -371,7 +390,7 @@ func scanProjectRow(row rowScanner) (Project, error) {
 	var settings, createdAt, updatedAt string
 	err := row.Scan(&p.ID, &p.Name, &p.Slug, &p.PublishableKey, &p.SecretKeyHash,
 		&settings, &p.Theme, &p.ThemeRevisionID, &p.Paywall, &p.PaywallRevisionID,
-		&p.Copy, &p.CopyRevisionID, &createdAt, &updatedAt)
+		&p.Copy, &p.CopyRevisionID, &p.Push, &createdAt, &updatedAt)
 	if err != nil {
 		return Project{}, err
 	}

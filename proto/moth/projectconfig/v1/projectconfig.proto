@@ -107,6 +107,22 @@ message StoredPaywall {
   LegalLinks legal = 8;
 }
 
+// StoredPush is one project's push settings as persisted on the project row
+// (milestone 20). Plain config, no secrets: only the Web Push VAPID PUBLIC
+// key ever lives here — the private key stays with the developer's sender
+// and never touches moth. Delivered to clients through the public
+// moth.auth.v1.GetProjectConfig response.
+message StoredPush {
+  // version is the document schema version (internal/push.SchemaVersion).
+  int32 version = 1;
+  // Master switch for the push registry; when false the client-facing
+  // moth.push.v1 RPCs refuse registrations.
+  bool enabled = 2;
+  // VAPID public key (base64url, uncompressed P-256 point) browser clients
+  // subscribe with; empty when the project does not use Web Push.
+  string webpush_vapid_public_key = 3;
+}
+
 // CopyLocaleMessages is one locale's copy overrides: catalog message key
 // (e.g. "sign_in.title") to the operator-customized string.
 message CopyLocaleMessages {

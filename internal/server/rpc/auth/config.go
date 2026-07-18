@@ -7,6 +7,7 @@ import (
 
 	authv1 "github.com/aloisdeniel/moth/gen/moth/auth/v1"
 	"github.com/aloisdeniel/moth/gen/moth/auth/v1/authv1connect"
+	"github.com/aloisdeniel/moth/internal/push"
 )
 
 // Handler also implements moth.auth.v1.ConfigService: the public,
@@ -34,6 +35,14 @@ func (h *Handler) GetProjectConfig(ctx context.Context, req *connect.Request[aut
 		},
 		PasswordMinLength: int32(s.PasswordMinLength),
 		SignUpOpen:        s.AllowPublicSignup,
+	}
+	// Push config (milestone 20): always present, no revision caching — it is
+	// two fields, unlike the theme/copy documents. Public values only: the
+	// VAPID public key is designed to be embedded in clients.
+	pc := push.FromStored(project.Push)
+	resp.Push = &authv1.PushConfig{
+		Enabled:               pc.Enabled,
+		WebpushVapidPublicKey: pc.WebPushVAPIDPublicKey,
 	}
 	// Theme caching contract (see the proto): the body is omitted only when
 	// the client already holds the current revision.

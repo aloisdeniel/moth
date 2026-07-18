@@ -702,6 +702,76 @@ func (x *StoredPaywall) GetLegal() *LegalLinks {
 	return nil
 }
 
+// StoredPush is one project's push settings as persisted on the project row
+// (milestone 20). Plain config, no secrets: only the Web Push VAPID PUBLIC
+// key ever lives here — the private key stays with the developer's sender
+// and never touches moth. Delivered to clients through the public
+// moth.auth.v1.GetProjectConfig response.
+type StoredPush struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// version is the document schema version (internal/push.SchemaVersion).
+	Version int32 `protobuf:"varint,1,opt,name=version,proto3" json:"version,omitempty"`
+	// Master switch for the push registry; when false the client-facing
+	// moth.push.v1 RPCs refuse registrations.
+	Enabled bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	// VAPID public key (base64url, uncompressed P-256 point) browser clients
+	// subscribe with; empty when the project does not use Web Push.
+	WebpushVapidPublicKey string `protobuf:"bytes,3,opt,name=webpush_vapid_public_key,json=webpushVapidPublicKey,proto3" json:"webpush_vapid_public_key,omitempty"`
+	unknownFields         protoimpl.UnknownFields
+	sizeCache             protoimpl.SizeCache
+}
+
+func (x *StoredPush) Reset() {
+	*x = StoredPush{}
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoredPush) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoredPush) ProtoMessage() {}
+
+func (x *StoredPush) ProtoReflect() protoreflect.Message {
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoredPush.ProtoReflect.Descriptor instead.
+func (*StoredPush) Descriptor() ([]byte, []int) {
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *StoredPush) GetVersion() int32 {
+	if x != nil {
+		return x.Version
+	}
+	return 0
+}
+
+func (x *StoredPush) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
+func (x *StoredPush) GetWebpushVapidPublicKey() string {
+	if x != nil {
+		return x.WebpushVapidPublicKey
+	}
+	return ""
+}
+
 // CopyLocaleMessages is one locale's copy overrides: catalog message key
 // (e.g. "sign_in.title") to the operator-customized string.
 type CopyLocaleMessages struct {
@@ -713,7 +783,7 @@ type CopyLocaleMessages struct {
 
 func (x *CopyLocaleMessages) Reset() {
 	*x = CopyLocaleMessages{}
-	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[9]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -725,7 +795,7 @@ func (x *CopyLocaleMessages) String() string {
 func (*CopyLocaleMessages) ProtoMessage() {}
 
 func (x *CopyLocaleMessages) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[9]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -738,7 +808,7 @@ func (x *CopyLocaleMessages) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CopyLocaleMessages.ProtoReflect.Descriptor instead.
 func (*CopyLocaleMessages) Descriptor() ([]byte, []int) {
-	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{9}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *CopyLocaleMessages) GetMessages() map[string]string {
@@ -761,7 +831,7 @@ type StoredCopy struct {
 
 func (x *StoredCopy) Reset() {
 	*x = StoredCopy{}
-	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[10]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -773,7 +843,7 @@ func (x *StoredCopy) String() string {
 func (*StoredCopy) ProtoMessage() {}
 
 func (x *StoredCopy) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[10]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -786,7 +856,7 @@ func (x *StoredCopy) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoredCopy.ProtoReflect.Descriptor instead.
 func (*StoredCopy) Descriptor() ([]byte, []int) {
-	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{10}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *StoredCopy) GetLocales() map[string]*CopyLocaleMessages {
@@ -822,7 +892,7 @@ type CacheEnvelope struct {
 
 func (x *CacheEnvelope) Reset() {
 	*x = CacheEnvelope{}
-	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[11]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -834,7 +904,7 @@ func (x *CacheEnvelope) String() string {
 func (*CacheEnvelope) ProtoMessage() {}
 
 func (x *CacheEnvelope) ProtoReflect() protoreflect.Message {
-	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[11]
+	mi := &file_moth_projectconfig_v1_projectconfig_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -847,7 +917,7 @@ func (x *CacheEnvelope) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CacheEnvelope.ProtoReflect.Descriptor instead.
 func (*CacheEnvelope) Descriptor() ([]byte, []int) {
-	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{11}
+	return file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *CacheEnvelope) GetPayload() []byte {
@@ -946,7 +1016,12 @@ const file_moth_projectconfig_v1_projectconfig_proto_rawDesc = "" +
 	"\boffering\x18\x05 \x01(\tR\boffering\x125\n" +
 	"\x16highlighted_identifier\x18\x06 \x01(\tR\x15highlightedIdentifier\x12\x16\n" +
 	"\x06layout\x18\a \x01(\tR\x06layout\x127\n" +
-	"\x05legal\x18\b \x01(\v2!.moth.projectconfig.v1.LegalLinksR\x05legal\"\xa6\x01\n" +
+	"\x05legal\x18\b \x01(\v2!.moth.projectconfig.v1.LegalLinksR\x05legal\"y\n" +
+	"\n" +
+	"StoredPush\x12\x18\n" +
+	"\aversion\x18\x01 \x01(\x05R\aversion\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled\x127\n" +
+	"\x18webpush_vapid_public_key\x18\x03 \x01(\tR\x15webpushVapidPublicKey\"\xa6\x01\n" +
 	"\x12CopyLocaleMessages\x12S\n" +
 	"\bmessages\x18\x01 \x03(\v27.moth.projectconfig.v1.CopyLocaleMessages.MessagesEntryR\bmessages\x1a;\n" +
 	"\rMessagesEntry\x12\x10\n" +
@@ -976,7 +1051,7 @@ func file_moth_projectconfig_v1_projectconfig_proto_rawDescGZIP() []byte {
 	return file_moth_projectconfig_v1_projectconfig_proto_rawDescData
 }
 
-var file_moth_projectconfig_v1_projectconfig_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_moth_projectconfig_v1_projectconfig_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_moth_projectconfig_v1_projectconfig_proto_goTypes = []any{
 	(*LegalLinks)(nil),          // 0: moth.projectconfig.v1.LegalLinks
 	(*ThemeColors)(nil),         // 1: moth.projectconfig.v1.ThemeColors
@@ -987,11 +1062,12 @@ var file_moth_projectconfig_v1_projectconfig_proto_goTypes = []any{
 	(*ThemeLogo)(nil),           // 6: moth.projectconfig.v1.ThemeLogo
 	(*StoredTheme)(nil),         // 7: moth.projectconfig.v1.StoredTheme
 	(*StoredPaywall)(nil),       // 8: moth.projectconfig.v1.StoredPaywall
-	(*CopyLocaleMessages)(nil),  // 9: moth.projectconfig.v1.CopyLocaleMessages
-	(*StoredCopy)(nil),          // 10: moth.projectconfig.v1.StoredCopy
-	(*CacheEnvelope)(nil),       // 11: moth.projectconfig.v1.CacheEnvelope
-	nil,                         // 12: moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry
-	nil,                         // 13: moth.projectconfig.v1.StoredCopy.LocalesEntry
+	(*StoredPush)(nil),          // 9: moth.projectconfig.v1.StoredPush
+	(*CopyLocaleMessages)(nil),  // 10: moth.projectconfig.v1.CopyLocaleMessages
+	(*StoredCopy)(nil),          // 11: moth.projectconfig.v1.StoredCopy
+	(*CacheEnvelope)(nil),       // 12: moth.projectconfig.v1.CacheEnvelope
+	nil,                         // 13: moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry
+	nil,                         // 14: moth.projectconfig.v1.StoredCopy.LocalesEntry
 }
 var file_moth_projectconfig_v1_projectconfig_proto_depIdxs = []int32{
 	1,  // 0: moth.projectconfig.v1.StoredTheme.colors:type_name -> moth.projectconfig.v1.ThemeColors
@@ -1002,9 +1078,9 @@ var file_moth_projectconfig_v1_projectconfig_proto_depIdxs = []int32{
 	6,  // 5: moth.projectconfig.v1.StoredTheme.logo:type_name -> moth.projectconfig.v1.ThemeLogo
 	0,  // 6: moth.projectconfig.v1.StoredTheme.legal:type_name -> moth.projectconfig.v1.LegalLinks
 	0,  // 7: moth.projectconfig.v1.StoredPaywall.legal:type_name -> moth.projectconfig.v1.LegalLinks
-	12, // 8: moth.projectconfig.v1.CopyLocaleMessages.messages:type_name -> moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry
-	13, // 9: moth.projectconfig.v1.StoredCopy.locales:type_name -> moth.projectconfig.v1.StoredCopy.LocalesEntry
-	9,  // 10: moth.projectconfig.v1.StoredCopy.LocalesEntry.value:type_name -> moth.projectconfig.v1.CopyLocaleMessages
+	13, // 8: moth.projectconfig.v1.CopyLocaleMessages.messages:type_name -> moth.projectconfig.v1.CopyLocaleMessages.MessagesEntry
+	14, // 9: moth.projectconfig.v1.StoredCopy.locales:type_name -> moth.projectconfig.v1.StoredCopy.LocalesEntry
+	10, // 10: moth.projectconfig.v1.StoredCopy.LocalesEntry.value:type_name -> moth.projectconfig.v1.CopyLocaleMessages
 	11, // [11:11] is the sub-list for method output_type
 	11, // [11:11] is the sub-list for method input_type
 	11, // [11:11] is the sub-list for extension type_name
@@ -1023,7 +1099,7 @@ func file_moth_projectconfig_v1_projectconfig_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_moth_projectconfig_v1_projectconfig_proto_rawDesc), len(file_moth_projectconfig_v1_projectconfig_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

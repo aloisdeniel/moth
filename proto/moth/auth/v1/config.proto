@@ -34,6 +34,20 @@ message AppleConfig {
   bool enabled = 1;
 }
 
+// PushConfig is the public part of a project's push-notification
+// configuration (milestone 20): everything the SDK needs to register the
+// device with moth's push registry. Public values only — the Web Push VAPID
+// public key is designed to be embedded in clients; the matching private key
+// stays with the developer's sender and never touches moth.
+message PushConfig {
+  // Whether the project accepts device registrations (moth.push.v1).
+  bool enabled = 1;
+  // VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+  // passes as `applicationServerKey` when subscribing; empty when the
+  // project does not use Web Push.
+  string webpush_vapid_public_key = 2;
+}
+
 // Theme is the public, fully resolved form of the project's design system,
 // ready to render: dark colors are already derived server-side, asset
 // references are absolute URLs. Binary assets (logo images, font files)
@@ -138,4 +152,7 @@ message GetProjectConfigResponse {
   // GetProjectConfigRequest.known_copy_revision matches, present otherwise —
   // including for projects with no copy overrides (fully bundled defaults).
   Copy copy = 6;
+  // The project's public push configuration. Always present; enabled=false
+  // when the project never configured push.
+  PushConfig push = 7;
 }
