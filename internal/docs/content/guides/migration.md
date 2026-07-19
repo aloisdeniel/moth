@@ -16,51 +16,52 @@ moth project export bird-spotter -o users.json
 ```
 
 The document carries each user's email, display name, email-verification
-state, disabled state, and custom claims — everything except credentials.
-See [`moth project export`](../../cli/reference/#moth-project-export).
+state, disabled state, custom claims, provider identities, **and the
+encoded password hash** — everything needed to move an account without a
+reset. See [`moth project export`](../../cli/reference/#moth-project-export).
 
-> **Credentials never leave the server**
+> **An export contains credentials — handle it like one**
 >
-> Password hashes are **not** exported, and social identities are not
-> carried in the document. This is deliberate: hashes are argon2id and
-> account-bound, and re-exporting them widens their exposure for no benefit.
-> See below for how users regain access after an import.
+> Password hashes travel with the users (argon2id, tagged `argon2id`), so
+> the JSON is as sensitive as your password database. Store and transfer it
+> accordingly — encrypted at rest, never in a shared bucket or a ticket
+> attachment — and delete it once the import is confirmed. Publishable
+> project config is a separate document; see
+> [`moth project dump`](../../cli/#declarative-config).
 
 ## Importing users
 
 ```sh
-moth project import bird-spotter -f users.json --invite
+moth project import bird-spotter -f users.json
 ```
 
 Import creates the document's users in the target project, restoring
-display name, verification, disabled state, and claims. It is **safe to
-re-run**: a user whose email already exists is skipped, so a partial or
-repeated import converges rather than duplicating.
+display name, verification, disabled state, claims, provider identities,
+and the password hash. It is **safe to re-run**: a user whose email
+already exists is skipped, so a partial or repeated import converges
+rather than duplicating (`--yes` skips the confirmation prompt for
+scripting).
 [`moth project import`](../../cli/reference/#moth-project-import).
 
-Because passwords don't round-trip, each imported user needs a way back in:
-
-- **`--invite`** — emails every newly created user a set-password link.
-  The clean choice when you have working SMTP.
-- **Without `--invite`** — each user gets an unusable random password and
-  recovers through "forgot password" (a password identity) or simply
-  signs in with Google/Apple, which **re-links automatically** to the
-  imported account on the first provider-verified sign-in.
+Because the hash round-trips, **users keep their existing password** — a
+moth-to-moth migration signs everyone back in with no action on their
+part. Social identities re-link automatically on the user's next
+provider-verified sign-in.
 
 ## Migrating from another auth system
 
-Produce a JSON array matching the export shape (`moth project export` on a
-throwaway project shows the exact fields), then `import --invite`. Users
-set a fresh password on first sign-in, or link a social provider — moth
-never ingests foreign password hashes in v1.
+Import also ingests **foreign password hashes** — bcrypt, scrypt, argon2,
+and pbkdf2 — tagged per user in the document's `password_algorithm` field.
+Each foreign hash is verified with its original algorithm on the user's
+first sign-in and then transparently rehashed to argon2id, so a team can
+move off Firebase, Auth0, or Supabase **without forcing a password reset**.
 
-> **Foreign hashes: coming in v1.0**
->
-> The v1.0 hardening milestone adds a migration format that can carry
-> foreign password hashes (bcrypt/scrypt/argon2 from another system) and
-> verify against them once, upgrading to argon2id on first successful
-> sign-in — so users migrate without a password reset. Until then, use the
-> invite/social-relink path above.
+Produce a JSON array matching the export shape (`moth project export` on a
+throwaway project shows the exact fields), set each user's
+`password_algorithm`, and import. Users whose source system you can't
+export hashes from can still recover through "forgot password" or by
+linking Google/Apple, which re-links to the imported account on the first
+provider-verified sign-in.
 
 ## Restoring a whole instance
 

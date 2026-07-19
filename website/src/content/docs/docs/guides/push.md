@@ -171,6 +171,12 @@ grpcurl -H "x-moth-key: sk_..." -d '{"user_id":"..."}' \
 # target: ListPushDevices(page_size, page_token, target).
 ```
 
+:::note[grpcurl against a release build]
+Release builds don't advertise their schema over reflection. Either start
+the server with `--reflection`, or point grpcurl at the `.proto` sources
+the instance serves at `/protos/` (`grpcurl -import-path … -proto …`).
+:::
+
 Each `PushDevice` carries the `target` (which API to call), the `token`
 (the credential to hand to that API), the last-reported `permission`
 (skip alert pushes for `denied` devices — data pushes may still work), and

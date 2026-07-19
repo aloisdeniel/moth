@@ -4,27 +4,14 @@
  * components must not introduce values outside this file.
  */
 
-@font-face {
-  font-family: "Satoshi";
-  src: url("../fonts/Satoshi-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("../fonts/Satoshi-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Satoshi";
-  src: url("../fonts/Satoshi-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
+/*
+ * Satoshi (the display face) loads from Fontshare's CDN — see the
+ * non-blocking <link> in index.html. Its ITF license permits CDN hosting
+ * but not redistributing the font files, so we do not bundle it. If the
+ * CDN is unreachable, --font-text falls back to the system UI font below,
+ * so the console stays fully usable offline. Cascadia Code (OFL, freely
+ * redistributable) stays self-hosted.
+ */
 @font-face {
   font-family: "Cascadia Code";
   src: url("../fonts/CascadiaCode-Regular.woff2") format("woff2");

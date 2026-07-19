@@ -118,6 +118,10 @@ type Server struct {
 	// package name and built once so the sha256 in the version listing
 	// always matches the served bytes.
 	pub map[string]*pubArchive
+	// projectPub caches per-project preconfigured package sets served at
+	// /p/{slug}/pub, built on demand and keyed by the project's current
+	// config revision.
+	projectPub *projectPubCache
 	// npm is the embedded @moth/react package, built once so the integrity
 	// hashes in the /npm packument always match the served bytes.
 	npm *npmArchive
@@ -196,6 +200,11 @@ func New(o Options) (*Server, error) {
 		return nil, err
 	}
 	s.pub = pub
+
+	// Per-project preconfigured package sets served at /p/{slug}/pub, built on
+	// demand and LRU-cached (config edits change the derived version and
+	// rebuild).
+	s.projectPub = newProjectPubCache(32)
 
 	// The @moth/react SDK served at /npm; same version discipline.
 	npm, err := buildNpmArchive(version.Version)
@@ -429,6 +438,13 @@ func New(o Options) (*Server, error) {
 	// (`dart pub` speaks plain HTTP; see plan/05 and plan/19).
 	mux.HandleFunc("GET /pub/api/packages/{package}", s.handlePubVersions)
 	mux.HandleFunc("GET /pub/packages/{package}/versions/{file}", s.handlePubArchive)
+
+	// The per-project pub repository: each project serves its own
+	// preconfigured build of the same-named packages (endpoint, publishable
+	// key and public config baked in). Public, like /pub — everything served
+	// is public config plus the embeddable publishable key.
+	mux.HandleFunc("GET /p/{slug}/pub/api/packages/{package}", s.handlePubProjectVersions)
+	mux.HandleFunc("GET /p/{slug}/pub/packages/{package}/versions/{file}", s.handlePubProjectArchive)
 
 	// The npm registry serving the @moth/react SDK. npm/pnpm request the
 	// scoped name as one percent-encoded segment (matched by {pkg}); yarn

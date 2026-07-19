@@ -52,14 +52,22 @@ with your real values.
 
 ## 4 · Add the SDK to your Flutter app
 
-Your moth instance serves the `moth_auth` package from its own pub
-repository at `/pub` — the SDK version always matches the server version,
-and nothing is fetched from pub.dev.
+Your moth instance serves **this project's own preconfigured** `moth_auth`
+build from its per-project pub repository at `/p/<slug>/pub`. Same package
+name, but the endpoint, publishable key and public config (providers,
+theme, copy, paywall) are baked into the package — so there is nothing to
+paste and no config fetch on first launch. Nothing comes from pub.dev.
+
+```sh
+dart pub add moth_auth --hosted-url http://localhost:8080/p/bird-spotter/pub
+```
+
+That writes the dependency for you; the equivalent pubspec entry is:
 
 ```yaml title="pubspec.yaml"
 dependencies:
   moth_auth:
-    hosted: http://localhost:8080/pub
+    hosted: http://localhost:8080/p/bird-spotter/pub
     version: ^1.0.0
 ```
 
@@ -67,8 +75,10 @@ dependencies:
 >
 > Running a dev build (built from source, unversioned)? It serves a
 > pre-release version like `0.0.0-dev.1`, and Dart version ranges never
-> match pre-releases — pin it exactly (`version: 0.0.0-dev.1`). The Setup
-> tab prints the exact constraint your instance serves.
+> match pre-releases — pin it exactly. The Setup tab prints the exact URL
+> and constraint your instance serves for this project. The version also
+> encodes the project's config revision, so `dart pub upgrade` refreshes the
+> baked-in defaults after an admin edit.
 
 Then:
 
@@ -80,8 +90,9 @@ flutter pub get
 
 `MothApp` owns the client, restores any persisted session, and gates your
 app behind authentication: signed out, it shows the SDK's built-in
-`MothLoginScreen`; signed in, it shows `child`. Replace the publishable
-key with yours from the Setup tab.
+`MothLoginScreen`; signed in, it shows `child`. Because the package is
+preconfigured, **no `MothConfig` is needed** — and the login screen renders
+your theme and providers on the first frame, offline.
 
 ```dart title="lib/main.dart"
 import 'package:flutter/material.dart';
@@ -90,10 +101,6 @@ import 'package:moth_auth/moth_auth.dart';
 void main() {
   runApp(
     MothApp(
-      config: MothConfig(
-        endpoint: Uri.parse('http://localhost:8080'),
-        publishableKey: 'pk_YOUR_PUBLISHABLE_KEY',
-      ),
       // Signed out -> the SDK's built-in MothLoginScreen; signed in -> child.
       child: const MyApp(),
     ),

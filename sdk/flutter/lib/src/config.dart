@@ -1,8 +1,13 @@
 import 'dart:ui';
 
+import 'generated_config.dart';
+
 /// Connection settings for a moth project.
 ///
-/// The values to paste here are shown on the project's setup-instructions
+/// When the package was pulled from a project's own per-project pub repository
+/// (`/p/<slug>/pub`), the endpoint and publishable key are already baked in —
+/// use [MothConfig.generated] (or just `MothApp(child: ...)`, which does it for
+/// you). Otherwise paste the values shown on the project's setup-instructions
 /// page in the moth admin.
 class MothConfig {
   const MothConfig({
@@ -12,6 +17,28 @@ class MothConfig {
     this.appName,
     this.configCacheTtl = const Duration(hours: 1),
   });
+
+  /// Builds the config from the values the moth server baked into a
+  /// preconfigured build (see `generated_config.dart`). Only valid in a
+  /// server-generated package ([mothIsGenerated]); asserts otherwise.
+  factory MothConfig.generated({
+    Locale? locale,
+    String? appName,
+    Duration configCacheTtl = const Duration(hours: 1),
+  }) {
+    assert(
+      mothIsGenerated,
+      'MothConfig.generated() requires a server-generated package (this build '
+      'has no baked endpoint). Pass an explicit MothConfig instead.',
+    );
+    return MothConfig(
+      endpoint: Uri.parse(mothEndpoint),
+      publishableKey: mothPublishableKey,
+      locale: locale,
+      appName: appName,
+      configCacheTtl: configCacheTtl,
+    );
+  }
 
   /// Base URL of the moth server, e.g. `https://auth.example.com`.
   ///

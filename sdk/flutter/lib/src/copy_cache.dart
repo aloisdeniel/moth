@@ -1,5 +1,6 @@
 import 'dart:ui';
 
+import 'bootstrap.dart';
 import 'copy.dart';
 import 'copy_cache_stub.dart' if (dart.library.io) 'copy_cache_io.dart' as impl;
 
@@ -63,7 +64,8 @@ class MothMemoryCopyCache implements MothCopyCache {
 
   @override
   Future<MothCachedCopy?> load(Locale locale) async =>
-      _byLocale[locale.languageCode];
+      _byLocale[locale.languageCode] ??
+      MothBootstrap.instance?.seededCopy(locale);
 
   @override
   Future<void> save(MothCopy copy, {required DateTime fetchedAt}) async {

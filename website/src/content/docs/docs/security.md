@@ -71,8 +71,13 @@ the binary small and auditable.
 
 ## Abuse resistance
 
-- Per-IP and per-account **rate limiting** (in-memory token buckets) on the
+- Per-IP, per-account, and per-project **rate limiting** on the
   credential-facing RPCs — `SignIn`, `SignUp`, `RequestPasswordReset`.
+  Limits are persisted in the database (fixed windows), so they survive a
+  restart and can't be reset by bouncing the process; the tiers are
+  configurable (`MOTH_RATELIMIT_*` / `[ratelimit]`) and behind a proxy the
+  real client IP comes from `X-Forwarded-For` only for
+  [trusted proxies](../installation/#configuration).
 - **Account-enumeration-safe** by design: `SignIn` returns a uniform
   `INVALID_CREDENTIALS` regardless of whether the email exists;
   `RequestPasswordReset` always returns `OK`; projects can enable an
@@ -93,15 +98,24 @@ moth is an auth server, not a product-analytics tool, and the
   pruned automatically; dashboards read pre-aggregated rollups.
 
 The [website you're reading](https://github.com/aloisdeniel/moth) practices
-the same stance: no trackers, no external requests, fonts self-hosted.
+the same stance: no trackers, no analytics, no cookies. Its only external
+request is the Satoshi display font from Fontshare's CDN, loaded
+non-blocking with a system-font fallback. The end-user hosted pages the
+binary serves (verify / reset / confirm-email) make **zero** external
+requests — their fonts are self-hosted and served from the instance itself.
 
 ## In scope for v1
 
 Email/password and Google/Apple sign-in; per-project ES256 keys and JWKS;
 argon2id passwords; rotating refresh tokens with reuse detection;
-encrypted secrets at rest; rate limiting; account-enumeration safety;
-self-service account deletion (App Store guideline 5.1.1) including Apple
-token revocation.
+encrypted secrets at rest; persistent rate limiting; account-enumeration
+safety; self-service account deletion (App Store guideline 5.1.1)
+including Apple token revocation; an append-only **admin audit log**; a
+Prometheus **`/metrics`** endpoint and structured JSON logs; first-class
+**backups** (`moth backup` / `moth restore`, plus scheduled snapshots);
+and built-in **ACME**/Let's Encrypt TLS. Subscriptions & entitlements
+(Apple, Google, Stripe), push-device registry, localization, and the
+React SDK ship alongside the Flutter SDK.
 
 ## Out of scope for v1
 
@@ -114,8 +128,12 @@ Stated plainly, because credibility matters more than a feature checkbox:
   instance serves one team's portfolio, not a horizontally-scaled fleet.
 - **A hosted moth service** — moth is self-hosted; there is no SaaS to
   trust with your users.
-- **A full audit log, `/metrics`, and built-in ACME** — these land in the
-  v1.0 hardening milestone; see [Installation](../installation/).
 
-Found a vulnerability? Report it privately via the security policy in the
-[repository](https://github.com/aloisdeniel/moth), not a public issue.
+## Reporting a vulnerability
+
+Found a security issue? Please report it **privately** — do not open a
+public issue. Use GitHub's
+[private vulnerability reporting](https://github.com/aloisdeniel/moth/security/advisories/new)
+or follow the [security policy](https://github.com/aloisdeniel/moth/blob/main/SECURITY.md).
+See [`SECURITY.md`](https://github.com/aloisdeniel/moth/blob/main/SECURITY.md)
+for scope and the disclosure timeline.

@@ -47,6 +47,13 @@ built-in defaults.
 | SMTP username | — | `MOTH_SMTP_USERNAME` | `[smtp] username` | — |
 | SMTP password | — | `MOTH_SMTP_PASSWORD` | `[smtp] password` | — |
 | SMTP from | — | `MOTH_SMTP_FROM` | `[smtp] from` | — |
+| Log format (`text`/`json`) | `--log-format` | `MOTH_LOG_FORMAT` | `log_format` | `text` |
+| gRPC reflection (release builds) | `--reflection` | `MOTH_REFLECTION` | `reflection` | `false` *(dev builds: on)* |
+| Scheduled backup dir | `--backup-dir` | `MOTH_BACKUP_DIR` | `backup_dir` | *(empty → disabled)* |
+| Scheduled backup interval | `--backup-interval` | `MOTH_BACKUP_INTERVAL` | `backup_interval` | `24h` |
+| Trusted proxy CIDRs/IPs | `--trusted-proxies` | `MOTH_TRUSTED_PROXIES` | `trusted_proxies` | *(none)* |
+| ACME hostname(s) | `--acme-domain` | `MOTH_ACME_DOMAINS` | `acme_domains` | *(empty → disabled)* |
+| Rate limit — per IP / account / project per minute | — | `MOTH_RATELIMIT_IP_PER_MINUTE`, `…_ACCOUNT_…`, `…_PROJECT_…` | `[ratelimit]` | `60 / 10 / 600` |
 
 `base_url` matters: it is baked into email links, the token `iss` claim,
 JWKS URLs, and OAuth redirect URIs, and it decides whether admin session
@@ -257,10 +264,12 @@ deployment guide; until then, prefer Caddy or Traefik in front of moth.
 
 ### Built-in ACME
 
-**Coming in v1.0:** `moth serve --acme-domain auth.example.com` — TLS
-directly from the binary on a bare VPS, no proxy at all. Also coming in
-v1.0: `--trusted-proxies`, so per-IP rate limits see real client
-addresses behind a proxy.
+`moth serve --acme-domain auth.example.com` obtains a Let's Encrypt
+certificate and serves HTTPS directly from the binary on a bare VPS, no
+proxy at all — it listens on `:443` with the `http-01` challenge on `:80`
+(pass a comma-separated list for multiple hostnames). Behind a proxy
+instead, set `--trusted-proxies` to the proxy's CIDRs/IPs so per-IP rate
+limits read the real client address from `X-Forwarded-For`.
 
 ## Health & diagnostics
 
@@ -270,8 +279,10 @@ addresses behind a proxy.
   "login stopped working": base-URL/TLS sanity, health and pub endpoints,
   SMTP (with a real test send), and per-project JWKS + provider
   verification against Google's and Apple's live endpoints.
+- `GET /metrics` — a Prometheus endpoint (requires the admin credential).
+- Structured logs — `--log-format json` switches the slog handler from
+  human-readable text to JSON for log shippers.
+- An append-only **audit log** records every admin action; browse it in
+  the console or via `moth.admin.v1`.
 - gRPC server reflection is enabled only in dev builds — release builds
-  don't advertise their surface.
-
-**Coming in v1.0:** a `/metrics` Prometheus endpoint, structured JSON
-logs, and an append-only audit log for every admin action.
+  don't advertise their surface unless you pass `--reflection`.

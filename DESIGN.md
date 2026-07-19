@@ -66,7 +66,16 @@ Rules:
 | Hosted pages + emails | **system stack** | `-apple-system, 'Segoe UI', Roboto, sans-serif` — these render inside the binary and email clients; they ship no font assets and must look native everywhere. |
 | SDK (all roles) | **platform default** | Flutter default (Roboto/SF) — the SDK ships no font assets to stay dependency-free and lightweight; a project theme (milestone 06) may supply its own font. Mono in the SDK uses `FontFeature.tabularFigures()` on the default font, not a mono family. |
 
-Font files are self-hosted (woff2). No third-party font CDNs, no `google_fonts` package.
+**Satoshi** (display/text) is loaded from Fontshare's CDN — its ITF license
+permits CDN hosting but not redistributing the font files, so it is not
+bundled. The `<link>` is non-render-blocking (`media="print"` + `onload`
+swap) with the system-font fallback stack above, so both the website and the
+admin console stay usable if the CDN is unreachable. **Cascadia Code** (mono)
+is self-hosted woff2 under `src/fonts/` (SIL OFL 1.1, freely
+redistributable). No `google_fonts` package; no other third-party CDNs. The
+**hosted pages, emails, and SDK** ship or reference no external fonts at all
+(system/platform stacks and the project's own OFL theme font), so the
+binary's end-user surfaces make zero external font requests.
 
 ### Scale
 
@@ -189,10 +198,10 @@ Outlined style only, 1.5px stroke feel, 16/20/24px sizes, colored `text-secondar
 ## Per-surface notes
 
 ### Public website + docs (milestone 09)
-Astro/Starlight on GitHub Pages, self-hosted Satoshi + Cascadia Code (woff2), minimal JS. Dark-scheme aware via `prefers-color-scheme`. Hero (`display` type) → one-line value prop ("One binary. Every app you ship.") → primary button "Get started" into the docs → feature grid of elevation-1 cards → mono code snippet showing `moth serve` + pubspec setup → footer. Docs inherit the same tokens through Starlight theming.
+Astro/Starlight on GitHub Pages, Satoshi from Fontshare's CDN (non-blocking, system fallback) + self-hosted Cascadia Code (woff2), minimal JS. Dark-scheme aware via `prefers-color-scheme`. Hero (`display` type) → one-line value prop ("One binary. Every app you ship.") → primary button "Get started" into the docs → feature grid of elevation-1 cards → mono code snippet showing `moth serve` + pubspec setup → footer. Docs inherit the same tokens through Starlight theming.
 
 ### Admin web app (`/admin`, milestone 03)
-React + Vite + TypeScript SPA embedded via `go:embed`. Tokens live in a single CSS-variables file (both schemes, follow system). Satoshi/Cascadia Code bundled as assets. Layout: top bar (instance) → project switcher → tabbed project view. Tables are the workhorse: `caption` headers, `body` cells, mono for emails-as-data, keys, and dates; row hover `surface-hover`; no zebra stripes.
+React + Vite + TypeScript SPA embedded via `go:embed`. Tokens live in a single CSS-variables file (both schemes, follow system). Cascadia Code bundled as an asset; Satoshi loaded from Fontshare's CDN (non-blocking, with the system-font fallback stack). Layout: top bar (instance) → project switcher → tabbed project view. Tables are the workhorse: `caption` headers, `body` cells, mono for emails-as-data, keys, and dates; row hover `surface-hover`; no zebra stripes.
 
 ### Hosted auth pages (`/p/{slug}/…`, embedded)
 Server-rendered from `internal/server/web/page.html.tmpl` with inline CSS and the system font stack — they must work with zero asset requests inside any webview or browser an email client opens. Keep them on the shared tokens but never add webfonts, JS, or images. When milestone 06 lands, these pages may absorb the project's theme colors; until then they stay neutral.

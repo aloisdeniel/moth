@@ -46,6 +46,20 @@ export default defineConfig({
         { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
         { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
         { tag: 'meta', attrs: { name: 'twitter:image', content: ogImage } },
+        // Satoshi (--sl-font) from Fontshare's CDN, loaded non-render-blocking
+        // (media="print" + onload swap). Falls back to the system UI font if
+        // the CDN is unreachable.
+        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://api.fontshare.com', crossorigin: true } },
+        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://cdn.fontshare.com', crossorigin: true } },
+        {
+          tag: 'link',
+          attrs: {
+            rel: 'stylesheet',
+            href: 'https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap',
+            media: 'print',
+            onload: "this.media='all'",
+          },
+        },
       ],
       sidebar: [
         { label: 'Quick start', slug: 'docs/quick-start' },

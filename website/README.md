@@ -110,16 +110,21 @@ motion), imported by the landing page layout and by Starlight through
 `customCss` (`src/styles/starlight.css` maps the tokens onto Starlight's
 CSS custom properties). Deviations are made by amending `DESIGN.md` first.
 
-### Fonts (self-hosted, woff2)
+### Fonts
 
-| Face | Weights | Source | License |
-|---|---|---|---|
-| Satoshi | 400 / 500 / 700 | Fontshare (Indian Type Foundry) | Fontshare Free Font License (ITF) |
-| Cascadia Code | 400 / 700 | github.com/microsoft/cascadia-code v2407.24 | SIL OFL 1.1 |
+| Face | Weights | Source | License | Hosting |
+|---|---|---|---|---|
+| Satoshi | 400 / 500 / 700 | Fontshare (Indian Type Foundry) | Fontshare Free Font License (ITF) | Fontshare CDN |
+| Cascadia Code | 400 / 700 | github.com/microsoft/cascadia-code v2407.24 | SIL OFL 1.1 | self-hosted, `src/fonts/` |
 
-Files live in `src/fonts/` and are referenced with relative `url()`s so Vite
-fingerprints them and any `base` works. `font-display: swap` everywhere. The
-site must make **zero** external requests — no font CDNs, no analytics.
+Cascadia Code is bundled as woff2 under `src/fonts/`, referenced with
+relative `url()`s so Vite fingerprints them and any `base` works. **Satoshi
+is loaded from Fontshare's CDN** (`api.fontshare.com`), not bundled: the ITF
+license permits CDN hosting but not redistributing the font files. The
+`<link>` is non-render-blocking (`media="print"` + `onload` swap), so if the
+CDN is unreachable `--moth-font-text` falls back to the system UI font.
+`font-display: swap` everywhere. Beyond that font, the site makes no external
+requests — no analytics, no trackers.
 
 ## Content layout
 

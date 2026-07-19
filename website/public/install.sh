@@ -5,7 +5,7 @@
 # SHA-256 against the release checksums, and installs the single static
 # binary. No dependencies beyond curl/wget and tar.
 #
-#   curl -fsSL https://moth.dev/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/aloisdeniel/moth/main/website/public/install.sh | sh
 #
 # Environment overrides:
 #   MOTH_VERSION      install a specific version (e.g. "1.0.0" or "v1.0.0")

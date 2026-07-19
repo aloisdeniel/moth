@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../bootstrap.dart';
 import '../client.dart';
 import '../copy.dart';
 import '../exceptions.dart';
@@ -132,6 +133,15 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
           'Place it under MothApp, or pass the client parameter.',
         );
       }
+      // Seed from the package's baked-in config (a server-generated build) so
+      // the providers and branding render on the first frame with no network
+      // round-trip; the fetch below then revalidates. Null for the canonical
+      // package, which shows the loading state until the fetch returns.
+      final seed = MothBootstrap.instance?.projectConfig;
+      if (seed != null) {
+        _config = seed;
+        _serverTheme = seed.theme;
+      }
       _fetchConfig();
     }
   }
@@ -161,7 +171,10 @@ class _MothLoginScreenState extends State<MothLoginScreen> {
         });
       }
     } on MothException {
-      if (mounted) setState(() => _configFailed = true);
+      // With a baked-in seed already showing, a failed revalidation is silent
+      // — the seeded providers stay. Only the canonical package (no seed) falls
+      // back to the retry state.
+      if (mounted && _config == null) setState(() => _configFailed = true);
     }
   }
 

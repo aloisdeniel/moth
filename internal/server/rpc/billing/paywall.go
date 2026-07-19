@@ -159,6 +159,15 @@ func (h *Handler) GetPaywall(ctx context.Context, req *connect.Request[billingv1
 	return out, nil
 }
 
+// PublicPaywall resolves a project's paywall into the render-ready public
+// message the SDK caches — the stored config or the built-in default. The
+// per-project pub repository reuses it to bake the paywall into a generated
+// SDK package.
+func PublicPaywall(p store.Project) *billingv1.Paywall {
+	cfg, rev := projectPaywall(p)
+	return publicPaywall(cfg, rev)
+}
+
 // publicPaywall converts the config into the render-ready public message.
 func publicPaywall(c paywall.Config, rev string) *billingv1.Paywall {
 	return &billingv1.Paywall{

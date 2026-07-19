@@ -4,31 +4,14 @@
  * Do not invent values here: amend DESIGN.md first, then mirror it.
  */
 
-/* ---- Fonts (self-hosted, woff2 only — zero external requests) ---------- */
-/* Satoshi — Indian Type Foundry, Fontshare free-font license.             */
-/* Cascadia Code — Microsoft, SIL OFL 1.1.                                  */
+/* ---- Fonts ------------------------------------------------------------- */
+/* Satoshi (display) — Indian Type Foundry, Fontshare ITF license: loaded   */
+/*   from Fontshare's CDN (see the non-blocking <link> in Base.astro). The  */
+/*   license permits CDN hosting but not redistributing the files, so it is */
+/*   not bundled; --font-text falls back to the system UI font if the CDN   */
+/*   is unreachable.                                                        */
+/* Cascadia Code (mono) — Microsoft, SIL OFL 1.1: self-hosted, woff2 only.  */
 
-@font-face {
-  font-family: 'Satoshi';
-  src: url('../fonts/satoshi-400.woff2') format('woff2');
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Satoshi';
-  src: url('../fonts/satoshi-500.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Satoshi';
-  src: url('../fonts/satoshi-700.woff2') format('woff2');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
 @font-face {
   font-family: 'Cascadia Code';
   src: url('../fonts/cascadia-code-400.woff2') format('woff2');

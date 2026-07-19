@@ -10,7 +10,8 @@
  *
  * Everything is drawn from DESIGN.md tokens (near-monochrome, mono type
  * for the install line). Uses system fonts at render time, which is fine:
- * these are static images, the *site* still self-hosts Satoshi/Cascadia.
+ * these are static images. At runtime the site self-hosts Cascadia Code and
+ * loads Satoshi from Fontshare's CDN (with a system-font fallback).
  */
 
 import { dirname, join, resolve } from 'node:path';

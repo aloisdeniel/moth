@@ -172,6 +172,12 @@ grpcurl -H "x-moth-key: sk_..." -d '{"user_id":"..."}' \
   your-moth:8080 moth.server.v1.EntitlementService/GetUserEntitlements
 ```
 
+:::note[grpcurl against a release build]
+Release builds don't advertise their schema over reflection. Either start
+the server with `--reflection`, or point grpcurl at the `.proto` sources
+the instance serves at `/protos/` (`grpcurl -import-path … -proto …`).
+:::
+
 ## 6 · Watch the money
 
 The project's analytics tab gains revenue per month (store-reported, per

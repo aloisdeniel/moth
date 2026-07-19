@@ -5,6 +5,7 @@ import 'package:crypto/crypto.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'bootstrap.dart';
 import 'gen/moth/billing/v1/billing.pb.dart' as pb;
 import 'gen/moth/projectconfig/v1/projectconfig.pb.dart' as storagepb;
 import 'offering.dart';
@@ -49,7 +50,9 @@ class MothFilePaywallCache implements MothPaywallCache {
     // not migrated (the config is refetched on the next revalidation).
     await _deleteBestEffort(File('${dir.path}/paywall.json'));
     final file = File('${dir.path}/paywall.pb');
-    if (!await file.exists()) return null;
+    // Cold cache: seed from the package's baked-in paywall (a server-generated
+    // build), so the paywall renders correctly on the first launch offline.
+    if (!await file.exists()) return MothBootstrap.instance?.seededPaywall;
     try {
       final envelope = storagepb.CacheEnvelope.fromBuffer(
         await file.readAsBytes(),

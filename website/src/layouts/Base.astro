@@ -42,6 +42,22 @@ const ogImage = new URL(`${base}/og.png`, Astro.site);
     <link rel="icon" href={`${base}/favicon-32.png`} type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href={`${base}/apple-touch-icon.png`} />
     <link rel="sitemap" href={`${base}/sitemap-index.xml`} />
+    {/*
+      Satoshi (display font) from Fontshare's CDN, loaded non-render-blocking
+      via media="print" + onload swap. If the CDN is unreachable the sheet
+      never applies and --moth-font-text falls back to the system UI font.
+    */}
+    <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap"
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" />
+    </noscript>
     <title>{title}</title>
   </head>
   <body>

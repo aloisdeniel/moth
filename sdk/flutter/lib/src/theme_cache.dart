@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'bootstrap.dart';
 import 'theme.dart';
 import 'theme_cache_stub.dart'
     if (dart.library.io) 'theme_cache_io.dart'
@@ -58,7 +59,8 @@ class MothMemoryThemeCache implements MothThemeCache {
   final _fonts = <String, Uint8List>{};
 
   @override
-  Future<MothCachedTheme?> loadTheme() async => _entry;
+  Future<MothCachedTheme?> loadTheme() async =>
+      _entry ?? MothBootstrap.instance?.seededTheme;
 
   @override
   Future<void> saveTheme(MothTheme theme, {required DateTime fetchedAt}) async {
