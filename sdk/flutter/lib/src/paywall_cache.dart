@@ -1,4 +1,3 @@
-import 'bootstrap.dart';
 import 'offering.dart';
 import 'paywall_cache_stub.dart'
     if (dart.library.io) 'paywall_cache_io.dart'
@@ -53,8 +52,7 @@ class MothMemoryPaywallCache implements MothPaywallCache {
   MothCachedPaywall? _entry;
 
   @override
-  Future<MothCachedPaywall?> load() async =>
-      _entry ?? MothBootstrap.instance?.seededPaywall;
+  Future<MothCachedPaywall?> load() async => _entry;
 
   @override
   Future<void> save(MothPaywall paywall, {required DateTime fetchedAt}) async {

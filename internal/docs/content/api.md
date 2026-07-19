@@ -168,9 +168,7 @@ third-party JWT libraries — so a few surfaces stay plain HTTP:
 - `GET /p/{slug}/.well-known/jwks.json` — the project's active public
   signing keys, for offline verification.
 - `GET /healthz` — liveness (alongside the standard gRPC health service).
-- `/pub/*` — the [pub repository](../sdk/) serving the canonical
-  `moth_auth`; `/p/{slug}/pub/*` serves each project's own preconfigured
-  build (endpoint, key and config baked in).
+- `/pub/*` — the [pub repository](../sdk/) serving `moth_auth`.
 - `/oauth/{provider}/…` — the web-redirect fallback for social sign-in.
 - `/assets/{project}/…` — project logo/font assets.
 

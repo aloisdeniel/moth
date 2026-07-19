@@ -8,15 +8,14 @@ import type { Project } from "../gen/moth/admin/v1/project_pb";
 import { ProjectService } from "../gen/moth/admin/v1/project_pb";
 import { InstanceSettingsService } from "../gen/moth/admin/v1/settings_pb";
 
-// useSdkVersion fetches the moth_auth version this instance serves for this
-// project from its per-project pub listing (/p/{slug}/pub), so the pubspec
-// snippet resolves the project's own preconfigured build. undefined = loading,
-// null = failed.
-function useSdkVersion(slug: string): string | null | undefined {
+// useSdkVersion fetches the moth_auth version this instance actually serves
+// from its own pub listing, so the pubspec snippet always resolves.
+// undefined = loading, null = failed.
+function useSdkVersion(): string | null | undefined {
   const [version, setVersion] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     let cancelled = false;
-    fetch(`/p/${encodeURIComponent(slug)}/pub/api/packages/moth_auth`)
+    fetch("/pub/api/packages/moth_auth")
       .then((resp) => (resp.ok ? resp.json() : Promise.reject(resp.status)))
       .then((listing: { latest: { version: string } }) => {
         if (!cancelled) setVersion(listing.latest.version);
@@ -27,7 +26,7 @@ function useSdkVersion(slug: string): string | null | undefined {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, []);
   return version;
 }
 
@@ -64,7 +63,7 @@ export function ProjectSetup({ project }: { project: Project }) {
   const instance = useQuery(InstanceSettingsService.method.getInstanceSettings);
   const signing = useQuery(ProjectService.method.getSigningKey, { projectId: project.id });
   const profileQ = useQuery(ProfileService.method.getProfile, { projectId: project.id });
-  const sdkVersion = useSdkVersion(project.slug);
+  const sdkVersion = useSdkVersion();
   const npmVersion = useNpmSdkVersion();
   const [platformChoice, setPlatformChoice] = useState<"flutter" | "react" | null>(null);
 
@@ -79,8 +78,7 @@ export function ProjectSetup({ project }: { project: Project }) {
   if (instance.isError) return <ErrorNote message={errorMessage(instance.error)} />;
   if (signing.isError) return <ErrorNote message={errorMessage(signing.error)} />;
   if (profileQ.isError) return <ErrorNote message={errorMessage(profileQ.error)} />;
-  if (sdkVersion === null)
-    return <ErrorNote message={`could not load the served SDK version from /p/${project.slug}/pub`} />;
+  if (sdkVersion === null) return <ErrorNote message="could not load the served SDK version from /pub" />;
 
   // The profile filters, never invents: no profile → all platforms and
   // sections, today's behavior.
@@ -114,17 +112,10 @@ export function ProjectSetup({ project }: { project: Project }) {
   // caret so patch updates of the same major resolve.
   const versionConstraint = sdkVersion.includes("-") ? sdkVersion : `^${sdkVersion}`;
 
-  // The per-project pub repository serves this project's own preconfigured
-  // build of moth_auth: same package name, but the endpoint, publishable key
-  // and public config are baked in, so no MothConfig is needed in the app.
-  const pubUrl = `${base}/p/${project.slug}/pub`;
-
   const pubspec = `dependencies:
   moth_auth:
-    hosted: ${pubUrl}
+    hosted: ${base}/pub
     version: ${versionConstraint}`;
-
-  const pubAdd = `dart pub add moth_auth --hosted-url ${pubUrl}`;
 
   // npm ranges never match pre-releases either — same pin-or-caret rule as
   // the pubspec above. npmVersion === null (no /npm on this server yet)
@@ -161,11 +152,12 @@ createRoot(document.getElementById('root')!).render(
 import 'package:moth_auth/moth_auth.dart';
 
 void main() {
-  // No configuration needed: this build is preconfigured for '${project.slug}'
-  // — endpoint, publishable key and public config are baked in, so the login
-  // screen renders branded on the first frame with no initial request.
   runApp(
     MothApp(
+      config: MothConfig(
+        endpoint: Uri.parse('${base}'),
+        publishableKey: '${project.publishableKey}',
+      ),
       // Signed out -> the SDK's built-in MothLoginScreen; signed in -> child.
       child: const MyApp(),
     ),
@@ -359,29 +351,22 @@ function PushToggle() {
           <section className="stack-12">
             <h2>1 · Add the SDK</h2>
             <p className="caption">
-              This project serves its own preconfigured{" "}
-              <span className="inline-code">moth_auth</span> build from{" "}
-              <span className="inline-code">{pubUrl}</span> — the endpoint,
-              publishable key and public config (providers, theme, copy,
-              paywall) are baked into the package, so there is nothing to paste
-              and no config fetch on first launch. The version tracks the
-              server version and this project's config revision.
+              This instance serves the{" "}
+              <span className="inline-code">moth_auth</span> Flutter SDK from its
+              own pub repository at{" "}
+              <span className="inline-code">{base}/pub</span>; the SDK version
+              tracks the server version.
             </p>
-            <CodeBlock code={pubAdd} />
-            <p className="caption body-strong">or in pubspec.yaml</p>
+            <p className="caption body-strong">pubspec.yaml</p>
             <CodeBlock code={pubspec} />
           </section>
 
           <section className="stack-12">
             <h2>2 · Wrap your app</h2>
             <p className="caption">
-              No <span className="inline-code">MothConfig</span> needed —{" "}
-              <span className="inline-code">MothApp</span> reads the baked-in
-              configuration. Admin edits still ship without an app release (the
-              SDK revalidates in the background); run{" "}
-              <span className="inline-code">dart pub upgrade</span> to refresh
-              the baked-in defaults.
+              Your publishable key is safe to embed in the app:
             </p>
+            <KeyWell value={project.publishableKey} />
             <p className="caption body-strong">lib/main.dart</p>
             <CodeBlock code={mainDart} />
           </section>

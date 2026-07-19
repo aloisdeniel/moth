@@ -1,22 +1,19 @@
 # Flutter SDK reference
 
-`moth_auth` is a pure-Dart core plus a thin Flutter layer. Each project
-serves its **own preconfigured** build from its per-project pub repository
-(`/p/<slug>/pub`), so the SDK version tracks the server version and the
-project's config revision, and nothing is fetched from pub.dev:
+`moth_auth` is a pure-Dart core plus a thin Flutter layer. It is served
+from your own instance's pub repository, so the SDK version always tracks
+the server version and nothing is fetched from pub.dev:
 
-```sh
-dart pub add moth_auth --hosted-url https://auth.example.com/p/bird-spotter/pub
+```yaml title="pubspec.yaml"
+dependencies:
+  moth_auth:
+    hosted: https://auth.example.com/pub
+    version: ^1.0.0
 ```
 
-The generated package is **preconfigured**: the endpoint, publishable key
-and public config (providers, theme, copy, paywall) are baked in, so
-`MothApp(child: ...)` runs with no `MothConfig` and no config fetch on
-first launch. The project's **Setup** tab in the admin console renders
-every snippet below with your real values already filled in.
-
-You can still pass an explicit `MothConfig` (below) — e.g. when pulling the
-canonical, project-agnostic package from the generic `/pub` repository.
+The package is **project-agnostic** — endpoint and publishable key are
+passed at runtime. The project's **Setup** tab in the admin console
+renders every snippet below with your real values already filled in.
 
 The web counterpart is [`@moth/react`](../react/) — same core/UI split,
 same themed screens, served from the instance's npm registry.
@@ -35,15 +32,20 @@ session on startup, and gates `child` behind authentication:
 
 ```dart title="lib/main.dart"
 void main() {
-  // Preconfigured build (pulled from /p/<slug>/pub): no config needed.
-  runApp(MothApp(child: const MyApp()));
+  runApp(
+    MothApp(
+      config: MothConfig(
+        endpoint: Uri.parse('https://auth.example.com'),
+        publishableKey: 'pk_...',
+      ),
+      child: const MyApp(),
+    ),
+  );
 }
 ```
 
-- `config` — optional. A preconfigured build self-configures from its
-  baked-in values, so you omit it. Pass an explicit
-  `MothConfig(endpoint:, publishableKey:)` only with the canonical package
-  from the generic `/pub` (`http://` URLs work for local development).
+- `config` — a `MothConfig(endpoint:, publishableKey:)`. `http://` URLs
+  work for local development.
 - `child` — shown once signed in.
 - `signedOut` — the widget shown while signed out. Defaults to the
   built-in [`MothLoginScreen`](#mothloginscreen); pass your own to replace
@@ -254,9 +256,9 @@ exclusively — no hardcoded styles. When the built-in screen isn't enough:
 
 ## Companions: native billing & push
 
-Two first-party plugin packages are served from the same per-project pub
-repository (`/p/<slug>/pub`) at the same version as `moth_auth`; each one
-is a single dependency plus one constructor argument:
+Two first-party plugin packages are served from the same `/pub`
+repository at the same version as `moth_auth`; each one is a single
+dependency plus one constructor argument:
 
 - **`moth_billing`** — implements `MothBillingAdapter` with StoreKit 2 on
   iOS and the Play Billing Library on Android. `MothScope.purchase` and

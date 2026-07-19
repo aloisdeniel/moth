@@ -32,31 +32,14 @@ type pubPackageSpec struct {
 	// moth_auth hosted dependency the archive builder rewrites to this
 	// instance's /pub URL and stamped version.
 	mothAuthDep bool
-	// genConfig marks the package carrying lib/src/generated_config.dart,
-	// whose placeholder constants the per-project archive builder rewrites
-	// with the project's endpoint, publishable key and baked config
-	// (buildProjectPubArchives). Only moth_auth carries it.
-	genConfig bool
 }
 
 // pubPackages is the served package set. Adding a companion means embedding
 // its publishable subset in sdk/embed.go and appending a spec here.
 var pubPackages = []pubPackageSpec{
-	{name: "moth_auth", dir: "flutter", versionDart: true, genConfig: true},
+	{name: "moth_auth", dir: "flutter", versionDart: true},
 	{name: "moth_billing", dir: "flutter_billing", mothAuthDep: true},
 	{name: "moth_push", dir: "flutter_push", mothAuthDep: true},
-}
-
-// genConfigInjection carries the per-project values the archive builder
-// stamps into moth_auth's lib/src/generated_config.dart placeholders, so the
-// package arrives preconfigured (endpoint, publishable key, and the base64
-// public config/paywall seeds). nil builds the canonical, unconfigured
-// package served at /pub.
-type genConfigInjection struct {
-	endpoint       string
-	publishableKey string
-	configB64      string
-	paywallB64     string
 }
 
 // pubContentType is the media type of the pub hosted repository API v2.
@@ -80,14 +63,6 @@ var (
 	// builder rewrites alongside the pubspec, so the version the SDK
 	// reports in x-moth-sdk-version metadata matches the served package.
 	versionDartLine = regexp.MustCompile(`(?m)^const String mothSdkVersion = '[^']*';$`)
-	// genConfigLines match the per-project placeholder constants in
-	// lib/src/generated_config.dart the per-project archive builder rewrites.
-	// The values (base64, URLs, pk_) never contain a single quote, so the
-	// '[^']*' body match is exact.
-	genEndpointLine   = regexp.MustCompile(`(?m)^const String mothEndpoint = '[^']*';$`)
-	genPubKeyLine     = regexp.MustCompile(`(?m)^const String mothPublishableKey = '[^']*';$`)
-	genConfigB64Line  = regexp.MustCompile(`(?m)^const String mothConfigB64 = '[^']*';$`)
-	genPaywallB64Line = regexp.MustCompile(`(?m)^const String mothPaywallB64 = '[^']*';$`)
 	// semverRe accepts what Dart's pub_semver calls a version:
 	// major.minor.patch with optional pre-release and/or build suffix
 	// (1.2.3, 1.2.3-rc.1, 1.2.3+42, 1.2.3-rc.1+42).
@@ -148,19 +123,6 @@ func pubVersionForURL(version, pubURL string) string {
 	return version + "+" + id
 }
 
-// pubVersionForProject extends pubVersionForURL with a `.r<hash>` build-
-// metadata identifier derived from the project's theme, copy and paywall
-// revisions, so a config edit bumps the served package version. The per-
-// project tarball's baked config is a function of these revisions (plus the
-// URL and moth version already folded in), so this keeps the pub client's
-// per-(host, name, version) archive cache coherent: same version ⇒ same bytes,
-// a new revision ⇒ a new version the developer picks up with `pub upgrade`.
-func pubVersionForProject(version, pubURL, revSignature string) string {
-	v := pubVersionForURL(version, pubURL)
-	sum := sha256.Sum256([]byte(revSignature))
-	return v + ".r" + hex.EncodeToString(sum[:4])
-}
-
 // sdkTreeHash hashes every embedded pub package tree (paths and contents) so
 // dev builds get a package version unique to the trees they serve. One hash
 // covers the whole set: companion packages pin moth_auth's exact stamped
@@ -212,7 +174,7 @@ func buildPubArchives(mothVersion, baseURL string) (map[string]*pubArchive, erro
 	ver = pubVersionForURL(ver, pubURL)
 	archives := make(map[string]*pubArchive, len(pubPackages))
 	for _, spec := range pubPackages {
-		a, err := buildPubArchive(spec, ver, pubURL, nil)
+		a, err := buildPubArchive(spec, ver, pubURL)
 		if err != nil {
 			return nil, fmt.Errorf("build %s pub archive: %w", spec.name, err)
 		}
@@ -226,7 +188,7 @@ func buildPubArchives(mothVersion, baseURL string) (map[string]*pubArchive, erro
 // moth_auth hosted-dependency placeholder). The output is deterministic for
 // a given binary and base URL: fs.WalkDir yields lexical order and every
 // tar header carries fixed metadata.
-func buildPubArchive(spec pubPackageSpec, version, pubURL string, inj *genConfigInjection) (*pubArchive, error) {
+func buildPubArchive(spec pubPackageSpec, version, pubURL string) (*pubArchive, error) {
 	a := &pubArchive{name: spec.name, version: version}
 
 	var buf bytes.Buffer
@@ -272,16 +234,6 @@ func buildPubArchive(spec pubPackageSpec, version, pubURL string, inj *genConfig
 			raw = versionDartLine.ReplaceAll(raw,
 				[]byte("const String mothSdkVersion = '"+a.version+"';"))
 		}
-		if spec.genConfig && inj != nil && name == "lib/src/generated_config.dart" {
-			// Bake the project's endpoint, publishable key and config seeds
-			// into the placeholder constants. A missing placeholder means the
-			// generated build would silently ship unconfigured, so fail loudly.
-			rewritten, err := injectGenConfig(raw, inj)
-			if err != nil {
-				return err
-			}
-			raw = rewritten
-		}
 		hdr := &tar.Header{
 			Name:    name,
 			Mode:    0o644,
@@ -312,29 +264,6 @@ func buildPubArchive(spec pubPackageSpec, version, pubURL string, inj *genConfig
 	sum := sha256.Sum256(a.tarball)
 	a.sha256 = hex.EncodeToString(sum[:])
 	return a, nil
-}
-
-// injectGenConfig rewrites the four generated_config.dart placeholder
-// constants with the project's values. Every placeholder must be present —
-// a missing one means a mismatched embedded file that would ship unconfigured.
-func injectGenConfig(raw []byte, inj *genConfigInjection) ([]byte, error) {
-	subs := []struct {
-		re    *regexp.Regexp
-		field string
-		value string
-	}{
-		{genEndpointLine, "mothEndpoint", inj.endpoint},
-		{genPubKeyLine, "mothPublishableKey", inj.publishableKey},
-		{genConfigB64Line, "mothConfigB64", inj.configB64},
-		{genPaywallB64Line, "mothPaywallB64", inj.paywallB64},
-	}
-	for _, s := range subs {
-		if !s.re.Match(raw) {
-			return nil, fmt.Errorf("embedded lib/src/generated_config.dart has no %s placeholder", s.field)
-		}
-		raw = s.re.ReplaceAll(raw, []byte("const String "+s.field+" = '"+s.value+"';"))
-	}
-	return raw, nil
 }
 
 // archivePath is the URL path of the tarball, relative to the base URL.

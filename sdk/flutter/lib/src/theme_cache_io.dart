@@ -6,7 +6,6 @@ import 'package:crypto/crypto.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'bootstrap.dart';
 import 'gen/moth/auth/v1/config.pb.dart' as pb;
 import 'gen/moth/projectconfig/v1/projectconfig.pb.dart' as storagepb;
 import 'theme.dart';
@@ -55,10 +54,7 @@ class MothFileThemeCache implements MothThemeCache {
     // not migrated (the theme is refetched on the next revalidation).
     await _deleteBestEffort(File('${dir.path}/theme.json'));
     final file = File('${dir.path}/theme.pb');
-    // Cold cache: seed from the package's baked-in theme (a server-generated
-    // build), so the login screen renders branded on the very first launch
-    // with no network round-trip. Null for the canonical package.
-    if (!await file.exists()) return MothBootstrap.instance?.seededTheme;
+    if (!await file.exists()) return null;
     try {
       final envelope = storagepb.CacheEnvelope.fromBuffer(
         await file.readAsBytes(),

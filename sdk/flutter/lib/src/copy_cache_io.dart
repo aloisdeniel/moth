@@ -6,7 +6,6 @@ import 'package:crypto/crypto.dart';
 import 'package:fixnum/fixnum.dart';
 import 'package:path_provider/path_provider.dart';
 
-import 'bootstrap.dart';
 import 'copy.dart';
 import 'copy_cache.dart';
 import 'gen/moth/auth/v1/config.pb.dart' as pb;
@@ -58,10 +57,7 @@ class MothFileCopyCache implements MothCopyCache {
     // not migrated (the copy is refetched on the next revalidation).
     await _deleteBestEffort(File('${dir.path}/copy_$hash.json'));
     final file = File('${dir.path}/copy_$hash.pb');
-    // Cold cache: seed from the package's baked-in default-locale copy (a
-    // server-generated build) when it matches the requested language, so the
-    // moth screens render translated on the first launch with no round-trip.
-    if (!await file.exists()) return MothBootstrap.instance?.seededCopy(locale);
+    if (!await file.exists()) return null;
     try {
       final envelope = storagepb.CacheEnvelope.fromBuffer(
         await file.readAsBytes(),

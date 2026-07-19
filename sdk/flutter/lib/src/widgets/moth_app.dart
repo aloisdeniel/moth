@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../auth_state.dart';
 import '../client.dart';
 import '../config.dart';
-import '../generated_config.dart';
 import '../copy.dart';
 import '../copy_cache.dart';
 import '../copy_controller.dart';
@@ -32,18 +31,7 @@ import 'purchase_flow.dart';
 import 'push_adapter.dart';
 
 /// Top-level widget that owns a [MothClient] and gates [child] behind
-/// authentication.
-///
-/// When the package was pulled from a project's own per-project pub repository
-/// (`/p/<slug>/pub`), the endpoint, publishable key and public config are
-/// baked in, so no configuration is needed at all:
-///
-/// ```dart
-/// void main() => runApp(MothApp(child: const MyApp()));
-/// ```
-///
-/// With the canonical package (the generic `/pub` repository), pass an explicit
-/// [config] instead:
+/// authentication:
 ///
 /// ```dart
 /// void main() {
@@ -99,16 +87,8 @@ class MothApp extends StatefulWidget {
     this.requireAuth = true,
     required this.child,
   }) : assert(
-         config == null || client == null,
-         'Provide at most one of config or client.',
-       ),
-       assert(
-         // mothEndpoint != '' (rather than the mothIsGenerated getter) so the
-         // condition stays const-evaluable in this const constructor.
-         config != null || client != null || mothEndpoint != '',
-         'MothApp needs a config or client: this build is not a '
-         'server-generated (preconfigured) package, so it cannot self-configure. '
-         'Pass config: MothConfig(...) or client: MothClient(...).',
+         (config == null) != (client == null),
+         'Provide exactly one of config or client.',
        ),
        assert(
          client == null || tokenStore == null,
@@ -229,10 +209,7 @@ class _MothAppState extends State<MothApp> with WidgetsBindingObserver {
     _ownsClient = widget.client == null;
     _client =
         widget.client ??
-        MothClient(
-          widget.config ?? MothConfig.generated(),
-          tokenStore: widget.tokenStore,
-        );
+        MothClient(widget.config!, tokenStore: widget.tokenStore);
     _state = _client.currentState;
     _subscription = _client.authStateChanges.listen((state) {
       if (!mounted) return;
