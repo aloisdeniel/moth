@@ -6,8 +6,13 @@ FROM alpine:3.20 AS certs
 RUN apk add --no-cache ca-certificates
 
 FROM scratch
+# dockers_v2 drives a buildx multi-platform build and stages each arch's
+# binary under a ${TARGETPLATFORM} subdir (e.g. linux/amd64/moth) in the
+# build context, so the copy must be platform-qualified — a bare `COPY moth`
+# resolves to nothing and fails with `"/moth": not found`.
+ARG TARGETPLATFORM
 COPY --from=certs /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
-COPY moth /moth
+COPY ${TARGETPLATFORM}/moth /moth
 VOLUME ["/data"]
 EXPOSE 8080
 ENTRYPOINT ["/moth", "serve", "--data-dir", "/data"]
