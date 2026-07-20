@@ -45,11 +45,16 @@ jobs:
 
       # External links over the built HTML. --root-dir resolves root-absolute
       # paths against dist so only off-site URLs actually hit the network.
+      # The site's own origin is excluded: canonical/og self-URLs are emitted
+      # without the production base path in this base-'/' build (and 404 until
+      # the first Pages deploy regardless); the internal link check above is
+      # the authority on in-site references.
       - name: External link check (lychee)
         uses: lycheeverse/lychee-action@v2
         with:
           args: >-
             --no-progress --max-retries 2 --exclude-loopback
+            --exclude '^https://aloisdeniel\.github\.io'
             --root-dir "${{ github.workspace }}/website/dist"
             "website/dist/**/*.html"
           fail: true

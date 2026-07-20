@@ -8,6 +8,13 @@ regenerated from conventional-commit history by `git cliff` (see
 
 ## [Unreleased]
 
+Nothing yet — v1.0.0 below is the first public release.
+
+## [1.0.0] — 2026-07-20
+
+First public release. Everything below shipped since 0.9.0; the highlights
+of the whole product are in the [README](README.md).
+
 ### Guided project creation
 
 - The admin's create-project dialog is now an adaptive multi-step wizard:
@@ -72,6 +79,34 @@ regenerated from conventional-commit history by `git cliff` (see
   last seen — with per-target totals, a target filter, pagination, and
   revocation; the push settings (enable switch + VAPID public key) moved
   there from Settings, and the setup checklist points at it.
+
+### Subscriptions & entitlements
+
+- Per-project subscription engine: App Store and Google Play receipts are
+  validated server-side and distilled into tiers and boolean entitlements
+  (e.g. `pro`) your app gates on; a free tier is always built in, so paid
+  subscriptions stay optional.
+- Store catalog provisioning from the admin's tier definitions.
+- Flutter purchasing in `moth_auth`: entitlement gates and a themed,
+  admin-configured paywall, with `MothBillingAdapter` as the seam for the
+  native purchase itself.
+- Subscription analytics on the project analytics tab: revenue per month,
+  active/trial counts, and trial-to-paid conversion.
+
+### Web billing & React SDK
+
+- The same tiers sell on the web through Stripe-hosted Checkout, configured
+  per project from the admin.
+- `@moth/react`: a React SDK served from the instance's own npm registry
+  (`/npm`), covering auth, entitlements and web checkout.
+
+### Localization & copy
+
+- Per-project localized, customizable copy for the login and paywall
+  surfaces, edited in the admin; config blobs are stored and served to the
+  SDKs as protobuf with download-once TTL caching.
+- `moth_auth` renders fully localized sign-in and paywall flows from the
+  served copy.
 
 ### Release engineering
 
