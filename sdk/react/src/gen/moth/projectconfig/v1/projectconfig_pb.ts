@@ -12,15 +12,15 @@
 // Evolution rules are the protobuf defaults: add fields, never renumber or
 // reuse tags. `buf breaking` guards this package like every other.
 
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file moth/projectconfig/v1/projectconfig.proto.
  */
 export const file_moth_projectconfig_v1_projectconfig: GenFile = /*@__PURE__*/
-  fileDesc("Ciltb3RoL3Byb2plY3Rjb25maWcvdjEvcHJvamVjdGNvbmZpZy5wcm90bxIVbW90aC5wcm9qZWN0Y29uZmlnLnYxIjQKCkxlZ2FsTGlua3MSEQoJdGVybXNfdXJsGAEgASgJEhMKC3ByaXZhY3lfdXJsGAIgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKrAQoTVGhlbWVDb2xvck92ZXJyaWRlcxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSI1Cg9UaGVtZVR5cG9ncmFwaHkSEwoLZm9udF9mYW1pbHkYASABKAkSDQoFc2NhbGUYAiABKAEiHAoMVGhlbWVTcGFjaW5nEgwKBHVuaXQYASABKAUiIwoKVGhlbWVTaGFwZRIVCg1jb3JuZXJfcmFkaXVzGAEgASgFIigKCVRoZW1lTG9nbxINCgVsaWdodBgBIAEoCRIMCgRkYXJrGAIgASgJIpkDCgtTdG9yZWRUaGVtZRIPCgd2ZXJzaW9uGAEgASgFEjIKBmNvbG9ycxgCIAEoCzIiLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9ycxI/CgtkYXJrX2NvbG9ycxgDIAEoCzIqLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9yT3ZlcnJpZGVzEjoKCnR5cG9ncmFwaHkYBCABKAsyJi5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVUeXBvZ3JhcGh5EjQKB3NwYWNpbmcYBSABKAsyIy5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVTcGFjaW5nEjAKBXNoYXBlGAYgASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLlRoZW1lU2hhcGUSLgoEbG9nbxgHIAEoCzIgLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUxvZ28SMAoFbGVnYWwYCCABKAsyIS5tb3RoLnByb2plY3Rjb25maWcudjEuTGVnYWxMaW5rcyLKAQoNU3RvcmVkUGF5d2FsbBIPCgd2ZXJzaW9uGAEgASgFEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEh4KFmhpZ2hsaWdodGVkX2lkZW50aWZpZXIYBiABKAkSDgoGbGF5b3V0GAcgASgJEjAKBWxlZ2FsGAggASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLkxlZ2FsTGlua3MiUAoKU3RvcmVkUHVzaBIPCgd2ZXJzaW9uGAEgASgFEg8KB2VuYWJsZWQYAiABKAgSIAoYd2VicHVzaF92YXBpZF9wdWJsaWNfa2V5GAMgASgJIpABChJDb3B5TG9jYWxlTWVzc2FnZXMSSQoIbWVzc2FnZXMYASADKAsyNy5tb3RoLnByb2plY3Rjb25maWcudjEuQ29weUxvY2FsZU1lc3NhZ2VzLk1lc3NhZ2VzRW50cnkaLwoNTWVzc2FnZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIqgBCgpTdG9yZWRDb3B5Ej8KB2xvY2FsZXMYASADKAsyLi5tb3RoLnByb2plY3Rjb25maWcudjEuU3RvcmVkQ29weS5Mb2NhbGVzRW50cnkaWQoMTG9jYWxlc0VudHJ5EgsKA2tleRgBIAEoCRI4CgV2YWx1ZRgCIAEoCzIpLm1vdGgucHJvamVjdGNvbmZpZy52MS5Db3B5TG9jYWxlTWVzc2FnZXM6AjgBIl4KDUNhY2hlRW52ZWxvcGUSDwoHcGF5bG9hZBgBIAEoDBIQCghyZXZpc2lvbhgCIAEoCRIOCgZsb2NhbGUYAyABKAkSGgoSZmV0Y2hlZF9hdF91bml4X21zGAQgASgDQkdaRWdpdGh1Yi5jb20vYWxvaXNkZW5pZWwvbW90aC9nZW4vbW90aC9wcm9qZWN0Y29uZmlnL3YxO3Byb2plY3Rjb25maWd2MWIGcHJvdG8z");
+  fileDesc("Ciltb3RoL3Byb2plY3Rjb25maWcvdjEvcHJvamVjdGNvbmZpZy5wcm90bxIVbW90aC5wcm9qZWN0Y29uZmlnLnYxIjQKCkxlZ2FsTGlua3MSEQoJdGVybXNfdXJsGAEgASgJEhMKC3ByaXZhY3lfdXJsGAIgASgJIqMBCgtUaGVtZUNvbG9ycxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSKrAQoTVGhlbWVDb2xvck92ZXJyaWRlcxIPCgdwcmltYXJ5GAEgASgJEhIKCm9uX3ByaW1hcnkYAiABKAkSEgoKYmFja2dyb3VuZBgDIAEoCRIVCg1vbl9iYWNrZ3JvdW5kGAQgASgJEg8KB3N1cmZhY2UYBSABKAkSEgoKb25fc3VyZmFjZRgGIAEoCRINCgVlcnJvchgHIAEoCRIQCghvbl9lcnJvchgIIAEoCSI1Cg9UaGVtZVR5cG9ncmFwaHkSEwoLZm9udF9mYW1pbHkYASABKAkSDQoFc2NhbGUYAiABKAEiHAoMVGhlbWVTcGFjaW5nEgwKBHVuaXQYASABKAUiIwoKVGhlbWVTaGFwZRIVCg1jb3JuZXJfcmFkaXVzGAEgASgFIigKCVRoZW1lTG9nbxINCgVsaWdodBgBIAEoCRIMCgRkYXJrGAIgASgJIpkDCgtTdG9yZWRUaGVtZRIPCgd2ZXJzaW9uGAEgASgFEjIKBmNvbG9ycxgCIAEoCzIiLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9ycxI/CgtkYXJrX2NvbG9ycxgDIAEoCzIqLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUNvbG9yT3ZlcnJpZGVzEjoKCnR5cG9ncmFwaHkYBCABKAsyJi5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVUeXBvZ3JhcGh5EjQKB3NwYWNpbmcYBSABKAsyIy5tb3RoLnByb2plY3Rjb25maWcudjEuVGhlbWVTcGFjaW5nEjAKBXNoYXBlGAYgASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLlRoZW1lU2hhcGUSLgoEbG9nbxgHIAEoCzIgLm1vdGgucHJvamVjdGNvbmZpZy52MS5UaGVtZUxvZ28SMAoFbGVnYWwYCCABKAsyIS5tb3RoLnByb2plY3Rjb25maWcudjEuTGVnYWxMaW5rcyLKAQoNU3RvcmVkUGF5d2FsbBIPCgd2ZXJzaW9uGAEgASgFEhAKCGhlYWRsaW5lGAIgASgJEhAKCHN1YnRpdGxlGAMgASgJEhAKCGJlbmVmaXRzGAQgAygJEhAKCG9mZmVyaW5nGAUgASgJEh4KFmhpZ2hsaWdodGVkX2lkZW50aWZpZXIYBiABKAkSDgoGbGF5b3V0GAcgASgJEjAKBWxlZ2FsGAggASgLMiEubW90aC5wcm9qZWN0Y29uZmlnLnYxLkxlZ2FsTGlua3MiUAoKU3RvcmVkUHVzaBIPCgd2ZXJzaW9uGAEgASgFEg8KB2VuYWJsZWQYAiABKAgSIAoYd2VicHVzaF92YXBpZF9wdWJsaWNfa2V5GAMgASgJItMBCg1TdG9yZWRQcm9maWxlEg8KB3ZlcnNpb24YASABKAUSMgoJcGxhdGZvcm1zGAIgAygOMh8ubW90aC5wcm9qZWN0Y29uZmlnLnYxLlBsYXRmb3JtEhYKDmdvb2dsZV9zaWduX2luGAMgASgIEhUKDWFwcGxlX3NpZ25faW4YBCABKAgSGwoTc2VsbHNfc3Vic2NyaXB0aW9ucxgFIAEoCBIUCgxzZW5kc19wdXNoZXMYBiABKAgSGwoTY2hlY2tsaXN0X2Rpc21pc3NlZBgHIAEoCCKQAQoSQ29weUxvY2FsZU1lc3NhZ2VzEkkKCG1lc3NhZ2VzGAEgAygLMjcubW90aC5wcm9qZWN0Y29uZmlnLnYxLkNvcHlMb2NhbGVNZXNzYWdlcy5NZXNzYWdlc0VudHJ5Gi8KDU1lc3NhZ2VzRW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4ASKoAQoKU3RvcmVkQ29weRI/Cgdsb2NhbGVzGAEgAygLMi4ubW90aC5wcm9qZWN0Y29uZmlnLnYxLlN0b3JlZENvcHkuTG9jYWxlc0VudHJ5GlkKDExvY2FsZXNFbnRyeRILCgNrZXkYASABKAkSOAoFdmFsdWUYAiABKAsyKS5tb3RoLnByb2plY3Rjb25maWcudjEuQ29weUxvY2FsZU1lc3NhZ2VzOgI4ASJeCg1DYWNoZUVudmVsb3BlEg8KB3BheWxvYWQYASABKAwSEAoIcmV2aXNpb24YAiABKAkSDgoGbG9jYWxlGAMgASgJEhoKEmZldGNoZWRfYXRfdW5peF9tcxgEIAEoAypeCghQbGF0Zm9ybRIYChRQTEFURk9STV9VTlNQRUNJRklFRBAAEhAKDFBMQVRGT1JNX0lPUxABEhQKEFBMQVRGT1JNX0FORFJPSUQQAhIQCgxQTEFURk9STV9XRUIQA0JHWkVnaXRodWIuY29tL2Fsb2lzZGVuaWVsL21vdGgvZ2VuL21vdGgvcHJvamVjdGNvbmZpZy92MTtwcm9qZWN0Y29uZmlndjFiBnByb3RvMw");
 
 /**
  * LegalLinks are the optional legal URLs rendered near signup and on the
@@ -413,6 +413,76 @@ export const StoredPushSchema: GenMessage<StoredPush> = /*@__PURE__*/
   messageDesc(file_moth_projectconfig_v1_projectconfig, 9);
 
 /**
+ * StoredProfile is one project's setup profile as persisted on the project
+ * row (milestone 22): the creation wizard's answers — platforms, sign-in
+ * intent, monetization and push intent. It records what the app *intends*,
+ * so surfaces can tell "doesn't want Apple sign-in" apart from "hasn't
+ * configured it yet"; it is never a second source of config truth. Absent
+ * (empty column) on projects created before the wizard, where surfaces
+ * behave exactly as before.
+ *
+ * @generated from message moth.projectconfig.v1.StoredProfile
+ */
+export type StoredProfile = Message<"moth.projectconfig.v1.StoredProfile"> & {
+  /**
+   * version is the document schema version (internal/profile.SchemaVersion).
+   *
+   * @generated from field: int32 version = 1;
+   */
+  version: number;
+
+  /**
+   * platforms the app ships on. Non-empty in every valid profile; drives
+   * every platform branch (store credentials, VAPID, setup snippets).
+   *
+   * @generated from field: repeated moth.projectconfig.v1.Platform platforms = 2;
+   */
+  platforms: Platform[];
+
+  /**
+   * google_sign_in / apple_sign_in record the social sign-in intent.
+   * Email/password is always on and needs no flag.
+   *
+   * @generated from field: bool google_sign_in = 3;
+   */
+  googleSignIn: boolean;
+
+  /**
+   * @generated from field: bool apple_sign_in = 4;
+   */
+  appleSignIn: boolean;
+
+  /**
+   * sells_subscriptions records the monetization intent (milestones 11/12).
+   *
+   * @generated from field: bool sells_subscriptions = 5;
+   */
+  sellsSubscriptions: boolean;
+
+  /**
+   * sends_pushes records the push intent (milestone 20).
+   *
+   * @generated from field: bool sends_pushes = 6;
+   */
+  sendsPushes: boolean;
+
+  /**
+   * checklist_dismissed hides the overview checklist card; it never fakes
+   * completeness — the derived items stay computable either way.
+   *
+   * @generated from field: bool checklist_dismissed = 7;
+   */
+  checklistDismissed: boolean;
+};
+
+/**
+ * Describes the message moth.projectconfig.v1.StoredProfile.
+ * Use `create(StoredProfileSchema)` to create a new message.
+ */
+export const StoredProfileSchema: GenMessage<StoredProfile> = /*@__PURE__*/
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 10);
+
+/**
  * CopyLocaleMessages is one locale's copy overrides: catalog message key
  * (e.g. "sign_in.title") to the operator-customized string.
  *
@@ -430,7 +500,7 @@ export type CopyLocaleMessages = Message<"moth.projectconfig.v1.CopyLocaleMessag
  * Use `create(CopyLocaleMessagesSchema)` to create a new message.
  */
 export const CopyLocaleMessagesSchema: GenMessage<CopyLocaleMessages> = /*@__PURE__*/
-  messageDesc(file_moth_projectconfig_v1_projectconfig, 10);
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 11);
 
 /**
  * StoredCopy is one project's localization overrides as persisted on the
@@ -452,7 +522,7 @@ export type StoredCopy = Message<"moth.projectconfig.v1.StoredCopy"> & {
  * Use `create(StoredCopySchema)` to create a new message.
  */
 export const StoredCopySchema: GenMessage<StoredCopy> = /*@__PURE__*/
-  messageDesc(file_moth_projectconfig_v1_projectconfig, 11);
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 12);
 
 /**
  * CacheEnvelope wraps a config payload the Flutter SDK persists on device
@@ -502,5 +572,40 @@ export type CacheEnvelope = Message<"moth.projectconfig.v1.CacheEnvelope"> & {
  * Use `create(CacheEnvelopeSchema)` to create a new message.
  */
 export const CacheEnvelopeSchema: GenMessage<CacheEnvelope> = /*@__PURE__*/
-  messageDesc(file_moth_projectconfig_v1_projectconfig, 12);
+  messageDesc(file_moth_projectconfig_v1_projectconfig, 13);
+
+/**
+ * Platform is an app platform a project ships on — the wizard's platform
+ * multi-select (milestone 22). Platforms drive which setup surfaces, wizard
+ * branches and checklist items apply to the project.
+ *
+ * @generated from enum moth.projectconfig.v1.Platform
+ */
+export enum Platform {
+  /**
+   * @generated from enum value: PLATFORM_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * @generated from enum value: PLATFORM_IOS = 1;
+   */
+  IOS = 1,
+
+  /**
+   * @generated from enum value: PLATFORM_ANDROID = 2;
+   */
+  ANDROID = 2,
+
+  /**
+   * @generated from enum value: PLATFORM_WEB = 3;
+   */
+  WEB = 3,
+}
+
+/**
+ * Describes the enum moth.projectconfig.v1.Platform.
+ */
+export const PlatformSchema: GenEnum<Platform> = /*@__PURE__*/
+  enumDesc(file_moth_projectconfig_v1_projectconfig, 0);
 

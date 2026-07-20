@@ -266,7 +266,7 @@ jobs:
       # Pinned to an explicit version so the security gate is deterministic and
       # auditable: a floating @latest lets a newly published advisory turn CI
       # red on an untouched commit, and a scanner regression silently weaken it.
-      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.1.4
+      - run: go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
       - run: govulncheck ./...
 
   # Static security analysis. Fails only on high-severity, high-confidence
@@ -279,10 +279,12 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - name: Run gosec
-        # Pinned to an explicit release (not @master) so a new gosec rule cannot
-        # turn CI red on an untouched commit and a regression cannot silently
-        # weaken the gate.
-        uses: securego/gosec@v2.22.5
-        with:
-          args: -severity high -confidence high -exclude-dir=gen -exclude-dir=web ./...
+      # Installed rather than run as the packaged action: that action's image
+      # bakes its own Go with GOTOOLCHAIN=local, so it cannot load a module
+      # whose go directive is newer than that Go and silently scans 0 files.
+      # Building it here makes it use setup-go's toolchain, which tracks
+      # go.mod. Pinned to an explicit release (not @latest) so a new gosec
+      # rule cannot turn CI red on an untouched commit and a regression cannot
+      # silently weaken the gate.
+      - run: go install github.com/securego/gosec/v2/cmd/gosec@v2.28.0
+      - run: gosec -severity high -confidence high -exclude-dir=gen -exclude-dir=web ./...

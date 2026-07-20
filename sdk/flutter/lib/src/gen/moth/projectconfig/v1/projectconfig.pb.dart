@@ -15,7 +15,11 @@ import 'dart:core' as $core;
 import 'package:fixnum/fixnum.dart' as $fixnum;
 import 'package:protobuf/protobuf.dart' as $pb;
 
+import 'projectconfig.pbenum.dart';
+
 export 'package:protobuf/protobuf.dart' show GeneratedMessageGenericExtensions;
+
+export 'projectconfig.pbenum.dart';
 
 /// LegalLinks are the optional legal URLs rendered near signup and on the
 /// paywall footer.
@@ -1014,6 +1018,148 @@ class StoredPush extends $pb.GeneratedMessage {
   $core.bool hasWebpushVapidPublicKey() => $_has(2);
   @$pb.TagNumber(3)
   void clearWebpushVapidPublicKey() => $_clearField(3);
+}
+
+/// StoredProfile is one project's setup profile as persisted on the project
+/// row (milestone 22): the creation wizard's answers — platforms, sign-in
+/// intent, monetization and push intent. It records what the app *intends*,
+/// so surfaces can tell "doesn't want Apple sign-in" apart from "hasn't
+/// configured it yet"; it is never a second source of config truth. Absent
+/// (empty column) on projects created before the wizard, where surfaces
+/// behave exactly as before.
+class StoredProfile extends $pb.GeneratedMessage {
+  factory StoredProfile({
+    $core.int? version,
+    $core.Iterable<Platform>? platforms,
+    $core.bool? googleSignIn,
+    $core.bool? appleSignIn,
+    $core.bool? sellsSubscriptions,
+    $core.bool? sendsPushes,
+    $core.bool? checklistDismissed,
+  }) {
+    final result = create();
+    if (version != null) result.version = version;
+    if (platforms != null) result.platforms.addAll(platforms);
+    if (googleSignIn != null) result.googleSignIn = googleSignIn;
+    if (appleSignIn != null) result.appleSignIn = appleSignIn;
+    if (sellsSubscriptions != null)
+      result.sellsSubscriptions = sellsSubscriptions;
+    if (sendsPushes != null) result.sendsPushes = sendsPushes;
+    if (checklistDismissed != null)
+      result.checklistDismissed = checklistDismissed;
+    return result;
+  }
+
+  StoredProfile._();
+
+  factory StoredProfile.fromBuffer($core.List<$core.int> data,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromBuffer(data, registry);
+  factory StoredProfile.fromJson($core.String json,
+          [$pb.ExtensionRegistry registry = $pb.ExtensionRegistry.EMPTY]) =>
+      create()..mergeFromJson(json, registry);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(
+      _omitMessageNames ? '' : 'StoredProfile',
+      package: const $pb.PackageName(
+          _omitMessageNames ? '' : 'moth.projectconfig.v1'),
+      createEmptyInstance: create)
+    ..aI(1, _omitFieldNames ? '' : 'version')
+    ..pc<Platform>(2, _omitFieldNames ? '' : 'platforms', $pb.PbFieldType.KE,
+        valueOf: Platform.valueOf,
+        enumValues: Platform.values,
+        defaultEnumValue: Platform.PLATFORM_UNSPECIFIED)
+    ..aOB(3, _omitFieldNames ? '' : 'googleSignIn')
+    ..aOB(4, _omitFieldNames ? '' : 'appleSignIn')
+    ..aOB(5, _omitFieldNames ? '' : 'sellsSubscriptions')
+    ..aOB(6, _omitFieldNames ? '' : 'sendsPushes')
+    ..aOB(7, _omitFieldNames ? '' : 'checklistDismissed')
+    ..hasRequiredFields = false;
+
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StoredProfile clone() => deepCopy();
+  @$core.Deprecated('See https://github.com/google/protobuf.dart/issues/998.')
+  StoredProfile copyWith(void Function(StoredProfile) updates) =>
+      super.copyWith((message) => updates(message as StoredProfile))
+          as StoredProfile;
+
+  @$core.override
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static StoredProfile create() => StoredProfile._();
+  @$core.override
+  StoredProfile createEmptyInstance() => create();
+  @$core.pragma('dart2js:noInline')
+  static StoredProfile getDefault() => _defaultInstance ??=
+      $pb.GeneratedMessage.$_defaultFor<StoredProfile>(create);
+  static StoredProfile? _defaultInstance;
+
+  /// version is the document schema version (internal/profile.SchemaVersion).
+  @$pb.TagNumber(1)
+  $core.int get version => $_getIZ(0);
+  @$pb.TagNumber(1)
+  set version($core.int value) => $_setSignedInt32(0, value);
+  @$pb.TagNumber(1)
+  $core.bool hasVersion() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearVersion() => $_clearField(1);
+
+  /// platforms the app ships on. Non-empty in every valid profile; drives
+  /// every platform branch (store credentials, VAPID, setup snippets).
+  @$pb.TagNumber(2)
+  $pb.PbList<Platform> get platforms => $_getList(1);
+
+  /// google_sign_in / apple_sign_in record the social sign-in intent.
+  /// Email/password is always on and needs no flag.
+  @$pb.TagNumber(3)
+  $core.bool get googleSignIn => $_getBF(2);
+  @$pb.TagNumber(3)
+  set googleSignIn($core.bool value) => $_setBool(2, value);
+  @$pb.TagNumber(3)
+  $core.bool hasGoogleSignIn() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearGoogleSignIn() => $_clearField(3);
+
+  @$pb.TagNumber(4)
+  $core.bool get appleSignIn => $_getBF(3);
+  @$pb.TagNumber(4)
+  set appleSignIn($core.bool value) => $_setBool(3, value);
+  @$pb.TagNumber(4)
+  $core.bool hasAppleSignIn() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearAppleSignIn() => $_clearField(4);
+
+  /// sells_subscriptions records the monetization intent (milestones 11/12).
+  @$pb.TagNumber(5)
+  $core.bool get sellsSubscriptions => $_getBF(4);
+  @$pb.TagNumber(5)
+  set sellsSubscriptions($core.bool value) => $_setBool(4, value);
+  @$pb.TagNumber(5)
+  $core.bool hasSellsSubscriptions() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearSellsSubscriptions() => $_clearField(5);
+
+  /// sends_pushes records the push intent (milestone 20).
+  @$pb.TagNumber(6)
+  $core.bool get sendsPushes => $_getBF(5);
+  @$pb.TagNumber(6)
+  set sendsPushes($core.bool value) => $_setBool(5, value);
+  @$pb.TagNumber(6)
+  $core.bool hasSendsPushes() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearSendsPushes() => $_clearField(6);
+
+  /// checklist_dismissed hides the overview checklist card; it never fakes
+  /// completeness — the derived items stay computable either way.
+  @$pb.TagNumber(7)
+  $core.bool get checklistDismissed => $_getBF(6);
+  @$pb.TagNumber(7)
+  set checklistDismissed($core.bool value) => $_setBool(6, value);
+  @$pb.TagNumber(7)
+  $core.bool hasChecklistDismissed() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearChecklistDismissed() => $_clearField(7);
 }
 
 /// CopyLocaleMessages is one locale's copy overrides: catalog message key

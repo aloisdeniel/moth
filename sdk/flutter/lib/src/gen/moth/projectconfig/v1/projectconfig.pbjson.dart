@@ -15,6 +15,22 @@ import 'dart:convert' as $convert;
 import 'dart:core' as $core;
 import 'dart:typed_data' as $typed_data;
 
+@$core.Deprecated('Use platformDescriptor instead')
+const Platform$json = {
+  '1': 'Platform',
+  '2': [
+    {'1': 'PLATFORM_UNSPECIFIED', '2': 0},
+    {'1': 'PLATFORM_IOS', '2': 1},
+    {'1': 'PLATFORM_ANDROID', '2': 2},
+    {'1': 'PLATFORM_WEB', '2': 3},
+  ],
+};
+
+/// Descriptor for `Platform`. Decode as a `google.protobuf.EnumDescriptorProto`.
+final $typed_data.Uint8List platformDescriptor = $convert.base64Decode(
+    'CghQbGF0Zm9ybRIYChRQTEFURk9STV9VTlNQRUNJRklFRBAAEhAKDFBMQVRGT1JNX0lPUxABEh'
+    'QKEFBMQVRGT1JNX0FORFJPSUQQAhIQCgxQTEFURk9STV9XRUIQAw==');
+
 @$core.Deprecated('Use legalLinksDescriptor instead')
 const LegalLinks$json = {
   '1': 'LegalLinks',
@@ -260,6 +276,48 @@ final $typed_data.Uint8List storedPushDescriptor = $convert.base64Decode(
     'CgpTdG9yZWRQdXNoEhgKB3ZlcnNpb24YASABKAVSB3ZlcnNpb24SGAoHZW5hYmxlZBgCIAEoCF'
     'IHZW5hYmxlZBI3Chh3ZWJwdXNoX3ZhcGlkX3B1YmxpY19rZXkYAyABKAlSFXdlYnB1c2hWYXBp'
     'ZFB1YmxpY0tleQ==');
+
+@$core.Deprecated('Use storedProfileDescriptor instead')
+const StoredProfile$json = {
+  '1': 'StoredProfile',
+  '2': [
+    {'1': 'version', '3': 1, '4': 1, '5': 5, '10': 'version'},
+    {
+      '1': 'platforms',
+      '3': 2,
+      '4': 3,
+      '5': 14,
+      '6': '.moth.projectconfig.v1.Platform',
+      '10': 'platforms'
+    },
+    {'1': 'google_sign_in', '3': 3, '4': 1, '5': 8, '10': 'googleSignIn'},
+    {'1': 'apple_sign_in', '3': 4, '4': 1, '5': 8, '10': 'appleSignIn'},
+    {
+      '1': 'sells_subscriptions',
+      '3': 5,
+      '4': 1,
+      '5': 8,
+      '10': 'sellsSubscriptions'
+    },
+    {'1': 'sends_pushes', '3': 6, '4': 1, '5': 8, '10': 'sendsPushes'},
+    {
+      '1': 'checklist_dismissed',
+      '3': 7,
+      '4': 1,
+      '5': 8,
+      '10': 'checklistDismissed'
+    },
+  ],
+};
+
+/// Descriptor for `StoredProfile`. Decode as a `google.protobuf.DescriptorProto`.
+final $typed_data.Uint8List storedProfileDescriptor = $convert.base64Decode(
+    'Cg1TdG9yZWRQcm9maWxlEhgKB3ZlcnNpb24YASABKAVSB3ZlcnNpb24SPQoJcGxhdGZvcm1zGA'
+    'IgAygOMh8ubW90aC5wcm9qZWN0Y29uZmlnLnYxLlBsYXRmb3JtUglwbGF0Zm9ybXMSJAoOZ29v'
+    'Z2xlX3NpZ25faW4YAyABKAhSDGdvb2dsZVNpZ25JbhIiCg1hcHBsZV9zaWduX2luGAQgASgIUg'
+    'thcHBsZVNpZ25JbhIvChNzZWxsc19zdWJzY3JpcHRpb25zGAUgASgIUhJzZWxsc1N1YnNjcmlw'
+    'dGlvbnMSIQoMc2VuZHNfcHVzaGVzGAYgASgIUgtzZW5kc1B1c2hlcxIvChNjaGVja2xpc3RfZG'
+    'lzbWlzc2VkGAcgASgIUhJjaGVja2xpc3REaXNtaXNzZWQ=');
 
 @$core.Deprecated('Use copyLocaleMessagesDescriptor instead')
 const CopyLocaleMessages$json = {

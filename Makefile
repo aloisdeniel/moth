@@ -13,10 +13,14 @@ lint:
 	golangci-lint run
 	buf lint
 
-# Regenerates gen/ (Go) and web/admin/src/gen (TypeScript); commit both.
-# Needs web/admin/node_modules (run `npm ci` in web/admin once).
+# Regenerates gen/ (Go), web/admin/src/gen and sdk/react/src/gen (TypeScript);
+# commit all three. The React SDK's stubs come from a separate template with
+# its own protoc-gen-es, so both runs are needed to match CI's staleness gate.
+# Needs web/admin/node_modules and sdk/react/node_modules (run `npm ci` in
+# each once).
 proto:
 	buf generate
+	buf generate --template buf.gen.react.yaml
 
 # Regenerates the Dart stubs for the Flutter SDK (sdk/flutter/lib/src/gen);
 # commit the result. Separate from `make proto` because CI's proto job has no

@@ -45,16 +45,25 @@ jobs:
 
       # External links over the built HTML. --root-dir resolves root-absolute
       # paths against dist so only off-site URLs actually hit the network.
-      # The site's own origin is excluded: canonical/og self-URLs are emitted
-      # without the production base path in this base-'/' build (and 404 until
-      # the first Pages deploy regardless); the internal link check above is
-      # the authority on in-site references.
+      # Two host families are excluded because a link checker structurally
+      # can't verify them here, not because they're unchecked:
+      #   - the site's own Pages origin: canonical/og self-URLs are emitted
+      #     without the production base path in this base-'/' build, and 404
+      #     until the first Pages deploy regardless. The internal link check
+      #     above is the authority on in-site references.
+      #   - the project's own GitHub repo: the docs link to source files on
+      #     `main` (DESIGN.md, SECURITY.md, LICENSE, example_backend), which
+      #     lychee fetches unauthenticated — so they 404 while the repo is
+      #     private, and pre-merge `main` doesn't yet carry those files. Both
+      #     resolve once the repo is public and this lands on main; they are
+      #     committed files, stable by construction.
       - name: External link check (lychee)
         uses: lycheeverse/lychee-action@v2
         with:
           args: >-
             --no-progress --max-retries 2 --exclude-loopback
             --exclude '^https://aloisdeniel\.github\.io'
+            --exclude '^https://github\.com/aloisdeniel/moth'
             --root-dir "${{ github.workspace }}/website/dist"
             "website/dist/**/*.html"
           fail: true

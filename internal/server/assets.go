@@ -51,7 +51,10 @@ func (s *Server) handleAsset(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	raw, err := os.ReadFile(filepath.Join(s.uploads, projectID, file))
+	// Both path segments are constrained above: projectID must parse as a
+	// UUID and file must be a key in logoAssets, so neither can carry a
+	// traversal payload. gosec's taint analysis can't see those guards.
+	raw, err := os.ReadFile(filepath.Join(s.uploads, projectID, file)) // #nosec G304,G703 -- projectID is a parsed UUID, file is allowlisted
 	if errors.Is(err, fs.ErrNotExist) {
 		http.NotFound(w, r)
 		return

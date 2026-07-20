@@ -258,7 +258,7 @@ async function main() {
     for (const p of projects) {
       await page.goto(`${BASE_URL}/admin`);
       await page.getByRole('button', { name: 'Create project' }).click();
-      await page.getByLabel('Name').fill(p.name);
+      await page.getByLabel('Name', { exact: true }).fill(p.name);
       await page.getByRole('dialog').getByRole('button', { name: 'Create project' }).click();
       await page.getByText(`${p.name} is ready`).waitFor();
     }
