@@ -20,6 +20,7 @@ The defining idea: **one moth server carries your entire portfolio of independen
 - **Served React SDK** (post-v1.2) — the same model for the web: an npm-compatible registry serves `@moth/react` from the binary; a provider component gates the app, hooks expose auth and entitlement state, and a themed paywall sells web subscriptions through Stripe Checkout — with the project's theme and localized copy applied.
 - **Native billing plugin** (post-v1.3) — `moth_billing`, a first-party Flutter plugin served from `/pub` (StoreKit 2 on iOS, Play Billing Library on Android) implementing the milestone-13 billing adapter, so a native purchase needs one dependency and zero adapter code.
 - **Push device registry** (post-v1.3) — moth registers every signed-in device's push identity (APNs / FCM token, Web Push subscription) with permission state and invalidation; the developer's backend reads the live set via `moth.server.v1` and sends through the push services itself. `moth_push` (Flutter) and `useMothPush()` (React) populate the registry automatically.
+- **Geo-distributed instances** (post-v1.5) — a main instance federates any number of regional instances (each still one binary + one SQLite file): a new user is homed at the nearest instance and stays there for life; the JWT names the home instance so SDKs stick to it; no replication — the main only propagates project config, routes first contact via a hashed identity locator, proxies admin views/actions to the home instance, and accumulates per-instance analytics rollups into a global overview.
 
 ## Architecture decisions
 
@@ -53,6 +54,8 @@ The defining idea: **one moth server carries your entire portfolio of independen
 │                     customer info, submit/restore purchase (post-v1.0)     │
 │  moth.push.v1.*   → push device registration (publishable key + JWT,       │
 │                     post-v1.3); read side lives in moth.server.v1          │
+│  moth.cluster.v1.*→ instance-to-instance fabric (instance key, post-v1.5):  │
+│                     enrollment, config sync, JWKS exchange, rollup pull     │
 │  /pub/*           → pub repository API (HTTP) serving moth_auth           │
 │  /npm/*           → npm registry API (HTTP) serving @moth/react (post-v1.2)│
 │  /p/*, /assets/*  → hosted pages & project assets (HTTP)                  │
@@ -95,6 +98,13 @@ Web billing (post-v1.2) adds:
 Push registration (post-v1.3) adds:
 
 - `push_devices` — per-project per-user device registrations: target (`apns` | `fcm` | `webpush`), push credential, stable device id, permission state, device metadata, last-seen, and revocation (reason-coded, never hard-deleted). Project config gains a push section (Web Push VAPID public key).
+
+Geo-distribution (post-v1.5) adds:
+
+- `instances` (main) — enrolled regional instances: name, region label, public base URL, hashed `ik_` instance key, status, heartbeat freshness. The main appears as a built-in row.
+- `user_locator` (main) — the only cross-instance index: hashed identity (email / provider subject / store transaction id) → home instance id + user id. A locator, never a mirror; rebuildable by replaying each instance's identities.
+- `project_replicas` + `instance_project_keys` (regionals/all) — propagated project config (revision-cursored, main is the only writer) and every instance's per-project **public** signing keys, so each instance serves the aggregated JWKS. Private keys never leave their instance; each instance signs with its own per-project keypair.
+- `analytics_rollups` (main) — pulled per-instance pre-aggregated metric buckets feeding the global dashboards; raw `events` stay on their instance.
 
 Localization (post-v1.1) adds:
 
@@ -164,9 +174,20 @@ Phase 5 is dependency-ordered: 19 stands alone on the milestone-13 adapter inter
 
 Phase 6 has a single milestone: 22 composes the existing admin RPCs and `moth doctor`/`moth setup` probes from milestones 03–21 into a guided front door — it adds a profile blob and a derived-status RPC, and no new write path.
 
+### Phase 7 — Geo-distribution (post-v1.5, ships as v1.6)
+
+| # | Milestone | Outcome |
+|---|---|---|
+| [23](23-instance-fabric.md) | Instance fabric | Enrollment of regional instances against a main (`ik_` instance keys, `moth serve --join`), `moth.cluster.v1`, project-config propagation (main → regionals, revision-cursored), per-instance per-project signing keys with an aggregated JWKS served everywhere. Config flows down, public keys flow up, data never moves. |
+| [24](24-home-instance-routing.md) | Home-instance routing | Every account is homed for life at the instance that created it; the main keeps a hashed-identity locator; wrong-door auth calls answer `WRONG_INSTANCE` + home URL (redirect, never proxy); JWTs carry the home instance (`mih`); emails/hosted pages link to the home; store webhooks route via the main. |
+| [25](25-geo-aware-sdks.md) | Geo-aware SDKs | Flutter + React SDKs discover the instance directory, latency-probe the nearest instance for first contact (signup homes there), pin the home from the JWT for all subsequent calls, and self-correct `WRONG_INSTANCE` transparently. One configured URL, zero new developer API, standalone unchanged. |
+| [26](26-federated-admin-analytics.md) | Federated admin & global analytics | The main becomes the single pane of glass: cluster-wide user list/search with home badges, live-proxied user detail and management actions (audit-logged on the home instance), `moth.server.v1` fan-out so one endpoint serves the whole cluster, and global dashboards summing pulled per-instance analytics rollups with a per-instance breakdown. |
+
+Phase 7 is dependency-ordered: 23 is the fabric (identity, sync, keys), 24 puts users on it (homing, locator, token claim), 25 makes clients navigate it, 26 makes it operable from one place. The phase deliberately preserves the core bet: each instance remains a single binary with a single SQLite file, individually backed up; there is no replication, no failover, and no shared storage — geography is partitioning by account, not scaling of one dataset.
+
 ## Non-goals (v1)
 
 - Other providers (GitHub, Facebook, phone/SMS, magic links) — architecture leaves room via the `identities` table.
-- Multi-node / horizontal scaling — SQLite + single process is the point; a moth instance serves one team's portfolio.
+- Multi-node / horizontal scaling — SQLite + single process is the point; a moth instance serves one team's portfolio. (Phase 7 later adds geo-*partitioning* — independent single-binary instances with users homed at one of them — but never replication, failover, or shared storage; scaling one dataset across nodes stays a permanent non-goal.)
 - User-facing account portal (self-service profile page) — SDK covers in-app needs.
 - iOS/Android native SDKs (Swift/Kotlin) — Flutter first; the published protos make generating native gRPC clients straightforward when the time comes.
