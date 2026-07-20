@@ -8,12 +8,25 @@ regenerated from conventional-commit history by `git cliff` (see
 
 ## [Unreleased]
 
-Nothing yet — v1.0.0 below is the first public release.
+Nothing yet.
+
+## [1.0.1] — 2026-07-21
+
+Release-tooling fix; no product changes. The v1.0.0 tag built every binary
+but the release aborted in the multi-arch Docker publish step, so GoReleaser
+(which publishes a release atomically) never created the GitHub release or
+attached the archives. v1.0.1 is the first release whose artifacts actually
+publish.
+
+- Fixed the `dockers_v2` build: its buildx context stages each arch's binary
+  under a `${TARGETPLATFORM}` subdirectory, so the Dockerfile now copies
+  `${TARGETPLATFORM}/moth` instead of a bare `moth`.
 
 ## [1.0.0] — 2026-07-20
 
-First public release. Everything below shipped since 0.9.0; the highlights
-of the whole product are in the [README](README.md).
+First public release (tagged, but its artifacts never published — see
+1.0.1). Everything below shipped since 0.9.0; the highlights of the whole
+product are in the [README](README.md).
 
 ### Guided project creation
 
