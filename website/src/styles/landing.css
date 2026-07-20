@@ -198,6 +198,12 @@ td code {
   padding: var(--moth-space-24) 0;
 }
 
+.hero-logo {
+  display: block;
+  margin-bottom: var(--moth-space-6);
+  color: var(--moth-text-primary);
+}
+
 .hero h1 {
   font-size: var(--moth-text-display-size);
   line-height: var(--moth-text-display-leading);

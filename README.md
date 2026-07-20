@@ -1,3 +1,10 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/logo.svg">
+    <img src="docs/logo-light.svg" alt="" width="120">
+  </picture>
+</p>
+
 <h1 align="center">moth</h1>
 
 <p align="center">

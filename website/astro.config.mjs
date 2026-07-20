@@ -55,6 +55,13 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'moth',
+      logo: {
+        // The moth mark next to the title; per-scheme fills because
+        // Starlight switches theme via data-theme, not prefers-color-scheme.
+        light: './src/assets/logo-light.svg',
+        dark: './src/assets/logo-dark.svg',
+        alt: '',
+      },
       description:
         'Authentication for all your mobile apps. One small binary.',
       social: [

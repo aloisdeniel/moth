@@ -5,6 +5,7 @@ import { Link, Navigate, Outlet, useLocation, useNavigate } from "react-router";
 import { invalidate, isUnauthenticated, queryClient } from "../api";
 import { SessionService } from "../gen/moth/admin/v1/session_pb";
 import { Loading } from "../components/ui";
+import { Logo } from "../components/Logo";
 
 // Shell wraps every authenticated screen: top bar, session guard, logout.
 export function Shell() {
@@ -50,6 +51,7 @@ export function Shell() {
     <>
       <header className="topbar">
         <Link to="/" className="topbar__brand">
+          <Logo size={15} />
           moth
         </Link>
         <span className="topbar__sep">/</span>

@@ -6,6 +6,7 @@ import CopyButton from '../components/CopyButton.astro';
 import FeatureTile from '../components/FeatureTile.astro';
 import ComparisonTable from '../components/ComparisonTable.astro';
 import Tabs from '../components/Tabs.astro';
+import Logo from '../components/Logo.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const github = 'https://github.com/aloisdeniel/moth';
@@ -156,6 +157,7 @@ ReadWritePaths=/var/lib/moth`;
   {/* 1 · Hero */}
   <section class="hero">
     <div class="container">
+      <Logo class="hero-logo" size={56} />
       <p class="overline">Open-source authentication server</p>
       <h1>Authentication for <em>all</em> your apps. One small binary.</h1>
       <p class="subline">

@@ -521,6 +521,9 @@ textarea.input {
 }
 
 .topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   font-weight: 700;
   font-size: var(--body-size);
   color: var(--text-primary);
