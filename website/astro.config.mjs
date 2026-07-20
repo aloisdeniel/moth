@@ -23,10 +23,35 @@ const base = process.env.WEBSITE_BASE ?? '/';
 // og:description itself; the landing layout carries its own tags).
 const ogImage = new URL(`${base.replace(/\/$/, '')}/og.png`, site).href;
 
+// The admin demo (make web-demo) lives in public/demo/ as a prebuilt SPA.
+// GitHub Pages resolves /demo/ to its index.html, but Astro's dev and
+// preview servers serve public/ files verbatim and 404 on directory URLs —
+// this middleware gives them the same directory-index behavior.
+const demoDirIndex = () => {
+  const prefix = base.replace(/\/$/, '');
+  const rewrite = (req, _res, next) => {
+    const [path, query] = (req.url ?? '').split('?');
+    if (path === `${prefix}/demo` || path === `${prefix}/demo/`) {
+      req.url = `${prefix}/demo/index.html${query ? `?${query}` : ''}`;
+    }
+    next();
+  };
+  return {
+    name: 'demo-dir-index',
+    configureServer(server) {
+      server.middlewares.use(rewrite);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(rewrite);
+    },
+  };
+};
+
 export default defineConfig({
   site,
   base,
   output: 'static',
+  vite: { plugins: [demoDirIndex()] },
   integrations: [
     starlight({
       title: 'moth',
