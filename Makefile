@@ -1,7 +1,7 @@
 VERSION ?= dev
 LDFLAGS := -s -w -X github.com/aloisdeniel/moth/internal/version.Version=$(VERSION)
 
-.PHONY: build test lint proto proto-dart proto-react run cross clean web dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens sdk-react sdk-react-test sdk-react-e2e website website-screenshots website-check docs-embed docs-proto
+.PHONY: build test lint proto proto-dart proto-react run cross clean web web-demo dev dev-server dev-web sdk-test sdk-e2e sdk-goldens preview-goldens sdk-react sdk-react-test sdk-react-e2e website website-screenshots website-check docs-embed docs-proto
 
 build:
 	go build -ldflags "$(LDFLAGS)" -o bin/moth ./cmd/moth
@@ -82,6 +82,12 @@ preview-goldens: build
 # result — `make build` embeds whatever is there.
 web:
 	cd web/admin && npm ci && npm run build
+
+# Rebuilds the website's in-browser admin demo (the SPA with a localStorage
+# fake backend, see web/admin/src/demo/) into website/public/demo; commit the
+# result — the pages deploy publishes whatever is there.
+web-demo:
+	cd web/admin && npm ci && npm run build:demo
 
 run: build
 	./bin/moth serve

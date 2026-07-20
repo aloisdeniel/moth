@@ -4,9 +4,15 @@ import { createConnectTransport } from "@connectrpc/connect-web";
 import { createConnectQueryKey } from "@connectrpc/connect-query";
 import { QueryClient } from "@tanstack/react-query";
 
+import { createDemoTransport } from "./demo";
+
 // The SPA always talks to the moth instance that serves it; in `make dev`
-// the Vite proxy forwards RPCs to the Go server.
-export const transport = createConnectTransport({ baseUrl: "/" });
+// the Vite proxy forwards RPCs to the Go server. Demo builds (`--mode demo`,
+// hosted on the website) swap the network for an in-browser fake backend;
+// in production builds VITE_DEMO is unset and the demo code is dropped.
+export const transport = import.meta.env.VITE_DEMO
+  ? createDemoTransport()
+  : createConnectTransport({ baseUrl: "/" });
 
 export const queryClient = new QueryClient({
   defaultOptions: {

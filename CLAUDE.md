@@ -16,6 +16,9 @@ order.
   TypeScript; needs `npm ci` in `web/admin` once; commit the results)
 - `make web` — rebuild the embedded admin SPA into `internal/server/web/dist`
   (commit the result; CI fails when it is stale)
+- `make web-demo` — rebuild the website's in-browser admin demo (the SPA in
+  `--mode demo`: localStorage fake backend from `web/admin/src/demo/`) into
+  `website/public/demo` (commit the result; CI fails when it is stale)
 - `make dev` — Go server on :8080 + Vite dev server on :5173 with an RPC
   proxy (open `http://localhost:5173/admin/`); frontend edits hot-reload
 - `make run` — build and start `moth serve`
@@ -55,7 +58,8 @@ internal/server/web/ hosted-page template + dist/ (committed Vite build of
 web/admin/           admin SPA source: React + Vite + TS, connect-web +
                      connect-query client generated from the protos
                      (src/gen), DESIGN.md tokens in src/styles, Playwright
-                     smoke test in e2e/
+                     smoke test in e2e/; src/demo/ is the website demo's
+                     in-browser fake backend (dead code in prod builds)
 scripts/             e2e_grpcurl.sh — manual auth-lifecycle pass with grpcurl
 ```
 

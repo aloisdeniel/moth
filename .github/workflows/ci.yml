@@ -94,6 +94,14 @@ jobs:
         run: |
           git add -N internal/server/web/dist/
           git diff --exit-code internal/server/web/dist/
+      # The website's in-browser demo is the same SPA built in demo mode
+      # (make web-demo) and committed to website/public/demo.
+      - run: npm run build:demo
+        working-directory: web/admin
+      - name: check committed demo build is current
+        run: |
+          git add -N website/public/demo/
+          git diff --exit-code website/public/demo/
 
   # Browser smoke test against the real binary with the SPA embedded:
   # first-run setup → login → create project → see keys.
