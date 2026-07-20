@@ -74,6 +74,13 @@
   font-weight: 700;
 }
 
+/* Header logo: smaller than Starlight's default (the full nav height minus
+   padding), so the mark reads as a mark beside the wordmark rather than
+   competing with it. Unlayered, so it wins over @layer starlight.core. */
+.site-title img {
+  height: 1.5rem;
+}
+
 /* Code blocks: background-subtle well, hairline border, radius-md. */
 .sl-markdown-content pre {
   background: var(--moth-background-subtle) !important;
