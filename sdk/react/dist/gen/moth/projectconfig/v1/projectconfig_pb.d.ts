@@ -1,4 +1,4 @@
-import type { GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 /**
  * Describes the file moth/projectconfig/v1/projectconfig.proto.
@@ -332,6 +332,67 @@ export type StoredPush = Message<"moth.projectconfig.v1.StoredPush"> & {
  */
 export declare const StoredPushSchema: GenMessage<StoredPush>;
 /**
+ * StoredProfile is one project's setup profile as persisted on the project
+ * row (milestone 22): the creation wizard's answers — platforms, sign-in
+ * intent, monetization and push intent. It records what the app *intends*,
+ * so surfaces can tell "doesn't want Apple sign-in" apart from "hasn't
+ * configured it yet"; it is never a second source of config truth. Absent
+ * (empty column) on projects created before the wizard, where surfaces
+ * behave exactly as before.
+ *
+ * @generated from message moth.projectconfig.v1.StoredProfile
+ */
+export type StoredProfile = Message<"moth.projectconfig.v1.StoredProfile"> & {
+    /**
+     * version is the document schema version (internal/profile.SchemaVersion).
+     *
+     * @generated from field: int32 version = 1;
+     */
+    version: number;
+    /**
+     * platforms the app ships on. Non-empty in every valid profile; drives
+     * every platform branch (store credentials, VAPID, setup snippets).
+     *
+     * @generated from field: repeated moth.projectconfig.v1.Platform platforms = 2;
+     */
+    platforms: Platform[];
+    /**
+     * google_sign_in / apple_sign_in record the social sign-in intent.
+     * Email/password is always on and needs no flag.
+     *
+     * @generated from field: bool google_sign_in = 3;
+     */
+    googleSignIn: boolean;
+    /**
+     * @generated from field: bool apple_sign_in = 4;
+     */
+    appleSignIn: boolean;
+    /**
+     * sells_subscriptions records the monetization intent (milestones 11/12).
+     *
+     * @generated from field: bool sells_subscriptions = 5;
+     */
+    sellsSubscriptions: boolean;
+    /**
+     * sends_pushes records the push intent (milestone 20).
+     *
+     * @generated from field: bool sends_pushes = 6;
+     */
+    sendsPushes: boolean;
+    /**
+     * checklist_dismissed hides the overview checklist card; it never fakes
+     * completeness — the derived items stay computable either way.
+     *
+     * @generated from field: bool checklist_dismissed = 7;
+     */
+    checklistDismissed: boolean;
+};
+/**
+ * Describes the message moth.projectconfig.v1.StoredProfile.
+ * Use `create(StoredProfileSchema)` to create a new message.
+ */
+export declare const StoredProfileSchema: GenMessage<StoredProfile>;
+/**
  * CopyLocaleMessages is one locale's copy overrides: catalog message key
  * (e.g. "sign_in.title") to the operator-customized string.
  *
@@ -415,3 +476,32 @@ export type CacheEnvelope = Message<"moth.projectconfig.v1.CacheEnvelope"> & {
  * Use `create(CacheEnvelopeSchema)` to create a new message.
  */
 export declare const CacheEnvelopeSchema: GenMessage<CacheEnvelope>;
+/**
+ * Platform is an app platform a project ships on — the wizard's platform
+ * multi-select (milestone 22). Platforms drive which setup surfaces, wizard
+ * branches and checklist items apply to the project.
+ *
+ * @generated from enum moth.projectconfig.v1.Platform
+ */
+export declare enum Platform {
+    /**
+     * @generated from enum value: PLATFORM_UNSPECIFIED = 0;
+     */
+    UNSPECIFIED = 0,
+    /**
+     * @generated from enum value: PLATFORM_IOS = 1;
+     */
+    IOS = 1,
+    /**
+     * @generated from enum value: PLATFORM_ANDROID = 2;
+     */
+    ANDROID = 2,
+    /**
+     * @generated from enum value: PLATFORM_WEB = 3;
+     */
+    WEB = 3
+}
+/**
+ * Describes the enum moth.projectconfig.v1.Platform.
+ */
+export declare const PlatformSchema: GenEnum<Platform>;

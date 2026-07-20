@@ -58,9 +58,18 @@ jobs:
         with:
           setup_only: true
       - run: buf lint
+      # Guards against breaking proto changes relative to the PR base. Skipped
+      # when the base branch carries no .proto files (buf errors "had no
+      # .proto files" against an empty module) — the case for the very first
+      # schema landing on a fresh main. Every subsequent PR compares normally.
       - name: buf breaking
         if: github.event_name == 'pull_request'
-        run: buf breaking --against ".git#branch=origin/${{ github.base_ref }}"
+        run: |
+          if git ls-tree -r --name-only "origin/${{ github.base_ref }}" | grep -q '\.proto$'; then
+            buf breaking --against ".git#branch=origin/${{ github.base_ref }}"
+          else
+            echo "Base origin/${{ github.base_ref }} has no .proto files; nothing to break against — skipping."
+          fi
       # protoc-gen-es comes from web/admin's dev dependencies.
       - run: npm ci
         working-directory: web/admin
