@@ -257,9 +257,19 @@ async function main() {
 
     for (const p of projects) {
       await page.goto(`${BASE_URL}/admin`);
+      // Create project is a multi-step wizard page (Basics → … → Review),
+      // not a dialog. Fill the Basics step, pick a platform (required), then
+      // jump straight to the review step and create.
       await page.getByRole('button', { name: 'Create project' }).click();
-      await page.getByLabel('Name', { exact: true }).fill(p.name);
-      await page.getByRole('dialog').getByRole('button', { name: 'Create project' }).click();
+      // The Field label wraps its help text, so the input's accessible name
+      // is "Name One project per app…"; a bare "Name" substring also matches
+      // the Slug field ("Derived from the name"). Anchor to the start so only
+      // the Name field matches.
+      await page.getByLabel(/^Name/).fill(p.name);
+      await page.getByRole('checkbox', { name: 'Web' }).check();
+      await page.getByRole('button', { name: 'Continue' }).click();
+      await page.getByRole('button', { name: 'Skip to review' }).click();
+      await page.getByRole('button', { name: 'Create project', exact: true }).click();
       await page.getByText(`${p.name} is ready`).waitFor();
     }
 
