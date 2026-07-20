@@ -1,0 +1,42 @@
+name: moth_auth_example
+description: >-
+  Example app for the moth_auth SDK: MothApp-gated home screen, MothScope
+  user info, and an authenticated call to a JWT-verifying sample backend.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  http: ^1.6.0
+  # A real app depends on the copy served by its moth instance:
+  #   moth_auth:
+  #     hosted: https://auth.example.com/pub
+  #     version: ^1.0.0
+  moth_auth:
+    path: ..
+  # Native sign-in SDKs are dependencies of the app, not of moth_auth —
+  # lib/oauth_adapter.dart bridges them to the SDK's login screen.
+  google_sign_in: ^7.2.0
+  sign_in_with_apple: ^8.1.0
+  # moth's first-party native billing (StoreKit 2 / Play Billing) — a
+  # dependency of the app, not of moth_auth. A real app depends on the copy
+  # served by its moth instance, like moth_auth above.
+  moth_billing:
+    path: ../../flutter_billing
+  # moth's first-party native push registration (APNs / FCM) — same deal:
+  # a dependency of the app, served by the moth instance in a real app.
+  moth_push:
+    path: ../../flutter_push
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,33 @@
+name: moth_auth
+description: >-
+  Flutter SDK for moth, the one-binary authentication server. Email/password
+  and social sign-in, secure session persistence, automatic token refresh and
+  typed errors over the moth.auth.v1 gRPC API.
+# Placeholder version: the moth server stamps the real release version into
+# the tarball it serves at /pub — the SDK version tracks the server version.
+version: 0.1.0
+homepage: https://github.com/aloisdeniel/moth
+publish_to: none # served by the moth binary at /pub, never pub.dev
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  crypto: ^3.0.3
+  fixnum: ^1.1.1
+  flutter_secure_storage: ^9.2.4
+  grpc: ^5.1.0
+  http: ^1.5.0
+  path_provider: ^2.1.5
+  protobuf: ^6.0.0
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter

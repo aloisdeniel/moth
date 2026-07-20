@@ -1,0 +1,341 @@
+syntax = "proto3";
+
+package moth.billing.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/billing/v1;billingv1";
+
+// BillingService is the client-facing subscription API, consumed by the moth
+// Flutter SDK. Authenticated exactly like AuthService: every call carries the
+// project publishable key in `x-moth-key: pk_...` request metadata AND a user
+// access token in the `Authorization: Bearer <jwt>` header — every RPC is
+// scoped to the signed-in user.
+//
+// The core contract: **a user always has a valid subscription state.** A
+// never-paid user, a free-tier user, and a user in a project that has declared
+// no products all get a well-formed CustomerInfo with an empty
+// active_entitlements list (the built-in `none` tier) — never an error. moth is
+// a validating mirror of the store: it never marks a subscription active on the
+// client's say-so, only after verifying a signed transaction or reading the
+// store's authoritative state.
+service BillingService {
+  // GetCustomerInfo returns the signed-in user's active entitlements and
+  // subscriptions. Always succeeds with a valid object; `none` (empty
+  // entitlements) for free users. Cheap and safe to call on every app launch.
+  rpc GetCustomerInfo(GetCustomerInfoRequest) returns (GetCustomerInfoResponse);
+  // SubmitPurchase hands moth the receipt of a purchase the app just completed
+  // natively. moth validates it against the store, links the subscription to
+  // the current user, derives entitlements, and returns the fresh CustomerInfo.
+  rpc SubmitPurchase(SubmitPurchaseRequest) returns (SubmitPurchaseResponse);
+  // RestorePurchases re-links a user's existing store purchases to the current
+  // account (new device, reinstall, account change), applying the store's own
+  // transfer rules, then returns the fresh CustomerInfo.
+  rpc RestorePurchases(RestorePurchasesRequest) returns (RestorePurchasesResponse);
+  // GetOfferings returns an offering's products for the paywall to display:
+  // per product the catalog identifier, display name, store SKUs (so the SDK
+  // can match the native store products), price/period metadata, trial/intro
+  // descriptor, the entitlements it grants, sort order and the "most popular"
+  // highlight flag. Unlike the three RPCs above this is publishable-key only
+  // (no Bearer): a paywall renders before the user signs in.
+  rpc GetOfferings(GetOfferingsRequest) returns (GetOfferingsResponse);
+  // GetPaywall returns the project's public paywall configuration (copy,
+  // benefit bullets, offering ref, layout, highlighted tier, legal links) with
+  // a revision id, for the SDK's batteries-included paywall screen. Colors and
+  // typography are NOT here — the paywall inherits them from the theme
+  // (GetProjectConfig, milestone 06).
+  //
+  // Caching contract (identical to GetProjectConfig + theme): the client caches
+  // the paywall keyed by revision_id and echoes it as
+  // GetPaywallRequest.known_paywall_revision. When it still matches, the
+  // response omits `paywall` and the client keeps rendering its cache
+  // (stale-while-revalidate); when it differs (or was empty on first call),
+  // `paywall` is present and the client replaces its cache. Publishable-key
+  // only, like GetOfferings.
+  rpc GetPaywall(GetPaywallRequest) returns (GetPaywallResponse);
+  // CreateCheckoutSession starts a Stripe-hosted Checkout for a subscription to
+  // the tier's Stripe price, bound to the signed-in user's Stripe customer
+  // (created on demand). moth never renders a card field: the response is a
+  // redirect URL to Stripe's hosted Checkout, and the resulting subscription
+  // lands through the webhook like any other store event. Requires Bearer
+  // (like GetCustomerInfo); fails with a precondition error when the project
+  // has no Stripe credentials, and an invalid-argument error when the tier has
+  // no Stripe price.
+  rpc CreateCheckoutSession(CreateCheckoutSessionRequest) returns (CreateCheckoutSessionResponse);
+  // CreateBillingPortalSession returns a Stripe Billing Portal URL for the
+  // signed-in user — cancel, payment-method and invoice management stay
+  // Stripe-hosted, the web analogue of deep-linking to the stores'
+  // subscription-management UI. Requires Bearer.
+  rpc CreateBillingPortalSession(CreateBillingPortalSessionRequest) returns (CreateBillingPortalSessionResponse);
+}
+
+// Offering is the ordered set of products a paywall presents — the products
+// sharing an `offering` tag, in sort order. Every project has a default
+// offering ("default").
+message Offering {
+  // Offering tag; "default" for the project's default offering.
+  string identifier = 1;
+  bool is_default = 2;
+  // The products to display, in paywall order.
+  repeated OfferingProduct products = 3;
+}
+
+// OfferingProduct is one purchasable tier as the paywall needs it: enough to
+// render a card and match the native store product. Price/period are display
+// + analytics metadata; the native store read stays authoritative for the
+// localized price actually charged.
+message OfferingProduct {
+  // Stable moth catalog identifier (e.g. "monthly"); the app never gates on
+  // this — it gates on entitlements — but the SDK uses it to drive purchases.
+  string identifier = 1;
+  string display_name = 2;
+  // Store SKUs so the SDK can pair this tier with the native store product;
+  // either may be empty when the tier ships on one store only.
+  string apple_product_id = 3;
+  string google_product_id = 4;
+  string billing_period = 5;
+  int64 price_amount_micros = 6;
+  string currency = 7;
+  // Trial/intro descriptor (display + analytics only).
+  string trial_period = 8;
+  int64 intro_price_amount_micros = 9;
+  string intro_period = 10;
+  // The stable entitlement identifiers this product grants while active (e.g.
+  // "pro"), so the paywall can label what a tier unlocks.
+  repeated string entitlements = 11;
+  int32 sort_order = 12;
+  // Whether this tier is the paywall's highlighted "most popular" tier (from
+  // the paywall config's highlighted_product_identifier).
+  bool highlighted = 13;
+  // Stripe recurring Price id ("price_..."); empty when the tier does not sell
+  // on the web (the React paywall marks such tiers unavailable).
+  string stripe_price_id = 14;
+}
+
+// PaywallLayout is the rendering variant the paywall screen uses; the token
+// space (colors/spacing/radius) always comes from the theme.
+enum PaywallLayout {
+  PAYWALL_LAYOUT_UNSPECIFIED = 0;
+  // One card per tier, side by side (the default).
+  PAYWALL_LAYOUT_TILES = 1;
+  // Tiers stacked as full-width rows.
+  PAYWALL_LAYOUT_LIST = 2;
+  // A single selected tier with a period toggle.
+  PAYWALL_LAYOUT_COMPACT = 3;
+}
+
+// Paywall is the public, render-ready paywall configuration. Copy and layout
+// only — colors/typography inherit from the theme.
+message Paywall {
+  // Identifies this version of the paywall config; changes on every admin
+  // edit. Cache the paywall keyed by this value and echo it as
+  // GetPaywallRequest.known_paywall_revision.
+  string revision_id = 1;
+  string headline = 2;
+  string subtitle = 3;
+  // Feature/benefit bullets, in display order.
+  repeated string benefits = 4;
+  // The offering tag whose products this paywall lists; pass it to
+  // GetOfferings.offering. Empty selects the default offering.
+  string offering = 5;
+  // The product identifier to render as "most popular"; empty for none.
+  string highlighted_product_identifier = 6;
+  PaywallLayout layout = 7;
+  // Optional legal links rendered in the paywall footer.
+  string terms_url = 8;
+  string privacy_url = 9;
+}
+
+message GetOfferingsRequest {
+  // Offering tag; empty selects the project's default offering.
+  string offering = 1;
+}
+
+message GetOfferingsResponse {
+  Offering offering = 1;
+}
+
+// Copy is the resolved, localized paywall copy for the negotiated locale: the
+// paywall.* message key → localized-string map (headline, subtitle, benefit
+// bullets, CTA, legal labels), merged bundled-default → project-override. The
+// paywall copy keys are part of the same catalog as the auth-screen copy
+// (moth.auth.v1). The locale is negotiated server-side from the request's
+// Accept-Language / x-moth-language metadata; the client never dictates raw
+// copy. The structural Paywall message above stays authoritative for
+// layout/offering/tier selection.
+message Copy {
+  // Opaque cache token identifying this (locale, override-revision) pair.
+  // Cache `messages` keyed by it and echo it as
+  // GetPaywallRequest.known_copy_revision; the response omits `messages` when
+  // it still matches.
+  string copy_revision = 1;
+  // The negotiated BCP-47 locale this copy is for (e.g. "fr").
+  string locale = 2;
+  // Resolved paywall.* message key → localized string for the negotiated
+  // locale.
+  map<string, string> messages = 3;
+}
+
+message GetPaywallRequest {
+  // The revision_id of the paywall the client has cached (empty on first
+  // call). When it still matches the current revision, the response omits
+  // `paywall`; see the caching contract on GetPaywall.
+  string known_paywall_revision = 1;
+  // The copy_revision the client has cached for the locale it is about to
+  // render (empty on first call). When it still matches the token the server
+  // computes for the negotiated locale, the response's `copy` carries the
+  // locale + copy_revision but omits `messages`; when it differs (or was
+  // empty), `messages` is present. The negotiated locale comes from
+  // Accept-Language / x-moth-language metadata, never from this body.
+  string known_copy_revision = 2;
+}
+
+message GetPaywallResponse {
+  // Omitted when GetPaywallRequest.known_paywall_revision matches the current
+  // revision; present otherwise (including for projects on the built-in
+  // default paywall config).
+  Paywall paywall = 1;
+  // The localized paywall copy for the negotiated locale. Always present (it
+  // carries the negotiated locale + copy_revision); its `messages` map is
+  // omitted when GetPaywallRequest.known_copy_revision matches, present
+  // otherwise — including for projects with no copy overrides.
+  Copy copy = 2;
+}
+
+// Store identifies which app store a purchase or subscription belongs to.
+enum Store {
+  STORE_UNSPECIFIED = 0;
+  STORE_APPLE = 1;
+  STORE_GOOGLE = 2;
+  STORE_STRIPE = 3;
+}
+
+// SubscriptionStatus mirrors the store's renewal state, mapped to a small set
+// common to Apple and Google. active/trialing/in_grace_period/in_billing_retry
+// all keep access; paused/expired/revoked do not.
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_ACTIVE = 1;
+  SUBSCRIPTION_STATUS_TRIALING = 2;
+  SUBSCRIPTION_STATUS_IN_GRACE_PERIOD = 3;
+  // Google "on hold": the renewal is being retried after a payment failure.
+  SUBSCRIPTION_STATUS_IN_BILLING_RETRY = 4;
+  SUBSCRIPTION_STATUS_PAUSED = 5;
+  SUBSCRIPTION_STATUS_EXPIRED = 6;
+  SUBSCRIPTION_STATUS_REVOKED = 7;
+}
+
+// EntitlementSource explains why an entitlement is active.
+enum EntitlementSource {
+  ENTITLEMENT_SOURCE_UNSPECIFIED = 0;
+  // Granted by an active store subscription.
+  ENTITLEMENT_SOURCE_STORE = 1;
+  // Granted by an operator (promo/comp), independent of store state.
+  ENTITLEMENT_SOURCE_GRANT = 2;
+  // The built-in free tier (no active subscription or grant). Reserved; the
+  // free tier is normally conveyed by an empty active_entitlements list.
+  ENTITLEMENT_SOURCE_NONE = 3;
+}
+
+// CustomerInfo is the complete subscription picture for one user. Apps gate
+// features on active_entitlements (never on a product id): check whether the
+// stable entitlement identifier (e.g. "pro") is present.
+message CustomerInfo {
+  // The entitlements the user currently holds. Empty means the free `none`
+  // tier — a valid, expected state, not an error.
+  repeated Entitlement active_entitlements = 1;
+  // The user's known subscriptions across stores (may include inactive ones,
+  // for history/paywall display).
+  repeated ActiveSubscription subscriptions = 2;
+}
+
+// Entitlement is one active capability the user holds.
+message Entitlement {
+  // Stable identifier the app checks (e.g. "pro"). Never changes across app
+  // releases even when the granting product does.
+  string identifier = 1;
+  // When the entitlement lapses; unset for a non-expiring grant.
+  google.protobuf.Timestamp expire_time = 2;
+  // Why it is active (store subscription vs operator grant).
+  EntitlementSource source = 3;
+  // The moth product identifier that granted it, when source is STORE; empty
+  // for grants.
+  string product_identifier = 4;
+}
+
+// ActiveSubscription is one of the user's store subscriptions.
+message ActiveSubscription {
+  // The moth product identifier, when the store SKU is mapped; empty otherwise.
+  string product_identifier = 1;
+  Store store = 2;
+  SubscriptionStatus status = 3;
+  // End of the current paid (or trial) period; the renewal date when
+  // auto_renew is true.
+  google.protobuf.Timestamp current_period_end = 4;
+  bool auto_renew = 5;
+  // Whether this subscription is a sandbox/test purchase.
+  bool is_sandbox = 6;
+}
+
+message GetCustomerInfoRequest {}
+
+message GetCustomerInfoResponse {
+  CustomerInfo customer_info = 1;
+}
+
+message SubmitPurchaseRequest {
+  Store store = 1;
+  // The moth product identifier the app is purchasing (its own catalog id, not
+  // the store SKU). moth maps it to the store product for validation.
+  string product_identifier = 2;
+  // The store receipt. For Apple, a StoreKit 2 signed transaction (JWS). For
+  // Google, the Play Billing purchase token — pair it with
+  // google_subscription_id (Google needs both to resolve the purchase).
+  oneof receipt {
+    string apple_jws_transaction = 3;
+    string google_purchase_token = 4;
+  }
+  // Google Play subscription id (the store product id); required alongside
+  // google_purchase_token, ignored for Apple.
+  string google_subscription_id = 5;
+}
+
+message SubmitPurchaseResponse {
+  CustomerInfo customer_info = 1;
+}
+
+message RestorePurchasesRequest {
+  Store store = 1;
+  // The receipts to re-link. For Apple, StoreKit 2 signed transactions (JWS);
+  // for Google, Play Billing purchase tokens.
+  repeated string receipts = 2;
+}
+
+message RestorePurchasesResponse {
+  CustomerInfo customer_info = 1;
+}
+
+message CreateCheckoutSessionRequest {
+  // The moth product identifier to subscribe to (its own catalog id, not the
+  // Stripe price id). The tier must carry a stripe_price_id.
+  string product_identifier = 1;
+  // Where Stripe redirects the browser after a completed checkout.
+  string success_url = 2;
+  // Where Stripe redirects the browser when the user backs out.
+  string cancel_url = 3;
+}
+
+message CreateCheckoutSessionResponse {
+  // The Stripe-hosted Checkout URL to redirect the browser to.
+  string url = 1;
+}
+
+message CreateBillingPortalSessionRequest {
+  // Where Stripe redirects the browser when the user leaves the portal.
+  string return_url = 1;
+}
+
+message CreateBillingPortalSessionResponse {
+  // The Stripe-hosted Billing Portal URL to redirect the browser to.
+  string url = 1;
+}

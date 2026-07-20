@@ -1,0 +1,16 @@
+version: v2
+clean: true
+plugins:
+  # Plugins are pinned through the `tool` directives in go.mod so codegen is
+  # reproducible on any machine with the Go toolchain — no global installs.
+  - local: ["go", "tool", "protoc-gen-go"]
+    out: gen
+    opt: paths=source_relative
+  - local: ["go", "tool", "protoc-gen-connect-go"]
+    out: gen
+    opt: paths=source_relative
+  # TypeScript client for the admin SPA, pinned through web/admin's
+  # package-lock (run `npm ci` in web/admin first).
+  - local: web/admin/node_modules/.bin/protoc-gen-es
+    out: web/admin/src/gen
+    opt: target=ts

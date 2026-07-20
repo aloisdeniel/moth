@@ -1,0 +1,451 @@
+---
+import Base from '../layouts/Base.astro';
+import Terminal from '../components/Terminal.astro';
+import CodeBlock from '../components/CodeBlock.astro';
+import CopyButton from '../components/CopyButton.astro';
+import FeatureTile from '../components/FeatureTile.astro';
+import ComparisonTable from '../components/ComparisonTable.astro';
+import Tabs from '../components/Tabs.astro';
+import Logo from '../components/Logo.astro';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const github = 'https://github.com/aloisdeniel/moth';
+
+// Hero install one-liners.
+const brew = 'brew install aloisdeniel/tap/moth';
+const curl =
+  'curl -fsSL https://raw.githubusercontent.com/aloisdeniel/moth/main/website/public/install.sh | sh';
+
+// Comparison rows — the axes moth wins, and a candid group on what it
+// doesn't do. Columns: [moth, Firebase Auth, Auth0, Supabase Auth].
+const compareRows = [
+  { group: 'Where it runs' },
+  {
+    label: 'Hosting',
+    cells: ['Self-hosted, your box', 'Google-managed', 'Okta-managed', 'Managed or self-host'],
+  },
+  {
+    label: 'Deployment',
+    cells: ['One static binary', 'SDK + cloud project', 'Tenant per environment', 'Postgres + GoTrue'],
+  },
+  {
+    label: 'Where user data lives',
+    cells: ['Your SQLite file', "Google's cloud", "Auth0's cloud", 'Your Postgres'],
+  },
+  { group: 'Portfolio economics' },
+  {
+    label: 'Apps per instance',
+    cells: ['Unlimited projects', 'One per Firebase project', 'One per tenant', 'One per project'],
+  },
+  {
+    label: 'Pricing model',
+    cells: ['Flat — you host', 'Per MAU above free tier', 'Per MAU, steep tiers', 'Per MAU above free tier'],
+  },
+  {
+    label: 'Token signing keys',
+    cells: ['Per-project ES256 + JWKS', 'Shared Google keys', 'Per-tenant keys', 'Per-project secret'],
+  },
+  { group: 'Beyond sign-in' },
+  {
+    label: 'In-app subscriptions',
+    cells: [
+      'Built in: receipts → entitlements',
+      'Pair with RevenueCat etc.',
+      'Not offered',
+      'Not offered',
+    ],
+  },
+  {
+    label: 'Web subscriptions (Stripe)',
+    cells: [
+      'Built in: hosted Checkout',
+      'Pair with Stripe yourself',
+      'Not offered',
+      'Not offered',
+    ],
+  },
+  {
+    label: 'Paywall + revenue analytics',
+    cells: [
+      'Themed paywall, revenue/mo',
+      'Separate products',
+      'Not offered',
+      'Not offered',
+    ],
+  },
+  {
+    label: 'Push device registry',
+    cells: [
+      'Built in: registry + feedback; your server sends',
+      'FCM (full send pipeline)',
+      'Not offered',
+      'Not offered',
+    ],
+  },
+  { group: "What moth doesn't do (v1)" },
+  {
+    label: 'Managed scale & SLA',
+    cells: ['You operate it', 'Google SLA', 'Enterprise SLAs', 'Managed tier'],
+  },
+  {
+    label: 'MFA / passkeys',
+    cells: ['Not in v1', 'Yes', 'Yes', 'Yes'],
+  },
+  {
+    label: 'Providers',
+    cells: ['Email, Google, Apple', 'Many', 'Many', 'Many'],
+  },
+];
+
+const stepRun = `moth serve --data-dir ./data
+# listening on :8080 · admin console at /admin`;
+
+const stepProject = `moth project create "Bird Spotter"
+# created bird-spotter · pk_bird_c81f2a9d4e`;
+
+const stepPubspec = `dependencies:
+  moth_auth:
+    hosted: https://auth.example.com/pub
+    version: ^1.0.0`;
+
+const stepWrap = `runApp(MothApp(
+  config: MothConfig(
+    endpoint: Uri.parse('https://auth.example.com'),
+    publishableKey: 'pk_bird_c81f2a9d4e',
+  ),
+  child: MyApp(),
+));`;
+
+const stepNpmrc = `@moth:registry=https://auth.example.com/npm
+# then: npm install @moth/react`;
+
+const stepProvider = `createRoot(document.getElementById('root')!).render(
+  <MothProvider
+    config={{
+      endpoint: 'https://auth.example.com',
+      publishableKey: 'pk_bird_c81f2a9d4e',
+    }}
+  >
+    <App />
+  </MothProvider>,
+)`;
+
+const tabBrew = `brew install aloisdeniel/tap/moth
+moth serve --data-dir ./data`;
+
+const tabCurl = `curl -fsSL https://raw.githubusercontent.com/aloisdeniel/moth/main/website/public/install.sh | sh
+moth serve --data-dir ./data`;
+
+const tabDocker = `docker run -d -p 8080:8080 -v moth-data:/data \\
+  -e MOTH_BASE_URL=https://auth.example.com \\
+  -e MOTH_MASTER_KEY=… \\
+  ghcr.io/aloisdeniel/moth`;
+
+const tabSystemd = `[Service]
+User=moth
+ExecStart=/usr/local/bin/moth serve --config /etc/moth/moth.toml
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/moth`;
+---
+
+<Base
+  title="moth — authentication for all your apps"
+  description="One small self-hosted binary. Every app you ship — mobile or web — gets its own users, keys, branded login and subscriptions. Just add a project."
+>
+  {/* 1 · Hero */}
+  <section class="hero">
+    <div class="container">
+      <Logo class="hero-logo" size={56} />
+      <p class="overline">Open-source authentication server</p>
+      <h1>Authentication for <em>all</em> your apps. One small binary.</h1>
+      <p class="subline">
+        Run one server. Every app you ship — mobile or web — gets its own
+        users, keys, branded login and subscriptions. Just add a project.
+      </p>
+
+      <div class="hero-grid">
+        <div>
+          <div class="hero-actions">
+            <a class="button button-primary" href={`${base}/docs/quick-start/`}>Get started</a>
+            <a class="button button-secondary" href={`${base}/demo/`}>Try the demo</a>
+            <a class="button button-secondary" href={github}>View on GitHub</a>
+          </div>
+          <div class="hero-install">
+            <div class="key-well">
+              <code>{brew}</code>
+              <CopyButton text={brew} label="Copy brew install command" />
+            </div>
+            <div class="key-well">
+              <code>{curl}</code>
+              <CopyButton text={curl} label="Copy curl install command" />
+            </div>
+            <p class="hero-install-note">
+              macOS and Linux · a single static binary, no dependencies. The
+              script verifies checksums and installs the latest signed release
+              (first tag: v1.0).
+            </p>
+          </div>
+        </div>
+        <Terminal />
+      </div>
+    </div>
+  </section>
+
+  {/* 2 · How it works */}
+  <section class="section section-subtle" id="how-it-works">
+    <div class="container">
+      <p class="overline">How it works</p>
+      <h2>Zero to a logged-in app in three steps.</h2>
+      <p class="lead">
+        No SDK keys to provision in a console, no backend to stand up. Run the
+        binary, create a project, point your app at it — Flutter on mobile,
+        React on the web.
+      </p>
+      <div class="steps">
+        <div class="step">
+          <h3>Run the binary</h3>
+          <p>
+            Embedded database, admin console, and SDK hosting — all inside one
+            process. No external services to wire up.
+          </p>
+          <CodeBlock code={stepRun} />
+        </div>
+        <div class="step">
+          <h3>Create a project</h3>
+          <p>
+            Each app is a sealed tenant with its own users, ES256 signing keys,
+            providers, and login branding. From the admin or the CLI.
+          </p>
+          <CodeBlock code={stepProject} />
+        </div>
+        <div class="step">
+          <h3>Add the SDK</h3>
+          <p>
+            Both SDKs are served from your instance — pub for Flutter, npm for
+            React. Wrap your app and you have a themed login screen.
+          </p>
+          <Tabs
+            name="sdk"
+            tabs={[
+              { id: 'flutter', label: 'Flutter' },
+              { id: 'react', label: 'React' },
+            ]}
+          >
+            <div slot="flutter">
+              <CodeBlock code={stepPubspec} label="pubspec.yaml" />
+              <CodeBlock code={stepWrap} label="lib/main.dart" />
+            </div>
+            <div slot="react">
+              <CodeBlock code={stepNpmrc} label=".npmrc" />
+              <CodeBlock code={stepProvider} label="src/main.tsx" />
+            </div>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {/* 3 · Feature grid */}
+  <section class="section" id="features">
+    <div class="container">
+      <p class="overline">Features</p>
+      <h2>One server, all your apps.</h2>
+      <p class="lead">
+        An indie, a studio, or an agency runs a single instance; every app is
+        just another project on it. Adding app #10 costs what app #1 did.
+      </p>
+      <div class="tile-grid">
+        <FeatureTile
+          title="One server, all your apps"
+          lead
+          shot={{
+            src: '/screenshots/admin-projects.png',
+            alt: 'The moth admin console projects list showing several independent apps side by side, each with its own branding.',
+            label: 'admin · projects',
+            ratio: '16 / 10',
+          }}
+        >
+          Unlimited projects per instance, each a fully isolated tenant. Nothing
+          is shared across projects unless you are looking at the admin console.
+        </FeatureTile>
+
+        <FeatureTile
+          title="Analytics"
+          shot={{
+            src: '/screenshots/analytics.png',
+            alt: 'A per-project analytics dashboard: signups, logins, active users, sign-in methods and platforms.',
+            label: 'project · analytics',
+            ratio: '16 / 11',
+          }}
+        >
+          Signups, logins, active users, methods and platforms — per project,
+          stored in your own database.
+        </FeatureTile>
+
+        <FeatureTile
+          title="Branded login, light and dark"
+          shot={{
+            src: '/screenshots/login-dark.png',
+            alt: 'A project-themed login screen rendered by the Flutter SDK in dark mode.',
+            label: 'sdk · login',
+            ratio: '4 / 5',
+          }}
+        >
+          A design-system editor themes each project's login screens — colors,
+          font, spacing, logo. The SDK renders them, light and dark.
+        </FeatureTile>
+
+        <FeatureTile title="Per-app isolated users">
+          Users belong to exactly one project. The same email in two apps is two
+          unrelated accounts, with unrelated sessions.
+        </FeatureTile>
+        <FeatureTile title="Email, Google & Apple">
+          Email/password plus Sign in with Google and Apple. One-command
+          provider setup from the CLI: <code>moth setup google</code>.
+        </FeatureTile>
+        <FeatureTile title="Admin console">
+          An embedded web app for projects, users, API keys, analytics, setup
+          instructions, and login theming. Ships inside the binary.
+        </FeatureTile>
+        <FeatureTile title="Flutter & React SDKs">
+          <code>moth_auth</code> and its native companions
+          <code>moth_billing</code> and <code>moth_push</code> are served from
+          the binary's own pub repository, <code>@moth/react</code> from its
+          npm registry — the SDK version always matches the server. Nothing
+          hits pub.dev or npmjs.
+        </FeatureTile>
+        <FeatureTile title="Admin CLI & agents">
+          The same binary drives any instance: scriptable project and user
+          management, and <code>moth skill export</code> for coding agents.
+        </FeatureTile>
+        <FeatureTile title="Server API + JWKS">
+          Your backend verifies tokens offline against the project's JWKS. A
+          token minted for one app can never validate for another.
+        </FeatureTile>
+        <FeatureTile title="Subscriptions & entitlements">
+          App Store, Google Play, and Stripe validated server-side — no billing
+          SaaS. Subscription state becomes entitlements like <code>pro</code>,
+          with promos and grace periods; a free tier is always built in. On
+          device, <code>moth_billing</code> runs StoreKit 2 and Play Billing
+          first-party: one dependency, zero adapter code.
+        </FeatureTile>
+        <FeatureTile title="Themed paywall, mobile & web">
+          <code>MothPaywallScreen</code> renders your tiers with your branding —
+          copy, layout, and highlighted tier configured per language from the
+          admin. One paywall config drives Flutter and React alike; on the web
+          it sells through Stripe-hosted Checkout, so moth never touches a card.
+        </FeatureTile>
+        <FeatureTile title="Push device registry">
+          Every signed-in device registers its APNs, FCM, or Web Push
+          credential — permission state included — via <code>moth_push</code>
+          or <code>useMothPush()</code>. Your backend reads the live registry
+          and sends with the push services' own APIs; moth registers, your
+          server sends, and dead tokens age out through the feedback loop.
+        </FeatureTile>
+        <FeatureTile title="Revenue per month">
+          Store-reported revenue, active subscribers, churn, and trial
+          conversion land on the same analytics tab — per project, per
+          currency, with Apple, Google, and web side by side, in your own
+          database.
+        </FeatureTile>
+      </div>
+    </div>
+  </section>
+
+  {/* 4 · Why moth */}
+  <section class="section section-subtle" id="why">
+    <div class="container">
+      <p class="overline">Why moth</p>
+      <h2>Honest about where it wins — and where it doesn't.</h2>
+      <p class="lead">
+        moth trades managed scale and a long provider list for ownership: your
+        server, your data, one flat bill across an entire portfolio.
+      </p>
+      <div class="why-grid">
+        <ComparisonTable
+          caption="moth compared with hosted authentication services across hosting, portfolio economics, and current limitations."
+          columns={['moth', 'Firebase Auth', 'Auth0', 'Supabase Auth']}
+          highlight={0}
+          rows={compareRows}
+        />
+        <aside class="cost-card">
+          <h3>Portfolio math</h3>
+          <dl class="cost-rows">
+            <div class="cost-row">
+              <dt>moth · 5 apps · 50k users</dt>
+              <dd>$5/mo</dd>
+            </div>
+            <div class="cost-row">
+              <dt>moth · 15 apps · 250k users</dt>
+              <dd>$5/mo</dd>
+            </div>
+            <div class="cost-row cost-total">
+              <dt>Marginal cost per new app</dt>
+              <dd>$0</dd>
+            </div>
+          </dl>
+          <p class="cost-note">
+            Hosted auth prices per monthly active user, per project — a portfolio
+            multiplies both axes. moth's only bill is the VPS it runs on; adding
+            app #10 changes nothing on it.
+          </p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  {/* 5 · Install & quick start */}
+  <section class="section" id="install">
+    <div class="container">
+      <p class="overline">Install</p>
+      <h2>Run it your way.</h2>
+      <p class="lead">
+        A single static binary for macOS and Linux. Pick a path, then follow the
+        <a href={`${base}/docs/quick-start/`}>ten-minute quick start</a>.
+      </p>
+      <div class="install-panels">
+        <Tabs
+          name="install"
+          tabs={[
+            { id: 'brew', label: 'Homebrew' },
+            { id: 'curl', label: 'curl' },
+            { id: 'docker', label: 'Docker' },
+            { id: 'systemd', label: 'systemd' },
+          ]}
+        >
+          <div slot="brew">
+            <p>macOS or Linux, via the Homebrew tap (ships with v1.0).</p>
+            <CodeBlock code={tabBrew} />
+          </div>
+          <div slot="curl">
+            <p>
+              The install script detects your platform, verifies the release
+              checksums, and installs the binary — <code>MOTH_VERSION</code> and
+              <code>MOTH_INSTALL_DIR</code> override the defaults. Binaries land
+              with the first tagged release (v1.0).
+            </p>
+            <CodeBlock code={tabCurl} />
+          </div>
+          <div slot="docker">
+            <p>
+              The official image ships with v1.0; until then build your own from
+              the repo. CGO-free, so a distroless base works. Mount <code>/data</code> —
+              it holds the entire state of the instance.
+            </p>
+            <CodeBlock code={tabDocker} />
+          </div>
+          <div slot="systemd">
+            <p>
+              A hardened unit runs moth as an unprivileged service. Full unit
+              file in the
+              <a href={`${base}/docs/installation/`}>deployment guide</a>.
+            </p>
+            <CodeBlock code={tabSystemd} label="/etc/systemd/system/moth.service" />
+          </div>
+        </Tabs>
+      </div>
+    </div>
+  </section>
+</Base>

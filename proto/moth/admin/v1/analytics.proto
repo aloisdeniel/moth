@@ -1,0 +1,249 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// AnalyticsService serves the project analytics dashboards. Numbers come
+// from pre-aggregated daily rollups (daily_stats) so dashboards never scan
+// the raw event stream; the activity feed reads the newest raw events.
+// Dates are calendar days ("YYYY-MM-DD") bucketed in the project's rollup
+// timezone (ProjectSettings.rollup_timezone). All RPCs require an
+// authenticated admin session.
+service AnalyticsService {
+  // GetStats returns the stat tiles, the per-day time series and the
+  // provider/platform breakdowns for one project over [from_date, to_date]
+  // (inclusive).
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  // ListRecentEvents returns the project's newest raw events for the
+  // activity feed, newest first.
+  rpc ListRecentEvents(ListRecentEventsRequest) returns (ListRecentEventsResponse);
+  // RunRollup triggers the aggregate-and-prune job immediately — for one
+  // project or the whole instance — and returns the run summary. The same
+  // job also runs nightly; re-rolling a day is idempotent.
+  rpc RunRollup(RunRollupRequest) returns (RunRollupResponse);
+  // GetSubscriptionStats returns the milestone-14 subscription revenue tiles,
+  // the per-month time series and the per-tier / per-store breakdowns for one
+  // project over [from_period, to_period] (inclusive, "YYYY-MM"). Like
+  // GetStats, every number comes from the pre-aggregated monthly rollup
+  // (subscription_monthly_stats / subscription_tier_stats) — this RPC never
+  // scans the raw subscription_events stream. Money is store-reported gross,
+  // reported per currency and never blended across currencies (no FX).
+  rpc GetSubscriptionStats(GetSubscriptionStatsRequest) returns (GetSubscriptionStatsResponse);
+}
+
+// Granularity selects the time-series bucket size. Only daily buckets are
+// rolled up today.
+enum Granularity {
+  GRANULARITY_UNSPECIFIED = 0;
+  GRANULARITY_DAY = 1;
+}
+
+message GetStatsRequest {
+  string project_id = 1;
+  // First day of the range, "YYYY-MM-DD" in the project's rollup timezone.
+  string from_date = 2;
+  // Last day of the range (inclusive), same format.
+  string to_date = 3;
+  // Bucket size; unspecified means DAY.
+  Granularity granularity = 4;
+}
+
+// StatTiles is the headline block of the project analytics tab. The 7-day
+// figures cover the last 7 rolled-up days.
+message StatTiles {
+  // End-user accounts in the project right now (all time, live count).
+  int64 total_users = 1;
+  // Signups over the last 7 days, and over the 7 days before those (the
+  // pair renders the trend arrow).
+  int64 new_users_7d = 2;
+  int64 new_users_previous_7d = 3;
+  // Distinct active users on the most recent rolled-up day (usually
+  // yesterday) and which day that was ("YYYY-MM-DD", empty when no data).
+  // DAU approximates "active" as: had a login or token-refresh event.
+  int64 latest_dau = 4;
+  string latest_dau_date = 5;
+  // Login attempts over the last 7 days, split by outcome. An elevated
+  // failure count is an ops signal (misconfigured provider, expired key).
+  int64 logins_7d = 6;
+  int64 login_failures_7d = 7;
+  // logins / (logins + failures) over the last 7 days, 0..1. Zero when
+  // there were no attempts — check the raw counts before rendering.
+  double login_success_rate_7d = 8;
+}
+
+// DailyStat is one day of the time series. Days without traffic are
+// zero-filled so charts render contiguous ranges.
+message DailyStat {
+  // "YYYY-MM-DD" in the project's rollup timezone.
+  string date = 1;
+  int64 signups = 2;
+  int64 logins = 3;
+  // Distinct users with a login or token-refresh event that day.
+  int64 dau = 4;
+  // Failed login attempts (no user attribution).
+  int64 failures = 5;
+}
+
+// ProviderBreakdown splits the range's logins by identity provider.
+message ProviderBreakdown {
+  int64 password = 1;
+  int64 google = 2;
+  int64 apple = 3;
+}
+
+// PlatformBreakdown splits the range's logins by SDK-reported platform;
+// other collects everything that is not ios/android/web, including logins
+// with no reported platform.
+message PlatformBreakdown {
+  int64 ios = 1;
+  int64 android = 2;
+  int64 web = 3;
+  int64 other = 4;
+}
+
+message GetStatsResponse {
+  StatTiles tiles = 1;
+  // One entry per day in [from_date, to_date], oldest first, zero-filled.
+  repeated DailyStat series = 2;
+  // Totals over the requested range.
+  ProviderBreakdown providers = 3;
+  PlatformBreakdown platforms = 4;
+}
+
+// Event is one server-emitted analytics event, trimmed for the activity
+// feed. PII-minimal by construction: the user id only — no email, no
+// metadata payload, no IP, no device ids.
+message Event {
+  string id = 1;
+  // Canonical event type, e.g. "user.signup", "user.login",
+  // "user.login_failed", "token.refresh", "user.deleted".
+  string type = 2;
+  // Empty for events without a subject (login failures).
+  string user_id = 3;
+  // Identity provider involved ("password", "google", "apple"); empty when
+  // not applicable.
+  string provider = 4;
+  // SDK-reported platform ("ios", "android", "web"); empty when none was
+  // reported.
+  string platform = 5;
+  google.protobuf.Timestamp create_time = 6;
+}
+
+message ListRecentEventsRequest {
+  string project_id = 1;
+  // Maximum events to return; the server defaults and caps it (50).
+  int32 limit = 2;
+}
+
+message ListRecentEventsResponse {
+  // Newest first.
+  repeated Event events = 1;
+}
+
+message GetSubscriptionStatsRequest {
+  string project_id = 1;
+  // First month of the range, "YYYY-MM" in the project's rollup timezone.
+  string from_period = 2;
+  // Last month of the range (inclusive), same format.
+  string to_period = 3;
+}
+
+// Money is always reported per currency — never blended. amount_micros is
+// store-reported gross (net of refunds), not net of store commission or tax.
+message CurrencyAmount {
+  // ISO-4217 code; empty when the underlying events carried no currency.
+  string currency = 1;
+  int64 amount_micros = 2;
+}
+
+// SubscriptionTiles is the headline block of the subscriptions section — the
+// current (latest rolled-up) month against the previous one.
+message SubscriptionTiles {
+  // The latest rolled-up month ("YYYY-MM", empty when no data) these figures
+  // describe, and the month before it for the trend arrows.
+  string latest_period = 1;
+  // Total revenue this month and last month, per currency (the headline).
+  repeated CurrencyAmount revenue_this_month = 2;
+  repeated CurrencyAmount revenue_previous_month = 3;
+  // Active subscribers this month and last: distinct users with an active
+  // event (purchased, renewed or trial_started), counted across all currencies
+  // as a single distinct-user total — never the sum of per-currency counts,
+  // which would double-count a user transacting in more than one currency.
+  int64 active_subscribers = 4;
+  int64 active_subscribers_previous = 5;
+  int64 new_subscribers = 6;
+  int64 churned = 7;
+  int64 trials_started = 8;
+  int64 trials_converted = 9;
+  // trials_converted / trials_started over the latest month, 0..1. Zero when
+  // no trials started — check the raw counts before rendering.
+  double trial_conversion_rate = 10;
+}
+
+// SubscriptionMonthlyStat is one month of the time series. Revenue and the
+// per-store split are per currency; new/renewed/churned/trial counts are event
+// counts summed across currencies, while active_subscribers is a currency-
+// agnostic distinct-user count (not a per-currency sum). Months without data
+// are zero-filled so charts render contiguous ranges.
+message SubscriptionMonthlyStat {
+  // "YYYY-MM" in the project's rollup timezone.
+  string period = 1;
+  // Total revenue this month, per currency (net of refunds).
+  repeated CurrencyAmount revenue = 2;
+  int64 active_subscribers = 3;
+  int64 new_subscribers = 4;
+  int64 renewals = 5;
+  int64 churned = 6;
+  int64 trials_started = 7;
+  int64 trials_converted = 8;
+}
+
+// SubscriptionTierBreakdown is one product's share of the requested range.
+// Revenue (per currency) and new_subscribers sum over the whole range; because
+// active_subscribers is a non-additive distinct-user count, it is that
+// product's currency-agnostic distinct count for the latest month in the range
+// (matching the headline tile), not a sum across months.
+message SubscriptionTierBreakdown {
+  // Empty for events with no mapped moth product.
+  string product_id = 1;
+  repeated CurrencyAmount revenue = 2;
+  int64 new_subscribers = 3;
+  int64 active_subscribers = 4;
+}
+
+// SubscriptionStoreBreakdown splits the range's revenue by store, per currency.
+message SubscriptionStoreBreakdown {
+  repeated CurrencyAmount apple = 1;
+  repeated CurrencyAmount google = 2;
+  repeated CurrencyAmount stripe = 3;
+}
+
+message GetSubscriptionStatsResponse {
+  SubscriptionTiles tiles = 1;
+  // One entry per month in [from_period, to_period], oldest first, zero-filled.
+  repeated SubscriptionMonthlyStat series = 2;
+  // Per-tier revenue/subscriber breakdown over the requested range.
+  repeated SubscriptionTierBreakdown tiers = 3;
+  // Per-store revenue breakdown over the requested range.
+  SubscriptionStoreBreakdown stores = 4;
+}
+
+message RunRollupRequest {
+  // Project to roll up; empty rolls up every project.
+  string project_id = 1;
+}
+
+// RunRollupResponse summarizes the completed run (also recorded server-side
+// for observability).
+message RunRollupResponse {
+  string run_id = 1;
+  google.protobuf.Timestamp start_time = 2;
+  google.protobuf.Timestamp finish_time = 3;
+  // Number of (project, day) windows re-aggregated.
+  int32 days_processed = 4;
+  // Raw events removed by retention pruning.
+  int64 events_pruned = 5;
+}

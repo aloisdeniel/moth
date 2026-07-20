@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package moth.push.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/push/v1;pushv1";
+
+// PushService is the client-facing push-device registry, consumed by the moth
+// SDKs (milestone 21). Authenticated exactly like BillingService: every call
+// carries the project publishable key in `x-moth-key: pk_...` request metadata
+// AND a user access token in the `Authorization: Bearer <jwt>` header — a
+// registration always hangs off (project, signed-in user); there are no
+// anonymous device registrations.
+//
+// moth registers; the developer's backend sends. moth never talks to
+// APNs/FCM/Web Push — it tracks each registration's target, permission state
+// and liveness, and hands the current set to the developer's backend through
+// moth.server.v1.PushService, which delivers. Rate-limited like the other
+// credential-facing RPCs (milestone 02).
+service PushService {
+  // RegisterDevice upserts the calling user's registration and returns the
+  // stored row. Idempotent by design — the SDK calls it on every app launch,
+  // token rotation and permission change, without bookkeeping:
+  //   - same device_id → the device's existing row is replaced (a rotated
+  //     token supersedes the old one, revoked `replaced`);
+  //   - same (target, token) under a new user → the newest owner wins (the
+  //     previous user's row is revoked `replaced`), which handles a device
+  //     changing accounts on sign-in;
+  //   - otherwise → a new registration is created.
+  // Every call refreshes last_seen_time, so it doubles as the liveness
+  // heartbeat feeding the staleness sweep.
+  rpc RegisterDevice(RegisterDeviceRequest) returns (RegisterDeviceResponse);
+  // UnregisterDevice revokes the calling user's registration for one
+  // installation (`signed_out`); the SDKs call it on sign-out. Idempotent:
+  // unknown or already-revoked device ids succeed.
+  rpc UnregisterDevice(UnregisterDeviceRequest) returns (UnregisterDeviceResponse);
+}
+
+// PushTarget says which push service the credential belongs to — i.e. which
+// API the developer's backend must call to reach the device. Deliberately not
+// the platform: an iOS app using FCM registers as PUSH_TARGET_FCM; the OS
+// lives in PushDeviceMetadata.platform as display metadata.
+enum PushTarget {
+  PUSH_TARGET_UNSPECIFIED = 0;
+  // Apple Push Notification service; token is the APNs device token.
+  PUSH_TARGET_APNS = 1;
+  // Firebase Cloud Messaging; token is the FCM registration token.
+  PUSH_TARGET_FCM = 2;
+  // Web Push; token is the serialized subscription (endpoint + keys).
+  PUSH_TARGET_WEBPUSH = 3;
+}
+
+// PushPermission is the OS-level notification-permission state the client
+// last reported. A registration with a token but DENIED permission is kept
+// (data pushes may still work) but flagged, so senders can skip alert pushes.
+enum PushPermission {
+  PUSH_PERMISSION_UNSPECIFIED = 0;
+  PUSH_PERMISSION_GRANTED = 1;
+  // iOS provisional authorization (quiet notifications).
+  PUSH_PERMISSION_PROVISIONAL = 2;
+  PUSH_PERMISSION_DENIED = 3;
+  // The client could not determine the permission state.
+  PUSH_PERMISSION_UNKNOWN = 4;
+}
+
+// PushDeviceMetadata is display metadata about the installation, for the
+// admin device panel and sender-side locale targeting. All fields optional.
+message PushDeviceMetadata {
+  // OS family ("ios", "android", "web", "macos", ...). Display only — the
+  // API to call lives in PushDevice.target.
+  string platform = 1;
+  // Device model (e.g. "iPhone16,1", "Pixel 9").
+  string model = 2;
+  // OS version (e.g. "18.2").
+  string os_version = 3;
+  // App version the registration came from (e.g. "2.4.1+87").
+  string app_version = 4;
+  // BCP-47 locale of the device (e.g. "fr-FR"), for locale targeting.
+  string locale = 5;
+}
+
+// PushDevice is one stored registration as the client sees it. The push
+// credential itself is NOT echoed back: tokens are returned only over the
+// secret-key surface (moth.server.v1), and the client already holds its own.
+message PushDevice {
+  string id = 1;
+  PushTarget target = 2;
+  // The client-generated stable installation id it registered under.
+  string device_id = 3;
+  PushPermission permission = 4;
+  PushDeviceMetadata metadata = 5;
+  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp update_time = 7;
+  // Refreshed on every RegisterDevice call.
+  google.protobuf.Timestamp last_seen_time = 8;
+}
+
+message RegisterDeviceRequest {
+  // Which push service `token` belongs to. Required.
+  PushTarget target = 1;
+  // The push credential: APNs device token, FCM registration token, or the
+  // serialized Web Push subscription (endpoint + keys). Required.
+  string token = 2;
+  // Client-generated stable installation id, so one physical device
+  // re-registering replaces its own row instead of accumulating. Required.
+  string device_id = 3;
+  // The OS-level permission state the client observed.
+  PushPermission permission = 4;
+  PushDeviceMetadata metadata = 5;
+}
+
+message RegisterDeviceResponse {
+  // The stored registration (created or upserted).
+  PushDevice device = 1;
+}
+
+message UnregisterDeviceRequest {
+  // The installation id passed to RegisterDevice.
+  string device_id = 1;
+}
+
+message UnregisterDeviceResponse {}

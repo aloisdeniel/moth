@@ -1,0 +1,177 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// UserService gives instance operators visibility and control over a
+// project's end users. All RPCs require an authenticated admin session.
+service UserService {
+  // ListUsers pages through a project's users, newest first, optionally
+  // filtered by a case-insensitive substring match on email or display
+  // name.
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  // GetUser returns one user with its provider identities and active
+  // sessions.
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  // CreateUser adds an account on the operator's behalf: either with a
+  // password, or without one plus an invite email that lets the owner set
+  // their own (the counterpart of invite-only signup mode).
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  // UpdateUser applies the fields named in update_mask ("display_name",
+  // "custom_claims").
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  // DisableUser blocks sign-in, refresh and introspection and revokes the
+  // user's refresh tokens.
+  rpc DisableUser(DisableUserRequest) returns (DisableUserResponse);
+  rpc EnableUser(EnableUserRequest) returns (EnableUserResponse);
+  // DeleteUser permanently removes the user, its identities, sessions and
+  // pending email tokens.
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  // RevokeUserSessions revokes every refresh token of the user (all
+  // devices); outstanding access tokens die at their expiry.
+  rpc RevokeUserSessions(RevokeUserSessionsRequest) returns (RevokeUserSessionsResponse);
+  // SendPasswordReset emails the user a password-reset link, as if they
+  // had used "forgot password" themselves.
+  rpc SendPasswordReset(SendPasswordResetRequest) returns (SendPasswordResetResponse);
+}
+
+// User is the operator's view of a project end user.
+message User {
+  string id = 1;
+  string email = 2;
+  bool email_verified = 3;
+  string display_name = 4;
+  bool disabled = 5;
+  google.protobuf.Timestamp create_time = 6;
+  // Linked authentication providers ("password", "google", "apple").
+  repeated string providers = 7;
+  // Last successful sign-in; unset when the user never signed in.
+  google.protobuf.Timestamp last_login_time = 8;
+  google.protobuf.Timestamp update_time = 9;
+  // JSON object embedded in the JWT `claims` claim.
+  string custom_claims = 10;
+}
+
+// Identity is one linked authentication provider of a user, shown on the
+// user detail page (and driving its unlink action).
+message Identity {
+  // "password", "google" or "apple".
+  string provider = 1;
+  // Email asserted by the provider when the identity was linked; empty for
+  // password identities.
+  string email = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
+
+// UserSession is one active device session (a live refresh-token chain).
+message UserSession {
+  string id = 1;
+  string device_info = 2;
+  google.protobuf.Timestamp create_time = 3;
+  google.protobuf.Timestamp expire_time = 4;
+}
+
+message ListUsersRequest {
+  string project_id = 1;
+  // Page size, 1–200; 0 means the default (50).
+  int32 page_size = 2;
+  // next_page_token of the previous response; empty for the first page.
+  string page_token = 3;
+  // Case-insensitive substring filter on email and display name.
+  string query = 4;
+}
+
+message ListUsersResponse {
+  repeated User users = 1;
+  // Empty when this is the last page.
+  string next_page_token = 2;
+  // Total users matching the query across all pages.
+  int64 total_size = 3;
+}
+
+message GetUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message GetUserResponse {
+  User user = 1;
+  repeated UserSession sessions = 2;
+  // Linked provider identities, in link order.
+  repeated Identity identities = 3;
+}
+
+message CreateUserRequest {
+  string project_id = 1;
+  string email = 2;
+  string display_name = 3;
+  // Initial password; leave empty together with send_invite to let the
+  // user choose one through the invite email.
+  string password = 4;
+  // Mark the email address as already verified.
+  bool email_verified = 5;
+  // Send a set-password invite email (requires a working mailer).
+  bool send_invite = 6;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message UpdateUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+  User user = 3;
+  // Supported paths: "display_name", "custom_claims".
+  google.protobuf.FieldMask update_mask = 4;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}
+
+message DisableUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message DisableUserResponse {
+  User user = 1;
+}
+
+message EnableUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message EnableUserResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message DeleteUserResponse {}
+
+message RevokeUserSessionsRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message RevokeUserSessionsResponse {
+  // Number of sessions revoked.
+  int64 revoked_count = 1;
+}
+
+message SendPasswordResetRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message SendPasswordResetResponse {}

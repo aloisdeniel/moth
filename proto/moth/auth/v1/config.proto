@@ -1,0 +1,158 @@
+syntax = "proto3";
+
+package moth.auth.v1;
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/auth/v1;authv1";
+
+// ConfigService exposes a project's public, non-secret configuration to the
+// mobile SDK, so the login screen can render exactly the sign-in methods
+// the project enables. Authenticated like AuthService: every call carries
+// the project's publishable key in `x-moth-key: pk_...` request metadata.
+//
+// Later milestones extend GetProjectConfigResponse: SDK bootstrap values in
+// 05, login-screen branding/theme in 06. Fields are only ever added.
+service ConfigService {
+  // GetProjectConfig returns the project configuration a client may see.
+  // Never includes secrets; only values that are safe to embed in an app.
+  rpc GetProjectConfig(GetProjectConfigRequest) returns (GetProjectConfigResponse);
+}
+
+// GoogleConfig is the public part of a project's Sign in with Google
+// configuration.
+message GoogleConfig {
+  bool enabled = 1;
+  // OAuth client IDs the native flows initialize with. Client IDs are
+  // public values (the secret never leaves the server).
+  string web_client_id = 2;
+  string ios_client_id = 3;
+  string android_client_id = 4;
+}
+
+// AppleConfig is the public part of a project's Sign in with Apple
+// configuration.
+message AppleConfig {
+  bool enabled = 1;
+}
+
+// PushConfig is the public part of a project's push-notification
+// configuration (milestone 20): everything the SDK needs to register the
+// device with moth's push registry. Public values only — the Web Push VAPID
+// public key is designed to be embedded in clients; the matching private key
+// stays with the developer's sender and never touches moth.
+message PushConfig {
+  // Whether the project accepts device registrations (moth.push.v1).
+  bool enabled = 1;
+  // VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+  // passes as `applicationServerKey` when subscribing; empty when the
+  // project does not use Web Push.
+  string webpush_vapid_public_key = 2;
+}
+
+// Theme is the public, fully resolved form of the project's design system,
+// ready to render: dark colors are already derived server-side, asset
+// references are absolute URLs. Binary assets (logo images, font files)
+// stay plain-HTTP downloads with cache headers — they don't belong in RPC
+// responses.
+message Theme {
+  // Identifies this version of the theme; changes on every admin edit.
+  // Cache the theme keyed by this value and echo it as
+  // GetProjectConfigRequest.known_theme_revision.
+  string revision_id = 1;
+  // Light palette, "#RRGGBB" values.
+  ThemeColors colors = 2;
+  // Dark palette, fully resolved (admin overrides merged with derived
+  // values); render it when the device is in dark mode.
+  ThemeColors dark_colors = 3;
+  // Font family name (from the server's curated set).
+  string font_family = 4;
+  // Absolute URL of the font file to download and register; cacheable.
+  string font_url = 5;
+  // Global text-size multiplier.
+  double font_scale = 6;
+  // Base spacing step in logical pixels.
+  int32 spacing_unit = 7;
+  // Component corner radius in logical pixels.
+  int32 corner_radius = 8;
+  // Absolute logo URLs per color scheme; empty when no logo is set.
+  string logo_light_url = 9;
+  string logo_dark_url = 10;
+  // Optional legal links rendered in the login screen footer.
+  string terms_url = 11;
+  string privacy_url = 12;
+}
+
+// ThemeColors is a complete palette: each color role and its "on"
+// (foreground) counterpart. Server-side validation guarantees WCAG AA
+// contrast (>= 4.5:1) between every pair.
+message ThemeColors {
+  string primary = 1;
+  string on_primary = 2;
+  string background = 3;
+  string on_background = 4;
+  string surface = 5;
+  string on_surface = 6;
+  string error = 7;
+  string on_error = 8;
+}
+
+// Copy is the resolved, localized copy for the negotiated locale: the message
+// key → localized-string map the SDK renders its auth screens from
+// (sign_in.*, sign_up.*, password_reset.*, verify_email.*), already merged
+// bundled-default → project-override. The locale is negotiated server-side
+// from the request's Accept-Language / x-moth-language metadata against the
+// project's available locales; the client never dictates raw copy.
+message Copy {
+  // Opaque cache token identifying this (locale, override-revision) pair. It
+  // changes whenever the negotiated locale or the project's copy overrides
+  // change. Cache `messages` keyed by this value and echo it as
+  // GetProjectConfigRequest.known_copy_revision; the response omits `messages`
+  // when it still matches (see the caching contract on the request).
+  string copy_revision = 1;
+  // The negotiated BCP-47 locale this copy is for (e.g. "fr"). Echoed so the
+  // client sets lang/dir correctly and re-requests when the device language
+  // changes; always present even when `messages` is omitted.
+  string locale = 2;
+  // Resolved message key → localized string for the negotiated locale.
+  map<string, string> messages = 3;
+}
+
+message GetProjectConfigRequest {
+  // Theme caching contract: pass the revision_id of the theme the client
+  // has cached (empty on first call). When it still matches the current
+  // revision, the response omits `theme` entirely — the client keeps
+  // rendering its cached copy. When it differs (or was empty), `theme` is
+  // present and the client replaces its cache.
+  string known_theme_revision = 1;
+  // Copy caching contract (identical shape to the theme one, but keyed by the
+  // negotiated locale too): pass the copy_revision the client has cached for
+  // the locale it is about to render (empty on first call). When it still
+  // matches the token the server computes for the negotiated locale, the
+  // response's `copy` carries the locale + copy_revision but omits `messages`
+  // (stale-while-revalidate); when it differs (or was empty), `messages` is
+  // present and the client replaces its cache. The negotiated locale comes
+  // from Accept-Language / x-moth-language metadata, never from this body.
+  string known_copy_revision = 2;
+}
+
+message GetProjectConfigResponse {
+  GoogleConfig google = 1;
+  AppleConfig apple = 2;
+  // Minimum accepted password length.
+  int32 password_min_length = 3;
+  // Whether the public SignUp RPC is open.
+  bool sign_up_open = 4;
+  // The project's design system. Omitted when
+  // GetProjectConfigRequest.known_theme_revision matches the current
+  // revision (see the caching contract there); always present otherwise,
+  // including for projects on the built-in default theme.
+  Theme theme = 5;
+  // The localized copy for the negotiated locale. Always present (it carries
+  // the negotiated locale + copy_revision so the client caches per (locale,
+  // revision)); its `messages` map is omitted when
+  // GetProjectConfigRequest.known_copy_revision matches, present otherwise —
+  // including for projects with no copy overrides (fully bundled defaults).
+  Copy copy = 6;
+  // The project's public push configuration. Always present; enabled=false
+  // when the project never configured push.
+  PushConfig push = 7;
+}

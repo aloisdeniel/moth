@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package moth.server.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/server/v1;serverv1";
+
+// TokenService lets the developer's backend verify moth access tokens
+// online. Offline JWKS verification is the recommended default; use
+// introspection when instant revocation matters more than latency.
+//
+// Every call carries the project secret key in `x-moth-key: sk_...`
+// request metadata (never shipped inside an app).
+service TokenService {
+  // IntrospectToken reports whether an access token is currently valid for
+  // this project — including revocation and disabled-user state that
+  // offline JWT verification cannot see.
+  rpc IntrospectToken(IntrospectTokenRequest) returns (IntrospectTokenResponse);
+}
+
+message IntrospectTokenRequest {
+  // The access token (JWT) exactly as presented by the client.
+  string access_token = 1;
+}
+
+message IntrospectTokenResponse {
+  // Whether the token is valid right now for this project.
+  bool active = 1;
+  // Machine-readable cause when inactive: EXPIRED, INVALID_SIGNATURE,
+  // MALFORMED, USER_DISABLED, USER_NOT_FOUND.
+  string inactive_reason = 2;
+  // Claims, set only when active (except user_id which is set whenever the
+  // signature verified).
+  string user_id = 3;
+  string email = 4;
+  bool email_verified = 5;
+  // The user's custom claims as embedded in the token.
+  google.protobuf.Struct custom_claims = 6;
+  google.protobuf.Timestamp issue_time = 7;
+  google.protobuf.Timestamp expire_time = 8;
+}

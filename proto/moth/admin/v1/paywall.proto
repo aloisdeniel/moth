@@ -1,0 +1,139 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// PaywallService manages a project's paywall configuration (milestone 13): the
+// copy and layout the SDK's batteries-included paywall screen renders from.
+// The paywall owns no design tokens of its own — colors, typography, spacing,
+// radius and logo inherit from the theme (ThemeService, milestone 06); this
+// config only carries the headline/subtitle copy, benefit bullets, which
+// offering to present, which tier to highlight, the layout variant and the
+// legal links. Configs are validated server-side (bounded copy, known layout,
+// http(s) legal links), and every save creates a revision (the last 10 are
+// kept for undo), mirroring ThemeService exactly. All RPCs require an
+// authenticated admin session.
+service PaywallService {
+  // GetPaywallConfig returns the project's current paywall config: the saved
+  // one, or the built-in defaults when the project never customized anything
+  // (revision_id empty, is_default true).
+  rpc GetPaywallConfig(GetPaywallConfigRequest) returns (GetPaywallConfigResponse);
+  // UpdatePaywallConfig validates and installs a full replacement config and
+  // returns the new revision. Partial updates are done client-side:
+  // GetPaywallConfig, edit, UpdatePaywallConfig.
+  rpc UpdatePaywallConfig(UpdatePaywallConfigRequest) returns (UpdatePaywallConfigResponse);
+  // ListPaywallRevisions returns the saved revisions, newest first (at most
+  // the 10 the server keeps).
+  rpc ListPaywallRevisions(ListPaywallRevisionsRequest) returns (ListPaywallRevisionsResponse);
+  // RestorePaywallRevision re-installs an old revision's config as a new
+  // revision (history only ever moves forward).
+  rpc RestorePaywallRevision(RestorePaywallRevisionRequest) returns (RestorePaywallRevisionResponse);
+  // ResetPaywall reverts the project to the built-in default paywall config.
+  // The revision history is kept, so the previous config stays restorable.
+  rpc ResetPaywall(ResetPaywallRequest) returns (ResetPaywallResponse);
+}
+
+// PaywallLayout is the rendering variant the paywall screen uses; the token
+// space (colors/spacing/radius) always comes from the theme.
+enum PaywallLayout {
+  PAYWALL_LAYOUT_UNSPECIFIED = 0;
+  // One card per tier, side by side (the default).
+  PAYWALL_LAYOUT_TILES = 1;
+  // Tiers stacked as full-width rows.
+  PAYWALL_LAYOUT_LIST = 2;
+  // A single selected tier with a period toggle.
+  PAYWALL_LAYOUT_COMPACT = 3;
+}
+
+// PaywallConfig is one project's complete paywall configuration, mirroring the
+// versioned JSON schema in internal/paywall (the schema version is a storage
+// concern and does not appear here).
+message PaywallConfig {
+  // Primary title (required, bounded length).
+  string headline = 1;
+  // Supporting line under the headline (optional, bounded length).
+  string subtitle = 2;
+  // Feature/benefit bullets, in display order (bounded count and length).
+  repeated string benefits = 3;
+  // The offering tag whose products the paywall lists; empty selects the
+  // project's default offering.
+  string offering = 4;
+  // The product identifier rendered as "most popular"; empty highlights
+  // nothing. A stable catalog identifier (e.g. "yearly"), never a store SKU.
+  string highlighted_product_identifier = 5;
+  PaywallLayout layout = 6;
+  PaywallLegal legal = 7;
+}
+
+// PaywallLegal holds the optional legal links rendered in the paywall footer;
+// must be absolute http(s) URLs.
+message PaywallLegal {
+  string terms_url = 1;
+  string privacy_url = 2;
+}
+
+// PaywallRevision is one saved version of a project's paywall config.
+message PaywallRevision {
+  string revision_id = 1;
+  PaywallConfig config = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
+
+message GetPaywallConfigRequest {
+  string project_id = 1;
+}
+
+message GetPaywallConfigResponse {
+  PaywallConfig config = 1;
+  // Empty when the project renders the built-in default paywall config.
+  string revision_id = 2;
+  // True when no config was ever saved (or after ResetPaywall).
+  bool is_default = 3;
+}
+
+message UpdatePaywallConfigRequest {
+  string project_id = 1;
+  // The full replacement config.
+  PaywallConfig config = 2;
+}
+
+message UpdatePaywallConfigResponse {
+  PaywallConfig config = 1;
+  // The id of the revision this save created.
+  string revision_id = 2;
+}
+
+message ListPaywallRevisionsRequest {
+  string project_id = 1;
+  // Maximum revisions to return; 0 (or anything above what the server keeps)
+  // returns all kept revisions.
+  int32 limit = 2;
+}
+
+message ListPaywallRevisionsResponse {
+  // Newest first.
+  repeated PaywallRevision revisions = 1;
+}
+
+message RestorePaywallRevisionRequest {
+  string project_id = 1;
+  string revision_id = 2;
+}
+
+message RestorePaywallRevisionResponse {
+  PaywallConfig config = 1;
+  // The id of the new revision created by the restore.
+  string revision_id = 2;
+}
+
+message ResetPaywallRequest {
+  string project_id = 1;
+}
+
+message ResetPaywallResponse {
+  // The built-in default paywall config now in effect.
+  PaywallConfig config = 1;
+}

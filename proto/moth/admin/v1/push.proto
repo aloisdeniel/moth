@@ -1,0 +1,193 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// PushService gives instance operators visibility over a project's
+// push-device registrations (the user detail Devices panel) and manages the
+// project's push settings. Registrations are metadata-only here: push tokens
+// are credentials and appear exclusively on the secret-key surface
+// (moth.server.v1) — never in admin RPCs. All RPCs require an authenticated
+// admin session.
+service PushService {
+  // GetPushSettings returns the project's push settings (defaults when never
+  // configured: disabled, no VAPID key).
+  rpc GetPushSettings(GetPushSettingsRequest) returns (GetPushSettingsResponse);
+  // UpdatePushSettings validates and installs a full replacement of the push
+  // settings. Partial updates are done client-side: GetPushSettings, edit,
+  // UpdatePushSettings.
+  rpc UpdatePushSettings(UpdatePushSettingsRequest) returns (UpdatePushSettingsResponse);
+  // ListUserPushDevices returns one user's registrations for the user detail
+  // Devices panel, most recently seen first — active and revoked (revocation
+  // is auditable, not a delete), never the tokens.
+  rpc ListUserPushDevices(ListUserPushDevicesRequest) returns (ListUserPushDevicesResponse);
+  // ListPushDevices returns the project's ACTIVE registrations for the Push
+  // tab, newest first with keyset pagination and an optional target filter —
+  // each with the owning user's id and email, never the tokens. Per-target
+  // totals for the whole project ride along on every page.
+  rpc ListPushDevices(ListPushDevicesRequest) returns (ListPushDevicesResponse);
+  // RevokePushDevice revokes one registration (`admin` reason, audit-logged);
+  // the sender surface stops serving it immediately. Idempotent: revoking an
+  // already-revoked registration succeeds and keeps the original reason.
+  rpc RevokePushDevice(RevokePushDeviceRequest) returns (RevokePushDeviceResponse);
+}
+
+// PushTarget says which push service a registration's credential belongs to
+// (which API the developer's sender must call), not what OS the device runs —
+// an iOS app using FCM registers as PUSH_TARGET_FCM; the OS lives in
+// PushDeviceMetadata.platform.
+enum PushTarget {
+  PUSH_TARGET_UNSPECIFIED = 0;
+  // Apple Push Notification service.
+  PUSH_TARGET_APNS = 1;
+  // Firebase Cloud Messaging.
+  PUSH_TARGET_FCM = 2;
+  // Web Push.
+  PUSH_TARGET_WEBPUSH = 3;
+}
+
+// PushPermission is the OS-level notification-permission state the client
+// last reported for the registration.
+enum PushPermission {
+  PUSH_PERMISSION_UNSPECIFIED = 0;
+  PUSH_PERMISSION_GRANTED = 1;
+  // iOS provisional authorization (quiet notifications).
+  PUSH_PERMISSION_PROVISIONAL = 2;
+  PUSH_PERMISSION_DENIED = 3;
+  // The client could not determine the permission state.
+  PUSH_PERMISSION_UNKNOWN = 4;
+}
+
+// PushRevokeReason says why a registration was revoked.
+enum PushRevokeReason {
+  PUSH_REVOKE_REASON_UNSPECIFIED = 0;
+  // The SDK unregistered on sign-out.
+  PUSH_REVOKE_REASON_SIGNED_OUT = 1;
+  // The developer's sender reported the credential dead (feedback loop).
+  PUSH_REVOKE_REASON_REPORTED_INVALID = 2;
+  // The staleness sweep expired a registration not seen within the window.
+  PUSH_REVOKE_REASON_STALE = 3;
+  // A re-registration superseded this row (rotated token or new account on
+  // the same device).
+  PUSH_REVOKE_REASON_REPLACED = 4;
+  // An operator revoked it from the admin console.
+  PUSH_REVOKE_REASON_ADMIN = 5;
+}
+
+// PushDeviceMetadata is the display metadata the client reported at
+// registration. All fields optional.
+message PushDeviceMetadata {
+  // OS family ("ios", "android", "web", "macos", ...).
+  string platform = 1;
+  // Device model (e.g. "iPhone16,1", "Pixel 9").
+  string model = 2;
+  // OS version (e.g. "18.2").
+  string os_version = 3;
+  // App version the registration came from (e.g. "2.4.1+87").
+  string app_version = 4;
+  // BCP-47 locale of the device (e.g. "fr-FR").
+  string locale = 5;
+}
+
+// PushDevice is the operator's view of one registration. Deliberately
+// token-free: the admin sees metadata, never the push credential.
+message PushDevice {
+  string id = 1;
+  PushTarget target = 2;
+  // Client-generated stable installation id.
+  string device_id = 3;
+  PushPermission permission = 4;
+  PushDeviceMetadata metadata = 5;
+  google.protobuf.Timestamp create_time = 6;
+  google.protobuf.Timestamp update_time = 7;
+  // Last register/heartbeat from the device.
+  google.protobuf.Timestamp last_seen_time = 8;
+  // Unset while the registration is active.
+  google.protobuf.Timestamp revoke_time = 9;
+  // Why it was revoked; PUSH_REVOKE_REASON_UNSPECIFIED while active.
+  PushRevokeReason revoke_reason = 10;
+}
+
+// PushSettings is the per-project push configuration. Plain config, not a
+// secret: the Web Push VAPID PUBLIC key is safe to hand to every client (it
+// is delivered through the public project config); the private key stays
+// with the developer's sender and never touches moth.
+message PushSettings {
+  // Master switch for the push registry; when false the client-facing
+  // moth.push.v1 RPCs refuse registrations.
+  bool enabled = 1;
+  // VAPID public key (base64url, uncompressed P-256 point) the browser SDK
+  // subscribes with. Empty when the project does not use Web Push.
+  string webpush_vapid_public_key = 2;
+}
+
+message GetPushSettingsRequest {
+  string project_id = 1;
+}
+
+message GetPushSettingsResponse {
+  PushSettings settings = 1;
+}
+
+message UpdatePushSettingsRequest {
+  string project_id = 1;
+  // The full replacement settings.
+  PushSettings settings = 2;
+}
+
+message UpdatePushSettingsResponse {
+  PushSettings settings = 1;
+}
+
+message ListUserPushDevicesRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message ListUserPushDevicesResponse {
+  // The user's registrations (active and revoked), most recently seen first.
+  repeated PushDevice devices = 1;
+}
+
+message ListPushDevicesRequest {
+  string project_id = 1;
+  // 1–200; 0 means the default of 50.
+  int32 page_size = 2;
+  // The next_page_token of the previous response; empty for the first page.
+  string page_token = 3;
+  // PUSH_TARGET_UNSPECIFIED matches all targets.
+  PushTarget target = 4;
+}
+
+// ProjectPushDevice is one active registration in the project-wide listing,
+// carrying the owning user so the operator can tell whose device it is.
+message ProjectPushDevice {
+  PushDevice device = 1;
+  string user_id = 2;
+  string user_email = 3;
+}
+
+message ListPushDevicesResponse {
+  repeated ProjectPushDevice devices = 1;
+  // Empty when there are no further pages.
+  string next_page_token = 2;
+  // Project-wide active-registration totals per target, independent of the
+  // request's target filter and page.
+  int64 apns_count = 3;
+  int64 fcm_count = 4;
+  int64 webpush_count = 5;
+}
+
+message RevokePushDeviceRequest {
+  string project_id = 1;
+  // The registration's id (PushDevice.id), not the installation device_id.
+  string push_device_id = 2;
+}
+
+message RevokePushDeviceResponse {
+  // The registration after the revoke.
+  PushDevice device = 1;
+}

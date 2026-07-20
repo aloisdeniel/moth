@@ -1,0 +1,238 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+import "moth/admin/v1/product.proto";
+import "moth/admin/v1/subscription.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// MonetizationService reconciles a project's product catalog (milestone 11 —
+// entitlements, products, offering) into App Store Connect and Google Play, and
+// reports the reconciliation state. moth's catalog is the desired state; the
+// stores stay authoritative for money and renewals, so a push produces a
+// diff/plan a human can inspect and any step the store APIs cannot perform is
+// surfaced as a guided checklist rather than silently skipped.
+//
+// CAPABILITY SPIKE — what each store's official API actually allows (the
+// milestone-08 "honest automation" contract: automate what the APIs expose,
+// guided fallback with exact paste values where they don't, verify the result):
+//
+//   Apple, App Store Connect API v1 (ASC JWT auth from milestone 08):
+//     AUTOMATABLE: create subscriptionGroups; create auto-renewable
+//       subscriptions; set base subscriptionPrices from price points; create
+//       in-app-purchase/subscription localizations (display name + description);
+//       read created product ids back to map onto moth products.
+//     GUIDED (API cannot, or cannot reliably, do it): price-schedule nuances and
+//       regional availability, and — the canonical example — SUBMITTING A NEW
+//       SUBSCRIPTION FOR REVIEW. These become guided steps with exact values.
+//     NOTIFICATIONS: the App Store Server Notifications V2 URL is set on the app
+//       version / in App Store Connect; moth supplies the exact URL + shared
+//       secret to register (guided), then verifies via a sandbox status read.
+//
+//   Google, Android Publisher API v3 (service-account authed):
+//     AUTOMATABLE: monetization.subscriptions with basePlans + offers (price,
+//       billing period, free-trial/intro phases); read ids back. inappproducts
+//       is the legacy path for one-off SKUs.
+//     GUIDED: Play Console product activation/availability and country pricing
+//       matrices the API leaves to the console.
+//     NOTIFICATIONS: create/point a Cloud Pub/Sub topic for Real-time developer
+//       notifications and register it on the app; moth points the push
+//       subscription at /billing/google/rtdn/{slug}. Topic creation lives in
+//       GCP (Pub/Sub API), not the Publisher API — guided where credentials
+//       don't cover it.
+//
+// All RPCs require an authenticated admin session. The store API calls
+// themselves live behind injectable clients (a later stage); this service is
+// the contract they satisfy.
+service MonetizationService {
+  // SyncStoreCatalog reconciles moth's catalog into one store. With dry_run it
+  // returns the plan (per product: noop | create | update | guided) without
+  // mutating the store; otherwise it applies the plan and returns the result.
+  // Idempotent by contract: a second run with no catalog change reports in_sync
+  // with an all-noop plan.
+  rpc SyncStoreCatalog(SyncStoreCatalogRequest) returns (SyncStoreCatalogResponse);
+  // GetStoreCatalogStatus returns, per store, whether credentials and
+  // notification plumbing are configured and a catalog drift summary — the data
+  // behind the admin store-connection panel and `moth doctor` billing checks.
+  rpc GetStoreCatalogStatus(GetStoreCatalogStatusRequest) returns (GetStoreCatalogStatusResponse);
+  // GetOffering returns an offering — the ordered set of products a paywall
+  // presents (the products sharing an `offering` tag, in sort_order). An empty
+  // offering id selects the default offering.
+  rpc GetOffering(GetOfferingRequest) returns (GetOfferingResponse);
+  // ReorderOffering rewrites the paywall order of an offering's products. Every
+  // product currently in the offering must appear exactly once.
+  rpc ReorderOffering(ReorderOfferingRequest) returns (ReorderOfferingResponse);
+}
+
+// SyncAction is the reconcile verb the plan assigns to one product for one
+// store.
+enum SyncAction {
+  SYNC_ACTION_UNSPECIFIED = 0;
+  // The store SKU already matches moth's desired state.
+  SYNC_ACTION_NOOP = 1;
+  // Create the product (subscription/base plan) in the store.
+  SYNC_ACTION_CREATE = 2;
+  // Update store-side values that drifted (e.g. a changed price).
+  SYNC_ACTION_UPDATE = 3;
+  // The store API cannot perform this; guided_steps carry the exact manual
+  // actions and values.
+  SYNC_ACTION_GUIDED = 4;
+}
+
+// ProductSyncStatus mirrors the store.product_store_sync.status column: the
+// standing reconciliation state of one product for one store.
+enum ProductSyncStatus {
+  PRODUCT_SYNC_STATUS_UNSPECIFIED = 0;
+  // Never pushed to this store.
+  PRODUCT_SYNC_STATUS_PENDING = 1;
+  // Store SKU matches moth.
+  PRODUCT_SYNC_STATUS_IN_SYNC = 2;
+  // Store SKU exists but differs from moth.
+  PRODUCT_SYNC_STATUS_DRIFT = 3;
+  // Last reconcile failed.
+  PRODUCT_SYNC_STATUS_ERROR = 4;
+}
+
+// GuidedValue is one exact value an operator must paste into a store console.
+message GuidedValue {
+  string label = 1;
+  string value = 2;
+}
+
+// GuidedStep is a manual action the store APIs cannot perform, stated with the
+// exact values to enter (honest automation: never silently skipped).
+message GuidedStep {
+  string title = 1;
+  string detail = 2;
+  // Deep link into the store console, when one exists.
+  string url = 3;
+  repeated GuidedValue values = 4;
+}
+
+// SyncFieldChange is one field the reconcile will (or would) push to the store.
+message SyncFieldChange {
+  // Field path ("price", "billing_period", "localization.en-US.name", …).
+  string field = 1;
+  // Store-side current value ("" when creating).
+  string current = 2;
+  // Desired value from moth's catalog.
+  string desired = 3;
+}
+
+// ProductSyncItem is one product's line in a sync plan (dry_run) or applied
+// result.
+message ProductSyncItem {
+  string product_id = 1;
+  // The moth catalog identifier (stable; e.g. "monthly").
+  string identifier = 2;
+  // The store SKU this maps to (desired, or created).
+  string store_product_id = 3;
+  SyncAction action = 4;
+  // Human summary of the change ("create monthly at 9.99 USD / month").
+  string summary = 5;
+  // Field-level changes pushed to the store.
+  repeated SyncFieldChange changes = 6;
+  // Manual steps the API cannot perform for this product.
+  repeated GuidedStep guided_steps = 7;
+  // Reconcile outcome (unset on dry_run).
+  ProductSyncStatus status = 8;
+  // Error when status is ERROR.
+  string error = 9;
+}
+
+message SyncStoreCatalogRequest {
+  string project_id = 1;
+  // Which store to reconcile.
+  Store store = 2;
+  // When true, compute and return the plan without mutating the store.
+  bool dry_run = 3;
+}
+
+message SyncStoreCatalogResponse {
+  Store store = 1;
+  // Per-product plan (dry_run) or applied result.
+  repeated ProductSyncItem items = 2;
+  // True when the catalog already matches the store (every item is noop) — the
+  // idempotency signal.
+  bool in_sync = 3;
+  // Guided steps not tied to a single product (e.g. notification wiring).
+  repeated GuidedStep guided_steps = 4;
+}
+
+// ProductSyncState is one product's standing sync record for a store.
+message ProductSyncState {
+  string product_id = 1;
+  string identifier = 2;
+  string store_product_id = 3;
+  ProductSyncStatus status = 4;
+  // Opaque store-side revision observed at last sync.
+  string revision = 5;
+  string error = 6;
+  google.protobuf.Timestamp last_sync_time = 7;
+}
+
+// StoreCatalogStatus is one store's connection + reconciliation summary.
+message StoreCatalogStatus {
+  Store store = 1;
+  // Whether this store's API credentials are configured.
+  bool credentials_present = 2;
+  // Whether the notification plumbing is wired (Apple ASSN URL / Play RTDN
+  // Pub/Sub topic present in the billing config).
+  bool notifications_wired = 3;
+  int32 products_total = 4;
+  int32 products_in_sync = 5;
+  int32 products_drift = 6;
+  int32 products_error = 7;
+  // Products with no store SKU set for this store.
+  int32 products_unmapped = 8;
+  // Latest successful sync across the store's products.
+  google.protobuf.Timestamp last_sync_time = 9;
+  // Per-product detail.
+  repeated ProductSyncState products = 10;
+}
+
+message GetStoreCatalogStatusRequest {
+  string project_id = 1;
+}
+
+message GetStoreCatalogStatusResponse {
+  // One entry per store (Apple, Google).
+  repeated StoreCatalogStatus stores = 1;
+}
+
+// Offering is the ordered set of products a paywall presents (the products
+// sharing an `offering` tag, in sort_order). Every project has a default
+// offering ("default").
+message Offering {
+  string identifier = 1;
+  bool is_default = 2;
+  // Product ids in paywall order.
+  repeated string product_ids = 3;
+  // The products themselves, in the same order.
+  repeated Product products = 4;
+}
+
+message GetOfferingRequest {
+  string project_id = 1;
+  // Offering tag; empty selects the default offering.
+  string offering = 2;
+}
+
+message GetOfferingResponse {
+  Offering offering = 1;
+}
+
+message ReorderOfferingRequest {
+  string project_id = 1;
+  // Offering tag; empty selects the default offering.
+  string offering = 2;
+  // Product ids in the desired paywall order. Every product currently in the
+  // offering must appear exactly once.
+  repeated string product_ids = 3;
+}
+
+message ReorderOfferingResponse {
+  Offering offering = 1;
+}

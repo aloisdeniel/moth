@@ -1,0 +1,20 @@
+version: v2
+# TypeScript stubs for the React SDK (moth.auth.v1 + moth.billing.v1 +
+# moth.push.v1) — run via
+# `make proto-react` and commit the output. Kept out of buf.gen.yaml on purpose:
+# the SDK only consumes the end-user surfaces, not the admin protos. Pinned
+# through sdk/react's package-lock (run `npm ci` in sdk/react first).
+clean: true
+inputs:
+  - directory: proto
+    paths:
+      - proto/moth/auth/v1
+      - proto/moth/billing/v1
+      - proto/moth/push/v1
+      # projectconfig/v1 ships only CacheEnvelope to the SDK (the on-device config
+      # cache wrapper); the Stored* messages are server-side but harmless.
+      - proto/moth/projectconfig/v1
+plugins:
+  - local: sdk/react/node_modules/.bin/protoc-gen-es
+    out: sdk/react/src/gen
+    opt: target=ts

@@ -1,0 +1,95 @@
+/*
+ * Starlight theme mapped onto the moth design tokens (see tokens.css and
+ * /DESIGN.md). Starlight's `--sl-color-white` is always the high-contrast
+ * (text) end and `--sl-color-black` the page background, in both schemes.
+ */
+
+/* Dark scheme (Starlight default). */
+:root {
+  --sl-font: var(--moth-font-text);
+  --sl-font-mono: var(--moth-font-mono);
+
+  --sl-color-white: #ededed; /* text-primary */
+  --sl-color-gray-1: #c9c9c9;
+  --sl-color-gray-2: #9c9c9c; /* text-secondary */
+  --sl-color-gray-3: #6e6e6e; /* text-tertiary */
+  --sl-color-gray-4: #3d3d3d; /* border-strong */
+  --sl-color-gray-5: #262626; /* border */
+  --sl-color-gray-6: #161616; /* surface */
+  --sl-color-gray-7: #111111; /* background-subtle */
+  --sl-color-black: #0a0a0a; /* background */
+
+  --sl-color-accent-low: #0d2b47;
+  --sl-color-accent: #52a8ff;
+  --sl-color-accent-high: #b0d7ff;
+
+  --sl-color-text: var(--moth-text-primary);
+  --sl-color-hairline: var(--moth-border);
+  --sl-color-hairline-light: var(--moth-border);
+  --sl-color-hairline-shade: var(--moth-border);
+  --sl-color-bg-nav: var(--moth-background);
+  --sl-color-bg-sidebar: var(--moth-background-subtle);
+}
+
+/* Light scheme. */
+:root[data-theme='light'] {
+  --sl-color-white: #0a0a0a; /* text-primary */
+  --sl-color-gray-1: #444444;
+  --sl-color-gray-2: #666666; /* text-secondary */
+  --sl-color-gray-3: #999999; /* text-tertiary */
+  --sl-color-gray-4: #d4d4d4; /* border-strong */
+  --sl-color-gray-5: #ebebeb; /* border */
+  --sl-color-gray-6: #fafafa; /* background-subtle */
+  --sl-color-gray-7: #fafafa;
+  --sl-color-black: #ffffff; /* background */
+
+  --sl-color-accent-low: #d8eafe;
+  --sl-color-accent: #0068d6;
+  --sl-color-accent-high: #00417f;
+
+  --sl-color-text: var(--moth-text-primary);
+  --sl-color-hairline: var(--moth-border);
+  --sl-color-hairline-light: var(--moth-border);
+  --sl-color-hairline-shade: var(--moth-border);
+  --sl-color-bg-nav: var(--moth-background);
+  --sl-color-bg-sidebar: var(--moth-background-subtle);
+}
+
+/* Typography: match the DESIGN.md scale where Starlight exposes hooks. */
+:root {
+  --sl-text-base: var(--moth-text-body-size);
+  --sl-text-code: var(--moth-text-code-size);
+  --sl-text-code-sm: var(--moth-text-code-size);
+  --sl-line-height: var(--moth-text-body-leading);
+}
+
+/* Headings: bold, tight tracking at >= 24px (DESIGN.md typography rules). */
+.sl-markdown-content h1,
+.sl-markdown-content h2 {
+  letter-spacing: var(--moth-tracking-tight);
+  font-weight: 700;
+}
+.sl-markdown-content h3,
+.sl-markdown-content h4 {
+  font-weight: 700;
+}
+
+/* Header logo: smaller than Starlight's default (the full nav height minus
+   padding), so the mark reads as a mark beside the wordmark rather than
+   competing with it. Unlayered, so it wins over @layer starlight.core. */
+.site-title img {
+  height: 1.5rem;
+}
+
+/* Code blocks: background-subtle well, hairline border, radius-md. */
+.sl-markdown-content pre {
+  background: var(--moth-background-subtle) !important;
+  border: 1px solid var(--moth-border);
+  border-radius: var(--moth-radius-md);
+}
+.sl-markdown-content code:not(pre code) {
+  background: var(--moth-background-subtle);
+  border: 1px solid var(--moth-border);
+  border-radius: var(--moth-radius-sm);
+  padding: 2px 6px;
+}

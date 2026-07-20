@@ -1,0 +1,62 @@
+name: release
+
+# Cuts a moth release on every semver tag: GoReleaser builds the six
+# platform binaries, archives, cosign-signed checksums, the Homebrew cask,
+# and the scratch multi-arch Docker images. The binary embeds the admin SPA,
+# the /docs content, the moth_auth Flutter SDK and the @moth/react SDK
+# (all committed files — CI's staleness gates keep them current), and the
+# ldflags stamp the tag into internal/version.Version — so the served pub
+# and npm SDKs and the embedded docs all match the released binary version.
+# (See .goreleaser.yaml.)
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the GitHub release
+  packages: write # push images to GHCR
+  id-token: write # keyless cosign signing via OIDC
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # GoReleaser's changelog needs the full history back to the last tag.
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      # Multi-arch (arm64) Docker builds run through QEMU + buildx.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      # Push rights to ghcr.io/<owner>/moth.
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # cosign for the keyless checksum + image signatures.
+      - uses: sigstore/cosign-installer@v3
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional: a PAT with push rights to the Homebrew tap repository. The
+          # cask push is gated by `skip_upload: "true"` in .goreleaser.yaml until
+          # the tap repo exists, so a missing/unauthorized token here never fails
+          # the release. Provide this token AND flip skip_upload to "false" once
+          # the tap is created. The GITHUB_TOKEN fallback keeps the template
+          # variable defined for the build even while uploads are skipped.
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || secrets.GITHUB_TOKEN }}

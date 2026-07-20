@@ -1,0 +1,128 @@
+// @ts-check
+import { defineConfig } from 'astro/config';
+import starlight from '@astrojs/starlight';
+
+/**
+ * GitHub Pages configuration.
+ *
+ * The deploy targets a custom domain (CNAME), so the defaults are
+ * `base: '/'` and a placeholder `site`. Until the domain is registered,
+ * GitHub *project* pages can be targeted instead by setting, at build time:
+ *
+ *   WEBSITE_SITE=https://aloisdeniel.github.io WEBSITE_BASE=/moth npm run build
+ *
+ * Once the custom domain exists, the deploy workflow (.github/workflows/
+ * pages.yml) handles it from repository variables — set WEBSITE_DOMAIN=<domain>
+ * (writes dist/CNAME), WEBSITE_SITE=https://<domain>, and WEBSITE_BASE=/. No
+ * CNAME file is committed to the repo.
+ */
+const site = process.env.WEBSITE_SITE ?? 'https://aloisdeniel.github.io';
+const base = process.env.WEBSITE_BASE ?? '/';
+
+// Absolute OG-image URL for the docs pages (Starlight sets og:title /
+// og:description itself; the landing layout carries its own tags).
+const ogImage = new URL(`${base.replace(/\/$/, '')}/og.png`, site).href;
+
+// The admin demo (make web-demo) lives in public/demo/ as a prebuilt SPA.
+// GitHub Pages resolves /demo/ to its index.html, but Astro's dev and
+// preview servers serve public/ files verbatim and 404 on directory URLs —
+// this middleware gives them the same directory-index behavior.
+const demoDirIndex = () => {
+  const prefix = base.replace(/\/$/, '');
+  const rewrite = (req, _res, next) => {
+    const [path, query] = (req.url ?? '').split('?');
+    if (path === `${prefix}/demo` || path === `${prefix}/demo/`) {
+      req.url = `${prefix}/demo/index.html${query ? `?${query}` : ''}`;
+    }
+    next();
+  };
+  return {
+    name: 'demo-dir-index',
+    configureServer(server) {
+      server.middlewares.use(rewrite);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use(rewrite);
+    },
+  };
+};
+
+export default defineConfig({
+  site,
+  base,
+  output: 'static',
+  vite: { plugins: [demoDirIndex()] },
+  integrations: [
+    starlight({
+      title: 'moth',
+      logo: {
+        // The moth mark next to the title; per-scheme fills because
+        // Starlight switches theme via data-theme, not prefers-color-scheme.
+        light: './src/assets/logo-light.svg',
+        dark: './src/assets/logo-dark.svg',
+        alt: '',
+      },
+      description:
+        'Authentication for all your mobile apps. One small binary.',
+      social: [
+        {
+          icon: 'github',
+          label: 'GitHub',
+          href: 'https://github.com/aloisdeniel/moth',
+        },
+      ],
+      customCss: ['./src/styles/tokens.css', './src/styles/starlight.css'],
+      head: [
+        { tag: 'meta', attrs: { property: 'og:image', content: ogImage } },
+        { tag: 'meta', attrs: { property: 'og:image:width', content: '1200' } },
+        { tag: 'meta', attrs: { property: 'og:image:height', content: '630' } },
+        { tag: 'meta', attrs: { name: 'twitter:card', content: 'summary_large_image' } },
+        { tag: 'meta', attrs: { name: 'twitter:image', content: ogImage } },
+        // Satoshi (--sl-font) from Fontshare's CDN, loaded non-render-blocking
+        // (media="print" + onload swap). Falls back to the system UI font if
+        // the CDN is unreachable.
+        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://api.fontshare.com', crossorigin: true } },
+        { tag: 'link', attrs: { rel: 'preconnect', href: 'https://cdn.fontshare.com', crossorigin: true } },
+        {
+          tag: 'link',
+          attrs: {
+            rel: 'stylesheet',
+            href: 'https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap',
+            media: 'print',
+            onload: "this.media='all'",
+          },
+        },
+      ],
+      sidebar: [
+        { label: 'Quick start', slug: 'docs/quick-start' },
+        { label: 'Installation & deployment', slug: 'docs/installation' },
+        {
+          label: 'Guides',
+          items: [
+            { label: 'Sign in with Google', slug: 'docs/guides/google' },
+            { label: 'Sign in with Apple', slug: 'docs/guides/apple' },
+            { label: 'Theming the login screen', slug: 'docs/guides/theming' },
+            { label: 'Subscriptions & paywall', slug: 'docs/guides/monetization' },
+            { label: 'Push notifications', slug: 'docs/guides/push' },
+            { label: 'Analytics', slug: 'docs/guides/analytics' },
+            { label: 'Backups', slug: 'docs/guides/backups' },
+            { label: 'Migration import & export', slug: 'docs/guides/migration' },
+          ],
+        },
+        { label: 'Flutter SDK reference', slug: 'docs/sdk' },
+        { label: 'React SDK reference', slug: 'docs/react' },
+        {
+          label: 'CLI reference',
+          items: [
+            { label: 'Overview', slug: 'docs/cli' },
+            { label: 'Commands', slug: 'docs/cli/reference' },
+          ],
+        },
+        { label: 'Agents & automation', slug: 'docs/agents' },
+        { label: 'API reference', slug: 'docs/api' },
+        { label: 'Security & threat model', slug: 'docs/security' },
+        { label: 'Changelog', slug: 'docs/changelog' },
+      ],
+    }),
+  ],
+});

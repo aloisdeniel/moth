@@ -1,0 +1,6 @@
+# Local development only: resolve moth_auth from the sibling source tree
+# instead of a moth instance's /pub. This file must NOT be embedded in the
+# binary or shipped in the served tarball — sdk/embed.go must not include it.
+dependency_overrides:
+  moth_auth:
+    path: ../flutter

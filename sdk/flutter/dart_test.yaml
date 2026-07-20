@@ -1,0 +1,19 @@
+# Test configuration for the moth_auth package.
+#
+# Tests tagged `integration` spawn a real moth binary and are excluded from
+# the default `flutter test` run (they need `make build` first). Run them
+# with `make sdk-e2e` from the repository root, or directly:
+#
+#   flutter test --run-skipped --tags integration test/integration
+#
+# Tests tagged `golden` compare committed screenshots whose rasterization
+# is platform-dependent, so they are excluded from the default run and CI.
+# Run them (UPDATE=1 to regenerate) with `make sdk-goldens`, or directly:
+#
+#   flutter test --run-skipped --tags golden test/golden
+tags:
+  integration:
+    skip: "integration tests need bin/moth — run via `make sdk-e2e`"
+    timeout: 3m
+  golden:
+    skip: "golden rendering is platform-dependent — run via `make sdk-goldens`"

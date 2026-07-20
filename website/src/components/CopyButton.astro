@@ -1,0 +1,61 @@
+---
+/**
+ * Copy-to-clipboard affordance (DESIGN.md: every setup snippet carries one).
+ * Renders both icons; JS toggles a class — no innerHTML injection.
+ */
+interface Props {
+  text: string;
+  label?: string;
+}
+const { text, label = 'Copy to clipboard' } = Astro.props;
+---
+
+<button type="button" class="copy-button" data-copy={text} aria-label={label}>
+  <svg
+    class="icon-copy"
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <rect x="5.75" y="5.75" width="7.5" height="7.5" rx="1.5"></rect>
+    <path d="M10.25 3.25v-.5a1.5 1.5 0 0 0-1.5-1.5h-4.5a1.5 1.5 0 0 0-1.5 1.5v4.5a1.5 1.5 0 0 0 1.5 1.5h.5"
+    ></path>
+  </svg>
+  <svg
+    class="icon-check"
+    width="16"
+    height="16"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M3.25 8.5 6.5 11.75l6.25-7.5"></path>
+  </svg>
+</button>
+
+<script>
+  // One delegated listener for every copy button on the page.
+  document.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-copy]');
+    if (!button) return;
+    const text = button.dataset.copy ?? '';
+    navigator.clipboard?.writeText(text).then(() => {
+      button.classList.add('copied');
+      button.setAttribute('aria-label', 'Copied');
+      window.setTimeout(() => {
+        button.classList.remove('copied');
+        button.setAttribute('aria-label', 'Copy to clipboard');
+      }, 1600);
+    });
+  });
+</script>

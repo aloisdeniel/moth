@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// InstanceSettingsService exposes instance-wide configuration to the admin
+// console: outgoing email and the values the setup-instruction pages
+// interpolate. All RPCs require an authenticated admin session.
+service InstanceSettingsService {
+  rpc GetInstanceSettings(GetInstanceSettingsRequest) returns (GetInstanceSettingsResponse);
+  // UpdateSmtpSettings stores an SMTP configuration in the database, which
+  // takes precedence over the server config file. An empty host clears the
+  // stored configuration and falls back to the config file (or the console
+  // transport).
+  rpc UpdateSmtpSettings(UpdateSmtpSettingsRequest) returns (UpdateSmtpSettingsResponse);
+  // SendTestEmail sends a probe email through the currently effective
+  // transport.
+  rpc SendTestEmail(SendTestEmailRequest) returns (SendTestEmailResponse);
+}
+
+// SmtpSettings is the outgoing email relay configuration.
+message SmtpSettings {
+  string host = 1;
+  int32 port = 2;
+  string username = 3;
+  // Write-only: accepted on update, never returned by reads. On update, an
+  // empty password keeps the stored one.
+  string password = 4;
+  // Sender address on every email.
+  string from = 5;
+}
+
+// SmtpSource says where the effective SMTP configuration comes from.
+enum SmtpSource {
+  SMTP_SOURCE_UNSPECIFIED = 0;
+  // No SMTP anywhere; emails are logged to the server console.
+  SMTP_SOURCE_NONE = 1;
+  // From the server config file / environment.
+  SMTP_SOURCE_CONFIG = 2;
+  // From the database (set through this service).
+  SMTP_SOURCE_DATABASE = 3;
+}
+
+message GetInstanceSettingsRequest {}
+
+message GetInstanceSettingsResponse {
+  // Public base URL of this instance (issuer prefix, JWKS URLs, links).
+  string base_url = 1;
+  // Server version ("dev" for unreleased builds).
+  string version = 2;
+  // Effective SMTP settings with the password blanked.
+  SmtpSettings smtp = 3;
+  SmtpSource smtp_source = 4;
+  // Whether the stored/config SMTP has a password set.
+  bool smtp_has_password = 5;
+}
+
+message UpdateSmtpSettingsRequest {
+  SmtpSettings smtp = 1;
+}
+
+message UpdateSmtpSettingsResponse {
+  SmtpSettings smtp = 1;
+  SmtpSource smtp_source = 2;
+  bool smtp_has_password = 3;
+}
+
+message SendTestEmailRequest {
+  string to = 1;
+}
+
+message SendTestEmailResponse {}

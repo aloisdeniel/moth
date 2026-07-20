@@ -1,0 +1,113 @@
+name: website
+
+# Quality gates for the public website (plan/09): build, internal + external
+# link checking, a Lighthouse budget (perf/a11y/seo >= 95), and a run of the
+# seeded-instance screenshot pipeline. Deploy lives in pages.yml.
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'website/**'
+      - 'docs/cli/**'
+      - '.github/workflows/website.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'docs/cli/**'
+      - '.github/workflows/website.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  # Build the static site once, then run every check that only needs the
+  # output. Built with the default base ('/') so the Lighthouse static server
+  # serves it cleanly at localhost root.
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+      - run: npm ci
+        working-directory: website
+      - run: npm run build
+        working-directory: website
+
+      # Internal references (href/src/srcset) must all resolve in dist/.
+      - name: Internal link check
+        run: node scripts/check-links.mjs
+        working-directory: website
+
+      # External links over the built HTML. --root-dir resolves root-absolute
+      # paths against dist so only off-site URLs actually hit the network.
+      # Two host families are excluded because a link checker structurally
+      # can't verify them here, not because they're unchecked:
+      #   - the site's own Pages origin: canonical/og self-URLs are emitted
+      #     without the production base path in this base-'/' build, and 404
+      #     until the first Pages deploy regardless. The internal link check
+      #     above is the authority on in-site references.
+      #   - the project's own GitHub repo: the docs link to source files on
+      #     `main` (DESIGN.md, SECURITY.md, LICENSE, example_backend), which
+      #     lychee fetches unauthenticated — so they 404 while the repo is
+      #     private, and pre-merge `main` doesn't yet carry those files. Both
+      #     resolve once the repo is public and this lands on main; they are
+      #     committed files, stable by construction.
+      - name: External link check (lychee)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress --max-retries 2 --exclude-loopback
+            --exclude '^https://aloisdeniel\.github\.io'
+            --exclude '^https://github\.com/aloisdeniel/moth'
+            --root-dir "${{ github.workspace }}/website/dist"
+            "website/dist/**/*.html"
+          fail: true
+
+      # Lighthouse budget: performance / accessibility / SEO >= 95 on the
+      # landing page and one docs page (lighthouserc.json). ubuntu-latest
+      # ships google-chrome-stable, which lhci discovers automatically.
+      - name: Lighthouse budget
+        run: npx -y @lhci/cli@0.15.x autorun
+        working-directory: website
+
+  # Proves the screenshot pipeline (seeded moth instance → real admin SPA →
+  # captures) still runs end-to-end and refreshes the committed images. Needs
+  # the real binary plus a browser, so it is guarded by STRICT mode: any
+  # failure to spawn the binary or the browser fails the job instead of
+  # silently emitting placeholders.
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/admin/package-lock.json
+            website/package-lock.json
+      - run: npm ci
+        working-directory: web/admin
+      - run: npm ci
+        working-directory: website
+      - run: make build
+      - name: Install Playwright chromium
+        run: npx playwright install --with-deps chromium
+        working-directory: web/admin
+      - name: Generate screenshots
+        run: make website-screenshots
+        env:
+          MOTH_SCREENSHOTS_STRICT: '1'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: website-screenshots
+          path: website/public/screenshots/
+          if-no-files-found: error

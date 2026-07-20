@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// ProfileService manages a project's setup profile — the creation wizard's
+// answers (platforms, sign-in / monetization / push intent), stored on the
+// project row (milestone 22) — and computes the derived setup checklist.
+// The profile records intent only; the checklist is recomputed from live
+// configuration on every call, never stored, so it is equally right for
+// projects configured through the tabs, the CLI or a teammate's session.
+// All RPCs require an authenticated admin session.
+service ProfileService {
+  // GetProfile returns the project's setup profile. has_profile is false on
+  // projects created before the wizard (profile is then unset and every
+  // adaptive surface behaves as it did pre-milestone).
+  rpc GetProfile(GetProfileRequest) returns (GetProfileResponse);
+  // UpdateProfile validates and installs a full replacement of the setup
+  // profile (platforms must be non-empty). Partial updates are done
+  // client-side: GetProfile, edit, UpdateProfile.
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+  // GetProjectSetupStatus derives the outstanding setup checklist from the
+  // live configuration and the profile's intent: features the profile did
+  // not choose produce no item, and each item disappears the moment the
+  // underlying config exists. A project with no profile gets an empty list
+  // and has_profile = false.
+  rpc GetProjectSetupStatus(GetProjectSetupStatusRequest) returns (GetProjectSetupStatusResponse);
+}
+
+// ProfilePlatform is an app platform a project ships on (the wizard's
+// platform multi-select). Platforms drive the setup tab, the wizard branches
+// and which checklist items can apply.
+enum ProfilePlatform {
+  PROFILE_PLATFORM_UNSPECIFIED = 0;
+  PROFILE_PLATFORM_IOS = 1;
+  PROFILE_PLATFORM_ANDROID = 2;
+  PROFILE_PLATFORM_WEB = 3;
+}
+
+// Profile is a project's setup profile: what the app intends, never a second
+// source of config truth. The actual provider/billing/push/theme
+// configuration lives behind the existing per-domain services.
+message Profile {
+  // platforms the app ships on; must be non-empty on UpdateProfile.
+  repeated ProfilePlatform platforms = 1;
+  // google_sign_in / apple_sign_in record the social sign-in intent.
+  // Email/password is always on and needs no flag.
+  bool google_sign_in = 2;
+  bool apple_sign_in = 3;
+  // sells_subscriptions records the monetization intent.
+  bool sells_subscriptions = 4;
+  // sends_pushes records the push intent.
+  bool sends_pushes = 5;
+  // checklist_dismissed hides the overview checklist card; it never fakes
+  // completeness.
+  bool checklist_dismissed = 6;
+}
+
+// SetupItem is one outstanding piece of setup, derived from live config.
+message SetupItem {
+  // id is the stable machine identifier of the item ("google_credentials",
+  // "apple_credentials", "billing_credentials", "catalog_sync",
+  // "push_vapid", "theme_default", "smtp").
+  string id = 1;
+  // title is the short human heading.
+  string title = 2;
+  // detail says what exactly is missing.
+  string detail = 3;
+  // tab is the project tab route that finishes the item ("providers",
+  // "monetization", "design", "settings"); empty for instance-level items
+  // (SMTP) that no project tab finishes.
+  string tab = 4;
+  // cli_command optionally names the CLI command that finishes the item
+  // (e.g. "moth setup apple").
+  string cli_command = 5;
+}
+
+message GetProfileRequest {
+  string project_id = 1;
+}
+
+message GetProfileResponse {
+  // has_profile is false on pre-wizard projects; profile is then unset.
+  bool has_profile = 1;
+  Profile profile = 2;
+}
+
+message UpdateProfileRequest {
+  string project_id = 1;
+  // The full replacement profile.
+  Profile profile = 2;
+}
+
+message UpdateProfileResponse {
+  Profile profile = 1;
+}
+
+message GetProjectSetupStatusRequest {
+  string project_id = 1;
+}
+
+message GetProjectSetupStatusResponse {
+  // has_profile is false on pre-wizard projects, which get no checklist
+  // (items is then always empty).
+  bool has_profile = 1;
+  // items are the outstanding setup steps, in a stable display order;
+  // empty when everything the profile intends is configured.
+  repeated SetupItem items = 2;
+  // checklist_dismissed mirrors the profile flag so the overview can hide
+  // the card without a second RPC.
+  bool checklist_dismissed = 3;
+}

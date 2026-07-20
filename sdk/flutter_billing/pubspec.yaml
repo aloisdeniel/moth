@@ -1,0 +1,41 @@
+name: moth_billing
+description: >-
+  First-party native billing for moth: implements moth_auth's
+  MothBillingAdapter with StoreKit 2 on iOS and the Play Billing Library on
+  Android, producing exactly the signed transaction / purchase token the
+  moth server validates in SubmitPurchase.
+# Placeholder version: the moth server stamps the real release version into
+# the tarball it serves at /pub — the SDK version tracks the server version.
+version: 0.1.0
+homepage: https://github.com/aloisdeniel/moth
+publish_to: none # served by the moth binary at /pub, never pub.dev
+
+environment:
+  sdk: ^3.12.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Placeholder hosted dependency: the moth server rewrites the url to the
+  # serving instance's /pub and the version to its own stamped release at
+  # serve time, so moth_billing always resolves the moth_auth it was built
+  # against. Local development overrides this via pubspec_overrides.yaml
+  # (which must never be embedded or served).
+  moth_auth:
+    hosted: https://moth.invalid/pub
+    version: 0.1.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: io.moth.billing
+        pluginClass: MothBillingPlugin
+      ios:
+        pluginClass: MothBillingPlugin

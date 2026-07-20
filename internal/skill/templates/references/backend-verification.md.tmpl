@@ -1,0 +1,109 @@
+# Verify moth tokens in your backend
+
+moth signs every access token with the project's ES256 key. Your API
+verifies them offline against the project JWKS — no call to moth on the
+request path.
+
+| Value | |
+| --- | --- |
+| JWKS URL | `{{.JWKSURL}}` |
+| Expected `iss` | `{{.Issuer}}` |
+| Expected `aud` | `{{.Audience}}` |
+| Algorithm | `ES256` (reject everything else) |
+
+`payload.sub` is the moth user id — use it as the stable foreign key in
+your own database.
+
+## Node (jose)
+
+```js
+import { createRemoteJWKSet, jwtVerify } from "jose";
+
+const jwks = createRemoteJWKSet(new URL("{{.JWKSURL}}"));
+
+export async function verifyMothToken(token) {
+  const { payload } = await jwtVerify(token, jwks, {
+    issuer: "{{.Issuer}}",
+    audience: "{{.Audience}}",
+  });
+  return payload; // payload.sub is the moth user id
+}
+```
+
+## Go (lestrrat-go/jwx)
+
+```go
+import (
+	"context"
+
+	"github.com/lestrrat-go/jwx/v3/jwk"
+	"github.com/lestrrat-go/jwx/v3/jwt"
+)
+
+var cache, _ = jwk.NewCache(context.Background(), nil)
+
+func init() {
+	cache.Register(context.Background(), "{{.JWKSURL}}")
+}
+
+func verifyMothToken(ctx context.Context, raw string) (jwt.Token, error) {
+	keys, err := cache.Lookup(ctx, "{{.JWKSURL}}")
+	if err != nil {
+		return nil, err
+	}
+	return jwt.Parse([]byte(raw),
+		jwt.WithKeySet(keys),
+		jwt.WithIssuer("{{.Issuer}}"),
+		jwt.WithAudience("{{.Audience}}"),
+	)
+}
+```
+
+## Dart backend (package:jose)
+
+```dart
+import 'package:jose/jose.dart';
+
+Future<Map<String, dynamic>> verifyMothToken(String token) async {
+  final jwt = await JsonWebToken.decodeAndVerify(
+    token,
+    JsonWebKeyStore()..addKeySetUrl(Uri.parse('{{.JWKSURL}}')),
+  );
+  final claims = jwt.claims;
+  if (claims.issuer != Uri.parse('{{.Issuer}}') ||
+      !(claims.audience?.contains('{{.Audience}}') ?? false)) {
+    throw Exception('token was not minted for this app');
+  }
+  return claims.toJson();
+}
+```
+
+## Online introspection (instant revocation checks)
+
+When you need revocation to take effect immediately (offline JWTs stay
+valid until expiry, default 15 minutes), ask moth instead. Requires the
+project's **secret key** (`sk_...`, shown once at project creation;
+rotate with `moth project keys regenerate-secret --show-secret`):
+
+```sh
+grpcurl \
+  -H 'x-moth-key: sk_YOUR_SECRET_KEY' \
+  -d '{"access_token": "eyJ..."}' \
+  MOTH_GRPC_HOST:443 \
+  moth.server.v1.TokenService/IntrospectToken
+```
+
+Expected: `{"active": true, "userId": "...", ...}`; a revoked or expired
+token returns `"active": false`. Generate a typed client for any language
+from the served proto sources:
+`{{.Endpoint}}/protos/moth/server/v1/token.proto` (plus
+`.../moth/auth/v1/auth.proto` and `.../moth/server/v1/user.proto`).
+
+## Failure modes
+
+| Symptom | Fix |
+| --- | --- |
+| JWKS URL returns 404 | Wrong project slug in the URL — the exact URL is in `moth project keys show {{.Slug}}` and on the Setup page |
+| `kid` not found in JWKS | The signing key was reset (`moth project keys reset-signing`) — refetch the JWKS; old tokens are permanently invalid |
+| `aud`/`iss` mismatch | Token comes from another project or instance; expected values are in the table above |
+| Valid signature but stale claims | Verify expiry (`exp`) and, for instant revocation, use IntrospectToken |

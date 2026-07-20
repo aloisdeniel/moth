@@ -1,0 +1,15 @@
+# build output
+dist/
+# lighthouse-ci run artifacts (see lighthouserc.json)
+.lighthouseci/
+# generated at build time from docs/cli/reference.md (see scripts/sync-generated.mjs)
+src/content/docs/docs/cli/reference.md
+# generated types
+.astro/
+# dependencies
+node_modules/
+# environment
+.env
+.env.*
+# macOS
+.DS_Store

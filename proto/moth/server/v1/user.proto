@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+package moth.server.v1;
+
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/server/v1;serverv1";
+
+// UserService is programmatic user management for the developer's backend —
+// the moth counterpart of the Firebase Admin SDK. Authenticated with the
+// project secret key (`x-moth-key: sk_...`); always scoped to that project.
+service UserService {
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse);
+  // CreateUser provisions a user directly (e.g. invite-only projects).
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  // UpdateUser edits profile fields and custom_claims — the only way,
+  // besides the admin UI, to put roles/permissions into the JWT. Claim
+  // changes take effect on the next token refresh; pair with
+  // RevokeUserSessions to force it.
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+  // DisableUser blocks sign-in, refresh and introspection for the user.
+  rpc DisableUser(DisableUserRequest) returns (DisableUserResponse);
+  // EnableUser lifts a DisableUser block.
+  rpc EnableUser(EnableUserRequest) returns (EnableUserResponse);
+  rpc DeleteUser(DeleteUserRequest) returns (DeleteUserResponse);
+  // RevokeUserSessions revokes every refresh token of the user.
+  rpc RevokeUserSessions(RevokeUserSessionsRequest) returns (RevokeUserSessionsResponse);
+}
+
+// User is the full server-side view of an account.
+message User {
+  string id = 1;
+  string email = 2;
+  bool email_verified = 3;
+  string display_name = 4;
+  string avatar_url = 5;
+  // Embedded in the JWT under the `claims` claim.
+  google.protobuf.Struct custom_claims = 6;
+  bool disabled = 7;
+  google.protobuf.Timestamp create_time = 8;
+  google.protobuf.Timestamp update_time = 9;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message GetUserResponse {
+  User user = 1;
+}
+
+message ListUsersRequest {}
+
+message ListUsersResponse {
+  repeated User users = 1;
+}
+
+message CreateUserRequest {
+  string email = 1;
+  // Optional; empty creates a user that must reset before password sign-in.
+  string password = 2;
+  string display_name = 3;
+  bool email_verified = 4;
+  google.protobuf.Struct custom_claims = 5;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message UpdateUserRequest {
+  string user_id = 1;
+  optional string display_name = 2;
+  optional string avatar_url = 3;
+  // Replaces the whole custom claims object when set.
+  google.protobuf.Struct custom_claims = 4;
+}
+
+message UpdateUserResponse {
+  User user = 1;
+}
+
+message DisableUserRequest {
+  string user_id = 1;
+}
+
+message DisableUserResponse {
+  User user = 1;
+}
+
+message EnableUserRequest {
+  string user_id = 1;
+}
+
+message EnableUserResponse {
+  User user = 1;
+}
+
+message DeleteUserRequest {
+  string user_id = 1;
+}
+
+message DeleteUserResponse {}
+
+message RevokeUserSessionsRequest {
+  string user_id = 1;
+}
+
+message RevokeUserSessionsResponse {}

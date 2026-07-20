@@ -1,0 +1,31 @@
+---
+/**
+ * Elevation-1 feature card (DESIGN.md: surface + hairline border,
+ * radius-md; hover moves the border to border-strong, no lift).
+ * Description comes from the default slot; an optional screenshot slot
+ * (see Screenshot.astro) sits under the copy.
+ */
+import Screenshot from './Screenshot.astro';
+
+interface Props {
+  title: string;
+  /** Leading tile: spans two columns and two rows of the grid. */
+  lead?: boolean;
+  shot?: {
+    src: string;
+    alt: string;
+    label: string;
+    ratio?: string;
+  };
+}
+
+const { title, lead = false, shot } = Astro.props;
+---
+
+<article class:list={['tile', { 'tile-lead': lead }]}>
+  <div class="tile-copy">
+    <h3>{title}</h3>
+    <p><slot /></p>
+  </div>
+  {shot && <Screenshot {...shot} />}
+</article>

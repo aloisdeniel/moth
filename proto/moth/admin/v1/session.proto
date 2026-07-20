@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// SessionService authenticates operators of the moth instance.
+//
+// Login sets an HttpOnly session cookie on its HTTP response; every other
+// admin RPC is authenticated by an interceptor that validates that cookie.
+service SessionService {
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc GetCurrentAdmin(GetCurrentAdminRequest) returns (GetCurrentAdminResponse);
+}
+
+message Admin {
+  string id = 1;
+  string email = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResponse {
+  Admin admin = 1;
+}
+
+message LogoutRequest {}
+
+message LogoutResponse {}
+
+message GetCurrentAdminRequest {}
+
+message GetCurrentAdminResponse {
+  Admin admin = 1;
+  // The moth build version of the answering server ("dev", or "vX.Y.Z" on
+  // release builds), so a CLI can validate a context and report what it
+  // talks to in one round trip.
+  string server_version = 2;
+}

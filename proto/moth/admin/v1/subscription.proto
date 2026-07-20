@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// SubscriptionService gives operators the per-user subscription view and the
+// promo/comp actions: inspect a user's subscriptions and grants, comp an
+// entitlement, or revoke a grant. Grant/revoke actions are audit-logged
+// (milestone 10). All RPCs require an authenticated admin session.
+service SubscriptionService {
+  // ListUserSubscriptions returns a user's store subscriptions and their
+  // operator grants (the full billing picture for the user detail page).
+  rpc ListUserSubscriptions(ListUserSubscriptionsRequest) returns (ListUserSubscriptionsResponse);
+  // GetUserSubscription returns one subscription by id.
+  rpc GetUserSubscription(GetUserSubscriptionRequest) returns (GetUserSubscriptionResponse);
+  // GrantEntitlement writes an operator grant (comp a reviewer, extend a grace
+  // period, grant a promo), optionally with an expiry.
+  rpc GrantEntitlement(GrantEntitlementRequest) returns (GrantEntitlementResponse);
+  // RevokeGrant marks an operator grant revoked from now on.
+  rpc RevokeGrant(RevokeGrantRequest) returns (RevokeGrantResponse);
+}
+
+// Store identifies which app store a subscription belongs to.
+enum Store {
+  STORE_UNSPECIFIED = 0;
+  STORE_APPLE = 1;
+  STORE_GOOGLE = 2;
+  STORE_STRIPE = 3;
+}
+
+// SubscriptionStatus mirrors the store's renewal state.
+enum SubscriptionStatus {
+  SUBSCRIPTION_STATUS_UNSPECIFIED = 0;
+  SUBSCRIPTION_STATUS_ACTIVE = 1;
+  SUBSCRIPTION_STATUS_TRIALING = 2;
+  SUBSCRIPTION_STATUS_IN_GRACE_PERIOD = 3;
+  SUBSCRIPTION_STATUS_IN_BILLING_RETRY = 4;
+  SUBSCRIPTION_STATUS_PAUSED = 5;
+  SUBSCRIPTION_STATUS_EXPIRED = 6;
+  SUBSCRIPTION_STATUS_REVOKED = 7;
+}
+
+// Subscription is the operator's view of one store subscription.
+message Subscription {
+  string id = 1;
+  string user_id = 2;
+  Store store = 3;
+  // The moth product id the store SKU maps to; empty when unmapped.
+  string product_id = 4;
+  SubscriptionStatus status = 5;
+  google.protobuf.Timestamp current_period_end = 6;
+  bool auto_renew = 7;
+  // "sandbox" or "production".
+  string environment = 8;
+  // Store identity: Apple original_transaction_id or Google purchase_token.
+  string store_transaction_id = 9;
+  google.protobuf.Timestamp create_time = 10;
+  google.protobuf.Timestamp update_time = 11;
+}
+
+// Grant is one operator (promo/comp) entitlement grant.
+message Grant {
+  string id = 1;
+  string entitlement_id = 2;
+  // When the grant lapses; unset for a non-expiring grant.
+  google.protobuf.Timestamp expire_time = 3;
+  string reason = 4;
+  // Label of the operator credential that created it.
+  string granted_by = 5;
+  google.protobuf.Timestamp create_time = 6;
+  // Set once revoked.
+  google.protobuf.Timestamp revoke_time = 7;
+}
+
+message ListUserSubscriptionsRequest {
+  string project_id = 1;
+  string user_id = 2;
+}
+
+message ListUserSubscriptionsResponse {
+  repeated Subscription subscriptions = 1;
+  // All grants of the user (active, expired and revoked), newest first.
+  repeated Grant grants = 2;
+}
+
+message GetUserSubscriptionRequest {
+  string project_id = 1;
+  string id = 2;
+}
+
+message GetUserSubscriptionResponse {
+  Subscription subscription = 1;
+}
+
+message GrantEntitlementRequest {
+  string project_id = 1;
+  string user_id = 2;
+  string entitlement_id = 3;
+  // Optional expiry; unset grants indefinitely.
+  google.protobuf.Timestamp expire_time = 4;
+  string reason = 5;
+}
+
+message GrantEntitlementResponse {
+  Grant grant = 1;
+}
+
+message RevokeGrantRequest {
+  string project_id = 1;
+  string grant_id = 2;
+}
+
+message RevokeGrantResponse {
+  Grant grant = 1;
+}

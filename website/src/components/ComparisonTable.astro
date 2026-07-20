@@ -1,0 +1,62 @@
+---
+/**
+ * Comparison table. First column is the axis, the `highlight` column
+ * (moth) gets a strong-border frame. Rows may open a group with a
+ * full-width mono section header. Scrolls horizontally inside its own
+ * container on small screens — never the page.
+ */
+interface Row {
+  /** Opens a new group when set; `label`/`cells` are ignored. */
+  group?: string;
+  label?: string;
+  cells?: string[];
+}
+
+interface Props {
+  caption: string;
+  columns: string[];
+  /** Index into `columns` to visually emphasize (default 0 = first data column). */
+  highlight?: number;
+  rows: Row[];
+}
+
+const { caption, columns, highlight = 0, rows } = Astro.props;
+---
+
+<div class="comparison-scroll">
+  <table class="comparison">
+    <caption class="visually-hidden">{caption}</caption>
+    <thead>
+      <tr>
+        <td></td>
+        {
+          columns.map((column, i) => (
+            <th scope="col" class:list={[{ 'cmp-hl': i === highlight }]}>
+              {column}
+            </th>
+          ))
+        }
+      </tr>
+    </thead>
+    <tbody>
+      {
+        rows.map((row) =>
+          row.group ? (
+            <tr class="cmp-group">
+              <th scope="colgroup" colspan={columns.length + 1}>
+                {row.group}
+              </th>
+            </tr>
+          ) : (
+            <tr>
+              <th scope="row">{row.label}</th>
+              {(row.cells ?? []).map((cell, i) => (
+                <td class:list={[{ 'cmp-hl': i === highlight }]}>{cell}</td>
+              ))}
+            </tr>
+          ),
+        )
+      }
+    </tbody>
+  </table>
+</div>

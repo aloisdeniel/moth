@@ -1,0 +1,116 @@
+# Administer moth from the terminal
+
+The `moth` binary doubles as a remote client, kubectl-style: thin wrappers
+over the same `moth.admin.v1` RPCs the admin SPA uses, so the two surfaces
+never diverge in capability. Everything below works without a browser.
+
+## Contexts & authentication
+
+Named contexts (server URL + personal access token) live in
+`~/.config/moth/config.toml` (`$XDG_CONFIG_HOME/moth/config.toml` when
+set); switch with `--context <name>` or `MOTH_CONTEXT=<name>`:
+
+```toml
+current-context = "prod"
+
+[contexts.prod]
+url = "{{.Endpoint}}"
+token = "moth_pat_..."
+```
+
+Create a context by logging in (prompts for a personal access token —
+mint one in the admin SPA under Account, or with `moth admin token`
+locally on the server host):
+
+```sh
+moth login {{.Endpoint}}
+```
+
+PATs are revocable server-side at any time; a revoked or expired token
+makes every command fail with `unauthenticated` — mint a new one and
+re-run `moth login`. Treat `moth_pat_...` values as secrets.
+
+## Scripting contract
+
+- `--json` on every command: parseable output (protojson field names,
+  e.g. `publishableKey`) on **stdout**, nothing else on stdout.
+- Errors go to **stderr**; the exit code is non-zero on any failure.
+- Destructive commands prompt; pass `--yes` in scripts.
+- Secrets are redacted unless `--show-secret` is passed; keys returned
+  exactly once (project creation, secret regeneration) print once and are
+  never retrievable again.
+
+## Command groups
+
+```sh
+moth project create|list|get|update|delete        # projects (one per app)
+moth project keys show|reset-signing|regenerate-secret
+moth project dump|apply                           # declarative state (below)
+moth project export|import                        # users-JSON data lifecycle
+moth user list|get|create|invite|disable|enable|delete  # end users of one project
+moth user claims set / moth user sessions revoke
+moth stats get                                    # analytics
+moth instance get|smtp                            # instance settings incl. SMTP test
+moth setup google|apple --project <slug>          # provider consoles (see provider-setup.md)
+moth doctor --project <slug>                      # config health check
+moth skill export                                 # this skill
+```
+
+`moth <group> --help` lists the exact flags; the full generated reference
+ships in the repo under `docs/cli/`.
+
+## Declarative projects (dump / apply)
+
+`moth project dump <slug>` emits the project's full desired state
+(settings, providers, theme, legal links) as a `ProjectSpec` YAML
+document; `moth project apply -f moth.yaml` idempotently
+creates-or-updates the project the spec's `slug` names. Apply twice →
+second run reports zero changes. Version the file next to your app code.
+
+```yaml
+name: {{.ProjectName}}
+slug: {{.Slug}}
+settings:
+  passwordMinLength: 8
+  allowPublicSignup: true
+  requireEmailVerification: true
+  google:
+    enabled: {{if .Google.Enabled}}true{{else}}false{{end}}
+    webClientId: "{{if .Google.WebClientID}}{{.Google.WebClientID}}{{else}}....apps.googleusercontent.com{{end}}"
+  apple:
+    enabled: {{if .Apple.Enabled}}true{{else}}false{{end}}
+```
+
+Write-only secrets (Google web client secret, Apple `.p8` key) never
+appear in dumps and are kept unchanged when the applied spec omits or
+empties them — a dump→apply round trip is always safe.
+
+## Diagnosis
+
+```sh
+moth doctor --project {{.Slug}}
+```
+
+Checks and clearly reports: JWKS reachability, SMTP (test send), provider
+configs (Apple key validity/expiry, Google client IDs resolve), the pub
+endpoint serving the SDK, base-URL/TLS sanity. Run it first whenever
+"login stopped working".
+
+## Typical flows
+
+```sh
+# New app, end to end
+moth login {{.Endpoint}}
+moth project create "My App"
+moth setup google --project my-app
+moth setup apple --project my-app
+moth doctor --project my-app
+
+# Read values for an integration (parse the JSON)
+moth project get {{.Slug}} --json
+moth project keys show {{.Slug}} --json   # JWKS URL, issuer, audience
+
+# User support
+moth user list --project {{.Slug}} --json
+moth user sessions revoke <user-id-or-email> --project {{.Slug}} --yes
+```

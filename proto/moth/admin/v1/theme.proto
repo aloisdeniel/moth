@@ -1,0 +1,220 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// ThemeService manages a project's design system: the small token set
+// (colors, typography, spacing, corner radius, logo, legal links) that
+// every end-user surface renders from. Themes are validated server-side —
+// WCAG AA contrast on every color/on-color pair, curated fonts, bounded
+// ranges — so any accepted theme produces a legible screen. Every save
+// creates a revision (the last 10 are kept for undo). All RPCs require an
+// authenticated admin session.
+service ThemeService {
+  // GetTheme returns the project's current theme: the saved one, or the
+  // built-in defaults when the project never customized anything
+  // (revision_id empty, is_default true).
+  rpc GetTheme(GetThemeRequest) returns (GetThemeResponse);
+  // UpdateTheme validates and installs a full replacement token set and
+  // returns the new revision. Partial updates are done client-side:
+  // GetTheme, edit, UpdateTheme.
+  rpc UpdateTheme(UpdateThemeRequest) returns (UpdateThemeResponse);
+  // ListThemeRevisions returns the saved revisions, newest first (at most
+  // the 10 the server keeps).
+  rpc ListThemeRevisions(ListThemeRevisionsRequest) returns (ListThemeRevisionsResponse);
+  // RestoreThemeRevision re-installs an old revision's token set as a new
+  // revision (history only ever moves forward). Note that logo assets are
+  // stored per project, not per revision: a restored theme points at the
+  // logo files as they are today.
+  rpc RestoreThemeRevision(RestoreThemeRevisionRequest) returns (RestoreThemeRevisionResponse);
+  // ResetTheme reverts the project to the built-in default theme. The
+  // revision history is kept, so the previous theme stays restorable.
+  rpc ResetTheme(ResetThemeRequest) returns (ResetThemeResponse);
+  // UploadLogo stores a logo image for one color scheme and returns the
+  // updated theme (a new revision). PNG or SVG, at most 512 KiB; images
+  // are decoded and re-encoded server-side, which strips any embedded
+  // payloads (SVG scripts in particular).
+  rpc UploadLogo(UploadLogoRequest) returns (UploadLogoResponse);
+  // DeleteLogo removes one color scheme's logo from the theme (a new
+  // revision) and deletes the stored file.
+  rpc DeleteLogo(DeleteLogoRequest) returns (DeleteLogoResponse);
+}
+
+// Theme is one project's complete design system, mirroring the versioned
+// JSON schema in internal/theme (the schema version is a storage concern
+// and does not appear here).
+message Theme {
+  // Light palette. Every field is required, "#RRGGBB".
+  ThemeColors colors = 1;
+  // Optional per-field dark-palette overrides; empty fields (or the whole
+  // message) are derived from `colors`: surfaces blend toward black,
+  // accents toward white, and each on* color becomes black or white,
+  // whichever contrasts more.
+  ThemeColorOverrides dark_colors = 2;
+  ThemeTypography typography = 3;
+  ThemeSpacing spacing = 4;
+  ThemeShape shape = 5;
+  // Output only: logo asset paths are managed through UploadLogo /
+  // DeleteLogo; values sent in UpdateTheme are ignored.
+  ThemeLogo logo = 6;
+  ThemeLegal legal = 7;
+}
+
+// ThemeColors is a complete palette: each color role and its "on"
+// (foreground) counterpart. Validation enforces a WCAG AA contrast ratio
+// (>= 4.5:1) between every pair.
+message ThemeColors {
+  string primary = 1;
+  string on_primary = 2;
+  string background = 3;
+  string on_background = 4;
+  string surface = 5;
+  string on_surface = 6;
+  string error = 7;
+  string on_error = 8;
+}
+
+// ThemeColorOverrides is a partial dark palette; empty fields are derived.
+message ThemeColorOverrides {
+  string primary = 1;
+  string on_primary = 2;
+  string background = 3;
+  string on_background = 4;
+  string surface = 5;
+  string on_surface = 6;
+  string error = 7;
+  string on_error = 8;
+}
+
+message ThemeTypography {
+  // One of the curated embedded fonts (e.g. "Inter"); arbitrary fonts are
+  // rejected.
+  string font_family = 1;
+  // Global text-size multiplier, 0.8 to 1.4.
+  double scale = 2;
+}
+
+message ThemeSpacing {
+  // Base spacing step in logical pixels, 4 to 16.
+  int32 unit = 1;
+}
+
+message ThemeShape {
+  // Component corner radius in logical pixels, 0 to 32.
+  int32 corner_radius = 1;
+}
+
+// ThemeLogo holds the server-managed asset paths of the uploaded logos
+// ("/assets/{project}/logo-light.png"); empty means no logo.
+message ThemeLogo {
+  string light_path = 1;
+  string dark_path = 2;
+}
+
+// ThemeLegal holds the optional legal links rendered near signup; must be
+// absolute http(s) URLs.
+message ThemeLegal {
+  string terms_url = 1;
+  string privacy_url = 2;
+}
+
+// ThemeRevision is one saved version of a project's theme.
+message ThemeRevision {
+  string revision_id = 1;
+  Theme theme = 2;
+  google.protobuf.Timestamp create_time = 3;
+}
+
+// LogoVariant selects which color scheme a logo is for.
+enum LogoVariant {
+  LOGO_VARIANT_UNSPECIFIED = 0;
+  LOGO_VARIANT_LIGHT = 1;
+  LOGO_VARIANT_DARK = 2;
+}
+
+message GetThemeRequest {
+  string project_id = 1;
+}
+
+message GetThemeResponse {
+  Theme theme = 1;
+  // Empty when the project renders the built-in defaults.
+  string revision_id = 2;
+  // True when no theme was ever saved (or after ResetTheme).
+  bool is_default = 3;
+}
+
+message UpdateThemeRequest {
+  string project_id = 1;
+  // The full replacement token set (logo paths excepted, see Theme.logo).
+  Theme theme = 2;
+}
+
+message UpdateThemeResponse {
+  Theme theme = 1;
+  // The id of the revision this save created.
+  string revision_id = 2;
+}
+
+message ListThemeRevisionsRequest {
+  string project_id = 1;
+  // Maximum revisions to return; 0 (or anything above what the server
+  // keeps) returns all kept revisions.
+  int32 limit = 2;
+}
+
+message ListThemeRevisionsResponse {
+  // Newest first.
+  repeated ThemeRevision revisions = 1;
+}
+
+message RestoreThemeRevisionRequest {
+  string project_id = 1;
+  string revision_id = 2;
+}
+
+message RestoreThemeRevisionResponse {
+  Theme theme = 1;
+  // The id of the new revision created by the restore.
+  string revision_id = 2;
+}
+
+message ResetThemeRequest {
+  string project_id = 1;
+}
+
+message ResetThemeResponse {
+  // The built-in default theme now in effect.
+  Theme theme = 1;
+}
+
+message UploadLogoRequest {
+  string project_id = 1;
+  LogoVariant variant = 2;
+  // Image bytes; PNG ("image/png") or SVG ("image/svg+xml"), at most
+  // 512 KiB.
+  bytes data = 3;
+  string content_type = 4;
+}
+
+message UploadLogoResponse {
+  Theme theme = 1;
+  // The id of the revision this upload created.
+  string revision_id = 2;
+  // Server path of the stored asset ("/assets/{project}/logo-light.png").
+  string path = 3;
+}
+
+message DeleteLogoRequest {
+  string project_id = 1;
+  LogoVariant variant = 2;
+}
+
+message DeleteLogoResponse {
+  Theme theme = 1;
+  // The id of the revision this delete created.
+  string revision_id = 2;
+}

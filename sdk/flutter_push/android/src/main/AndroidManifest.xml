@@ -1,0 +1,16 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Merged into the app manifest so it can request the API 33+ runtime
+         notification permission without declaring anything itself. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <application>
+        <!-- Token rotation only: the service forwards onNewToken to Dart and
+             deliberately handles no messages — display stays app code. -->
+        <service
+            android:name="io.moth.push.MothPushMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+    </application>
+</manifest>

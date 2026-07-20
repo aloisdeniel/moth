@@ -1,0 +1,83 @@
+---
+/**
+ * Prerendered "asciinema-style" terminal: a pure-CSS typing animation, fully
+ * self-contained (no external player, no requests, no runtime JS).
+ *
+ * All lines exist in the DOM at their final size — typed lines animate width
+ * (steps() per character), output lines fade in — so the terminal never
+ * changes height and causes zero layout shift. `prefers-reduced-motion`
+ * renders the finished session statically. Screen readers get one
+ * descriptive label instead of the animation.
+ */
+
+const CHAR_MS = 42; // typing speed
+const OUT_MS = 220; // gap before an output line appears
+const THINK_MS = 550; // pause before the next command
+
+type Line =
+  | { kind: 'cmd'; text: string; delay: number; chars: number; duration: number }
+  | { kind: 'out'; text: string; delay: number; ok?: boolean };
+
+const lines: Line[] = [];
+let t = 700;
+
+const cmd = (text: string) => {
+  const duration = text.length * CHAR_MS;
+  lines.push({ kind: 'cmd', text, delay: t, chars: text.length, duration });
+  t += duration + OUT_MS;
+};
+const out = (text: string, ok = false) => {
+  lines.push({ kind: 'out', text, delay: t, ok });
+  t += OUT_MS;
+};
+const pause = () => {
+  t += THINK_MS;
+};
+
+cmd('moth serve');
+out('listening on :8080 · admin console at /admin');
+pause();
+cmd('moth project create "Bird Spotter"');
+out('created project bird-spotter');
+out('publishable key  pk_bird_c81f2a9d4e');
+pause();
+cmd('flutter run');
+out('✓ signed in as jane@example.com', true);
+pause();
+
+const promptDelay = t;
+---
+
+<div
+  class="terminal"
+  role="img"
+  aria-label="Terminal session: moth serve starts the server, moth project create adds the Bird Spotter project, and flutter run signs a user in."
+>
+  <div class="terminal-bar" aria-hidden="true">
+    <span>moth · terminal</span>
+  </div>
+  <div class="terminal-body" aria-hidden="true">
+    {
+      lines.map((line) =>
+        line.kind === 'cmd' ? (
+          <span class="tl">
+            <span class="tl-prompt">$ </span>
+            <span
+              class="tl-typed"
+              style={`--n: ${line.chars}; --steps: steps(${line.chars}, end); --d: ${line.delay}ms; --dur: ${line.duration}ms;`}
+            >
+              {line.text}
+            </span>
+          </span>
+        ) : (
+          <span class:list={['tl', 'tl-out', { 'tl-ok': line.ok }]} style={`--d: ${line.delay}ms;`}>
+            {line.text}
+          </span>
+        ),
+      )
+    }
+    <span class="tl tl-out tl-cursor" style={`--d: ${promptDelay}ms;`}>
+      <span class="tl-prompt">$ </span>
+    </span>
+  </div>
+</div>

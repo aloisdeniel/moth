@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package moth.admin.v1;
+
+import "google/protobuf/timestamp.proto";
+import "moth/admin/v1/session.proto";
+
+option go_package = "github.com/aloisdeniel/moth/gen/moth/admin/v1;adminv1";
+
+// AdminAccountService manages the operator accounts of this moth instance:
+// inviting additional admins and changing one's own password. All RPCs
+// except AcceptAdminInvite require an authenticated admin session.
+service AdminAccountService {
+  rpc ListAdmins(ListAdminsRequest) returns (ListAdminsResponse);
+  // InviteAdmin creates a single-use invite for a new operator account.
+  // The invite link is returned for copy-paste and additionally emailed
+  // when a mailer is configured.
+  rpc InviteAdmin(InviteAdminRequest) returns (InviteAdminResponse);
+  rpc ListAdminInvites(ListAdminInvitesRequest) returns (ListAdminInvitesResponse);
+  rpc RevokeAdminInvite(RevokeAdminInviteRequest) returns (RevokeAdminInviteResponse);
+  // AcceptAdminInvite redeems an invite token, creates the admin account
+  // and signs it in (sets the session cookie). Unauthenticated.
+  rpc AcceptAdminInvite(AcceptAdminInviteRequest) returns (AcceptAdminInviteResponse);
+  // ChangePassword changes the calling admin's password after verifying
+  // the current one, and ends the admin's other browser sessions.
+  rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
+  // CreatePersonalAccessToken mints a `moth_pat_...` credential for the
+  // calling admin, accepted by every admin RPC as
+  // `authorization: Bearer` metadata (the moth CLI's credential). Stored
+  // hashed; the plaintext is returned exactly once, in this response.
+  // A token minted over a PAT never outlives the creating token: its
+  // expiry is capped at the creator's, so a leaked short-lived token
+  // cannot be laundered into a longer-lived one.
+  rpc CreatePersonalAccessToken(CreatePersonalAccessTokenRequest) returns (CreatePersonalAccessTokenResponse);
+  // ListPersonalAccessTokens returns the calling admin's tokens (metadata
+  // only, revoked ones included), newest first.
+  rpc ListPersonalAccessTokens(ListPersonalAccessTokensRequest) returns (ListPersonalAccessTokensResponse);
+  // RevokePersonalAccessToken immediately ends one of the calling admin's
+  // tokens; its next use fails UNAUTHENTICATED.
+  rpc RevokePersonalAccessToken(RevokePersonalAccessTokenRequest) returns (RevokePersonalAccessTokenResponse);
+}
+
+// AdminInvite is a pending operator invitation.
+message AdminInvite {
+  string id = 1;
+  string email = 2;
+  google.protobuf.Timestamp create_time = 3;
+  google.protobuf.Timestamp expire_time = 4;
+}
+
+message ListAdminsRequest {}
+
+message ListAdminsResponse {
+  repeated Admin admins = 1;
+}
+
+message InviteAdminRequest {
+  string email = 1;
+}
+
+message InviteAdminResponse {
+  AdminInvite invite = 1;
+  // Absolute invite URL, returned exactly once. Anyone opening it can
+  // claim the account.
+  string invite_url = 2;
+  // Whether the invite was also delivered by email.
+  bool emailed = 3;
+}
+
+message ListAdminInvitesRequest {}
+
+message ListAdminInvitesResponse {
+  repeated AdminInvite invites = 1;
+}
+
+message RevokeAdminInviteRequest {
+  string id = 1;
+}
+
+message RevokeAdminInviteResponse {}
+
+message AcceptAdminInviteRequest {
+  string token = 1;
+  string password = 2;
+}
+
+message AcceptAdminInviteResponse {
+  Admin admin = 1;
+}
+
+message ChangePasswordRequest {
+  string current_password = 1;
+  string new_password = 2;
+}
+
+message ChangePasswordResponse {}
+
+// PersonalAccessToken is the metadata of one `moth_pat_...` credential.
+// The token value itself is stored hashed and only ever returned by
+// CreatePersonalAccessToken.
+message PersonalAccessToken {
+  string id = 1;
+  // Operator-chosen label ("ci", "laptop").
+  string name = 2;
+  google.protobuf.Timestamp create_time = 3;
+  // When the token last authenticated a request; unset when never used.
+  google.protobuf.Timestamp last_used_time = 4;
+  // Unset means the token never expires.
+  google.protobuf.Timestamp expire_time = 5;
+  // Set once the token has been revoked.
+  google.protobuf.Timestamp revoke_time = 6;
+}
+
+message CreatePersonalAccessTokenRequest {
+  string name = 1;
+  // Days until the token expires; 0 means it never expires.
+  int32 expires_in_days = 2;
+}
+
+message CreatePersonalAccessTokenResponse {
+  // The `moth_pat_...` plaintext, returned exactly once.
+  string token = 1;
+  PersonalAccessToken metadata = 2;
+}
+
+message ListPersonalAccessTokensRequest {}
+
+message ListPersonalAccessTokensResponse {
+  // Newest first; revoked tokens are included until they are pruned.
+  repeated PersonalAccessToken tokens = 1;
+}
+
+message RevokePersonalAccessTokenRequest {
+  string id = 1;
+}
+
+message RevokePersonalAccessTokenResponse {}
